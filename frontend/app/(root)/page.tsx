@@ -8,12 +8,12 @@ export default function Home() {
   return (
     // <div className="min-h-screen  bg-[var(--surface)] f ">
       <main className="flex min-h-screen w-full flex-col items-center  py-16 px-16  bg-[var(--surface)] sm:items-start font-sans">
-        <div className="flex items-center justify-center h-[50vh] w-full pr-20">
+        <div className="flex items-center ml-10 justify-center h-[40vh] w-full pr-20">
           <Image
             src="/متقن.svg"
             alt="Motqin Logo"
-            width={600}
-            height={90}
+            width={500}
+            height={50}
             priority
           />
         </div>
