@@ -7,7 +7,6 @@ import { CustomButtonProps } from "@/type";
 const CustomButton = ({
   title,
   leftIcon,
-  href,
   onClick,
   variant = "primary",
   disabled,
@@ -32,18 +31,6 @@ const CustomButton = ({
       <span>{title}</span>
     </>
   );
-
-  // 👉 Link button (OAuth, navigation)
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className={cn(baseStyles, variants[variant], className)}
-      >
-        {content}
-      </Link>
-    );
-  }
 
   // 👉 Action button (submit, click)
   return (

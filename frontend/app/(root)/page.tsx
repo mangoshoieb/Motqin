@@ -12,8 +12,8 @@ export default function Home() {
           <Image
             src="/متقن.svg"
             alt="Motqin Logo"
-            width={700}
-            height={100}
+            width={600}
+            height={90}
             priority
           />
         </div>

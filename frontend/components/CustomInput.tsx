@@ -2,21 +2,13 @@
 
 import { cn } from "@/app/lib/utils";
 import { CustomInputProps } from "@/type";
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-const CustomInput = ({
-  placeholder,
-  value,
-  label,
-  type,
-  onChange,
-  keyboardType,
-  icon,
-  className,
-}: CustomInputProps) => {
+const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
+  ({ label, type, icon, error, className, ...props }, ref) => {
 
-  const [isFocused, setIsFocused] = useState(false);
+  // const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
 
@@ -37,7 +29,8 @@ const CustomInput = ({
         )}
 
         <input
-        //   {...props}
+        ref={ref}
+        {...props}
         type={
           type === "password"
             ? showPassword
@@ -45,10 +38,6 @@ const CustomInput = ({
               : "password"
             : type
         }
-          placeholder={placeholder}
-          value={value}
-          inputMode={keyboardType}
-          onChange={onChange}
           className={cn(
             "w-full rounded-lg border px-3 py-3 text-sm",
             icon && "pl-10",
@@ -72,8 +61,17 @@ const CustomInput = ({
           </button>
         )}
       </div>
+      {error && (
+          <p className="text-sm text-red-500">
+            {error}
+          </p>
+        )}
     </div>
   );
 
 }
+)
+
+CustomInput.displayName = "CustomInput";
+
 export default CustomInput;

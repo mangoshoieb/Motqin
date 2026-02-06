@@ -1,13 +1,11 @@
-export interface CustomInputProps {
-    placeholder?: string;
-    value?: string;
-    type:string
-    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    label: string;
-    className?:string;
-    icon?:React.ReactNode;
-    keyboardType?: | "email" | "numeric" | "tel"|"text";
+// types.ts
+export interface CustomInputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  icon?: React.ReactNode;
+  error?: string;
 }
+
 
 export interface CustomButtonProps {
     title: string;

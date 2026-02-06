@@ -1,92 +1,89 @@
 "use client";
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
-import { Key, Mail, User } from "lucide-react";
+import { Key, Mail } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Image from "next/image";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaFacebook } from "react-icons/fa";
 import Link from "next/link";
+import z from "zod";
+import { signInSchema } from "@/app/lib/validators/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
-const SignUp = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", username: "" });
+type FormData = z.infer<typeof signInSchema>;
+
+const SignIn = () => {
   const router = useRouter();
 
-  const submit = async () => {
-    if (!form.email || !form.password || !form.username) {
-      console.log("enter the the required data please ");
-      setIsSubmitting(true);
-      try {
-        console.log("you have sing up succefully ");
-        router.replace("/");
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    resolver: zodResolver(signInSchema),
+  });
+
+  const onSubmit = (data: FormData) => {
+    console.log(data);
+    router.replace("/");
   };
 
   return (
     <main className="min-h-screen w-full flex bg-[var(--surface)]">
       <div className=" w-130 min-w-100 flex flex-col gap-7 h-[88vh] m-10 p-10 bg-white rounded-3xl">
         <h1 className="text-3xl font-bold text-left">Login</h1>
-        <CustomButton
-          title="Login with Google"
-          leftIcon={<FcGoogle size={24} />}
-          href="/api/auth/google"
-          variant="google"
-          className="w-full text-md font-semibold"
-        />
-        <CustomButton
-          title="Login with Facebook"
-          leftIcon={<FaFacebook size={24} />}
-          href="/api/auth/facebook"
-          variant="facebook"
-          className="w-full text-md font-semibold"
-        />
-        <CustomInput
-          placeholder="example@gmail.com"
-          label="Email"
-          value={form.email}
-          type="email"
-          keyboardType="email"
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, email: e.target.value }))
-          }
-          className="w-full"
-          icon={<Mail size={18} />}
-        />
-        <CustomInput
-          label="Password"
-          value={form.password}
-          type="password"
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, password: e.target.value }))
-          }
-          // className="w-full"
-          icon={<Key size={18} />}
-        />
-        <div className="font-medium text-right">
-          <Link href={"/sign-in"}>
-            <span className="text-blue-600 ">Forget password?</span>
-          </Link>
-        </div>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4 flex flex-col gap-2"
+        >
+          <CustomButton
+            title="Login with Google"
+            leftIcon={<FcGoogle size={24} />}
+            variant="google"
+            className="w-full text-md font-semibold"
+          />
+          <CustomButton
+            title="Login with Facebook"
+            leftIcon={<FaFacebook size={24} />}
+            variant="facebook"
+            className="w-full text-md font-semibold"
+          />
+          <CustomInput
+            placeholder="example@gmail.com"
+            label="Email"
+            type="email"
+            icon={<Mail size={18} />}
+            error={errors.email?.message}
+            {...register("email")}
+          />
+          <CustomInput
+            label="Password"
+            type="password"
+            icon={<Key size={18} />}
+            error={errors.password?.message}
+            {...register("password")}
+          />
+          <div className="font-medium text-right">
+            <Link href={"/forgetPassword"}>
+              <span className="text-blue-600 ">Forget password?</span>
+            </Link>
+          </div>
 
-        <CustomButton
-          title="sing up"
-          type="submit"
-          className="w-full text-md font-semibold"
-        />
+          <CustomButton
+            title="Sign In"
+            type="submit"
+            className="w-full text-md font-semibold"
+          />
 
-        <div className="my-1 text-sm flex justify-center items-center gap-2">
-          <p className="text-gray-700">Are you new?</p>
-          <Link href={"/sign-up"}>
-            <span className="text-blue-600 ">Sign Up</span>
-          </Link>
-        </div>
+          <div className="my-1 text-sm flex justify-center items-center gap-2">
+            <p className="text-gray-700">Are you new?</p>
+            <Link href={"/sign-up"}>
+              <span className="text-blue-600 ">Sign Up</span>
+            </Link>
+          </div>
+        </form>
       </div>
       <div className="hidden md:flex flex-1 justify-center items-center">
         <div className="flex flex-col items-center gap-6 w-full">
@@ -114,4 +111,4 @@ const SignUp = () => {
   );
 };
 
-export default SignUp;
+export default SignIn;
