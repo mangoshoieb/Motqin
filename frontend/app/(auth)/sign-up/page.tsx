@@ -33,9 +33,9 @@ const SignUp = () => {
 
   return (
     <main className="min-h-screen w-full flex bg-[var(--surface)]">
-      <div className="w-130 min-w-100 flex flex-col h-[88vh] m-10 px-10 py-8 bg-white rounded-3xl">
-        <h1 className="text-3xl mb-7 font-bold text-left">Sign up</h1>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 flex flex-col gap-2">
+      <div className="w-[35VW] min-w-90 flex flex-col m-8 px-10 py-6 bg-white rounded-3xl">
+        <h1 className="text-3xl mb-5 font-bold text-left">Sign up</h1>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 flex flex-col gap-1">
           <CustomInput
             placeholder="example@gmail.com"
             label="Email"
@@ -97,7 +97,7 @@ const SignUp = () => {
             width={300}
             height={70}
             priority
-            className="-mb-20"
+            className="-mb-30"
           />
 
           <div className="relative w-full max-w-[900px] h-[550px]">

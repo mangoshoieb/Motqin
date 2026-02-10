@@ -32,11 +32,11 @@ const SignIn = () => {
 
   return (
     <main className="min-h-screen w-full flex bg-[var(--surface)]">
-      <div className=" w-130 min-w-100 flex flex-col gap-7 h-[88vh] m-10 p-10 bg-white rounded-3xl">
+      <div className=" w-[35VW] min-w-90 flex flex-col gap-7  m-8 px-10 py-6 bg-white rounded-3xl">
         <h1 className="text-3xl font-bold text-left">Login</h1>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4 flex flex-col gap-2"
+          className="space-y-4 flex flex-col gap-1"
         >
           <CustomButton
             title="Login with Google"
@@ -93,7 +93,7 @@ const SignIn = () => {
             width={300}
             height={70}
             priority
-            className="-mb-20"
+            className="-mb-30"
           />
 
           <div className="relative w-full max-w-[900px] h-[550px]">
