@@ -1,4 +1,5 @@
 import { FeatureCard } from "@/components/FeautureCard";
+import Footer from "@/components/Footer";
 import { Trophy, Bot, BookOpen, ShieldOff, CalendarCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,9 +7,9 @@ import Link from "next/link";
 export default function Home() {
   const isLoggedIn = true;
   return (
-    // <div className="min-h-screen  bg-[var(--surface)] f ">
-      <main className="flex min-h-screen w-full flex-col items-center  py-16 px-16  bg-[var(--surface)] sm:items-start font-sans">
-        <div className="flex items-center ml-10 justify-center h-[40vh] w-full pr-20">
+    <main className=" min-h-screen w-full   bg-[var(--surface)] sm:items-start font-sans" >
+      <div className="w-full">
+        <div className="max-w-7xl mx-auto flex items-center justify-center h-[40vh] px-6 md:px-12">
           <Image
             src="/متقن.svg"
             alt="Motqin Logo"
@@ -17,8 +18,9 @@ export default function Home() {
             priority
           />
         </div>
-        <section className="mt-1 w-full  grid grid-cols-10 gap-6 auto-rows-[80px]">
-          {/* Planner - Hero Card (spans 4 cols, 2 rows) */}
+      </div>
+      <section className="w-full">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 grid grid-cols-10 gap-6 auto-rows-[80px]">
           <Link href="/planner" className="col-span-7 row-span-4 rounded-3xl">
             <FeatureCard
               title="Planner"
@@ -75,18 +77,6 @@ export default function Home() {
               size="small"
             />
           </Link>
-          {/* Focus - Compact card */}
-          {/* <FeatureCard
-            title="Focus"
-            description="Block distractions"
-            icon={ShieldOff}
-            variant="focus"
-            size="small"
-            className="col-span-1 row-span-1 bg-rose-500"
-            // onClick={() => console.log("Navigate to Focus Mode")}
-          /> */}
-
-          {/* Bottom row continuation */}
           <FeatureCard
             title="Focus Mode"
             description="Stay productive with app blocking"
@@ -97,18 +87,9 @@ export default function Home() {
             className="col-span-3 row-span-2 bg-rose-400"
             // onClick={() => console.log("Navigate to Focus Mode")}
           />
-
-          {/* <FeatureCard
-            title="Daily Quiz"
-            description="Spaced repetition"
-            icon={BookOpen}
-            variant="quiz"
-            size="small"
-            className="col-span-1 row-span-1 bg-green-500"
-            // onClick={() => console.log("Navigate to Quiz")}
-          /> */}
-        </section>
-      </main>
-    // </div>
+        </div>
+      </section>
+      <Footer />
+    </main>
   );
 }
