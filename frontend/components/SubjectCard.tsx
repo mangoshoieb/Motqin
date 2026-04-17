@@ -5,9 +5,10 @@ import { AnimatedArrow } from "./AnimatedArrow";
 interface SubjectCardProps {
   title: string;
   // description?: string;
-  lessons: number;
-  hours: number;
+  // lessons: number;
+  // hours: number;
   href: string;
+  key: string;
   className?: string;
   arrowPlay?: boolean;
 }
@@ -15,14 +16,16 @@ interface SubjectCardProps {
 export const SubjectCard = ({
   title,
   // description,
-  lessons,
-  hours,
+  // lessons,
+  // hours,
   href,
+  key,
   className,
   arrowPlay
 }: SubjectCardProps) => {
   return (
     <Link
+      key={key}
       href={href}
       className={cn(
         "group relative flex rounded-2xl my-4 overflow-hidden",
@@ -33,21 +36,21 @@ export const SubjectCard = ({
       )}
     >
       {/* Main content */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-10">
         <h2 className="text-xl font-bold text-zinc-900">{title}</h2>
 
         {/* {description && (
           <p className="text-sm text-zinc-600 mt-1 max-w-md">{description}</p>
         )} */}
 
-        <div className="flex gap-6 mt-6 text-sm text-zinc-700">
+        {/* <div className="flex gap-6 mt-6 text-sm text-zinc-700">
           <div>
             <span className="font-semibold">{lessons}</span> lessons
           </div>
           <div>
             <span className="font-semibold">{hours}</span> hours
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Action column */}

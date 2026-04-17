@@ -91,7 +91,7 @@ const Nav = () => {
           </>
         ) : (
           <>
-            <Link href="/" className="text-lg font-semibold text-blakc">
+            <Link href="/" className="text-lg font-semibold ">
               Home
             </Link>
             <ThemeToggle />

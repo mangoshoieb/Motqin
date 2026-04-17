@@ -1,19 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { cn } from "@/app/lib/utils";
 import { AnimatedArrow } from "./AnimatedArrow";
+import { CircleChevronRight, ChevronDown } from "lucide-react";
 
 type LessonState = "start" | "continue" | "review";
 
 interface LessonCardProps {
   title: string;
-  description?: string;
-//   lessons: number;
-  hours: number;
+  outlines: string[];
   state: LessonState;
   href: string;
   className?: string;
   arrowPlay?: boolean;
-
 }
 
 const stateStyles: Record<LessonState, string> = {
@@ -24,14 +25,23 @@ const stateStyles: Record<LessonState, string> = {
 
 export const LessonCard = ({
   title,
-  description,
-//   lessons,
-  hours,
+  outlines,
   state,
   href,
   className,
-  arrowPlay
+  arrowPlay,
 }: LessonCardProps) => {
+  const [expanded, setExpanded] = useState(false);
+
+  const hasMore = outlines.length > 2;
+  const visibleOutlines = expanded ? outlines : outlines.slice(0, 2);
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.preventDefault(); // 🚫 prevent navigation
+    e.stopPropagation(); // 🚫 stop bubbling to Link
+    setExpanded((prev) => !prev);
+  };
+
   return (
     <Link
       href={href}
@@ -45,16 +55,8 @@ export const LessonCard = ({
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-zinc-900">{title}</h2>
-          {description && (
-            <p className="text-sm text-zinc-600 mt-1 max-w-md">
-              {description}
-            </p>
-          )}
-        </div>
+        <h2 className="text-xl font-bold text-zinc-900">{title}</h2>
 
-        {/* State badge */}
         <span
           className={cn(
             "px-3 py-1 rounded-full text-xs font-semibold capitalize",
@@ -65,17 +67,46 @@ export const LessonCard = ({
         </span>
       </div>
 
-      {/* Stats */}
-      <div className="flex gap-6 mt-6 text-sm text-zinc-700">
-        {/* <div>
-          <span className="font-semibold">{lessons}</span> lessons
-        </div> */}
-        <div>
-          <span className="font-semibold">{hours}</span> hours
+      {/* Outlines */}
+      <div className="mt-4 relative">
+        <div
+          className={cn(
+            "flex flex-col gap-2 transition-all duration-300",
+            !expanded && hasMore && "max-h-[80px] overflow-hidden"
+          )}
+        >
+          {visibleOutlines.map((outline, index) => (
+            <div key={index} className="flex gap-3 items-start">
+              <CircleChevronRight className="size-4 mt-1 shrink-0" />
+              <span>{outline}</span>
+            </div>
+          ))}
         </div>
+
+        {/* Blur Fade */}
+        {!expanded && hasMore && (
+          <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-white to-transparent" />
+        )}
       </div>
 
-      {/* Action button */}
+      {/* Expand Arrow (ONLY controls expand) */}
+      {hasMore && (
+        <div className="flex justify-center mt-3">
+          <button
+            onClick={handleToggle}
+            className="relative px-8 py-4 -m-5 rounded-full cursor-pointer hover:bg-zinc-200 transition"
+          >
+            <ChevronDown
+              className={cn(
+                "transition-transform duration-300",
+                expanded && "rotate-180"
+              )}
+            />
+          </button>
+        </div>
+      )}
+
+      {/* Navigation Button */}
       <div className="absolute bottom-6 right-6">
         <div
           className={cn(
@@ -87,8 +118,7 @@ export const LessonCard = ({
             "group-hover:text-white"
           )}
         >
-                    <AnimatedArrow size={30} play={arrowPlay} />
-
+          <AnimatedArrow size={30} play={arrowPlay} />
         </div>
       </div>
     </Link>

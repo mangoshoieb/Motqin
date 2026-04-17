@@ -1,3 +1,4 @@
+import CustomButton from "@/components/CustomButton";
 import { FeatureCard } from "@/components/FeautureCard";
 import Footer from "@/components/Footer";
 import { Trophy, Bot, BookOpen, ShieldOff, CalendarCheck } from "lucide-react";
@@ -7,16 +8,33 @@ import Link from "next/link";
 export default function Home() {
   const isLoggedIn = true;
   return (
-    <main className=" min-h-screen w-full   bg-[var(--surface)] sm:items-start font-sans" >
-      <div className="w-full">
-        <div className="max-w-7xl mx-auto flex items-center justify-center h-[40vh] px-6 md:px-12">
+    <main className=" min-h-screen w-full   bg-[var(--surface)] sm:items-start font-sans">
+      <div className="relative w-full hero overflow-hidden min-h-screen">
+        <div
+          className="absolute inset-0 bg-no-repeat bg-right bg-cover opacity-60 pointer-events-none"
+          style={{ backgroundImage: "url('/hero-bg.svg')" }}
+        />
+        <div className="relative max-w-7xl mx-auto flex flex-col gap-15 items-end my-20 justify-end  px-6 md:px-12">
           <Image
             src="/متقن.svg"
             alt="Motqin Logo"
-            width={500}
+            width={400}
             height={50}
             priority
           />
+          <h1 className="text-4xl font-bold mr-5 text-blue-900">.أتقن تركيزك. أتقن مستقبلك</h1>
+          <div className="min-w-[30vw] mr-5 flex gap-15 items-end justify-end">
+            <CustomButton 
+            title="دليل"
+            className="w-[10vw] text-2xl"
+            variant="outline"
+            />
+            <CustomButton 
+            title="أبدأ الان"
+            className="w-[10vw] text-2xl"
+            variant="primary"
+            />
+          </div>
         </div>
       </div>
       <section className="w-full">
