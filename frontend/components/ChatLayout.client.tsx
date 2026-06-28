@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChatWindow } from "./ChatWindow";
 import { ChatInput } from "./ChatInput";
-import { fetchSpeech, sendMessage } from "@/app/lib/api";
+import { fetchSpeech, sendMessage } from "../app/services/ai-teacher.services";
 import { Sidebar } from "./Sidebar";
 
 export interface Message {
