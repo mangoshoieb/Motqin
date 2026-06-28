@@ -11,13 +11,9 @@ export const signUpSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters").max(30),
 });
 export const signInSchema = z.object({
-  phoneNumber: z
-    .string()
-    .min(11, "Phone number is required")
-    .max(15, "Invalid phone number")
-    .regex(/^01[0125][0-9]{8}$/, "Please enter a valid Egyptian phone number"),
-
-  username: z.string().min(3, "Username must be at least 3 characters").max(30),
+  email: z.string().email("Invalid email address"),
+  // username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export const forgetPassSchema = z.object({

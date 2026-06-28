@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 type FormData = z.infer<typeof signInSchema>;
 
 const SignIn = () => {
+  const router = useRouter();
 
   const {
     register,
@@ -64,6 +65,11 @@ const SignIn = () => {
             error={errors.password?.message}
             {...register("password")}
           />
+          <div className="font-medium text-right">
+            <Link href={"/forgetPassword"}>
+              <span className="text-blue-600 ">Forget password?</span>
+            </Link>
+          </div>
 
           <CustomButton
             title="Sign In"
