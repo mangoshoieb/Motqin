@@ -1,5 +1,5 @@
 import Nav from "@/components/Nav";
-import { Providers } from "../providers";
+import { Providers } from "../providers/providers";
 
 export default function RootLayout({
     children,

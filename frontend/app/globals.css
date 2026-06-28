@@ -16,7 +16,7 @@
   --input-text: #515158;
   --input-border: #d4d4d8;
   --input-placeholder: #71717a;
-
+  --daycard-bg: #d9d9d9;
   --chat-toolbar-bg: #ffffff;
 }
 
@@ -29,11 +29,11 @@
   --sidebar-bg: #0f0f12;
   --sidebar-text: #e5e7eb;
   --sidebar-hover: #1f1f23;
-    --input-bg: #18181b;
+  --input-bg: #18181b;
   --input-text: #b3b6bb;
   --input-border: #3f3f46;
   --input-placeholder: #a1a1aa;
-
+  --daycard-bg: #d9d9d2;
   --chat-toolbar-bg: #0f0f12;
 }
 
@@ -86,4 +86,79 @@ body {
   .black_btn:active {
     transform: translateY(1px);
   }
+}
+
+@keyframes fadeIn {
+  from {
+    /* opacity: 0; */
+    transform: scaleX(0.95);
+  }
+
+  to {
+    /* opacity: 1; */
+    transform: scaleX(1);
+  }
+}
+
+.fade-in-right {
+  animation: fadeIn 1000ms ease;
+  transform-origin: right center;
+}
+.fade-in-left {
+  animation: fadeIn 1000ms ease;
+  transform-origin: left center;
+}
+
+@keyframes expandCard {
+  from {
+    /* opacity: 0; */
+    transform: scaleX(188px);
+  }
+
+  to {
+    /* opacity: 1; */
+    transform: scaleX(567px);
+  }
+}
+
+.expand-card {
+  animation: expandCard 1000ms ease;
+  transform-origin: right center;
+}
+
+@keyframes slideTasksIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes expandSection {
+  from {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+
+  to {
+    max-height: 600px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sessions-enter {
+  overflow: hidden;
+  animation: expandSection 0.7s ease-out forwards;
+  animation-delay: 500ms;
+}
+
+.task-item {
+  opacity: 0;
+  transform: translateX(20px);
+  animation: slideTasksIn 0.4s ease-out forwards;
 }

@@ -1,0 +1,17 @@
+.fc {
+    --fc-border-color: #aaaab4;
+    --fc-page-bg-color: transparent;
+  
+    --fc-neutral-bg-color: #18181b;
+    --fc-neutral-text-color: #fafafa;
+  
+    --fc-button-bg-color: #2563eb;
+    --fc-button-border-color: #2563eb;
+  
+    --fc-button-hover-bg-color: #1d4ed8;
+    --fc-button-hover-border-color: #1d4ed8;
+  
+    --fc-today-bg-color: rgba(59,130,246,0.15);
+  }
+
+  
