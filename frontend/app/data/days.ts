@@ -1,4 +1,5 @@
 import {
+  PlannerDay,
   Task,
   TaskCategory,
   TaskPriority,
@@ -23,7 +24,7 @@ const task = (
   source,
 });
 
-export const weekData = [
+export const weekData : PlannerDay[]  = [
   {
     index: 1,
     dayName: "الأحد",
@@ -92,7 +93,7 @@ export const weekData = [
     totalTasks: 6,
     workingHours: 5,
     focusSessions: 4,
-    mood: "رائع",
+    mood: "ممتاز",
     tasks: [
       task("6", "درس اللغة الإنجليزية", true, "lesson", 60, "high", "ai"),
       task("7", "مهمة مراجعة", true, "revision", 45, "medium", "ai"),
@@ -238,7 +239,7 @@ export const weekData = [
     totalTasks: 5,
     workingHours: 0,
     focusSessions: 0,
-    mood: "خامل",
+    mood: "متوسط",
     tasks: [
       task("19", "مراجعة الفيزياء", false, "revision", 60, "high", "ai"),
       task(

@@ -3,7 +3,6 @@ import DayCard from "@/components/DayCard";
 import { weekData } from "@/app/data/days";
 import { useState } from "react";
 import ExpandedDayCard from "@/components/ExpandedDayCard";
-import { motion } from "framer-motion";
 import { cn } from "@/app/lib/utils";
 interface DayProps {
   dayName: string;
@@ -14,7 +13,7 @@ interface DayProps {
   workingHours: number;
   focusSessions: number;
 
-  mood: string;
+  mood: "مذهل" | "ممتاز" | "جيد" | "متوسط";
   showBorder?: boolean;
 
   onClick?: () => void;
@@ -44,10 +43,10 @@ const Planner = () => {
     return { start: 2, end: 6 };
   }
 
-  function hideBorder(selectedIndex: number){
-    if (selectedIndex <=3){
+  function hideBorder(selectedIndex: number) {
+    if (selectedIndex <= 3) {
       return true;
-    }else{
+    } else {
       return false;
     }
   }
@@ -104,9 +103,7 @@ const Planner = () => {
           })}
         </div>
 
-        <div>
-          Goals
-        </div>
+        <div>Goals</div>
       </div>
     </main>
   );

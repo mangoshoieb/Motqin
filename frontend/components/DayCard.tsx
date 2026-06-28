@@ -38,7 +38,7 @@ interface DayCardProps {
   workingHours: number;
   focusSessions: number;
 
-  mood: string;
+  mood:"مذهل" | "ممتاز" | "جيد" | "متوسط";
   showBorder: boolean;
   tasks: Task[];
 

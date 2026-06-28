@@ -13,11 +13,10 @@ import { signUpSchema } from "@/app/lib/validators/auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axiosInstance from "@/app/lib/axios";
-import { useGoogleIdentity, useGoogleLogin } from "@/app/hooks/useAuth";
+import { useGoogleLogin } from "@/app/hooks/useAuth";
 import GoogleSignIn from "@/components/GoogleSignIn";
 import { useFacebookLogin } from "@/app/hooks/useFacebookLogin";
 import { signInWithFacebook } from "@/app/services/facebook-auth.services";
-
 type FormData = z.infer<typeof signUpSchema>;
 
 const SignUp = () => {

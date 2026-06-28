@@ -1,5 +1,3 @@
-
-
 export type TaskCategory =
   | "revision"
   | "quiz"
@@ -8,15 +6,9 @@ export type TaskCategory =
   | "project"
   | "other";
 
-export type TaskPriority =
-  | "low"
-  | "medium"
-  | "high";
+export type TaskPriority = "low" | "medium" | "high";
 
-export type TaskSource =
-  | "manual"
-  | "ai"
-  | "goal";
+export type TaskSource = "manual" | "ai" | "goal";
 
 export interface Task {
   id: string;
@@ -35,7 +27,7 @@ export interface Task {
 export interface Session {
   id: string;
 
-//   taskId: string;
+  //   taskId: string;
 
   title: string;
 
@@ -45,9 +37,20 @@ export interface Session {
 
   actualMinutes: number;
 
-  status:
-    | "paused"
-    | "idle"
-    | "active"
-    | "completed";
+  status: "paused" | "idle" | "active" | "completed";
+}
+
+export type Mood = "مذهل" | "ممتاز" | "جيد" | "متوسط";
+
+export interface PlannerDay {
+  index: number;
+  dayName: string;
+  date: string;
+  completedTasks: number;
+  totalTasks: number;
+  workingHours: number;
+  focusSessions: number;
+  mood: Mood;
+  tasks: Task[];
+  sessions: Session[];
 }

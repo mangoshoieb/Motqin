@@ -21,6 +21,7 @@ interface ExpandedDayCardProps {
   aiSuggestions?: string[];
   onCollapse: () => void;
   focusSessions: number;
+  // currentDay:boolean;
 }
 
 const ExpandedDayCard = ({
@@ -28,12 +29,11 @@ const ExpandedDayCard = ({
   dayName,
   date,
   tasks,
-  Mood,
+  mood,
   workingHours,
-  totalSessionNumber,
   sessions,
   selected,
-  currentDay,
+  // currentDay,
   showBorder,
   focusSessions,
   onCollapse,
