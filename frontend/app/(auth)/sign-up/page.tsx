@@ -1,7 +1,7 @@
 "use client";
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
-import { Mail, Phone, User } from "lucide-react";
+import { Phone, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Image from "next/image";
 import { useRef } from "react";

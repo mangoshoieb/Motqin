@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { verifyPhoneSchema } from "@/app/lib/validators/auth";
 import { useVerifyPhone } from "@/app/hooks/useVerifyPhone";
 import z from "zod";
+import { useAuthStore } from "@/app/lib/auth.store";
 
 type VerifyPhoneForm = z.infer<typeof verifyPhoneSchema>;
 
@@ -25,6 +26,10 @@ const VerifyPhone = () => {
     resolver: zodResolver(verifyPhoneSchema),
   });
 
+  
+    const phoneNumber = useAuthStore(
+      state => state.phoneNumber
+  );
   const onSubmit = (data: VerifyPhoneForm) => {
     console.log('hi')
     if (!phoneNumber) return;
@@ -34,10 +39,6 @@ const VerifyPhone = () => {
       code: data.code,
     });
   };
-
-  const searchParams = useSearchParams();
-
-  const phoneNumber = searchParams.get("phone");
   return (
     <main className="min-h-screen w-full flex bg-[var(--surface)]">
       <div className=" w-[35VW] min-w-90 flex flex-col gap-7  m-8 px-10 py-6 bg-white rounded-3xl">
