@@ -1,24 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
+import Script from "next/script";
 
-interface FacebookProviderProps {
-  children: React.ReactNode;
-}
-
-export default function FacebookProvider({
-  children,
-}: FacebookProviderProps) {
-  useEffect(() => {
-    window.fbAsyncInit = () => {
-      window.FB.init({
-        appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID!,
-        cookie: true,
-        xfbml: false,
-        version: "v23.0",
-      });
-    };
-  }, []);
-
-  return <>{children}</>;
+export default function FacebookSDK() {
+  return (
+    <Script
+      src="https://connect.facebook.net/en_US/sdk.js"
+      strategy="afterInteractive"
+      onLoad={() => {
+        window.FB.init({
+          appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID!,
+          cookie: true,
+          xfbml: false,
+          version: "v23.0",
+        });
+      }}
+    />
+  );
 }

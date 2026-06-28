@@ -1,28 +1,31 @@
 "use client";
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
-import { Key, Mail, User } from "lucide-react";
+import { Mail, Phone, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Image from "next/image";
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import { FaFacebook } from "react-icons/fa";
 import Link from "next/link";
 import { z } from "zod";
 import { signUpSchema } from "@/app/lib/validators/auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axiosInstance from "@/app/lib/axios";
 import { useGoogleLogin } from "@/app/hooks/useAuth";
 import GoogleSignIn from "@/components/GoogleSignIn";
 import { useFacebookLogin } from "@/app/hooks/useFacebookLogin";
 import { signInWithFacebook } from "@/app/services/facebook-auth.services";
+import { useRegisterPhone } from "@/app/hooks/useRegisterPhone";
 type FormData = z.infer<typeof signUpSchema>;
 
 const SignUp = () => {
-  const router = useRouter();
-  const { mutate: googleLogin, isPending } = useGoogleLogin();
-  const { mutate: facebookLogin } = useFacebookLogin();
+  const { mutate: registerPhone, isPending: isPhonePending } =
+    useRegisterPhone();
+
+  const { mutate: facebookLogin, isPending: isFacebookPending } =
+    useFacebookLogin();
+
+  const { mutate: googleLogin, isPending: isGooglePending } = useGoogleLogin();
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const {
     register,
@@ -32,25 +35,11 @@ const SignUp = () => {
     resolver: zodResolver(signUpSchema),
   });
 
-  const onSubmit = async (data: FormData) => {
-    try {
-      console.log(data);
-
-      await registerUser(data);
-
-      router.replace("/");
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const registerUser = async (payload: FormData) => {
-    const response = await axiosInstance.post(
-      "/Authentication/register-user",
-      payload
-    );
-
-    return response.data;
+  const onSubmit = (data: FormData) => {
+    registerPhone({
+      phoneNumber: data.phoneNumber,
+      name: data.username,
+    });
   };
 
   const handleFacebookLogin = async () => {
@@ -79,6 +68,7 @@ const SignUp = () => {
             onClick={handleFacebookLogin}
             variant="facebook"
             className="w-full text-md font-semibold"
+            disabled={isFacebookPending}
           />
           <GoogleSignIn
             ref={googleButtonRef}
@@ -96,7 +86,6 @@ const SignUp = () => {
           <CustomButton
             title="Continue with Google"
             leftIcon={<FcGoogle size={24} />}
-            // href="/api/auth/google"
             onClick={() => {
               googleButtonRef.current
                 ?.querySelector("div[role='button']")
@@ -108,6 +97,7 @@ const SignUp = () => {
             }}
             variant="google"
             className="w-full text-md font-semibold"
+            disabled={isGooglePending}
           />
           <div className="mb-2 text-md flex justify-center items-center gap-2 font-semibold">
             <p className="text-gray-700">Already have an account.</p>
@@ -116,12 +106,12 @@ const SignUp = () => {
             </Link>
           </div>
           <CustomInput
-            placeholder="example@gmail.com"
-            label="Email"
-            type="email"
-            icon={<Mail size={18} />}
-            error={errors.email?.message}
-            {...register("email")}
+            placeholder="+20 10XXXXXXXX"
+            label="Phone Number"
+            type="tel"
+            icon={<Phone size={18} />}
+            error={errors.phoneNumber?.message}
+            {...register("phoneNumber")}
           />
           <CustomInput
             placeholder="mono"
@@ -131,17 +121,11 @@ const SignUp = () => {
             {...register("username")}
             icon={<User size={18} />}
           />
-          <CustomInput
-            label="Password"
-            type="password"
-            error={errors.password?.message}
-            {...register("password")}
-            icon={<Key size={18} />}
-          />
           <CustomButton
             title="sign up"
             type="submit"
             className="w-full text-md font-semibold"
+            disabled={isPhonePending}
           />
         </form>
       </div>

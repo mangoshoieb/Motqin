@@ -22,4 +22,23 @@ export const authService = {
 
     return data;
   },
+  async registerPhone(
+    body: RegisterPhoneRequest
+  ): Promise<RegisterPhoneResponse> {
+    const { data } = await axiosInstance.post<RegisterPhoneResponse>(
+      API_ROUTES.AUTH.REGISTER_PHONE,
+      body
+    );
+
+    return data;
+  },
+
+  async verifyPhone(body: VerifyPhoneRequest): Promise<VerifyPhoneResponse> {
+    const { data } = await axiosInstance.post<VerifyPhoneResponse>(
+      API_ROUTES.AUTH.VERIFY_PHONE,
+      body
+    );
+
+    return data;
+  },
 };

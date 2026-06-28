@@ -2,60 +2,75 @@
 
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
-import { ArrowBigLeft, ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft} from "lucide-react";
 import Image from "next/image";
-import { FcGoogle } from "react-icons/fc";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { forgetPassSchema } from "@/app/lib/validators/auth";
+import { verifyPhoneSchema } from "@/app/lib/validators/auth";
+import { useVerifyPhone } from "@/app/hooks/useVerifyPhone";
+import z from "zod";
 
-type ForgotPasswordForm = {
-  email: string;
-};
+type VerifyPhoneForm = z.infer<typeof verifyPhoneSchema>;
 
-const ForgetPassword = () => {
+const VerifyPhone = () => {
+  const { mutate: verifyPhone, isPending } = useVerifyPhone();
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<ForgotPasswordForm>({
-    resolver: zodResolver(forgetPassSchema),
+  } = useForm<VerifyPhoneForm>({
+    resolver: zodResolver(verifyPhoneSchema),
   });
 
-  const onSubmit = (data: ForgotPasswordForm) => {
-    console.log(data);
-    router.replace("/");
+  const onSubmit = (data: VerifyPhoneForm) => {
+    console.log('hi')
+    if (!phoneNumber) return;
+
+    verifyPhone({
+      phoneNumber,
+      code: data.code,
+    });
   };
+
+  const searchParams = useSearchParams();
+
+  const phoneNumber = searchParams.get("phone");
   return (
     <main className="min-h-screen w-full flex bg-[var(--surface)]">
       <div className=" w-[35VW] min-w-90 flex flex-col gap-7  m-8 px-10 py-6 bg-white rounded-3xl">
         <h1 className="text-3xl font-bold text-left">Forget password</h1>
+        <p className="text-md font-semibold text-gray-500">
+          Enter the 6-digit code sent to your phone number.
+        </p>
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4 flex flex-col gap-4 mt-10"
         >
           <CustomInput
-            placeholder="example@gmail.com"
-            label="Email"
-            type="email"
-            icon={<Mail size={18} />}
-            error={errors.email?.message}
-            {...register("email")}
+            placeholder="123456"
+            label="Verification Code"
+            type="text"
+            error={errors.code?.message}
+            {...register("code")}
           />
 
           <CustomButton
-            title="Reset password"
-            // leftIcon={<FcGoogle size={24} />}
-            variant='facebook'
+            title="Verify"
+             type="submit"
+            variant="facebook"
             className="w-full text-md font-semibold cursor-pointer"
+            disabled={isPending}
           />
-          <div className="flex cursor-pointer gap-3 m-auto " onClick={()=> router.replace('/sign-in')}>
-            {<ArrowLeft className="size-6 text-gray-700"/>}
-          
-          <p className="font-semibold  text-gray-700">Back to log in</p>
+          <div
+            className="flex cursor-pointer gap-3 m-auto "
+            onClick={() => router.replace("/sign-in")}
+          >
+            {<ArrowLeft className="size-6 text-gray-700" />}
+
+            <p className="font-semibold  text-gray-700">Back to log in</p>
           </div>
         </form>
       </div>
@@ -85,4 +100,4 @@ const ForgetPassword = () => {
   );
 };
 
-export default ForgetPassword;
+export default VerifyPhone;

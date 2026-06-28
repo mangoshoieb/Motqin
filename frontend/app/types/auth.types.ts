@@ -90,3 +90,30 @@ interface FacebookAuthResponse {
   signedRequest: string;
 }
 }
+
+// phone register and login
+
+declare global {
+
+interface RegisterPhoneRequest {
+  phoneNumber: string;
+  name: string;
+}
+
+interface RegisterPhoneResponse {
+  message: string;
+}
+
+interface VerifyPhoneRequest {
+  phoneNumber: string;
+  code: string;
+}
+ interface VerifyPhoneResponse {
+  message: string;
+  token: {
+    accessToken: string;
+    refreshToken: string;
+    expiredAt: string;
+  };
+}
+}
