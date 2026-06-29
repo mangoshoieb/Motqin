@@ -50,6 +50,7 @@ const SignUp = () => {
       facebookLogin({
         accessToken,
       });
+      console.log(accessToken)
     } catch (error) {
       console.error(error);
     }
