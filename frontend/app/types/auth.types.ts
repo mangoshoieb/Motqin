@@ -10,7 +10,7 @@ export interface AuthTokens {
 
 export interface GoogleLoginResponse {
   message: string;
-  tokens: AuthTokens;
+  token: AuthTokens;
 }
 
 // google
