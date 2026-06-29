@@ -13,11 +13,7 @@ const GoogleSignIn = forwardRef<HTMLDivElement, GoogleSignInProps>(
     return (
       <div
         ref={ref}
-        style={{
-          // position: "absolute",
-          opacity: 1,
-          // pointerEvents: "none",
-        }}
+        className="absolute inset-0 z-10 opacity-0"
       >
         <GoogleLogin
           onSuccess={(credentialResponse) => {

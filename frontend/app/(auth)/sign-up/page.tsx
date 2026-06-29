@@ -44,13 +44,13 @@ const SignUp = () => {
 
   const handleFacebookLogin = async () => {
     try {
-      console.log('facebook button pressed')
+      console.log("facebook button pressed");
       const accessToken = await signInWithFacebook();
 
       facebookLogin({
         accessToken,
       });
-      console.log(accessToken)
+      console.log(accessToken);
     } catch (error) {
       console.error(error);
     }
@@ -75,8 +75,6 @@ const SignUp = () => {
           <GoogleSignIn
             ref={googleButtonRef}
             onSuccess={(idToken) => {
-              console.log(idToken);
-
               googleLogin({
                 idToken,
               });
@@ -85,20 +83,12 @@ const SignUp = () => {
               console.log("Google Login Failed");
             }}
           />
+
           <CustomButton
             title="Continue with Google"
             leftIcon={<FcGoogle size={24} />}
-            onClick={() => {
-              googleButtonRef.current
-                ?.querySelector("div[role='button']")
-                ?.dispatchEvent(
-                  new MouseEvent("click", {
-                    bubbles: true,
-                  })
-                );
-            }}
             variant="google"
-            className="w-full text-md font-semibold"
+            className="w-full text-md font-semibold pointer-events-none"
             disabled={isGooglePending}
           />
           <div className="mb-2 text-md flex justify-center items-center gap-2 font-semibold">
