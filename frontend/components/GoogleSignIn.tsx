@@ -14,9 +14,9 @@ const GoogleSignIn = forwardRef<HTMLDivElement, GoogleSignInProps>(
       <div
         ref={ref}
         style={{
-          position: "absolute",
-          opacity: 0,
-          pointerEvents: "none",
+          // position: "absolute",
+          opacity: 1,
+          // pointerEvents: "none",
         }}
       >
         <GoogleLogin
