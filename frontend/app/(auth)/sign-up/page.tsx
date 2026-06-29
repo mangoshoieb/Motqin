@@ -58,7 +58,7 @@ const SignUp = () => {
 
   return (
     <main className="min-h-screen w-full flex bg-[var(--surface)]">
-      <div className="w-[35VW] min-w-90 flex flex-col m-8 px-10 py-5 bg-white rounded-3xl">
+      <div className="w-[35VW] min-w-90 flex flex-col m-8 max-md:mx-auto max-md:h-[90vh] px-10 py-5 bg-white rounded-3xl">
         <h1 className="text-3xl mb-5 font-bold text-left">Sign up</h1>
         <form
           onSubmit={handleSubmit(onSubmit)}
