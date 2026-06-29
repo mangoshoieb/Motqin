@@ -72,25 +72,25 @@ const SignUp = () => {
             className="w-full text-md font-semibold"
             disabled={isFacebookPending}
           />
-          <GoogleSignIn
-            ref={googleButtonRef}
-            onSuccess={(idToken) => {
-              googleLogin({
-                idToken,
-              });
-            }}
-            onError={() => {
-              console.log("Google Login Failed");
-            }}
-          />
+          <div className="relative w-full h-12">
+            <div className="absolute inset-0 opacity-0">
+              <GoogleSignIn
+                onSuccess={(idToken) => {
+                  googleLogin({ idToken });
+                }}
+                onError={() => {
+                  console.log("Google Login Failed");
+                }}
+              />
+            </div>
 
-          <CustomButton
-            title="Continue with Google"
-            leftIcon={<FcGoogle size={24} />}
-            variant="google"
-            className="w-full text-md font-semibold pointer-events-none"
-            disabled={isGooglePending}
-          />
+            <CustomButton
+              title="Continue with Google"
+              leftIcon={<FcGoogle size={24} />}
+              variant="google"
+              className="w-full h-12 text-md font-semibold"
+            />
+          </div>
           <div className="mb-2 text-md flex justify-center items-center gap-2 font-semibold">
             <p className="text-gray-700">Already have an account.</p>
             <Link href={"/sign-in"}>
