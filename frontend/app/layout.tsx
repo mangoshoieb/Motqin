@@ -39,10 +39,6 @@ export default function RootLayout({
         <FacebookSDK/>
       </head>
       <body className={`${geistSans.variable} ${cairo.className} antialiased`}>
-        <Script
-          src="https://connect.facebook.net/en_US/sdk.js"
-          strategy="afterInteractive"
-        />
         <main>
           <Providers>{children}</Providers>
         </main>
