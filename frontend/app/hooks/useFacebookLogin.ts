@@ -13,6 +13,7 @@ export function useFacebookLogin() {
     mutationFn: authService.facebookLogin,
 
     onSuccess: (data) => {
+      console.log("from hook")
       authStorage.setTokens(
         data.tokens.accessToken,
         data.tokens.refreshToken

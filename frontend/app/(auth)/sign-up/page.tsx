@@ -44,6 +44,7 @@ const SignUp = () => {
 
   const handleFacebookLogin = async () => {
     try {
+      console.log('facebook button pressed')
       const accessToken = await signInWithFacebook();
 
       facebookLogin({

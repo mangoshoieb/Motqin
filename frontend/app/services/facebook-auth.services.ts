@@ -11,6 +11,7 @@ export const signInWithFacebook = (): Promise<string> => {
             response.authResponse &&
             response.authResponse.accessToken
           ) {
+            console.log("facebook login success")
             resolve(response.authResponse.accessToken);
           } else {
             reject(new Error("Facebook login cancelled"));

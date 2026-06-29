@@ -16,6 +16,7 @@ export function useGoogleLogin() {
     mutationFn: authService.googleLogin,
 
     onSuccess: (data) => {
+      console.log("google login success")
       console.log(data);
       authStorage.setTokens(data.token.accessToken, data.token.refreshToken);
 
