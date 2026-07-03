@@ -29,7 +29,7 @@ const Nav = () => {
 
   return (
     <nav className="w-full border-b border-zinc-200 bg-[var(--background)] transition-colors duration-300 dark:border-zinc-800">
-      <div className="mx-auto h-20 max-w-7xl flex justify-between items-center px-3">
+      <div className="mx-auto h-16 max-w-7xl flex justify-between items-center px-3">
         {/* Left Section */}
         <div className="flex items-center justify-start">
           {user ? (

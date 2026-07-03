@@ -46,10 +46,12 @@ export default function ProfilePage() {
 
   return (
     <main className=" px-6 py-10   bg-[var(--surface)] overflow-hidden">
-      <div className="flex gap-5 mt-5 " dir="rtl">
+      <div className="flex  gap-5 mt-5 max-md:flex-col " dir="rtl">
         {/* Photo */}
         <div className="flex-1 flex-col gap-10">
-          <div className="rounded-3xl h-[80vh] border border-zinc-200 bg-zinc-100 p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div
+            className="rounded-3xl h-90 md:h-[80vh] border border-zinc-200 bg-zinc-100 p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          >
             <div className="flex h-full flex-col items-center justify-center">
               <label className="group relative cursor-pointer">
                 <input
@@ -68,7 +70,7 @@ export default function ProfilePage() {
                     alt="الصورة الشخصية"
                     width={220}
                     height={220}
-                    className="h-56 w-56 rounded-full border-4 border-zinc-200 object-cover transition duration-300 group-hover:brightness-75 dark:border-zinc-700"
+                    className="h-40 w-40 sm:h-48 sm:w-48 lg:h-56 lg:w-56 rounded-full border-4 border-zinc-200 object-cover transition duration-300 group-hover:brightness-75 dark:border-zinc-700"
                   />
 
                   {/* Change Icon */}

@@ -35,7 +35,7 @@ export default function ThemeSubMenu() {
             <button
               key={item.value}
               onClick={() => setTheme(item.value)}
-              className="flex w-full items-center justify-between px-4 py-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="flex w-full items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <div className="flex items-center gap-3">
                 <Icon size={18} />
