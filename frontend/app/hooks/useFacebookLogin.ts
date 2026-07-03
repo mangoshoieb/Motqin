@@ -15,8 +15,8 @@ export function useFacebookLogin() {
     onSuccess: (data) => {
       console.log("from hook")
       authStorage.setTokens(
-        data.tokens.accessToken,
-        data.tokens.refreshToken
+        data.token.accessToken,
+        data.token.refreshToken
       );
 
       router.replace("/");

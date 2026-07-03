@@ -1,12 +1,13 @@
 @import "tailwindcss";
-
+@custom-variant dark (&:where(.dark, .dark *));
 /* =========================
    DESIGN TOKENS
 ========================= */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --surface: #e1e1ec;
+  /* --surface: #e1e1ec; */
+  --surface: #e5e5e9;
   --assistant-bg: #ffffff;
   --assistant-text: #18181b;
   --sidebar-bg: #ffffff;
@@ -161,4 +162,13 @@ body {
   opacity: 0;
   transform: translateX(20px);
   animation: slideTasksIn 0.4s ease-out forwards;
+}
+@theme {
+  --animate-shimmer: shimmer 1.5s linear infinite;
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(200%);
+    }
+  }
 }

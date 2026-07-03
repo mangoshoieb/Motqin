@@ -57,92 +57,114 @@ const SignUp = () => {
   };
 
   return (
-    <main className="min-h-screen w-full flex bg-[var(--surface)]">
-      <div className="w-[35VW] min-w-90 flex flex-col m-8 max-md:mx-auto max-md:h-[90vh] px-10 py-5 bg-white rounded-3xl">
-        <h1 className="text-3xl mb-5 font-bold text-left">Sign up</h1>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4 flex flex-col gap-1"
-        >
-          <CustomButton
-            title="Continue with Facebook"
-            leftIcon={<FaFacebook size={24} />}
-            onClick={handleFacebookLogin}
-            variant="facebook"
-            className="w-full text-md font-semibold"
-            disabled={isFacebookPending}
-          />
-          <div className="relative w-full h-12">
-            <div className="absolute inset-0 opacity-0">
-              <GoogleSignIn
-                onSuccess={(idToken) => {
-                  googleLogin({ idToken });
-                }}
-                onError={() => {
-                  console.log("Google Login Failed");
-                }}
+    <main
+      dir="rtl"
+      className="min-h-screen flex bg-[var(--surface)]"
+    >
+      {/* Form */}
+      <section className="w-full lg:w-[40%] flex justify-center items-center p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
+        <div className="w-full h-full max-w-md bg-white rounded-3xl shadow-sm px-6 sm:px-8 py-8">
+          <h1 className="text-3xl font-bold text-right mb-6">
+            إنشاء حساب
+          </h1>
+  
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-6"
+          >
+            <CustomButton
+              title="المتابعة باستخدام فيسبوك"
+              leftIcon={<FaFacebook size={22} />}
+              onClick={handleFacebookLogin}
+              variant="facebook"
+              className="w-full font-semibold"
+              disabled={isFacebookPending}
+            />
+  
+            <div className="relative w-full h-12">
+              <div className="absolute inset-0 opacity-0">
+                <GoogleSignIn
+                  onSuccess={(idToken) => {
+                    googleLogin({ idToken });
+                  }}
+                  onError={() => {
+                    console.log("Google Login Failed");
+                  }}
+                />
+              </div>
+  
+              <CustomButton
+                title="المتابعة باستخدام جوجل"
+                leftIcon={<FcGoogle size={22} />}
+                variant="google"
+                className="w-full h-12 font-semibold"
               />
             </div>
-
-            <CustomButton
-              title="Continue with Google"
-              leftIcon={<FcGoogle size={24} />}
-              variant="google"
-              className="w-full h-12 text-md font-semibold"
+  
+            <div className="flex justify-center gap-2 text-sm sm:text-base font-medium">
+              <Link
+                href="/sign-in"
+                className="text-blue-600 hover:underline"
+              >
+                تسجيل الدخول
+              </Link>
+  
+              <span className="text-gray-600">
+                لديك حساب بالفعل؟
+              </span>
+            </div>
+  
+            <CustomInput
+              label="رقم الهاتف"
+              placeholder="+20 10XXXXXXXX"
+              type="tel"
+              icon={<Phone size={18} />}
+              error={errors.phoneNumber?.message}
+              {...register("phoneNumber")}
             />
-          </div>
-          <div className="mb-2 text-md flex justify-center items-center gap-2 font-semibold">
-            <p className="text-gray-700">Already have an account.</p>
-            <Link href={"/sign-in"}>
-              <span className="text-blue-600 ">Sign in</span>
-            </Link>
-          </div>
-          <CustomInput
-            placeholder="+20 10XXXXXXXX"
-            label="Phone Number"
-            type="tel"
-            icon={<Phone size={18} />}
-            error={errors.phoneNumber?.message}
-            {...register("phoneNumber")}
-          />
-          <CustomInput
-            placeholder="mono"
-            label="UserName"
-            type="text"
-            error={errors.username?.message}
-            {...register("username")}
-            icon={<User size={18} />}
-          />
-          <CustomButton
-            title="sign up"
-            type="submit"
-            className="w-full text-md font-semibold"
-            disabled={isPhonePending}
-          />
-        </form>
-      </div>
-      <div className="hidden md:flex flex-1 justify-center items-center">
-        <div className="flex flex-col items-center gap-6 w-full">
+  
+            <CustomInput
+              label="اسم المستخدم"
+              placeholder="مثال: محمد أحمد"
+              type="text"
+              icon={<User size={18} />}
+              error={errors.username?.message}
+              {...register("username")}
+            />
+  
+            <CustomButton
+              title="إنشاء الحساب"
+              type="submit"
+              className="w-full font-semibold"
+              disabled={isPhonePending}
+            />
+          </form>
+        </div>
+      </section>
+  
+      {/* Illustration */}
+      <section className="hidden lg:flex flex-1 justify-center mt-8 items-center order-1 lg:order-2">
+        <div className="flex flex-col items-center w-full">
           <Image
             src="/متقن.svg"
-            alt="Motqin Logo"
-            width={300}
-            height={70}
+            alt="متقن"
+            width={320}
+            height={80}
             priority
-            className="-mb-30"
+            className="-mb-20"
           />
-
-          <div className="relative w-full max-w-[900px] h-[550px]">
+  
+          <div className="relative w-full max-w-3xl h-[580px]">
             <Image
               src="/Research paper-rafiki.svg"
-              alt="Motqin Illustration"
+              alt="متقن"
               fill
-              className="object-contain"
               priority
+              className="object-contain"
             />
           </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 };

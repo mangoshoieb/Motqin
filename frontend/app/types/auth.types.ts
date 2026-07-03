@@ -74,7 +74,7 @@ export interface FacebookLoginRequest {
 }
 
 interface FacebookLoginResponse {
-  tokens: {
+  token: {
     accessToken: string;
     refreshToken: string;
 };

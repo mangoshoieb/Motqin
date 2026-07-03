@@ -1,21 +1,21 @@
-import Nav from "@/components/Nav";
+import Nav from "@/components/Navbar/Nav";
 import { Providers } from "../providers/providers";
 
 export default function RootLayout({
-    children,
-  }: Readonly<{
-    children: React.ReactNode;
-  }>) {
-    return (
-      <html lang="en" suppressHydrationWarning>
-        <body>
-          <main>
-            <Providers>
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <main>
+          <Providers>
             <Nav />
-              {children}
-              </Providers>
-          </main>
-        </body>
-      </html>
-    );
-  }
+            {children}
+          </Providers>
+        </main>
+      </body>
+    </html>
+  );
+}

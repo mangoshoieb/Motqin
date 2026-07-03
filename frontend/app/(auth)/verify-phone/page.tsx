@@ -2,7 +2,7 @@
 
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
-import { ArrowLeft} from "lucide-react";
+import { ArrowRight} from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -33,70 +33,80 @@ const VerifyPhone = () => {
   const onSubmit = (data: VerifyPhoneForm) => {
     console.log('hi')
     if (!phoneNumber) return;
-
+    console.log('hiiiii')
     verifyPhone({
       phoneNumber,
       code: data.code,
     });
   };
   return (
-    <main className="min-h-screen w-full flex bg-[var(--surface)]">
-      <div className=" w-[35VW] min-w-90 flex flex-col gap-7  m-8 px-10 py-6 bg-white rounded-3xl">
-        <h1 className="text-3xl font-bold text-left">Forget password</h1>
-        <p className="text-md font-semibold text-gray-500">
-          Enter the 6-digit code sent to your phone number.
-        </p>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4 flex flex-col gap-4 mt-10"
-        >
-          <CustomInput
-            placeholder="123456"
-            label="Verification Code"
-            type="text"
-            error={errors.code?.message}
-            {...register("code")}
-          />
-
-          <CustomButton
-            title="Verify"
-             type="submit"
-            variant="facebook"
-            className="w-full text-md font-semibold cursor-pointer"
-            disabled={isPending}
-          />
-          <div
-            className="flex cursor-pointer gap-3 m-auto "
-            onClick={() => router.replace("/sign-in")}
+    <main dir="rtl" className="min-h-screen flex bg-[var(--surface)]">
+      {/* Form */}
+      <section className="w-full lg:w-[40%] flex justify-center items-center p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-sm px-6 sm:px-8 py-8">
+          <h1 className="text-3xl font-bold text-right mb-4">
+            تأكيد رقم الهاتف
+          </h1>
+  
+          <p className="text-gray-500 text-sm sm:text-base leading-7 mb-6">
+            أدخل رمز التحقق المكون من 6 أرقام الذي تم إرساله إلى رقم هاتفك.
+          </p>
+  
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-5"
           >
-            {<ArrowLeft className="size-6 text-gray-700" />}
-
-            <p className="font-semibold  text-gray-700">Back to log in</p>
-          </div>
-        </form>
-      </div>
-      <div className="hidden md:flex flex-1 justify-center items-center">
-        <div className="flex flex-col items-center gap-6 w-full">
+            <CustomInput
+              label="رمز التحقق"
+              placeholder="123456"
+              type="text"
+              error={errors.code?.message}
+              {...register("code")}
+            />
+  
+            <CustomButton
+              title="تأكيد"
+              type="submit"
+              variant="facebook"
+              className="w-full font-semibold"
+              disabled={isPending}
+            />
+  
+            <button
+              type="button"
+              onClick={() => router.replace("/sign-in")}
+              className="flex items-center justify-center gap-2 text-gray-700 font-semibold hover:text-blue-600 transition-colors cursor-pointer"
+            >
+              <ArrowRight className="size-5" />
+              <span>العودة إلى تسجيل الدخول</span>
+            </button>
+          </form>
+        </div>
+      </section>
+  
+      {/* Illustration */}
+      <section className="hidden lg:flex flex-1 justify-center items-center order-1 lg:order-2">
+        <div className="flex flex-col items-center w-full">
           <Image
             src="/متقن.svg"
-            alt="Motqin Logo"
-            width={300}
-            height={70}
+            alt="متقن"
+            width={320}
+            height={80}
             priority
-            className="-mb-30"
+            className="-mb-20"
           />
-
-          <div className="relative w-full max-w-[900px] h-[550px]">
+  
+          <div className="relative w-full max-w-3xl h-[580px]">
             <Image
               src="/Research paper-rafiki.svg"
-              alt="Motqin Illustration"
+              alt="متقن"
               fill
-              className="object-contain"
               priority
+              className="object-contain"
             />
           </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 };

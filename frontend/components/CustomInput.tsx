@@ -15,7 +15,7 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
   return (
     <div className={cn("w-full space-y-1")}>
       {label && (
-        <label className="text-md font-semibold text-gray-700">
+        <label className="text-sm font-semibold text-gray-600">
           {label}
         </label>
       )}
@@ -39,7 +39,7 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
             : type
         }
           className={cn(
-            "w-full rounded-lg border px-3 py-3 text-sm",
+            "w-full rounded-lg border px-3 py-3 text-sm mt-2",
             icon && "pl-10",
             type=== ' password' && "pr-10",
             "border-gray-300",

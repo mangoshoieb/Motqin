@@ -1,4 +1,4 @@
-
+import { Toaster } from "sonner";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cairo } from "next/font/google";
 
@@ -36,11 +36,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <FacebookSDK/>
+        <FacebookSDK />
       </head>
       <body className={`${geistSans.variable} ${cairo.className} antialiased`}>
         <main>
-          <Providers>{children}</Providers>
+          <Providers>
+            {children}
+            <Toaster position="top-center" richColors closeButton />
+          </Providers>
         </main>
       </body>
     </html>
