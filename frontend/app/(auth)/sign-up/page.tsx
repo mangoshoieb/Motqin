@@ -8,19 +8,20 @@ import { useRef } from "react";
 import { FaFacebook } from "react-icons/fa";
 import Link from "next/link";
 import { z } from "zod";
-import { signUpSchema } from "@/app/lib/validators/auth";
+import { signInSchema, signUpSchema } from "@/app/lib/validators/auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleLogin } from "@/app/hooks/useAuth";
 import GoogleSignIn from "@/components/GoogleSignIn";
 import { useFacebookLogin } from "@/app/hooks/useFacebookLogin";
 import { signInWithFacebook } from "@/app/services/facebook-auth.services";
-import { useRegisterPhone } from "@/app/hooks/useRegisterPhone";
-type FormData = z.infer<typeof signUpSchema>;
+// import { useRegisterPhone } from "@/app/hooks/useRegisterPhone";
+import { useLogInPhone } from "@/app/hooks/useLoginPhone";
+type FormData = z.infer<typeof signInSchema>;
 
 const SignUp = () => {
   const { mutate: registerPhone, isPending: isPhonePending } =
-    useRegisterPhone();
+    useLogInPhone();
 
   const { mutate: facebookLogin, isPending: isFacebookPending } =
     useFacebookLogin();
@@ -32,13 +33,12 @@ const SignUp = () => {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: zodResolver(signUpSchema),
+    resolver: zodResolver(signInSchema),
   });
 
   const onSubmit = (data: FormData) => {
     registerPhone({
       phoneNumber: data.phoneNumber,
-      name: data.username,
     });
   };
 
@@ -59,7 +59,7 @@ const SignUp = () => {
   return (
     <main
       dir="rtl"
-      className="min-h-screen flex bg-[var(--surface)]"
+      className="h-screen overflow-hidden flex bg-[var(--surface)]"
     >
       {/* Form */}
       <section className="w-full lg:w-[40%] flex justify-center items-center p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
@@ -102,16 +102,16 @@ const SignUp = () => {
             </div>
   
             <div className="flex justify-center gap-2 text-sm sm:text-base font-medium">
+  
+              <span className="text-gray-600">
+                لديك حساب بالفعل؟
+              </span>
               <Link
                 href="/sign-in"
                 className="text-blue-600 hover:underline"
               >
                 تسجيل الدخول
               </Link>
-  
-              <span className="text-gray-600">
-                لديك حساب بالفعل؟
-              </span>
             </div>
   
             <CustomInput
@@ -123,14 +123,14 @@ const SignUp = () => {
               {...register("phoneNumber")}
             />
   
-            <CustomInput
+            {/* <CustomInput
               label="اسم المستخدم"
               placeholder="مثال: محمد أحمد"
               type="text"
               icon={<User size={18} />}
               error={errors.username?.message}
               {...register("username")}
-            />
+            /> */}
   
             <CustomButton
               title="إنشاء الحساب"

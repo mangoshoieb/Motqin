@@ -6,18 +6,20 @@ import { useRouter } from "next/navigation";
 import { authService } from "../services/auth.services";
 import { useAuthStore } from "../lib/auth.store";
 
-export function useRegisterPhone() {
+export function useLogInPhone() {
   const router = useRouter();
-  const setPhoneData = useAuthStore(
-    state => state.setPhoneData
+  const setPhone = useAuthStore(
+    state => state.setPhone
 );
   return useMutation({
-    mutationFn: authService.registerPhone,
+    mutationFn: authService.logInPhone,
 
     onSuccess: (data, variables) => {
       console.log(data.message)
-      setPhoneData(
-          variables.phoneNumber );
+      console.log(data)
+      setPhone(
+          variables.phoneNumber
+      );
   
       router.push("/verify-phone");
   },

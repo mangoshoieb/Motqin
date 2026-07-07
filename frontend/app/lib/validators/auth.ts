@@ -11,14 +11,24 @@ export const signUpSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters").max(30),
 });
 export const signInSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  // username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  phoneNumber: z
+    .string()
+    .min(11, "Phone number is required")
+    .max(15, "Invalid phone number")
+    .regex(/^01[0125][0-9]{8}$/, "Please enter a valid Egyptian phone number"),
 });
 
-
 export const verifyPhoneSchema = z.object({
-  code: z
+  code: z.string().length(6, "OTP must contain exactly 6 digits"),
+});
+
+export const completeProfileSchema = z.object({
+  name: z
     .string()
-    .length(6, "OTP must contain exactly 6 digits"),
+    .min(3, "الاسم يجب أن يحتوي على 3 أحرف على الأقل")
+    .max(50),
+
+  region: z
+    .string()
+    .min(1, "يرجى اختيار المحافظة"),
 });

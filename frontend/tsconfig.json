@@ -28,7 +28,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
-, "tailwind.config.js", "app/lib/axios.ts"  ],
+    "**/*.mts",
+    "tailwind.config.js",
+    "app/lib/axios.ts"
+  ],
   "exclude": ["node_modules"]
 }

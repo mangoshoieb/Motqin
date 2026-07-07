@@ -33,7 +33,7 @@ const VerifyPhone = () => {
   const onSubmit = (data: VerifyPhoneForm) => {
     console.log('hi')
     if (!phoneNumber) return;
-    console.log('hiiiii')
+    console.log(phoneNumber) 
     verifyPhone({
       phoneNumber,
       code: data.code,

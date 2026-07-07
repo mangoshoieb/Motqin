@@ -4,7 +4,8 @@ interface AuthStore {
   phoneNumber: string;
   username: string;
 
-  setPhoneData: (phoneNumber: string, username: string) => void;
+  setPhoneData: (phoneNumber: string, username?: string) => void;
+  setPhone: (phoneNumber: string) => void;
 
   clearPhoneData: () => void;
 }
@@ -17,6 +18,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({
       phoneNumber,
       username,
+    }),
+  setPhone: (phoneNumber) =>
+    set({
+      phoneNumber,
     }),
 
   clearPhoneData: () =>

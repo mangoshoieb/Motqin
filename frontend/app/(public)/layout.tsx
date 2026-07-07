@@ -7,15 +7,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
         <main>
           <Providers>
             <Nav />
             {children}
           </Providers>
         </main>
-      </body>
-    </html>
   );
 }

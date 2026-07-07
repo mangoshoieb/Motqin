@@ -16,10 +16,28 @@ export function useGoogleLogin() {
     mutationFn: authService.googleLogin,
 
     onSuccess: (data) => {
-      console.log("google login success")
-      console.log(data);
-      authStorage.setTokens(data.token.accessToken, data.token.refreshToken);
-
+      console.log("DATA =", data);
+      console.log("typeof data.token =", typeof data.token);
+      console.log("data.token =", data.token);
+    
+      if (typeof data.token === "string") {
+        console.log("Returned AuthTokens directly");
+    
+        authStorage.setTokens(
+          data.token,
+          data.refreshToken,
+        );
+      } else {
+        console.log("Returned GoogleLoginResponse");
+    
+        authStorage.setTokens(
+          data.token,
+          data.refreshToken
+        );
+      }
+    
+      console.log("Stored:", localStorage.getItem("accessToken"));
+    
       router.replace("/");
     },
 
@@ -27,4 +45,13 @@ export function useGoogleLogin() {
       console.error(error);
     },
   });
+}
+
+export function useAuth() {
+  const token = authStorage.getAccessToken();
+
+  return {
+    isAuthenticated: !!token,
+    token,
+  };
 }

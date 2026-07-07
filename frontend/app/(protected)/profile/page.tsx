@@ -92,7 +92,7 @@ export default function ProfilePage() {
 
         <div className="rounded-2xl flex-1 border border-zinc-300 bg-zinc-100 overflow-hidden p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-2xl font-bold">المعلومات الشخصية</h2>
+            <h2 className="text-xl lg:text-2xl font-bold">المعلومات الشخصية</h2>
 
             {!isEditing ? (
               <button

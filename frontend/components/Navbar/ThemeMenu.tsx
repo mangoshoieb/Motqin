@@ -25,7 +25,7 @@ export default function ThemeSubMenu() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="absolute left-full top-0 ml-1 w-56 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="absolute left-full top-0 ml-1 w-42 sm:w-56 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
       <div className="py-2">
         {themes.map((item) => {
           const Icon = item.icon;

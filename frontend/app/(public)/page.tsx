@@ -4,9 +4,13 @@ import Footer from "@/components/Footer";
 import { Trophy, Bot, BookOpen, ShieldOff, CalendarCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { authStorage } from "../lib/auth-storage";
 
 export default function Home() {
-  const isLoggedIn = true;
+  // const isLoggedIn = true;
+  console.log("hi")
+  console.log(authStorage.getAccessToken())
+  console.log("hi")
   return (
     <main className=" min-h-screen w-full   bg-[var(--surface)] sm:items-start font-sans">
       <div className="relative w-full hero overflow-hidden min-h-screen">

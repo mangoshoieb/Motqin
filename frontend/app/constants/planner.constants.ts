@@ -1,5 +1,3 @@
-
-
 export const categoryStyles = {
   revision: {
     dot: "bg-amber-500",
@@ -32,7 +30,6 @@ export const categoryStyles = {
   },
 } as const;
 
-
 export const moodOptions = [
   {
     value: "ممتاز",
@@ -54,21 +51,28 @@ export const moodOptions = [
 
 export const API_ROUTES = {
   AUTH: {
-    LOGIN: "/Authentication/login",
-    REGISTER: "/Authentication/register",
-    REFRESH: "/Authentication/refresh-token",
-    GOOGLE: "/Authentication/google",
-    FACEBOOK: "/Authentication/facebook",
-    REGISTER_PHONE: "/Authentication/register-phone",
-    VERIFY_PHONE: "/Authentication/verify-phone",
-    VERIFY_EMAIL: "/Authentication/verify-email",
+    LOGIN: "/auth/login",
+    REGISTER: "/auth/register",
+    REFRESH: "/auth/refresh-token",
+    GOOGLE: "/auth/google",
+    FACEBOOK: "/auth/facebook",
+    REGISTER_PHONE: "/auth/register-phone",
+    LOGIN_PHONE: "/auth/phone-logIn-request",
+    VERIFY_PHONE: "/auth/phone-verify",
+    VERIFY_EMAIL: "/auth/verify-email",
+    COMPLETE_PROFILE: "/auth/phone-complete-signup",
+    LOGOUT:"/auth/logout"
   },
-
+  
   SUBJECTS: {
-    GET_ALL: "/Subjects",
+    GET_ALL: "/subjects",
   },
-
+  
   LESSONS: {
     GET_ALL: "/Lessons",
   },
+  USERS:{
+    CURRENT_USER: "/users/me",
+
+  }
 };

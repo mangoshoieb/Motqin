@@ -1,22 +1,31 @@
 "use client";
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
-import { Key, Mail } from "lucide-react";
+import { Phone, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import { FaFacebook } from "react-icons/fa";
 import Link from "next/link";
-import z from "zod";
+import { z } from "zod";
 import { signInSchema } from "@/app/lib/validators/auth";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useGoogleLogin } from "@/app/hooks/useAuth";
+import GoogleSignIn from "@/components/GoogleSignIn";
+import { useFacebookLogin } from "@/app/hooks/useFacebookLogin";
+import { signInWithFacebook } from "@/app/services/facebook-auth.services";
+import { useLogInPhone } from "@/app/hooks/useLoginPhone";
 type FormData = z.infer<typeof signInSchema>;
 
 const SignIn = () => {
-  const router = useRouter();
+  const { mutate: logInPhone, isPending: isPhonePending } = useLogInPhone();
 
+  const { mutate: facebookLogin, isPending: isFacebookPending } =
+    useFacebookLogin();
+
+  const { mutate: googleLogin, isPending: isGooglePending } = useGoogleLogin();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
   const {
     register,
     handleSubmit,
@@ -26,87 +35,126 @@ const SignIn = () => {
   });
 
   const onSubmit = (data: FormData) => {
-    console.log(data);
-    router.replace("/");
+    logInPhone({
+      phoneNumber: data.phoneNumber,
+    });
+  };
+
+  const handleFacebookLogin = async () => {
+    try {
+      console.log("facebook button pressed");
+      const accessToken = await signInWithFacebook();
+
+      facebookLogin({
+        accessToken,
+      });
+      console.log(accessToken);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
-    <main className="min-h-screen w-full flex bg-[var(--surface)]">
-      <div className=" w-[35VW] min-w-90 flex flex-col gap-7  m-8 px-10 py-6 bg-white rounded-3xl">
-        <h1 className="text-3xl font-bold text-left">Login</h1>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4 flex flex-col gap-1"
-        >
-          <CustomButton
-            title="Login with Google"
-            leftIcon={<FcGoogle size={24} />}
-            variant="google"
-            className="w-full text-md font-semibold"
-          />
-          <CustomButton
-            title="Login with Facebook"
-            leftIcon={<FaFacebook size={24} />}
-            variant="facebook"
-            className="w-full text-md font-semibold"
-          />
-          <CustomInput
-            placeholder="example@gmail.com"
-            label="Email"
-            type="email"
-            icon={<Mail size={18} />}
-            error={errors.email?.message}
-            {...register("email")}
-          />
-          <CustomInput
-            label="Password"
-            type="password"
-            icon={<Key size={18} />}
-            error={errors.password?.message}
-            {...register("password")}
-          />
-          <div className="font-medium text-right">
-            <Link href={"/forgetPassword"}>
-              <span className="text-blue-600 ">Forget password?</span>
-            </Link>
-          </div>
+    <main
+      dir="rtl"
+      className="max-h-screen overflow-hidden flex bg-[var(--surface)]"
+    >
+      {/* Form */}
+      <section className="w-full lg:w-[40%] h-[95vh] flex justify-center items-center p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
+        <div className="w-full h-full max-w-md bg-white rounded-3xl shadow-sm px-6 sm:px-8 py-8">
+          <h1 className="text-3xl font-bold text-right mb-6">تسجيل الدخول</h1>
 
-          <CustomButton
-            title="Sign In"
-            type="submit"
-            className="w-full text-md font-semibold"
-          />
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-6"
+          >
+            <CustomButton
+              title="المتابعة باستخدام فيسبوك"
+              leftIcon={<FaFacebook size={22} />}
+              onClick={handleFacebookLogin}
+              variant="facebook"
+              className="w-full font-semibold"
+              disabled={isFacebookPending}
+            />
 
-          <div className="my-1 text-sm flex justify-center items-center gap-2">
-            <p className="text-gray-700">Are you new?</p>
-            <Link href={"/sign-up"}>
-              <span className="text-blue-600 ">Sign Up</span>
-            </Link>
-          </div>
-        </form>
-      </div>
-      <div className="hidden md:flex flex-1 justify-center items-center">
-        <div className="flex flex-col items-center gap-6 w-full">
+            <div className="relative w-full h-12">
+              <div className="absolute inset-0 opacity-0">
+                <GoogleSignIn
+                  onSuccess={(idToken) => {
+                    googleLogin({ idToken });
+                  }}
+                  onError={() => {
+                    console.log("Google Login Failed");
+                  }}
+                />
+              </div>
+
+              <CustomButton
+                title="المتابعة باستخدام جوجل"
+                leftIcon={<FcGoogle size={22} />}
+                variant="google"
+                className="w-full h-12 font-semibold"
+              />
+            </div>
+
+            <div className="flex justify-center gap-2 text-sm sm:text-base font-medium">
+              <span className="text-gray-600">ليس لديك حساب.</span>
+              <Link href="/sign-up" className="text-blue-600 hover:underline">
+                إنشاء حساب
+              </Link>
+            </div>
+
+            <CustomInput
+              label="رقم الهاتف"
+              placeholder="+20 10XXXXXXXX"
+              type="tel"
+              icon={<Phone size={18} />}
+              error={errors.phoneNumber?.message}
+              {...register("phoneNumber")}
+            />
+            {/*   
+            <CustomInput
+              label="اسم المستخدم"
+              placeholder="مثال: محمد أحمد"
+              type="text"
+              icon={<User size={18} />}
+              error={errors.username?.message}
+              {...register("username")}
+            /> */}
+
+            <CustomButton
+              title="تسجيل دخول"
+              type="submit"
+              className="w-full font-semibold"
+              disabled={isPhonePending}
+            />
+          </form>
+        </div>
+      </section>
+
+      {/* Illustration */}
+      <section className="hidden lg:flex flex-1 justify-center mt-8 items-center order-1 lg:order-2">
+        <div className="flex flex-col items-center w-full">
           <Image
             src="/متقن.svg"
-            alt="Motqin Logo"
-            width={300}
-            height={70}
+            alt="متقن"
+            width={320}
+            height={80}
             priority
-            className="-mb-30"
+            className="-mb-20"
           />
 
-          <div className="relative w-full max-w-[900px] h-[550px]">
+          <div className="relative w-full max-w-3xl h-[580px]">
             <Image
               src="/Research paper-rafiki.svg"
-              alt="Motqin Illustration"
+              alt="متقن"
               fill
-              className="object-contain"
               priority
+              className="object-contain"
             />
           </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 };

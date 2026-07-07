@@ -3,14 +3,16 @@ export interface GoogleLoginRequest {
 }
 
 export interface AuthTokens {
-  accessToken: string;
+  token: string;
   refreshToken: string;
   expiresAt: string;
 }
 
 export interface GoogleLoginResponse {
   message: string;
-  token: AuthTokens;
+  token: string;
+  refreshToken: string;
+  expiresAt: string;
 }
 
 // google
@@ -49,71 +51,109 @@ declare global {
     fbAsyncInit: () => void;
   }
 
+  interface FacebookSDK {
+    init(options: FacebookInitOptions): void;
 
-interface FacebookSDK {
-  init(options: FacebookInitOptions): void;
+    login(
+      callback: (response: FacebookLoginResponse) => void,
+      options?: FacebookLoginOptions
+    ): void;
+  }
 
-  login(
-    callback: (response: FacebookLoginResponse) => void,
-    options?: FacebookLoginOptions
-  ): void;
-}
+  interface FacebookInitOptions {
+    appId: string;
+    cookie?: boolean;
+    xfbml?: boolean;
+    version: string;
+  }
 
-interface FacebookInitOptions {
-  appId: string;
-  cookie?: boolean;
-  xfbml?: boolean;
-  version: string;
-}
-
-interface FacebookLoginOptions {
-  scope?: string;
-}
-export interface FacebookLoginRequest {
-  accessToken: string;
-}
-
-interface FacebookLoginResponse {
-  token: {
+  interface FacebookLoginOptions {
+    scope?: string;
+  }
+  export interface FacebookLoginRequest {
     accessToken: string;
+  }
+
+  interface FacebookLoginResponse {
+    
+    token: string;
     refreshToken: string;
-};
-  status: "connected" | "not_authorized" | "unknown";
+    status: "connected" | "not_authorized" | "unknown";
 
-  authResponse?: FacebookAuthResponse;
-}
+    authResponse?: FacebookAuthResponse;
+  }
 
-interface FacebookAuthResponse {
-  accessToken: string;
-  expiresIn: number;
-  userID: string;
-  signedRequest: string;
-}
+  interface FacebookAuthResponse {
+    accessToken: string;
+    expiresIn: number;
+    userID: string;
+    signedRequest: string;
+  }
 }
 
 // phone register and login
 
 declare global {
+  interface RegisterPhoneRequest {
+    phoneNumber: string;
+    name: string;
+  }
 
-interface RegisterPhoneRequest {
-  phoneNumber: string;
-  name: string;
-}
+  interface RegisterPhoneResponse {
+    message: string;
+  }
 
-interface RegisterPhoneResponse {
-  message: string;
-}
+  interface LogInPhoneRequest {
+    phoneNumber: string;
+  }
+  interface LogInPhoneResponse {
+    message: string;
+    isNewUser: boolean;
+    resendCooldownSeconds: number;
+    resendsRemaining: number;
+  }
 
-interface VerifyPhoneRequest {
-  phoneNumber: string;
-  code: string;
-}
- interface VerifyPhoneResponse {
-  message: string;
-  token: {
-    accessToken: string;
-    refreshToken: string;
-    expiredAt: string;
-  };
-}
+  interface VerifyPhoneRequest {
+    phoneNumber: string;
+    code: string;
+  }
+  interface VerifyPhoneResponse {
+    message: string;
+    needsSignup: boolean;
+    token?: {
+      token: string;
+      refreshToken: string;
+      expiresAt: string;
+    };
+  }
+
+  export interface CompleteProfileRequest {
+    phoneNumber: string;
+    name: string;
+    region: string;
+  }
+
+  export interface CompleteProfileResponse {
+    message: string;
+    token: {
+      token: string;
+      refreshToken: string;
+      expiresAt: string;
+    };
+  }
+  export interface CurrentUserResponse {
+    id: string;
+    fullName: string;
+    email: string;
+    emailConfirmed: boolean;
+    phoneNumber: string;
+    phoneNumberConfirmed: boolean;
+    region: string;
+    country: string;
+    educationalStage: number;
+    gradeLevel: number;
+    isProfileComplete: boolean;
+    createdAt: string;
+    roles: string[];
+  }
 }

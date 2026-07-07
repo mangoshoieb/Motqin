@@ -15,22 +15,28 @@ export function useVerifyPhone() {
     mutationFn: authService.verifyPhone,
 
     onSuccess: (data) => {
-      console.log("SUCCESS");
-      console.log(data);
+      if (data.needsSignup) {
+        router.replace("/complete-profile");
+        return;
+      }
 
-      authStorage.setTokens(data.token.accessToken, data.token.refreshToken);
+      if (!data.token) {
+        console.error("Token is missing.");
+        return;
+      }
 
-      console.log("Tokens saved");
+      authStorage.setTokens(
+        data.token.token,
+        data.token.refreshToken
+      );
 
       router.replace("/");
-
-      console.log("Redirect called");
     },
 
     onError: (error: AxiosError<ApiError>) => {
       console.log("error");
       const message = error.response?.data.message;
-      console.log(message);
+      console.log(error);
 
       switch (message) {
         case "Invalid or expired verification code.":
