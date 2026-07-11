@@ -9,13 +9,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { verifyPhoneSchema } from "@/app/lib/validators/auth";
 import { useVerifyPhone } from "@/app/hooks/useVerifyPhone";
+import { useResendOtp } from "@/app/hooks/useResendOtp";
 import z from "zod";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/app/lib/auth.store";
 
 type VerifyPhoneForm = z.infer<typeof verifyPhoneSchema>;
 
 const VerifyPhone = () => {
   const { mutate: verifyPhone, isPending } = useVerifyPhone();
+  const { mutate: resendOtp, isPending: isResending } = useResendOtp();
   const router = useRouter();
 
   const {
@@ -26,19 +29,65 @@ const VerifyPhone = () => {
     resolver: zodResolver(verifyPhoneSchema),
   });
 
-  
+
     const phoneNumber = useAuthStore(
       state => state.phoneNumber
   );
+  const resendCooldownSeconds = useAuthStore(
+    state => state.resendCooldownSeconds
+  );
+  const resendsRemaining = useAuthStore(
+    state => state.resendsRemaining
+  );
+  const setResendInfo = useAuthStore(
+    state => state.setResendInfo
+  );
+
+  // Local ticking countdown, seeded from the cooldown the backend returned
+  // with the last OTP send (initial send or resend).
+  const [cooldown, setCooldown] = useState(resendCooldownSeconds);
+
+  useEffect(() => {
+    setCooldown(resendCooldownSeconds);
+  }, [resendCooldownSeconds]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((c) => Math.max(c - 1, 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
   const onSubmit = (data: VerifyPhoneForm) => {
-    console.log('hi')
     if (!phoneNumber) return;
-    console.log(phoneNumber) 
     verifyPhone({
       phoneNumber,
       code: data.code,
     });
   };
+
+  const handleResend = () => {
+    if (!phoneNumber || cooldown > 0 || resendsRemaining <= 0) return;
+
+    resendOtp(
+      { phoneNumber },
+      {
+        onSuccess: (data) => {
+          setResendInfo(data.resendCooldownSeconds, data.resendsRemaining);
+        },
+      }
+    );
+  };
+
+  const resendLabel =
+    resendsRemaining <= 0
+      ? "تم استنفاد عدد المحاولات، حاول لاحقًا"
+      : cooldown > 0
+      ? `إعادة الإرسال بعد ${cooldown} ثانية`
+      : isResending
+      ? "جارٍ الإرسال..."
+      : "إعادة إرسال الرمز";
   return (
     <main dir="rtl" className="min-h-screen flex bg-[var(--surface)]">
       {/* Form */}
@@ -71,7 +120,21 @@ const VerifyPhone = () => {
               className="w-full font-semibold"
               disabled={isPending}
             />
-  
+
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={
+                isResending ||
+                cooldown > 0 ||
+                resendsRemaining <= 0 ||
+                !phoneNumber
+              }
+              className="text-sm font-medium text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline transition-colors"
+            >
+              {resendLabel}
+            </button>
+
             <button
               type="button"
               onClick={() => router.replace("/sign-in")}

@@ -8,6 +8,7 @@ interface Props {
 
 import { authService } from "../services/auth.services";
 import { authStorage } from "../lib/auth-storage";
+import { toast } from "sonner";
 
 export function useGoogleLogin() {
   const router = useRouter();
@@ -43,6 +44,9 @@ export function useGoogleLogin() {
 
     onError: (error) => {
       console.error(error);
+      // toast.error("حدث خطأ ما", {
+      //   className: "!bg-red-200/80 ",
+      // });
     },
   });
 }

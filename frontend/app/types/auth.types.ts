@@ -145,15 +145,54 @@ declare global {
     id: string;
     fullName: string;
     email: string;
-    emailConfirmed: boolean;
-    phoneNumber: string;
-    phoneNumberConfirmed: boolean;
-    region: string;
+    emailConfirmed:boolean;
     country: string;
-    educationalStage: number;
+    role: string | null;
     gradeLevel: number;
-    isProfileComplete: boolean;
-    createdAt: string;
-    roles: string[];
+    educationalStage: number;
+    isProfileComplete:boolean;
+    // Not yet returned by GET /users/me — kept optional until the backend
+    // exposes it, so the profile page's region field has somewhere to live.
+    createdAt:string;
+    region?: string;
+    phoneNumberConfirmed:boolean
   }
 }
+
+
+// country
+// : 
+// "Egypt"
+// createdAt
+// : 
+// "2026-07-10T19:25:37.0344492"
+// educationalStage
+// : 
+// 3
+// email
+// : 
+// "amgadmagdy667@gmail.com"
+// emailConfirmed
+// : 
+// true
+// fullName
+// : 
+// "Amgad Shoiep"
+// gradeLevel
+// : 
+// 3
+// id
+// : 
+// "cbf2c704-6a43-4800-8c11-ca73890f8dad"
+// isProfileComplete
+// : 
+// true
+// phoneNumber
+// : 
+// null
+// phoneNumberConfirmed
+// : 
+// false
+// region
+// : 
+// null

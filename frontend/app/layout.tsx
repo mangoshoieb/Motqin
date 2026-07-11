@@ -4,11 +4,10 @@ import { Geist, Geist_Mono, Cairo, Inter } from "next/font/google";
 
 import "./globals.css";
 import { Providers } from "./providers/providers";
-import Script from "next/script";
 import FacebookSDK from "./providers/FacebookProvider";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", inter.variable)}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn("font-sans", inter.variable)}
+    >
       <head>
         <FacebookSDK />
       </head>
@@ -48,7 +51,25 @@ export default function RootLayout({
         <main>
           <Providers>
             {children}
-            <Toaster position="top-center" richColors closeButton />
+            <Toaster
+              position="top-center"
+              richColors
+              expand
+              dir="rtl"
+              closeButton
+              toastOptions={{
+                classNames: {
+                  toast:
+                    "rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-[50vw]",
+                  title: "font-semibold text-[15px]",
+                  description: "text-sm",
+                  success: "bg-green-50 dark:bg-green-950",
+                  error: "bg-red-50 dark:bg-red-950",
+                  warning: "bg-yellow-50 dark:bg-yellow-950",
+                  info: "bg-blue-50 dark:bg-blue-950",
+                },
+              }}
+            />
           </Providers>
         </main>
       </body>

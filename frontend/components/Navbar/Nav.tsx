@@ -30,7 +30,7 @@ const Nav = () => {
   ];
   // Temporary user object until auth is connected
   const { user, isLoading } = useAuth();
-const firstName = user?.fullName.trim().split(/\s+/)[0];
+const firstName = user?.fullName?.trim().split(/\s+/)[0];
   return (
     <nav className="w-full border-b border-zinc-200 bg-[var(--background)] transition-colors duration-300 dark:border-zinc-800">
       <div className="mx-auto h-16 max-w-7xl flex justify-between items-center px-3">

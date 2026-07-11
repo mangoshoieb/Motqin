@@ -69,8 +69,15 @@ export const API_ROUTES = {
   },
   
   LESSONS: {
-    GET_ALL: "/Lessons",
+    GET_ALL: "/lessons",
   },
+
+  QUESTIONS: {
+    BY_LESSON: "/questions/by-lesson",
+    ADD_MCQ: "/questions/user/mcq",
+    ADD_FILL: "/questions/user/fill",
+  },
+
   USERS:{
     CURRENT_USER: "/users/me",
 

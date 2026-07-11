@@ -11,16 +11,22 @@ export function useLogInPhone() {
   const setPhone = useAuthStore(
     state => state.setPhone
 );
+  const setResendInfo = useAuthStore(
+    state => state.setResendInfo
+  );
   return useMutation({
     mutationFn: authService.logInPhone,
 
     onSuccess: (data, variables) => {
       console.log(data.message)
-      console.log(data)
       setPhone(
           variables.phoneNumber
       );
-  
+      setResendInfo(
+        data.resendCooldownSeconds,
+        data.resendsRemaining
+      );
+
       router.push("/verify-phone");
   },
     onError: (error) => {

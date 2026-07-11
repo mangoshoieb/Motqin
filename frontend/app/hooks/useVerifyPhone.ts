@@ -25,10 +25,7 @@ export function useVerifyPhone() {
         return;
       }
 
-      authStorage.setTokens(
-        data.token.token,
-        data.token.refreshToken
-      );
+      authStorage.setTokens(data.token.token, data.token.refreshToken);
 
       router.replace("/");
     },
@@ -40,15 +37,21 @@ export function useVerifyPhone() {
 
       switch (message) {
         case "Invalid or expired verification code.":
-          toast.error("رمز التحقق غير صحيح");
+          toast.error("رمز التحقق غير صحيح", {
+            className: "!bg-red-200/80 ",
+          });
           break;
 
         case "Verification code has expired.":
-          toast.error("انتهت صلاحية رمز التحقق");
+          toast.error("انتهت صلاحية رمز التحقق", {
+            className: "!bg-red-200/80 ",
+          });
           break;
 
         default:
-          toast.error("حدث خطأ غير متوقع");
+          toast.error("حدث خطأ غير متوقع", {
+            className: "!bg-red-200/80 ",
+          });
       }
     },
   });

@@ -1,17 +1,14 @@
 import Nav from "@/components/Navbar/Nav";
-import { Providers } from "../providers/providers";
 
-export default function RootLayout({
+export default function PublicLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-        <main>
-          <Providers>
-            <Nav />
-            {children}
-          </Providers>
-        </main>
+    <main>
+      <Nav />
+      {children}
+    </main>
   );
 }

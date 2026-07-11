@@ -14,12 +14,14 @@ interface RegionSelectProps {
   value?: string;
   onChange: (value: string) => void;
   error?: string;
+  disabled?: boolean;
 }
 
 export default function RegionSelect({
   value,
   onChange,
   error,
+  disabled,
 }: RegionSelectProps) {
   return (
     <div className="space-y-2">
@@ -28,8 +30,9 @@ export default function RegionSelect({
       <Select
         value={value ?? ""}
         onValueChange={(value) => onChange(value ?? "")}
+        disabled={disabled}
       >
-        <SelectTrigger className=" h-12 w-full rounded-xl border-gray-300 bg-white px-4 text-right text-base shadow-none transition-all  hover:border-blue-400  focus:border-blue-500  focus:ring-2  focus:ring-blue-100  data-[placeholder]:text-gray-400">
+        <SelectTrigger className=" h-12 w-full rounded-xl border-gray-300 bg-white px-4 text-right text-base shadow-none transition-all  hover:border-blue-400  focus:border-blue-500  focus:ring-2  focus:ring-blue-100  data-[placeholder]:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50">
           <SelectValue placeholder="اختر المحافظة" />
         </SelectTrigger>
 

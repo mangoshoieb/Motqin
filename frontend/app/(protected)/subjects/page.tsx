@@ -3,7 +3,7 @@
 import { SubjectCardClient } from "@/components/SubjectCard.client";
 import { useGetSubjects } from "@/app/hooks/useGetSubjects";
 
-const SubjectPage = () => {
+const SubjectsPage = () => {
   const { data: subjects, isPending, isError } = useGetSubjects();
 
   return (
@@ -23,16 +23,16 @@ const SubjectPage = () => {
 
         {subjects?.map((subject) => (
           <SubjectCardClient
-            key={subject.id}
+            key={subject.subjectID}
             title={subject.name}
-            href={`/subjects/${subject.id}-${subject.name
+            href={`/subjects/${subject.subjectID}-${subject.name
               .toLowerCase()
               .replace(/\s+/g, "-")}`}
           ></SubjectCardClient>
         ))}
       </div>
-    </div>
+    </div>  
   );
 };
 
-export default SubjectPage;
+export default SubjectsPage;

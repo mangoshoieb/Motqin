@@ -14,7 +14,12 @@ export function useAutoRefresh() {
       const expiry = authStorage.getAccessTokenExpiry();
       if (!expiry) return;
 
-      const delay = Math.max(expiry - Date.now() - 60_000, 0);
+      // Small random jitter so tabs opened together (same token, same
+      // expiry) don't all fire their refresh timer at the exact same
+      // instant — see the cross-tab lock in lib/axios.ts for the rest of
+      // the race-condition fix.
+      const jitter = Math.random() * 5_000;
+      const delay = Math.max(expiry - Date.now() - 60_000, 0) + jitter;
 
       timer = setTimeout(async () => {
         try {

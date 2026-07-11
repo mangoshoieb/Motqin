@@ -1,24 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Skeleton from "@/components/ui/Skeleton";
+import RegionSelect from "@/components/RegionSelect";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
+
+const PROFILE_IMAGE = "/my-notion-face-portrait.png";
 
 export default function ProfilePage() {
+  const { data: user, isLoading, isError } = useCurrentUser();
+
   const [isEditing, setIsEditing] = useState(false);
+  const [showBio, setShowBio] = useState(false);
 
   const [form, setForm] = useState({
-    name: "Mono",
-    username: "@mono",
+    name: "",
     bio: "",
+    region: "",
   });
 
-  const user = {
-    phoneNumber: "+20 123 456 7890",
-    google: "mono@gmail.com",
-    facebook: "غير متصل",
-    image: "/my-notion-face-portrait.png",
-  };
+  // Sync the editable form with the real user data once /users/me resolves.
+  useEffect(() => {
+    if (user) {
+      setForm((prev) => ({
+        ...prev,
+        name: user.fullName ?? "",
+        region: user.region ?? "",
+      }));
+    }
+  }, [user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -28,19 +39,24 @@ export default function ProfilePage() {
       [e.target.name]: e.target.value,
     }));
   };
-  const [showBio, setShowBio] = useState(false);
+
+  const handleRegionChange = (value: string) => {
+    setForm((prev) => ({ ...prev, region: value }));
+  };
+
   const handleCancel = () => {
     setIsEditing(false);
 
     setForm({
-      name: "Mono",
-      username: "@mono",
-      bio: "طالب هندسة مهتم بالذكاء الاصطناعي.",
+      name: user?.fullName ?? "",
+      bio: "",
+      region: user?.region ?? "",
     });
   };
 
   const handleSave = () => {
-    // TODO: Update profile
+    // TODO: Wire up to a real "update profile" endpoint once the backend
+    // exposes one (GET /users/me currently only returns data, no PATCH yet).
     setIsEditing(false);
   };
 
@@ -66,7 +82,7 @@ export default function ProfilePage() {
 
                 <div className="relative">
                   <Image
-                    src={user.image}
+                    src={PROFILE_IMAGE}
                     alt="الصورة الشخصية"
                     width={220}
                     height={220}
@@ -97,7 +113,8 @@ export default function ProfilePage() {
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
-                className="rounded-xl border border-zinc-300 px-5 py-2 transition hover:bg-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                disabled={isLoading || isError}
+                className="rounded-xl border border-zinc-300 px-5 py-2 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
               >
                 تعديل
               </button>
@@ -120,6 +137,19 @@ export default function ProfilePage() {
             )}
           </div>
 
+          {isLoading ? (
+            <div className="space-y-6">
+              <Skeleton className="h-[52px] w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-[52px] w-full" />
+              <Skeleton className="h-[52px] w-full" />
+              <Skeleton className="h-[52px] w-full" />
+            </div>
+          ) : isError ? (
+            <p className="text-sm text-red-500">
+              تعذر تحميل بيانات الحساب. حاول تحديث الصفحة.
+            </p>
+          ) : (
           <div className="space-y-6">
             {/* Name */}
 
@@ -135,19 +165,13 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Username */}
+            {/* Region */}
 
-            <div>
-              <label className="mb-2 block font-medium">اسم المستخدم</label>
-
-              <input
-                name="username"
-                value={form.username}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full rounded-xl border border-zinc-400 disabled:border-zinc-300 px-4 py-3 disabled:bg-zinc-50 bg-white dark:disabled:border-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:disabled:bg-zinc-800"
-              />
-            </div>
+            <RegionSelect
+              value={form.region}
+              onChange={handleRegionChange}
+              disabled={!isEditing}
+            />
 
             {/* Bio */}
 
@@ -181,32 +205,51 @@ export default function ProfilePage() {
             )}
             <div className="my-8 border-t border-zinc-200 dark:border-zinc-800" />
 
-            {/* Readonly */}
+            {/* Readonly — real data from GET /users/me */}
 
             <div>
-              <label className="mb-2 block font-medium">رقم الهاتف</label>
+              <label className="mb-2 block font-medium">البريد الإلكتروني</label>
 
               <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {user.phoneNumber}
+                {user?.email}
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block font-medium">حساب Google</label>
+              <label className="mb-2 block font-medium">الدولة</label>
 
               <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {user.google}
+                {user?.country}
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block font-medium">حساب Facebook</label>
+              <label className="mb-2 block font-medium">المرحلة التعليمية</label>
 
               <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {user.facebook}
+                {user?.educationalStage}
               </div>
             </div>
+
+            <div>
+              <label className="mb-2 block font-medium">الصف الدراسي</label>
+
+              <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                {user?.gradeLevel}
+              </div>
+            </div>
+
+            {user?.role && (
+              <div>
+                <label className="mb-2 block font-medium">الدور</label>
+
+                <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                  {user.role}
+                </div>
+              </div>
+            )}
           </div>
+          )}
         </div>
       </div>
     </main>

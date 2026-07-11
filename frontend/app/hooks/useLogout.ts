@@ -17,8 +17,6 @@ export function useLogout() {
     },
 
     onError: () => {
-      // Even if the request fails,
-      // clear local tokens so the user is logged out.
       logoutLocal();
     },
   });

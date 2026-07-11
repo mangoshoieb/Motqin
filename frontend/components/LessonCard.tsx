@@ -9,7 +9,7 @@ import { CircleChevronRight, ChevronDown } from "lucide-react";
 type LessonState = "start" | "continue" | "review";
 
 interface LessonCardProps {
-  title: string;
+  name: string;
   outlines: string[];
   state: LessonState;
   href: string;
@@ -24,29 +24,29 @@ const stateStyles: Record<LessonState, string> = {
 };
 
 export const LessonCard = ({
-  title,
-  outlines,
-  state,
+  name,
+  // outlines,
+  // state,
   href,
   className,
   arrowPlay,
 }: LessonCardProps) => {
-  const [expanded, setExpanded] = useState(false);
+  // const [expanded, setExpanded] = useState(false);
 
-  const hasMore = outlines.length > 2;
-  const visibleOutlines = expanded ? outlines : outlines.slice(0, 2);
+  // const hasMore = outlines.length > 2;
+  // const visibleOutlines = expanded ? outlines : outlines.slice(0, 2);
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.preventDefault(); // 🚫 prevent navigation
-    e.stopPropagation(); // 🚫 stop bubbling to Link
-    setExpanded((prev) => !prev);
-  };
-
+  // const handleToggle = (e: React.MouseEvent) => {
+  //   e.preventDefault(); // 🚫 prevent navigation
+  //   e.stopPropagation(); // 🚫 stop bubbling to Link
+  //   setExpanded((prev) => !prev);
+  // };
+console.log(name)
   return (
     <Link
       href={href}
       className={cn(
-        "group relative block rounded-2xl p-6",
+        "group relative block rounded-2xl p-6 pb-15",
         "bg-white border border-zinc-200",
         "transition-all duration-300",
         "hover:shadow-xl hover:-translate-y-1",
@@ -55,42 +55,42 @@ export const LessonCard = ({
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <h2 className="text-xl font-bold text-zinc-900">{title}</h2>
+        <h2 className="text-xl font-bold text-zinc-900">{name}</h2>
 
         <span
           className={cn(
-            "px-3 py-1 rounded-full text-xs font-semibold capitalize",
-            stateStyles[state]
+            "px-3 py-1 rounded-full text-xs font-semibold capitalize bg-emerald-100 text-emerald-700",
+            // stateStyles[state]
           )}
         >
-          {state}
+          أبدأ
         </span>
       </div>
 
       {/* Outlines */}
-      <div className="mt-4 relative">
+      {/* <div className="mt-4 relative">
         <div
           className={cn(
             "flex flex-col gap-2 transition-all duration-300",
             !expanded && hasMore && "max-h-[80px] overflow-hidden"
           )}
-        >
-          {visibleOutlines.map((outline, index) => (
+        > */}
+          {/* {visibleOutlines.map((outline, index) => (
             <div key={index} className="flex gap-3 items-start">
               <CircleChevronRight className="size-4 mt-1 shrink-0" />
               <span>{outline}</span>
             </div>
-          ))}
-        </div>
+          ))} */}
+        {/* </div> */}
 
         {/* Blur Fade */}
-        {!expanded && hasMore && (
+        {/* {!expanded && hasMore && (
           <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-white to-transparent" />
-        )}
-      </div>
+        )} */}
+      {/* </div> */}
 
       {/* Expand Arrow (ONLY controls expand) */}
-      {hasMore && (
+      {/* {hasMore && (
         <div className="flex justify-center mt-3">
           <button
             onClick={handleToggle}
@@ -104,10 +104,10 @@ export const LessonCard = ({
             />
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Navigation Button */}
-      <div className="absolute bottom-6 right-6">
+      <div className="absolute bottom-1 right-6">
         <div
           className={cn(
             "flex items-center justify-center",
