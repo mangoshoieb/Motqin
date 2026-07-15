@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Motqin — Frontend Progress Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --navy:#0b1f4d;
+    --blue:#2563eb;
+    --blue-dark:#1d3f91;
+    --violet:#7c3aed;
+    --amber:#f59e0b;
+    --emerald:#10b981;
+    --rose:#f43f5e;
+    --teal:#14b8a6;
+    --zinc-50:#fafafa;
+    --zinc-100:#f4f4f5;
+    --zinc-200:#e4e4e7;
+    --zinc-400:#a1a1aa;
+    --zinc-500:#71717a;
+    --zinc-700:#3f3f46;
+    --zinc-900:#18181b;
+    --page-w:210mm;
+    --page-h:297mm;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#e9e9ee;}
+  body{
+    font-family:'Inter',-apple-system,Segoe UI,Arial,sans-serif;
+    color:var(--zinc-900);
+    font-size:10.6pt;
+    line-height:1.55;
+  }
+
+  .arabic{font-family:'Cairo','Inter',sans-serif; direction:rtl; unicode-bidi:isolate;}
+  code, .mono{font-family:'JetBrains Mono',monospace; font-size:0.92em;}
+
+  .page{
+    width:var(--page-w);
+    min-height:var(--page-h);
+    margin:14px auto;
+    background:#fff;
+    padding:16mm 15mm 14mm 15mm;
+    position:relative;
+    page-break-after:always;
+    box-shadow:0 1px 3px rgba(0,0,0,0.15);
+  }
+  @media print{
+    body{background:#fff;}
+    .page{margin:0; box-shadow:none; width:auto; min-height:auto;}
+  }
+
+  h1{font-size:20pt; margin:0 0 10px; color:var(--navy); letter-spacing:-0.01em;}
+  h2{font-size:15pt; margin:0 0 6px; color:var(--navy); border-bottom:2px solid var(--zinc-200); padding-bottom:6px;}
+  h3{font-size:12pt; margin:16px 0 6px; color:var(--blue-dark);}
+  h4{font-size:10.5pt; margin:10px 0 4px; color:var(--zinc-700); text-transform:uppercase; letter-spacing:.04em;}
+  p{margin:0 0 8px;}
+  ul,ol{margin:4px 0 10px; padding-inline-start:18px;}
+  li{margin-bottom:3px;}
+  small{color:var(--zinc-500);}
+
+  .kicker{
+    font-size:8.5pt; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--blue); margin-bottom:4px;
+  }
+  .pagehead{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px;}
+  .pagenum{position:absolute; bottom:8mm; right:15mm; font-size:8pt; color:var(--zinc-400);}
+  .pagenum.left{right:auto; left:15mm;}
+  .footer-brand{position:absolute; bottom:8mm; left:15mm; font-size:8pt; color:var(--zinc-400); font-weight:600;}
+
+  /* ---------- Cover ---------- */
+  .cover{background:linear-gradient(160deg,var(--navy) 0%, #14306e 55%, var(--blue) 100%); color:#fff; display:flex; flex-direction:column; justify-content:space-between;}
+  .cover .top small{color:#b9c6ee;}
+  .cover-logo{font-size:15pt; font-weight:800; letter-spacing:.02em;}
+  .cover-title{font-size:34pt; font-weight:800; line-height:1.15; margin:60px 0 14px; max-width:130mm;}
+  .cover-sub{font-size:12.5pt; color:#dbe4ff; max-width:120mm; line-height:1.6;}
+  .cover-meta{display:flex; gap:40px; margin-top:40px; font-size:9.5pt; color:#c8d4f7;}
+  .cover-meta div strong{display:block; color:#fff; font-size:10.5pt; margin-bottom:2px;}
+  .cover-bottom{border-top:1px solid rgba(255,255,255,.2); padding-top:14px; font-size:8.5pt; color:#aebbe8;}
+
+  /* ---------- TOC ---------- */
+  .toc-list{list-style:none; padding:0; margin:0;}
+  .toc-list li{display:flex; align-items:baseline; gap:8px; padding:7px 0; border-bottom:1px dotted var(--zinc-200); font-size:10.3pt;}
+  .toc-list .num{color:var(--blue); font-weight:700; width:22px; flex-shrink:0;}
+  .toc-list .fill{flex:1; border-bottom:1px dotted var(--zinc-400); position:relative; top:-3px; margin:0 4px;}
+  .toc-list .pg{color:var(--zinc-500); font-weight:600; width:20px; text-align:right;}
+  .toc-section{margin-bottom:4px; font-weight:700; color:var(--navy); font-size:10.8pt;}
+
+  /* ---------- generic components ---------- */
+  .badge{display:inline-block; font-size:7.6pt; font-weight:700; padding:2px 8px; border-radius:20px; letter-spacing:.03em;}
+  .b-done{background:#dcfce7; color:#166534;}
+  .b-partial{background:#fef3c7; color:#92400e;}
+  .b-missing{background:#fee2e2; color:#991b1b;}
+  .b-planned{background:#dbeafe; color:#1e40af;}
+
+  table{width:100%; border-collapse:collapse; font-size:9.6pt; margin:8px 0 14px;}
+  th{background:var(--navy); color:#fff; text-align:left; padding:7px 9px; font-size:8.6pt; text-transform:uppercase; letter-spacing:.03em;}
+  th.ar, td.ar{text-align:right;}
+  td{padding:7px 9px; border-bottom:1px solid var(--zinc-200); vertical-align:top;}
+  tr:nth-child(even) td{background:var(--zinc-50);}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;}
+
+  .card{border:1px solid var(--zinc-200); border-radius:10px; padding:12px 14px; background:var(--zinc-50);}
+  .card h4{margin-top:0;}
+  .lib-card{border:1px solid var(--zinc-200); border-radius:10px; padding:10px 12px; margin-bottom:8px; background:#fff;}
+  .lib-card .name{font-weight:700; font-family:'JetBrains Mono',monospace; font-size:9.6pt; color:var(--blue-dark);}
+  .lib-card .ver{color:var(--zinc-500); font-size:8.4pt; font-weight:500;}
+  .lib-card .role{font-size:8.6pt; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--violet); margin-bottom:3px;}
+  .lib-card p{margin:0; font-size:9.4pt; color:var(--zinc-700);}
+
+  .callout{border-left:4px solid var(--blue); background:#eff6ff; padding:10px 14px; border-radius:0 8px 8px 0; margin:12px 0; font-size:9.6pt;}
+  .callout.warn{border-color:var(--amber); background:#fffbeb;}
+  .callout.gap{border-color:var(--rose); background:#fff1f2;}
+  .callout.ok{border-color:var(--emerald); background:#ecfdf5;}
+  .callout strong{display:block; margin-bottom:3px; font-size:8.6pt; text-transform:uppercase; letter-spacing:.03em;}
+
+  .mockup-frame{border:1px solid var(--zinc-200); border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.08); margin:10px 0;}
+  .mockup-bar{height:22px; background:#e5e5ea; display:flex; align-items:center; gap:5px; padding:0 10px;}
+  .mockup-bar span{width:8px; height:8px; border-radius:50%; background:#c4c4cc;}
+  .mockup-caption{font-size:8.4pt; color:var(--zinc-500); margin-top:4px; font-style:italic;}
+
+  .pill{display:inline-flex; align-items:center; gap:4px; font-size:8pt; font-weight:600; padding:3px 9px; border-radius:20px; background:var(--zinc-100); color:var(--zinc-700); margin:2px 3px 2px 0;}
+
+  .roadmap-item{display:flex; gap:12px; margin-bottom:12px; align-items:flex-start;}
+  .roadmap-num{flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:10pt;}
+  .roadmap-item h4{margin:0 0 3px; text-transform:none; letter-spacing:0; font-size:10.3pt; color:var(--navy);}
+  .roadmap-item p{margin:0; font-size:9.4pt; color:var(--zinc-700);}
+
+  .two-col{columns:2; column-gap:20px;}
+  .two-col li{break-inside:avoid;}
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 — COVER ============ -->
+<section class="page cover">
+  <div class="top">
+    <div class="cover-logo">MOTQIN &nbsp;·&nbsp; متقن</div>
+    <small>Graduation Project — Technical Progress Report</small>
+  </div>
+  <div>
+    <div class="cover-title">Frontend Engineering Report:<br>Architecture, Stack &amp; Progress</div>
+    <div class="cover-sub">An AI-powered productivity and learning platform for students. This report documents the current state of the Next.js frontend application — its architecture, technology stack, implemented features, and the roadmap ahead.</div>
+    <div class="cover-meta">
+      <div><strong>Prepared by</strong>Abd Elwahab Sewalam</div>
+      <div><strong>Module</strong>Frontend (Next.js / React)</div>
+      <div><strong>Date</strong>July 13, 2026</div>
+    </div>
+  </div>
+  <div class="cover-bottom">Motqin — "Master your focus. Master your future." (أتقن تركيزك. أتقن مستقبلك) &nbsp;|&nbsp; Backend: .NET (out of scope for this report)</div>
+</section>
+
+<!-- ============ PAGE 2 — TOC ============ -->
+<section class="page">
+  <div class="kicker">Contents</div>
+  <h1>Table of Contents</h1>
+
+  <div class="toc-section">1. Overview</div>
+  <ul class="toc-list">
+    <li><span class="num">1.1</span>Executive Summary<span class="fill"></span><span class="pg">3</span></li>
+    <li><span class="num">1.2</span>Project Vision &amp; Core Pillars<span class="fill"></span><span class="pg">4</span></li>
+    <li><span class="num">1.3</span>Implementation Status at a Glance<span class="fill"></span><span class="pg">5</span></li>
+  </ul>
+
+  <div class="toc-section">2. Technology Stack</div>
+  <ul class="toc-list">
+    <li><span class="num">2.1</span>Core Framework &amp; Language<span class="fill"></span><span class="pg">6</span></li>
+    <li><span class="num">2.2</span>UI, Styling &amp; Motion Libraries<span class="fill"></span><span class="pg">7</span></li>
+    <li><span class="num">2.3</span>Data, State, Forms &amp; Auth Libraries<span class="fill"></span><span class="pg">8</span></li>
+  </ul>
+
+  <div class="toc-section">3. Application Architecture</div>
+  <ul class="toc-list">
+    <li><span class="num">3.1</span>Route &amp; Folder Architecture<span class="fill"></span><span class="pg">9</span></li>
+    <li><span class="num">3.2</span>Provider Composition &amp; Rendering Model<span class="fill"></span><span class="pg">10</span></li>
+    <li><span class="num">3.3</span>Data Flow: Component → API<span class="fill"></span><span class="pg">11</span></li>
+    <li><span class="num">3.4</span>Authentication &amp; Token Refresh Architecture<span class="fill"></span><span class="pg">12</span></li>
+  </ul>
+
+  <div class="toc-section">4. Feature Walkthrough</div>
+  <ul class="toc-list">
+    <li><span class="num">4.1</span>Landing Page &amp; Navigation<span class="fill"></span><span class="pg">13</span></li>
+    <li><span class="num">4.2</span>Authentication Flow (Phone OTP, Google, Facebook)<span class="fill"></span><span class="pg">14</span></li>
+    <li><span class="num">4.3</span>AI Teacher (Chat Interface)<span class="fill"></span><span class="pg">16</span></li>
+    <li><span class="num">4.4</span>Subjects → Lessons → Quiz &amp; Progress<span class="fill"></span><span class="pg">17</span></li>
+    <li><span class="num">4.5</span>Smart Planner<span class="fill"></span><span class="pg">19</span></li>
+    <li><span class="num">4.6</span>Subscription &amp; Checkout<span class="fill"></span><span class="pg">20</span></li>
+    <li><span class="num">4.7</span>Profile Management<span class="fill"></span><span class="pg">21</span></li>
+  </ul>
+
+  <div class="toc-section">5. Analysis &amp; Roadmap</div>
+  <ul class="toc-list">
+    <li><span class="num">5.1</span>Gap Analysis Against Core Objectives<span class="fill"></span><span class="pg">22</span></li>
+    <li><span class="num">5.2</span>Recommended Next Steps<span class="fill"></span><span class="pg">23</span></li>
+    <li><span class="num">5.3</span>Appendix — Dependency &amp; API Reference<span class="fill"></span><span class="pg">25</span></li>
+  </ul>
+
+  <div class="pagenum">02</div>
+</section>
+
+<!-- ============ PAGE 3 — EXECUTIVE SUMMARY ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 1.1</div><h1>Executive Summary</h1></div></div>
+
+  <p>Motqin is an AI-driven study companion built to help students focus, learn, and track academic progress through five interconnected modules: an <strong>AI Teacher</strong>, an <strong>App Blocker / Focus System</strong>, a <strong>Quiz &amp; Spaced-Repetition tracker</strong>, <strong>Competitions &amp; Gamification</strong>, and a <strong>Smart Planner</strong> that ties everything together. This report covers the <strong>frontend application</strong> only — a Next.js 16 / React 19 codebase that consumes a separate .NET backend API.</p>
+
+  <p>As of this report, the frontend has a working, production-shaped <strong>authentication system</strong> (phone OTP, Google OAuth, Facebook OAuth, JWT access/refresh tokens with cross-tab coordination), a functioning <strong>subjects → lessons → questions</strong> browsing flow wired to live backend endpoints, a first working version of the <strong>AI Teacher chat</strong> (text + generated speech), and fully designed but <strong>not-yet-backend-connected</strong> screens for the <strong>Smart Planner</strong> and <strong>Subscription/Checkout</strong> flow. The <strong>App Blocker</strong> and <strong>Competitions/Gamification</strong> modules described in the product vision do not yet exist as working frontend features — they currently appear only as marketing copy on the landing page and as line items in the subscription plan descriptions.</p>
+
+  <div class="callout ok">
+    <strong>What's solid</strong>
+    Authentication (with a genuinely sophisticated multi-tab token-refresh system), API/service layer, subjects &amp; lessons data fetching, and the AI Teacher chat's happy path are implemented against real endpoints and follow a consistent, scalable architecture.
+  </div>
+
+  <div class="callout warn">
+    <strong>What's designed but not wired up</strong>
+    The Smart Planner UI (weekly view, day cards, mood, focus sessions) runs entirely on local mock data (<code>app/data/days.ts</code>) with no backend calls. The Subscription/Checkout flow computes real pricing but the "Confirm payment" button only shows a toast — no payment gateway is integrated yet.
+  </div>
+
+  <div class="callout gap">
+    <strong>What's missing entirely</strong>
+    App Blocker (focus/distraction blocking, Supervisor Mode), spaced-repetition scheduling logic, Competitions/leaderboards, and gamification (achievements, points) have no frontend implementation yet — they exist only as product vision and UI copy.
+  </div>
+
+  <p>The remainder of this report walks through the technology choices, the architecture that ties the app together, a page-by-page look at what's built, an honest gap analysis against the five core pillars, and a prioritized set of recommended next steps.</p>
+
+  <div class="pagenum">03</div>
+</section>
+
+<!-- ============ PAGE 4 — VISION & PILLARS ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 1.2</div><h1>Project Vision &amp; Core Pillars</h1></div></div>
+
+  <p>Motqin's product vision centers on five interconnected modules, all coordinated by a central Smart Planner. The frontend's job is to expose each module through a consistent, adaptive interface. The diagram below shows how the pillars are meant to relate to one another — the Smart Planner is the hub that reads from and writes to every other module.</p>
+
+  <svg viewBox="0 0 700 330" width="100%" height="330" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="350" cy="165" r="72" fill="#0b1f4d"/>
+    <text x="350" y="158" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Inter">Smart</text>
+    <text x="350" y="176" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Inter">Planner</text>
+
+    <!-- spokes -->
+    <g stroke="#c7d2e8" stroke-width="2">
+      <line x1="350" y1="93" x2="350" y2="55"/>
+      <line x1="285" y1="120" x2="150" y2="70"/>
+      <line x1="285" y1="210" x2="150" y2="260"/>
+      <line x1="415" y1="120" x2="550" y2="70"/>
+      <line x1="415" y1="210" x2="550" y2="260"/>
+    </g>
+
+    <!-- AI Teacher -->
+    <rect x="290" y="10" width="120" height="45" rx="10" fill="#2563eb"/>
+    <text x="350" y="37" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="Inter">AI Teacher</text>
+
+    <!-- App Blocker -->
+    <rect x="40" y="45" width="150" height="45" rx="10" fill="#f43f5e"/>
+    <text x="115" y="72" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="Inter">App Blocker / Focus</text>
+
+    <!-- Quiz -->
+    <rect x="20" y="238" width="180" height="45" rx="10" fill="#14b8a6"/>
+    <text x="110" y="265" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="Inter">Quiz &amp; Spaced Repetition</text>
+
+    <!-- Competitions -->
+    <rect x="480" y="238" width="180" height="45" rx="10" fill="#f59e0b"/>
+    <text x="570" y="265" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="Inter">Competitions &amp; Gamification</text>
+
+    <!-- Progress -->
+    <rect x="500" y="45" width="150" height="45" rx="10" fill="#7c3aed"/>
+    <text x="575" y="72" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="Inter">Progress Tracking</text>
+  </svg>
+
+  <h3>The five pillars, as specified</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>AI Teacher</h4>
+      <p style="font-size:9.4pt">Personalized tutor trained on predefined subjects. Adjusts explanation depth to student level; supports Q&amp;A and step-by-step walkthroughs.</p>
+    </div>
+    <div class="card">
+      <h4>App Blocker (Focus System)</h4>
+      <p style="font-size:9.4pt">Blocks distracting apps on a time- or task-based schedule, integrated with the planner. Includes a Supervisor Mode that only a parent/mentor can override.</p>
+    </div>
+    <div class="card">
+      <h4>Quiz &amp; Progress Tracking</h4>
+      <p style="font-size:9.4pt">AI-generated quizzes at multiple difficulty levels and formats, with spaced-repetition scheduling for weak or old material.</p>
+    </div>
+    <div class="card">
+      <h4>Competitions &amp; Gamification</h4>
+      <p style="font-size:9.4pt">Leaderboards, achievements, and peer comparison to sustain motivation and engagement over time.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:10px;">
+    <h4>Smart Planner (the hub)</h4>
+    <p style="font-size:9.4pt">Central, highly customizable scheduler. Times spaced-repetition reminders, detects the student's most productive hours, auto-schedules focus sessions, and drives the App Blocker's behavior — the one system every other module reports into.</p>
+  </div>
+
+  <div class="pagenum">04</div>
+</section>
+
+<!-- ============ PAGE 5 — STATUS AT A GLANCE ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 1.3</div><h1>Implementation Status at a Glance</h1></div></div>
+
+  <p>Status is scored against three states: <span class="badge b-done">Implemented</span> (built and wired to a real backend endpoint), <span class="badge b-partial">UI Only</span> (designed and interactive in the frontend, but running on local mock data or with no backend call yet), and <span class="badge b-missing">Not Started</span> (no frontend code exists for this capability yet).</p>
+
+  <table>
+    <tr><th style="width:26%">Module</th><th style="width:14%">Status</th><th>Notes</th></tr>
+    <tr><td><strong>Authentication</strong></td><td><span class="badge b-done">Implemented</span></td><td>Phone OTP login/registration, Google OAuth, Facebook OAuth, JWT access/refresh with automatic renewal and cross-tab coordination.</td></tr>
+    <tr><td><strong>Subjects &amp; Lessons</strong></td><td><span class="badge b-done">Implemented</span></td><td>Live-fetched via React Query from <code>/subjects</code> and <code>/lessons</code>.</td></tr>
+    <tr><td><strong>Quiz Questions</strong></td><td><span class="badge b-done">Implemented</span></td><td>Fetch by lesson, category tabs, type filters, and a working "add your own question" (MCQ / fill-in-the-blank) form against real endpoints.</td></tr>
+    <tr><td><strong>Quiz-taking / scoring</strong></td><td><span class="badge b-missing">Not Started</span></td><td>The "Start" button links to a <code>/quiz</code> route that has no page implementation yet.</td></tr>
+    <tr><td><strong>Spaced repetition</strong></td><td><span class="badge b-missing">Not Started</span></td><td>No scheduling logic anywhere in the frontend; referenced only in subscription-plan marketing copy.</td></tr>
+    <tr><td><strong>AI Teacher chat</strong></td><td><span class="badge b-partial">UI Only</span></td><td>Fully working chat UI with text + TTS audio playback, but hardcoded <code>lesson_id: "default"</code>, no conversation persistence, and the speech endpoint is a hardcoded <code>localhost:8000</code> URL.</td></tr>
+    <tr><td><strong>Smart Planner</strong></td><td><span class="badge b-partial">UI Only</span></td><td>Full weekly view UI (expand/collapse day cards, mood, focus-session counts) but 100% local mock data in <code>app/data/days.ts</code> — no API calls at all.</td></tr>
+    <tr><td><strong>App Blocker / Focus Mode</strong></td><td><span class="badge b-missing">Not Started</span></td><td>Appears only as a static marketing card on the homepage ("Focus Mode — 45 minutes today", hardcoded). No blocking logic, scheduling, or Supervisor Mode.</td></tr>
+    <tr><td><strong>Competitions &amp; Gamification</strong></td><td><span class="badge b-missing">Not Started</span></td><td>Static homepage card with hardcoded rank/points. No leaderboard, achievements, or scoring system.</td></tr>
+    <tr><td><strong>Subscription &amp; Checkout</strong></td><td><span class="badge b-partial">UI Only</span></td><td>Full pricing/plan/discount UI with correct calculations; "Confirm payment" is a placeholder toast — no payment gateway wired up.</td></tr>
+    <tr><td><strong>Profile</strong></td><td><span class="badge b-partial">UI Only</span></td><td>Reads real user data from <code>GET /users/me</code>; editing is local-only since no <code>PATCH</code> endpoint exists yet on the backend.</td></tr>
+  </table>
+
+  <h3>Coverage against the 5 pillars</h3>
+  <svg viewBox="0 0 700 90" width="100%" height="90" xmlns="http://www.w3.org/2000/svg">
+    <g font-family="Inter" font-size="10.5">
+      <rect x="0" y="10" width="130" height="26" rx="6" fill="#10b981"/><text x="65" y="27" text-anchor="middle" fill="#fff" font-weight="700">AI Teacher</text>
+      <rect x="142" y="10" width="130" height="26" rx="6" fill="#f59e0b"/><text x="207" y="27" text-anchor="middle" fill="#fff" font-weight="700">Quiz &amp; Progress</text>
+      <rect x="284" y="10" width="130" height="26" rx="6" fill="#f59e0b"/><text x="349" y="27" text-anchor="middle" fill="#fff" font-weight="700">Smart Planner</text>
+      <rect x="426" y="10" width="130" height="26" rx="6" fill="#ef4444"/><text x="491" y="27" text-anchor="middle" fill="#fff" font-weight="700">App Blocker</text>
+      <rect x="568" y="10" width="130" height="26" rx="6" fill="#ef4444"/><text x="633" y="27" text-anchor="middle" fill="#fff" font-weight="700">Competitions</text>
+    </g>
+    <g font-family="Inter" font-size="8.5" fill="#71717a">
+      <text x="65" y="55" text-anchor="middle">UI + partial API</text>
+      <text x="207" y="55" text-anchor="middle">Browsing done, quiz-taking missing</text>
+      <text x="349" y="55" text-anchor="middle">UI only, mock data</text>
+      <text x="491" y="55" text-anchor="middle">Not started</text>
+      <text x="633" y="55" text-anchor="middle">Not started</text>
+    </g>
+  </svg>
+
+  <div class="pagenum">05</div>
+</section>
+
+<!-- ============ PAGE 6 — TECH STACK: CORE ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 2.1</div><h1>Core Framework &amp; Language</h1></div></div>
+  <p>The frontend is a single Next.js application using the <strong>App Router</strong>, written entirely in <strong>TypeScript</strong>, styled with <strong>Tailwind CSS v4</strong>. Below is how each core piece is actually used in this codebase — not just what it is in general.</p>
+
+  <div class="lib-card">
+    <div class="name">next <span class="ver">v16.1.4</span></div>
+    <div class="role">Framework</div>
+    <p>App Router with route groups — <code>(public)</code>, <code>(auth)</code>, <code>(protected)</code> — each with its own <code>layout.tsx</code>. Client components are marked with <code>"use client"</code> throughout (the app is effectively CSR-first: almost every page fetches data client-side via React Query rather than using Server Components for data loading). <code>next/font/google</code> loads Inter, Geist, Geist Mono and Cairo (for Arabic) as CSS variables in the root layout. <code>next/image</code> and <code>next/navigation</code> (<code>useRouter</code>, <code>useParams</code>, <code>useSearchParams</code>) are used across auth guards and dynamic subject/lesson routes.</p>
+  </div>
+  <div class="lib-card">
+    <div class="name">react / react-dom <span class="ver">v19.2.3</span></div>
+    <div class="role">UI Library</div>
+    <p>Function components with hooks throughout; no class components. React 19 is required by Next 16.</p>
+  </div>
+  <div class="lib-card">
+    <div class="name">typescript <span class="ver">^5</span></div>
+    <div class="role">Language</div>
+    <p>Domain types are hand-written per feature (<code>planner.types.ts</code>, <code>auth.types.ts</code>, <code>motqin.types.ts</code>) rather than generated from the backend's OpenAPI schema — worth automating later (see Roadmap).</p>
+  </div>
+  <div class="lib-card">
+    <div class="name">tailwindcss <span class="ver">v4</span> · @tailwindcss/postcss</div>
+    <div class="role">Styling</div>
+    <p>Tailwind v4's CSS-first config (no <code>tailwind.config.js</code>; theme lives in <code>globals.css</code> via <code>@theme</code>/CSS custom properties). Dark mode and page-specific theme tokens (e.g. <code>--surface</code>, <code>--sidebar-bg</code>, <code>--input-border</code>) are consumed with <code>var(--token)</code> inside Tailwind's arbitrary-value syntax, e.g. <code>bg-[var(--surface)]</code>.</p>
+  </div>
+  <div class="lib-card">
+    <div class="name">sass</div>
+    <div class="role">Styling</div>
+    <p>Used for a small number of legacy/utility stylesheets (e.g. <code>notfound.css</code> compiled from Sass) alongside Tailwind.</p>
+  </div>
+
+  <div class="callout">
+    <strong>Rendering strategy note</strong>
+    Nearly every route in this app is a Client Component (<code>"use client"</code>) that fetches its own data with TanStack Query. This is a pragmatic choice for a fast-moving student project, but it forfeits some of Next.js's Server Component benefits (smaller client bundles, server-side data fetching, better first paint). Worth revisiting selectively — see Recommended Next Steps.
+  </div>
+
+  <div class="pagenum">06</div>
+</section>
+
+<!-- ============ PAGE 7 — TECH STACK: UI ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 2.2</div><h1>UI, Styling &amp; Motion Libraries</h1></div></div>
+
+  <div class="lib-card"><div class="name">lucide-react <span class="ver">v0.563.0</span></div><div class="role">Icons</div><p>Primary icon set — used across buttons, nav, chat input (mic/send), and cards.</p></div>
+  <div class="lib-card"><div class="name">react-icons <span class="ver">v5.5.0</span></div><div class="role">Icons</div><p>Supplies brand icons Lucide doesn't cover — Google (<code>FcGoogle</code>) and Facebook (<code>FaFacebook</code>) buttons on the sign-in/sign-up screens.</p></div>
+  <div class="lib-card"><div class="name">framer-motion <span class="ver">v12.40.0</span></div><div class="role">Animation</div><p>Powers the Planner's day-card expand/collapse transitions and other interactive UI motion.</p></div>
+  <div class="lib-card"><div class="name">lottie-react <span class="ver">v2.4.1</span></div><div class="role">Animation</div><p>Renders JSON-based Lottie animations, e.g. <code>public/lottie/right-arrow.json</code> via the <code>AnimatedArrow</code> component.</p></div>
+  <div class="lib-card"><div class="name">next-themes <span class="ver">v0.4.6</span></div><div class="role">Theming</div><p>Drives the light/dark <code>ThemeProvider</code> wrapping the whole app (class-based strategy: toggles a class on <code>&lt;html&gt;</code> that Tailwind's dark-mode variant and the app's CSS custom properties respond to).</p></div>
+  <div class="lib-card"><div class="name">sonner <span class="ver">v2.0.7</span></div><div class="role">Notifications</div><p>Global toast system, RTL-configured (<code>dir="rtl"</code>) in the root layout. Every failed API call is funneled through a single <code>showApiErrorToast</code> helper in the Axios response interceptor, so error surfacing is consistent app-wide without per-call boilerplate.</p></div>
+  <div class="lib-card"><div class="name">class-variance-authority · clsx · tailwind-merge · tw-animate-css</div><div class="role">Styling utilities</div><p>Standard shadcn/ui-style utility stack: <code>cva</code> for component style variants (e.g. button variants), <code>clsx</code>/<code>tailwind-merge</code> combined into the project's <code>cn()</code> helper (<code>app/lib/utils.ts</code>) used everywhere className logic branches.</p></div>
+  <div class="lib-card"><div class="name">shadcn <span class="ver">v4.13.0</span> · @base-ui/react</div><div class="role">Component primitives</div><p>shadcn CLI-generated primitives (<code>components/ui/button.tsx</code>, <code>select.tsx</code>) built on Base UI's unstyled, accessible primitives — styled to match the app's design tokens rather than a stock theme.</p></div>
+  <div class="lib-card"><div class="name">@fullcalendar/core · daygrid · react <span class="ver">v6.1.20</span></div><div class="role">Calendar</div><p>Installed for calendar-based planning views; not yet wired into a visible route (the current Planner UI uses a custom weekly day-card layout instead — likely the intended integration point for a monthly/calendar view).</p></div>
+
+  <div class="pagenum">07</div>
+</section>
+
+<!-- ============ PAGE 8 — TECH STACK: DATA/STATE ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 2.3</div><h1>Data, State, Forms &amp; Auth Libraries</h1></div></div>
+
+  <div class="lib-card"><div class="name">@tanstack/react-query <span class="ver">v5.101.1</span> (+ devtools)</div><div class="role">Server state</div><p>The single source of truth for anything that comes from the backend — subjects, lessons, questions, current user, and every auth mutation (login, register, verify, logout). One <code>QueryClient</code> is created per app instance in <code>QueryProvider</code> and provided at the root, above every other provider except theming.</p></div>
+  <div class="lib-card"><div class="name">axios <span class="ver">v1.18.0</span></div><div class="role">HTTP client</div><p>A single configured <code>axiosInstance</code> (<code>app/lib/axios.ts</code>) is the only way the app talks to the backend. A request interceptor attaches the bearer token; a response interceptor centrally handles 401 → silent token refresh → retry, and turns every other failure into a toast. See Section 3.4 for the full refresh-token design.</p></div>
+  <div class="lib-card"><div class="name">zustand <span class="ver">v5.0.14</span></div><div class="role">Client state</div><p>Lightweight global store used narrowly — currently just <code>useAuthStore</code>, which holds transient sign-up state (phone number, OTP resend cooldown/remaining count) that needs to survive navigation between the sign-up → verify-phone → complete-profile screens without being persisted or sent to the server.</p></div>
+  <div class="lib-card"><div class="name">react-hook-form <span class="ver">v7.71.1</span> + @hookform/resolvers + zod <span class="ver">v4.3.6</span></div><div class="role">Forms &amp; validation</div><p>Every form (sign-in, sign-up, add-question, complete-profile) uses <code>useForm</code> with a <code>zodResolver</code> against a schema defined in <code>app/lib/validators/</code>, giving typed, runtime-validated form state with minimal boilerplate.</p></div>
+  <div class="lib-card"><div class="name">jwt-decode <span class="ver">v4.0.0</span> (+ hand-rolled decode)</div><div class="role">Auth</div><p>Used alongside a small manual base64/JWT payload decoder in <code>auth-storage.ts</code> (<code>getAccessTokenExpiry</code>) to schedule the proactive token-refresh timer.</p></div>
+  <div class="lib-card"><div class="name">@react-oauth/google <span class="ver">v0.13.5</span></div><div class="role">Auth provider</div><p>Wraps the app in <code>GoogleOAuthProvider</code> (<code>providers/googleProvider.tsx</code>) using <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code>; the <code>GoogleSignIn</code> component renders Google's button and forwards the ID token to <code>useGoogleLogin</code>.</p></div>
+  <div class="lib-card"><div class="name">Facebook SDK (via custom provider)</div><div class="role">Auth provider</div><p><code>FacebookProvider.tsx</code> loads the Facebook JS SDK (<code>NEXT_PUBLIC_FACEBOOK_APP_ID</code>) into <code>&lt;head&gt;</code>; <code>facebook-auth.services.ts</code> wraps <code>FB.login</code> in a Promise for the sign-in page to call.</p></div>
+
+  <h3>Why this stack works for Motqin</h3>
+  <p style="font-size:9.6pt">React Query + a thin Axios layer keeps every screen's server data in sync without a hand-rolled cache. Zustand is intentionally used only where React Query would be the wrong tool (transient, non-server UI state) — a good discipline that keeps state management legible. Zod + react-hook-form gives the auth and question-authoring forms real validation with very little code per form.</p>
+
+  <div class="pagenum">08</div>
+</section>
+
+<!-- ============ PAGE 9 — ROUTE ARCHITECTURE ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 3.1</div><h1>Route &amp; Folder Architecture</h1></div></div>
+  <p>The App Router is organized into three route groups by access level. Route groups (parenthesized folder names) don't affect the URL — they let each area define its own layout and guard logic.</p>
+
+  <svg viewBox="0 0 700 360" width="100%" height="360" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
+    <rect x="0" y="0" width="700" height="360" rx="10" fill="#f4f4f5"/>
+    <text x="16" y="24" font-size="12" font-weight="700" fill="#0b1f4d">app/</text>
+
+    <!-- (public) -->
+    <rect x="16" y="36" width="205" height="150" rx="8" fill="#eff6ff" stroke="#2563eb"/>
+    <text x="28" y="56" font-size="10.5" font-weight="700" fill="#1d3f91">(public)/</text>
+    <text x="34" y="74" font-size="9" fill="#3f3f46">layout.tsx — Nav (guest)</text>
+    <text x="34" y="90" font-size="9" fill="#3f3f46">page.tsx — Landing / Home</text>
+    <text x="34" y="106" font-size="9" fill="#3f3f46">about/page.tsx</text>
+    <text x="34" y="122" font-size="9" fill="#3f3f46">privacy/page.tsx</text>
+    <text x="34" y="138" font-size="9" fill="#3f3f46">data-deletion/page.tsx</text>
+    <text x="34" y="154" font-size="9" fill="#3f3f46">context/auth.context.ts</text>
+    <text x="34" y="172" font-size="8.3" fill="#71717a" font-style="italic">no auth required</text>
+
+    <!-- (auth) -->
+    <rect x="248" y="36" width="205" height="150" rx="8" fill="#f5f3ff" stroke="#7c3aed"/>
+    <text x="260" y="56" font-size="10.5" font-weight="700" fill="#5b21b6">(auth)/</text>
+    <text x="266" y="74" font-size="9" fill="#3f3f46">layout.tsx</text>
+    <text x="266" y="90" font-size="9" fill="#3f3f46">sign-in/page.tsx</text>
+    <text x="266" y="106" font-size="9" fill="#3f3f46">sign-up/page.tsx</text>
+    <text x="266" y="122" font-size="9" fill="#3f3f46">verify-phone/page.tsx</text>
+    <text x="266" y="138" font-size="9" fill="#3f3f46">complete-profile/page.tsx</text>
+    <text x="266" y="172" font-size="8.3" fill="#71717a" font-style="italic">OTP + OAuth flows</text>
+
+    <!-- (protected) -->
+    <rect x="480" y="36" width="204" height="230" rx="8" fill="#ecfdf5" stroke="#10b981"/>
+    <text x="492" y="56" font-size="10.5" font-weight="700" fill="#065f46">(protected)/</text>
+    <text x="498" y="74" font-size="9" fill="#3f3f46">layout.tsx — guards + Nav</text>
+    <text x="498" y="90" font-size="9" fill="#3f3f46">Ai-Teacher/page.tsx</text>
+    <text x="498" y="106" font-size="9" fill="#3f3f46">planner/page.tsx</text>
+    <text x="498" y="122" font-size="9" fill="#3f3f46">subjects/page.tsx</text>
+    <text x="498" y="138" font-size="9" fill="#3f3f46">subjects/[subjectId]/page.tsx</text>
+    <text x="498" y="154" font-size="9" fill="#3f3f46">.../[subjectId]/[lessonId]/</text>
+    <text x="498" y="170" font-size="9" fill="#3f3f46">profile/page.tsx</text>
+    <text x="498" y="186" font-size="9" fill="#3f3f46">subscription/page.tsx</text>
+    <text x="498" y="202" font-size="9" fill="#3f3f46">subscription/checkout/page.tsx</text>
+    <text x="498" y="222" font-size="8.3" fill="#71717a" font-style="italic">redirects to /sign-in</text>
+    <text x="498" y="234" font-size="8.3" fill="#71717a" font-style="italic">if no access token</text>
+
+    <!-- shared -->
+    <rect x="16" y="200" width="437" height="86" rx="8" fill="#fff7ed" stroke="#f59e0b"/>
+    <text x="28" y="220" font-size="10.5" font-weight="700" fill="#92400e">shared app-level modules</text>
+    <text x="34" y="238" font-size="9" fill="#3f3f46">providers/  ·  hooks/  ·  services/  ·  lib/  ·  types/  ·  constants/  ·  data/</text>
+    <text x="34" y="254" font-size="9" fill="#3f3f46">layout.tsx (root) — fonts, Providers, Toaster, Facebook SDK</text>
+    <text x="34" y="270" font-size="9" fill="#3f3f46">globals.css — Tailwind v4 theme tokens (--surface, --sidebar-bg, ...)</text>
+
+    <text x="16" y="316" font-size="9" fill="#3f3f46">components/ — cross-route UI (cards, forms, Navbar/, ui/, auth/ProtectedRoute)</text>
+    <text x="16" y="336" font-size="8.3" fill="#71717a" font-style="italic">Route groups control layout/guarding only — URLs are unaffected, e.g. (protected)/planner → /planner</text>
+  </svg>
+
+  <p style="font-size:9.4pt">Guarding happens redundantly: <code>(protected)/layout.tsx</code> (checks <code>authStorage.getAccessToken()</code>, redirects to <code>/sign-in</code>) and a standalone <code>components/auth/ProtectedRoute.tsx</code> wrapper both do the same client-side check. A third, unrelated <code>middleware.ts</code> at the project root implements a similar idea but is currently disabled and out of sync with the real route names — see Section 4.2 and 5.2.</p>
+
+  <div class="pagenum">09</div>
+</section>
+
+<!-- ============ PAGE 10 — PROVIDERS ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 3.2</div><h1>Provider Composition &amp; Rendering Model</h1></div></div>
+  <p>Every page renders inside a fixed stack of context providers, mounted once in <code>app/layout.tsx</code> via a single <code>&lt;Providers&gt;</code> component. Order matters: each provider only has access to what's above it.</p>
+
+  <svg viewBox="0 0 620 300" width="100%" height="300" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
+    <rect x="10" y="10" width="600" height="280" rx="14" fill="none" stroke="#a1a1aa" stroke-dasharray="4 4"/>
+    <text x="30" y="34" font-size="10.5" font-weight="700" fill="#3f3f46">ThemeProvider (next-themes)</text>
+    <text x="34" y="50" font-size="8.3" fill="#71717a">attribute="class" · defaultTheme="light" · enableSystem={'{false}'}</text>
+
+    <rect x="30" y="62" width="560" height="210" rx="12" fill="none" stroke="#2563eb" stroke-dasharray="4 4"/>
+    <text x="48" y="86" font-size="10.5" font-weight="700" fill="#1d3f91">QueryProvider (TanStack Query)</text>
+    <text x="52" y="102" font-size="8.3" fill="#71717a">one QueryClient instance for the whole app session</text>
+
+    <rect x="48" y="114" width="524" height="140" rx="10" fill="none" stroke="#7c3aed" stroke-dasharray="4 4"/>
+    <text x="64" y="138" font-size="10.5" font-weight="700" fill="#5b21b6">GoogleProvider (GoogleOAuthProvider)</text>
+
+    <rect x="64" y="150" width="492" height="86" rx="8" fill="#ecfdf5" stroke="#10b981"/>
+    <text x="80" y="174" font-size="10.5" font-weight="700" fill="#065f46">AuthProvider</text>
+    <text x="84" y="192" font-size="8.6" fill="#3f3f46">exposes current-user context to Nav / profile via useAuth()</text>
+    <text x="300" y="208" font-size="11" font-weight="800" fill="#0b1f4d" text-anchor="middle">{'{children}'}</text>
+    <text x="300" y="224" font-size="8.3" fill="#71717a" text-anchor="middle">route content — public / auth / protected pages</text>
+  </svg>
+
+  <p style="font-size:9.4pt">Outside this stack, but still root-level: a <code>FacebookSDK</code> script tag injected in <code>&lt;head&gt;</code>, and a globally mounted <code>&lt;Toaster&gt;</code> (sonner) configured for RTL, positioned top-center, styled per toast type (success/error/warning/info) to match the design tokens.</p>
+
+  <h3>State ownership summary</h3>
+  <table>
+    <tr><th style="width:22%">State</th><th style="width:20%">Owner</th><th>Lifetime / notes</th></tr>
+    <tr><td>Server data (subjects, lessons, questions, current user)</td><td>TanStack Query</td><td>Cached per query key, refetched on demand; devtools enabled in dev.</td></tr>
+    <tr><td>Access / refresh tokens</td><td><code>localStorage</code> via <code>authStorage</code></td><td>Persisted across reloads; read directly by Axios interceptors and route guards (not part of React state at all).</td></tr>
+    <tr><td>Sign-up-in-progress state (phone, OTP cooldown)</td><td>Zustand (<code>useAuthStore</code>)</td><td>In-memory only, cleared on <code>clearPhoneData()</code>; survives navigation between auth screens.</td></tr>
+    <tr><td>Theme (light/dark)</td><td>next-themes</td><td>Persisted via next-themes' own storage; applied as a class on <code>&lt;html&gt;</code>.</td></tr>
+    <tr><td>Form state</td><td>react-hook-form (local to each form)</td><td>Not lifted to global state; validated with Zod on submit.</td></tr>
+    <tr><td>Planner data (days, tasks, sessions)</td><td>Local <code>useState</code> over a static import</td><td>Not persisted; resets on reload. See gap analysis.</td></tr>
+  </table>
+
+  <div class="pagenum">10</div>
+</section>
+
+<!-- ============ PAGE 11 — DATA FLOW ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 3.3</div><h1>Data Flow: Component → API</h1></div></div>
+  <p>Every real data operation in the app follows the same four-layer path. This consistency is one of the codebase's strongest architectural traits — a new feature can be added by following the same recipe every time.</p>
+
+  <svg viewBox="0 0 700 210" width="100%" height="210" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
+    <g font-size="10">
+      <rect x="0" y="70" width="150" height="60" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+      <text x="75" y="95" text-anchor="middle" font-weight="700" fill="#1d3f91">Component</text>
+      <text x="75" y="112" text-anchor="middle" font-size="8" fill="#3f3f46">e.g. SubjectsPage</text>
+
+      <rect x="185" y="70" width="150" height="60" rx="10" fill="#f5f3ff" stroke="#7c3aed"/>
+      <text x="260" y="95" text-anchor="middle" font-weight="700" fill="#5b21b6">React Query hook</text>
+      <text x="260" y="112" text-anchor="middle" font-size="8" fill="#3f3f46">useGetSubjects()</text>
+
+      <rect x="370" y="70" width="150" height="60" rx="10" fill="#fff7ed" stroke="#f59e0b"/>
+      <text x="445" y="95" text-anchor="middle" font-weight="700" fill="#92400e">Service</text>
+      <text x="445" y="112" text-anchor="middle" font-size="8" fill="#3f3f46">subjectService.getAll()</text>
+
+      <rect x="555" y="70" width="145" height="60" rx="10" fill="#ecfdf5" stroke="#10b981"/>
+      <text x="627" y="95" text-anchor="middle" font-weight="700" fill="#065f46">axiosInstance</text>
+      <text x="627" y="112" text-anchor="middle" font-size="8" fill="#3f3f46">interceptors + baseURL</text>
+    </g>
+    <g stroke="#a1a1aa" stroke-width="2" fill="none" marker-end="url(#arrow)">
+      <path d="M150,100 L185,100"/>
+      <path d="M335,100 L370,100"/>
+      <path d="M520,100 L555,100"/>
+    </g>
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#a1a1aa"/></marker>
+    </defs>
+    <text x="350" y="170" text-anchor="middle" font-size="9.5" fill="#3f3f46">.NET backend API — https://motqin-demo-2.runasp.net/api</text>
+    <path d="M627,130 L627,150 L350,150 L350,158" stroke="#a1a1aa" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  </svg>
+
+  <h3>Concrete example — Subjects page</h3>
+  <ol style="font-size:9.4pt">
+    <li><code>SubjectsPage</code> calls <code>useGetSubjects()</code> — a thin React Query <code>useQuery</code> wrapper.</li>
+    <li>The hook's <code>queryFn</code> calls a typed service function that knows the URL (<code>API_ROUTES.SUBJECTS.GET_ALL</code>) and return shape.</li>
+    <li>The service calls the shared <code>axiosInstance</code>, which injects <code>Authorization: Bearer &lt;token&gt;</code> and unwraps the backend's response envelope.</li>
+    <li>On error, the response interceptor shows a toast automatically — the component itself only needs to render <code>isPending</code> / <code>isError</code> states, never handle errors directly.</li>
+  </ol>
+
+  <div class="callout">
+    <strong>Why this matters for the graduation write-up</strong>
+    This is a textbook layered architecture (presentation → data-access hook → service → HTTP client), which keeps components free of fetch/error-handling logic and makes the same pattern trivially reusable for new features (e.g. adding the Planner's real API integration is "just" writing <code>planner.service.ts</code> + a matching hook).
+  </div>
+
+  <div class="pagenum">11</div>
+</section>
+
+<!-- ============ PAGE 12 — AUTH ARCHITECTURE ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 3.4</div><h1>Authentication &amp; Token Refresh Architecture</h1></div></div>
+  <p>This is the most architecturally mature part of the frontend. Access tokens are short-lived JWTs; refresh tokens are longer-lived and single-use (rotated on every refresh). Two problems had to be solved beyond a textbook interceptor: <strong>multiple open tabs</strong> refreshing at once, and <strong>distinguishing a truly expired session from a transient network failure</strong>.</p>
+
+  <svg viewBox="0 0 700 250" width="100%" height="250" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
+    <rect x="0" y="0" width="700" height="250" rx="10" fill="#f9fafb"/>
+    <text x="16" y="22" font-size="11" font-weight="700" fill="#0b1f4d">Cross-tab refresh coordination</text>
+
+    <rect x="20" y="36" width="200" height="90" rx="8" fill="#eff6ff" stroke="#2563eb"/>
+    <text x="120" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#1d3f91">Tab A (leader)</text>
+    <text x="34" y="76" font-size="8.3" fill="#3f3f46">1. 401 received</text>
+    <text x="34" y="90" font-size="8.3" fill="#3f3f46">2. acquireRefreshLock()</text>
+    <text x="34" y="104" font-size="8.3" fill="#3f3f46">3. POST /auth/refresh-token</text>
+    <text x="34" y="118" font-size="8.3" fill="#3f3f46">4. writes new tokens to localStorage</text>
+
+    <rect x="250" y="36" width="200" height="90" rx="8" fill="#fff7ed" stroke="#f59e0b"/>
+    <text x="350" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Tab B (follower)</text>
+    <text x="264" y="76" font-size="8.3" fill="#3f3f46">1. 401 received</text>
+    <text x="264" y="90" font-size="8.3" fill="#3f3f46">2. sees lock held → waits</text>
+    <text x="264" y="104" font-size="8.3" fill="#3f3f46">3. polls localStorage (150ms)</text>
+    <text x="264" y="118" font-size="8.3" fill="#3f3f46">4. reuses Tab A's new token</text>
+
+    <rect x="480" y="36" width="200" height="90" rx="8" fill="#fef2f2" stroke="#ef4444"/>
+    <text x="580" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b">localStorage key</text>
+    <text x="494" y="76" font-size="8.3" fill="#3f3f46">auth:refreshLock</text>
+    <text x="494" y="90" font-size="8.3" fill="#3f3f46">10s TTL, jittered check</text>
+    <text x="494" y="104" font-size="8.3" fill="#3f3f46">prevents same-instant race</text>
+    <text x="494" y="118" font-size="8.3" fill="#3f3f46">between tabs opened together</text>
+
+    <text x="16" y="150" font-size="10.5" font-weight="700" fill="#0b1f4d">Transient vs. terminal failure classification</text>
+    <text x="20" y="170" font-size="8.6" fill="#3f3f46">isAuthRejection(error) → true only for HTTP 400 / 401 / 403 (this backend returns 400, not 401, for an invalid/expired refresh token)</text>
+    <text x="20" y="186" font-size="8.6" fill="#3f3f46">→ true: force logout + redirect to /sign-in, clear localStorage</text>
+    <text x="20" y="202" font-size="8.6" fill="#3f3f46">→ false (network error, timeout, 5xx, CORS): retry up to 3× with 500ms/1000ms backoff, never wipe the session</text>
+    <text x="20" y="222" font-size="8.6" fill="#3f3f46">Proactive refresh: useAutoRefresh() decodes the JWT's exp claim and schedules a refresh 60s before expiry, re-armed on tab visibility change.</text>
+  </svg>
+
+  <div class="callout ok" style="margin-top:8px">
+    <strong>Engineering highlight</strong>
+    Handling refresh-token rotation across multiple tabs correctly is a genuinely non-trivial distributed-coordination problem — most student (and many production) apps skip it and end up with random logout bugs when a user has two tabs open. This is a strong section to expand on in the graduation write-up's "technical depth" discussion.
+  </div>
+
+  <div class="pagenum">12</div>
+</section>
+
+<!-- ============ PAGE 13 — LANDING PAGE ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 4.1</div><h1>Landing Page &amp; Navigation</h1></div></div>
+  <p>The public landing page (<code>(public)/page.tsx</code>) introduces Motqin with a hero section and a bento-style feature grid linking to each core module. It is fully static/marketing at this stage — no data fetching.</p>
+
+  <div class="mockup-frame">
+    <div class="mockup-bar"><span></span><span></span><span></span></div>
+    <svg viewBox="0 0 660 340" width="100%" height="340" xmlns="http://www.w3.org/2000/svg" font-family="Cairo, Inter">
+      <rect width="660" height="340" fill="#f8fafc"/>
+      <rect width="660" height="120" fill="#eef2ff"/>
+      <text x="640" y="40" text-anchor="end" font-size="16" font-weight="800" fill="#1e3a8a">متقن</text>
+      <text x="640" y="70" text-anchor="end" font-size="14" font-weight="700" fill="#1e3a8a">.أتقن تركيزك. أتقن مستقبلك</text>
+      <rect x="500" y="86" width="60" height="22" rx="11" fill="#fff" stroke="#1e3a8a"/><text x="530" y="101" text-anchor="middle" font-size="8" fill="#1e3a8a">دليل</text>
+      <rect x="565" y="86" width="75" height="22" rx="11" fill="#1e3a8a"/><text x="602" y="101" text-anchor="middle" font-size="8" fill="#fff">أبدأ الان</text>
+
+      <!-- bento grid -->
+      <rect x="16" y="136" width="380" height="190" rx="14" fill="#93c5fd"/>
+      <text x="30" y="160" font-size="12" font-weight="800" fill="#0b1f4d">Planner</text>
+      <text x="30" y="176" font-size="8" fill="#1e3a8a">Plan your study sessions and track progress</text>
+      <text x="30" y="310" font-size="8" fill="#0b1f4d">Tasks done 17/20 · Streak 5 days</text>
+
+      <rect x="404" y="136" width="120" height="235" rx="14" fill="#a78bfa"/>
+      <text x="464" y="160" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">AI Teacher</text>
+      <text x="464" y="176" text-anchor="middle" font-size="8" fill="#f3e8ff">Get instant help</text>
+
+      <rect x="532" y="136" width="112" height="110" rx="14" fill="#fcd34d"/>
+      <text x="588" y="160" text-anchor="middle" font-size="10" font-weight="800" fill="#78350f">Competitions</text>
+      <text x="588" y="176" text-anchor="middle" font-size="7.5" fill="#78350f">Rank #3 · 2,450 pts</text>
+
+      <rect x="16" y="334" width="0" height="0"/>
+    </svg>
+  </div>
+  <p class="mockup-caption">Fig. 4.1 — UI reconstructed from <code>app/(public)/page.tsx</code> source (bento-grid layout, real copy/stats as hardcoded in the component). Not a live capture.</p>
+
+  <h3>Navigation (<code>components/Navbar/Nav.tsx</code>)</h3>
+  <p style="font-size:9.4pt">A single responsive nav bar renders differently based on auth state: guests see "تسجيل الدخول / إنشاء حساب" (sign in / sign up) links; authenticated users see an avatar + first-name dropdown (<code>UserMenu</code>) instead. Auth state comes from <code>useAuth()</code> (public auth context), independent of the (protected) layout's own token check.</p>
+
+  <div class="pagenum">13</div>
+</section>
+
+<!-- ============ PAGE 14 — AUTH FLOW 1 ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 4.2</div><h1>Authentication Flow (1/2)</h1></div></div>
+  <p>Sign-in supports three methods on one screen: phone number + OTP, Google, and Facebook. Sign-up is a guided multi-step flow: register phone → verify OTP → complete profile.</p>
+
+  <div class="mockup-frame">
+    <div class="mockup-bar"><span></span><span></span><span></span></div>
+    <svg viewBox="0 0 660 300" width="100%" height="300" xmlns="http://www.w3.org/2000/svg" font-family="Cairo, Inter">
+      <rect width="660" height="300" fill="#fff"/>
+      <rect x="0" y="0" width="660" height="300" fill="#eef2ff"/>
+      <rect x="380" y="30" width="260" height="240" rx="20" fill="#fff" stroke="#e4e4e7"/>
+      <text x="600" y="60" text-anchor="end" font-size="15" font-weight="800" fill="#111">تسجيل الدخول</text>
+      <rect x="400" y="76" width="220" height="34" rx="10" fill="#1877f2"/><text x="510" y="98" text-anchor="middle" font-size="9" fill="#fff">المتابعة باستخدام فيسبوك</text>
+      <rect x="400" y="118" width="220" height="34" rx="10" fill="#fff" stroke="#d4d4d8"/><text x="510" y="140" text-anchor="middle" font-size="9" fill="#111">المتابعة باستخدام جوجل</text>
+      <text x="600" y="168" text-anchor="end" font-size="8.5" fill="#2563eb">إنشاء حساب</text>
+      <text x="490" y="168" text-anchor="end" font-size="8.5" fill="#71717a">ليس لديك حساب.</text>
+      <rect x="400" y="182" width="220" height="34" rx="10" fill="#fafafa" stroke="#d4d4d8"/><text x="600" y="204" text-anchor="end" font-size="9" fill="#71717a">+20 10XXXXXXXX</text>
+      <rect x="400" y="226" width="220" height="34" rx="10" fill="#111"/><text x="510" y="248" text-anchor="middle" font-size="9" fill="#fff">تسجيل دخول</text>
+      <text x="180" y="150" text-anchor="middle" font-size="12" font-weight="800" fill="#1e3a8a">متقن</text>
+    </svg>
+  </div>
+  <p class="mockup-caption">Fig. 4.2 — Sign-in screen, reconstructed from <code>app/(auth)/sign-in/page.tsx</code> (RTL form, right column illustration).</p>
+
+  <h3>Sign-up sequence</h3>
+  <svg viewBox="0 0 700 90" width="100%" height="90" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
+    <g font-size="9.5" font-weight="700">
+      <rect x="0" y="18" width="150" height="40" rx="20" fill="#2563eb"/><text x="75" y="42" text-anchor="middle" fill="#fff">/sign-up</text>
+      <rect x="185" y="18" width="150" height="40" rx="20" fill="#7c3aed"/><text x="260" y="42" text-anchor="middle" fill="#fff">/verify-phone</text>
+      <rect x="370" y="18" width="150" height="40" rx="20" fill="#10b981"/><text x="445" y="42" text-anchor="middle" fill="#fff">/complete-profile</text>
+      <rect x="555" y="18" width="145" height="40" rx="20" fill="#0b1f4d"/><text x="627" y="42" text-anchor="middle" fill="#fff">/ (home)</text>
+    </g>
+    <g stroke="#a1a1aa" stroke-width="2" fill="none" marker-end="url(#a2)"><path d="M150,38 L185,38"/><path d="M335,38 L370,38"/><path d="M520,38 L555,38"/></g>
+    <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#a1a1aa"/></marker></defs>
+    <text x="75" y="80" text-anchor="middle" font-size="7.8" fill="#71717a">registerPhone()</text>
+    <text x="260" y="80" text-anchor="middle" font-size="7.8" fill="#71717a">verifyPhone() + resend/cooldown</text>
+    <text x="445" y="80" text-anchor="middle" font-size="7.8" fill="#71717a">completeProfile() → tokens issued</text>
+  </svg>
+  <p style="font-size:9.4pt">Phone number and OTP-resend state (cooldown seconds, resends remaining) is carried between these three screens via the Zustand <code>useAuthStore</code> rather than URL params or re-entry, so the user never has to retype their number.</p>
+
+  <div class="pagenum">14</div>
+</section>
+
+<!-- ============ PAGE 15 — AUTH FLOW 2 ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 4.2</div><h1>Authentication Flow (2/2) — Endpoints &amp; Guards</h1></div></div>
+
+  <table>
+    <tr><th>Action</th><th>Endpoint</th><th>Frontend entry point</th></tr>
+    <tr><td>Register by phone</td><td class="mono">POST /auth/register-phone</td><td><code>useRegisterPhone</code> → sign-up page</td></tr>
+    <tr><td>Login by phone (request OTP)</td><td class="mono">POST /auth/phone-logIn-request</td><td><code>useLoginPhone</code> → sign-in page</td></tr>
+    <tr><td>Verify OTP</td><td class="mono">POST /auth/phone-verify</td><td><code>useVerifyPhone</code> → verify-phone page</td></tr>
+    <tr><td>Resend OTP</td><td class="mono">(same, re-triggered)</td><td><code>useResendOtp</code> — enforces cooldown from store</td></tr>
+    <tr><td>Complete profile</td><td class="mono">POST /auth/phone-complete-signup</td><td><code>useCompleteProfile</code> → issues tokens</td></tr>
+    <tr><td>Google login</td><td class="mono">POST /auth/google</td><td><code>useGoogleLogin</code> ← <code>GoogleSignIn</code> ID token</td></tr>
+    <tr><td>Facebook login</td><td class="mono">POST /auth/facebook</td><td><code>useFacebookLogin</code> ← FB SDK access token</td></tr>
+    <tr><td>Current user</td><td class="mono">GET /users/me</td><td><code>useCurrentUser</code> — Nav avatar, Profile page</td></tr>
+    <tr><td>Refresh tokens</td><td class="mono">POST /auth/refresh-token</td><td><code>refreshTokens()</code> in <code>lib/axios.ts</code></td></tr>
+    <tr><td>Logout</td><td class="mono">POST /auth/logout</td><td><code>useLogout</code> — clears local tokens + server session</td></tr>
+  </table>
+
+  <h3>Route guarding</h3>
+  <p style="font-size:9.4pt">Every route under <code>(protected)</code> checks <code>authStorage.getAccessToken()</code> in a <code>useEffect</code> and redirects to <code>/sign-in</code> if absent — implemented identically in <code>(protected)/layout.tsx</code> and again in the standalone <code>ProtectedRoute</code> component. This is a client-side-only guard: because every protected page is a Client Component, there's a brief flash where <code>null</code> is rendered before the redirect fires, and the guard offers no protection against a user with dev tools directly hitting the backend — the backend's own JWT validation is the real security boundary here, as it should be.</p>
+
+  <div class="callout warn">
+    <strong>Observed rough edges</strong>
+    A few debug <code>console.log</code> calls remain in shipped code (e.g. <code>useGoogleLogin</code>, the home page, subject pages) — harmless but worth stripping before a public build. Route guarding is duplicated across three places that don't agree with each other: <code>(protected)/layout.tsx</code> and <code>ProtectedRoute.tsx</code> both correctly check <code>localStorage</code> for a token, but a third file, <code>middleware.ts</code>, also exists at the project root with its own (currently disabled) guard — <code>isLoggedIn</code> is hardcoded to <code>true</code> and its route names (<code>/signin</code>, <code>/signup</code>, <code>/dashboard</code>) don't match the app's real routes (<code>/sign-in</code>, <code>/sign-up</code>, <code>/</code>). It has no effect today, but its presence is worth knowing about (see Section 5.2).
+  </div>
+
+  <div class="pagenum">15</div>
+</section>
+
+<!-- ============ PAGE 16 — AI TEACHER ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 4.3</div><h1>AI Teacher (Chat Interface)</h1></div></div>
+  <p>Route: <code>/Ai-Teacher</code>. A three-part chat layout — subject sidebar, scrolling message window, and a text input with a (currently inert) mic button — built as its own mini client-state app (<code>ChatLayoutt</code>) independent of React Query, since chat messages aren't a cached server resource here.</p>
+
+  <div class="mockup-frame">
+    <div class="mockup-bar"><span></span><span></span><span></span></div>
+    <svg viewBox="0 0 660 300" width="100%" height="300" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
+      <rect width="660" height="300" fill="#f4f4f5"/>
+      <rect x="0" y="0" width="170" height="300" fill="#fff" stroke="#e4e4e7"/>
+      <text x="16" y="26" font-size="10" font-weight="700" fill="#111">Lesson Topics</text>
+      <rect x="12" y="36" width="146" height="26" rx="8" fill="#dbeafe"/><text x="20" y="53" font-size="8.5" fill="#1d4ed8">Introduction</text>
+      <text x="20" y="84" font-size="8.5" fill="#3f3f46">Key Concepts</text>
+      <text x="20" y="112" font-size="8.5" fill="#3f3f46">Examples</text>
+      <text x="20" y="140" font-size="8.5" fill="#3f3f46">Practice Questions</text>
+
+      <!-- messages -->
+      <circle cx="196" cy="70" r="14" fill="#c4b5fd"/>
+      <rect x="216" y="56" width="260" height="30" rx="14" fill="#fff" stroke="#e4e4e7"/>
+      <text x="230" y="75" font-size="8.5" fill="#111">Can you explain photosynthesis simply?</text>
+
+      <rect x="420" y="100" width="220" height="30" rx="14" fill="#2563eb"/>
+      <text x="620" y="119" text-anchor="end" font-size="8.5" fill="#fff">Sure — let's break it down step by step...</text>
+
+      <!-- input bar -->
+      <rect x="170" y="256" width="490" height="40" fill="#fff" stroke="#e4e4e7"/>
+      <circle cx="196" cy="276" r="12" fill="#f4f4f5"/>
+      <rect x="220" y="264" width="360" height="24" rx="10" fill="#f4f4f5"/>
+      <text x="232" y="280" font-size="8" fill="#a1a1aa">Ask your AI Teacher...</text>
+      <circle cx="632" cy="276" r="14" fill="#2563eb"/>
+    </svg>
+  </div>
+  <p class="mockup-caption">Fig. 4.3 — Reconstructed from <code>ChatLayout.client.tsx</code>, <code>ChatWindow.tsx</code>, <code>ChatInput.tsx</code>, <code>Sidebar.tsx</code>.</p>
+
+  <h3>How a message round-trip works today</h3>
+  <ol style="font-size:9.4pt">
+    <li>User sends text → <code>sendMessage()</code> POSTs to <code>{'{NEXT_PUBLIC_AI_API_URL}'}/chat</code> with <code>{'{'} message, lesson_id: "default", request_type: "explain" {'}'}</code>.</li>
+    <li>The reply text comes back, then <code>fetchSpeech()</code> immediately POSTs that reply to a <strong>hardcoded</strong> <code>http://127.0.0.1:8000/talk</code> to get a TTS audio blob.</li>
+    <li>The audio blob is converted to an object URL and attached to the assistant's message bubble as an inline <code>&lt;audio&gt;</code> player.</li>
+  </ol>
+
+  <div class="callout gap">
+    <strong>Known issues to fix</strong>
+    <code>lesson_id</code> is always the literal string "default" — the chat isn't yet aware of which subject/lesson the student is on, even though the sidebar visually implies lesson context. The TTS URL is hardcoded to localhost instead of using <code>NEXT_PUBLIC_AI_API_URL</code>, so voice replies will silently fail outside local development. No conversation history is persisted — refreshing the page loses the chat.
+  </div>
+
+  <div class="pagenum">16</div>
+</section>
+
+<!-- ============ PAGE 17 — SUBJECTS/LESSONS ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 4.4</div><h1>Subjects → Lessons → Quiz &amp; Progress (1/2)</h1></div></div>
+  <p>This is the most complete end-to-end data flow in the app: three nested dynamic routes, each backed by a real React Query hook and a real backend endpoint.</p>
+
+  <svg viewBox="0 0 700 70" width="100%" height="70" xmlns="http://www.w3.org/2000/svg" font-family="Inter">
+    <g font-size="9.5" font-weight="700">
+      <rect x="0" y="14" width="150" height="36" rx="18" fill="#2563eb"/><text x="75" y="36" text-anchor="middle" fill="#fff">/subjects</text>
+      <rect x="185" y="14" width="180" height="36" rx="18" fill="#7c3aed"/><text x="275" y="36" text-anchor="middle" fill="#fff">/subjects/[id]</text>
+      <rect x="400" y="14" width="230" height="36" rx="18" fill="#10b981"/><text x="515" y="36" text-anchor="middle" fill="#fff">/subjects/[id]/[lessonId]</text>
+    </g>
+    <g stroke="#a1a1aa" stroke-width="2" fill="none" marker-end="url(#a3)"><path d="M150,32 L185,32"/><path d="M365,32 L400,32"/></g>
+    <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#a1a1aa"/></marker></defs>
+  </svg>
+  <p style="font-size:9.2pt; text-align:center; color:#71717a; margin-top:-6px">useGetSubjects() → GET /subjects &nbsp;·&nbsp; useGetLessons(id) → GET /lessons &nbsp;·&nbsp; useGetQuestionsByLesson(id) → GET /questions/by-lesson</p>
+
+  <div class="mockup-frame">
+    <div class="mockup-bar"><span></span><span></span><span></span></div>
+    <svg viewBox="0 0 660 220" width="100%" height="220" xmlns="http://www.w3.org/2000/svg" font-family="Cairo, Inter">
+      <rect width="660" height="220" fill="#f4f4f5"/>
+      <text x="620" y="34" text-anchor="end" font-size="13" font-weight="800" fill="#1e3a8a">أسئلة الدرس</text>
+      <rect x="500" y="20" width="120" height="26" rx="13" fill="#2563eb"/><text x="560" y="37" text-anchor="middle" font-size="8.5" fill="#fff">ابدأ</text>
+
+      <rect x="330" y="60" width="290" height="30" rx="10" fill="#e4e4e7"/>
+      <rect x="500" y="64" width="112" height="22" rx="8" fill="#fff"/><text x="556" y="79" text-anchor="middle" font-size="8" fill="#1d4ed8" font-weight="700">أساسي</text>
+      <text x="470" y="79" text-anchor="middle" font-size="8" fill="#71717a">إضافية</text>
+      <text x="400" y="79" text-anchor="middle" font-size="8" fill="#71717a">متقدم</text>
+
+      <rect x="30" y="106" width="600" height="42" rx="12" fill="#fff" stroke="#e4e4e7"/>
+      <text x="600" y="130" text-anchor="end" font-size="9" fill="#111">ما ناتج جمع 2 + 2 ؟</text>
+      <rect x="30" y="154" width="600" height="42" rx="12" fill="#fff" stroke="#e4e4e7"/>
+      <text x="600" y="178" text-anchor="end" font-size="9" fill="#111">أكمل الفراغ: الماء يتكون من الهيدروجين و ....</text>
+    </svg>
+  </div>
+  <p class="mockup-caption">Fig. 4.4 — Reconstructed from the lesson-questions page: category tabs (أساسي/إضافية/متقدم), type filter, question list, "ابدأ" (Start) button.</p>
+
+  <div class="pagenum">17</div>
+</section>
+
+<!-- ============ PAGE 18 — SUBJECTS/LESSONS 2 ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 4.4</div><h1>Subjects → Lessons → Quiz &amp; Progress (2/2)</h1></div></div>
+
+  <h3>Question authoring</h3>
+  <p style="font-size:9.4pt">Students (or content authors) can add their own questions in two formats — multiple choice and fill-in-the-blank — via <code>AddQuestionForm</code>, which posts to <code>POST /questions/user/mcq</code> or <code>POST /questions/user/fill</code> depending on type. Newly hidden/dismissed questions are tracked client-side by ID (<code>hiddenIds</code>) rather than deleted server-side.</p>
+
+  <h3>What's built vs. what "Quiz &amp; Progress Tracking" requires</h3>
+  <table>
+    <tr><th style="width:34%">Product requirement</th><th style="width:16%">Status</th><th>Detail</th></tr>
+    <tr><td>Browse questions by lesson/category/type</td><td><span class="badge b-done">Implemented</span></td><td>Real API, real filtering UI.</td></tr>
+    <tr><td>Multiple question formats (MCQ, open-ended, ...)</td><td><span class="badge b-partial">Partial</span></td><td>MCQ + fill-in-the-blank exist; open-ended not modeled yet.</td></tr>
+    <tr><td>Difficulty levels</td><td><span class="badge b-partial">Partial</span></td><td>Modeled as three fixed category tabs, not a difficulty score.</td></tr>
+    <tr><td>Taking a quiz / scoring</td><td><span class="badge b-missing">Not started</span></td><td>"ابدأ" links to a <code>/quiz</code> route with no page yet.</td></tr>
+    <tr><td>Performance tracking over time</td><td><span class="badge b-missing">Not started</span></td><td>No results storage or history UI.</td></tr>
+    <tr><td>Spaced repetition scheduling</td><td><span class="badge b-missing">Not started</span></td><td>No logic anywhere in the frontend.</td></tr>
+    <tr><td>Integration with the planner</td><td><span class="badge b-missing">Not started</span></td><td>Planner and quiz systems don't share data yet.</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>Read on this module</strong>
+    The data-fetching foundation (subjects → lessons → questions) is genuinely solid and is the strongest candidate to extend next, since the hardest plumbing (auth, API layer, list/detail routing) is already proven out here.
+  </div>
+
+  <div class="pagenum">18</div>
+</section>
+
+<!-- ============ PAGE 19 — PLANNER ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 4.5</div><h1>Smart Planner</h1></div></div>
+  <p>Route: <code>/planner</code>. A horizontally-arranged weekly view where each day is a collapsible card; clicking a day expands it (Framer Motion transition) and narrows the visible date range around it.</p>
+
+  <div class="mockup-frame">
+    <div class="mockup-bar"><span></span><span></span><span></span></div>
+    <svg viewBox="0 0 660 220" width="100%" height="220" xmlns="http://www.w3.org/2000/svg" font-family="Cairo, Inter">
+      <rect width="660" height="220" fill="#fff"/>
+      <text x="620" y="30" text-anchor="end" font-size="14" font-weight="800" fill="#111">الأسبوع الأول</text>
+      <text x="470" y="30" text-anchor="end" font-size="9" fill="#71717a">18 يونيو - 24 يونيو</text>
+      <g>
+        <rect x="20" y="46" width="82" height="150" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+        <rect x="112" y="46" width="82" height="150" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+        <rect x="204" y="46" width="82" height="150" rx="10" fill="#fff7ed" stroke="#fed7aa"/>
+        <rect x="296" y="46" width="220" height="150" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+        <rect x="524" y="46" width="82" height="150" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+      </g>
+      <text x="405" y="70" text-anchor="middle" font-size="10" font-weight="700" fill="#1d3f91">الأربعاء (expanded)</text>
+      <text x="405" y="90" text-anchor="middle" font-size="8" fill="#3f3f46">21/06 · مزاج: ممتاز</text>
+      <text x="405" y="108" text-anchor="middle" font-size="8" fill="#3f3f46">3/3 مهام مكتملة · 6 ساعات عمل</text>
+      <text x="405" y="126" text-anchor="middle" font-size="8" fill="#3f3f46">5 جلسات تركيز</text>
+      <rect x="316" y="140" width="180" height="18" rx="6" fill="#dbeafe"/><text x="406" y="153" text-anchor="middle" font-size="7.5" fill="#1d4ed8">جلسة المعلم الذكي</text>
+      <rect x="316" y="162" width="180" height="18" rx="6" fill="#dbeafe"/><text x="406" y="175" text-anchor="middle" font-size="7.5" fill="#1d4ed8">تصميم صفحة المواد</text>
+      <text x="60" y="128" text-anchor="middle" font-size="8" fill="#3f3f46">الأحد</text>
+      <text x="153" y="128" text-anchor="middle" font-size="8" fill="#3f3f46">الإثنين</text>
+      <text x="245" y="128" text-anchor="middle" font-size="8" fill="#3f3f46">الثلاثاء</text>
+      <text x="565" y="128" text-anchor="middle" font-size="8" fill="#3f3f46">الخميس</text>
+    </svg>
+  </div>
+  <p class="mockup-caption">Fig. 4.5 — Reconstructed from <code>Planner</code>, <code>DayCard</code>, <code>ExpandedDayCard</code> and the mock dataset in <code>app/data/days.ts</code>.</p>
+
+  <p style="font-size:9.4pt">Each <code>PlannerDay</code> models <code>completedTasks</code>, <code>totalTasks</code>, <code>workingHours</code>, <code>focusSessions</code>, a <code>mood</code> rating, and lists of <code>Task</code> (category, priority, source: manual/ai/goal) and <code>Session</code> (focus-session timers with paused/idle/active/completed status) — a data model already shaped for the real product (AI-sourced tasks, goal-linked tasks, focus sessions) even though it's currently populated from a hardcoded array rather than an API.</p>
+
+  <div class="callout gap">
+    <strong>Gap</strong>
+    Zero backend integration: no <code>planner.service.ts</code>, no React Query hooks, no persistence. This is the single highest-leverage next step, since the Planner is specified as the product's central hub (Section 5.2).
+  </div>
+
+  <div class="pagenum">19</div>
+</section>
+
+<!-- ============ PAGE 20 — SUBSCRIPTION ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 4.6</div><h1>Subscription &amp; Checkout</h1></div></div>
+  <p>Three-tier pricing (<em>أساسي / بريميوم / متقدم</em>) with a period selector (1/3/6/12 months, discounts 0–35%) that live-recalculates price on <code>/subscription</code>, and a full order-summary + refund-policy checkout page at <code>/subscription/checkout</code>.</p>
+
+  <div class="mockup-frame">
+    <div class="mockup-bar"><span></span><span></span><span></span></div>
+    <svg viewBox="0 0 660 210" width="100%" height="210" xmlns="http://www.w3.org/2000/svg" font-family="Cairo, Inter">
+      <rect width="660" height="210" fill="#f4f4f5"/>
+      <text x="330" y="26" text-anchor="middle" font-size="13" font-weight="800" fill="#1e3a8a">اختر خطة الاشتراك المناسبة لك</text>
+      <rect x="30" y="46" width="180" height="150" rx="14" fill="#fff" stroke="#e4e4e7"/>
+      <text x="120" y="70" text-anchor="middle" font-size="10" font-weight="700">أساسي</text>
+      <text x="120" y="90" text-anchor="middle" font-size="14" font-weight="800">79 ج.م</text>
+
+      <rect x="240" y="38" width="180" height="166" rx="14" fill="#0b1f4d"/>
+      <rect x="290" y="30" width="80" height="18" rx="9" fill="#fbbf24"/><text x="330" y="43" text-anchor="middle" font-size="7" fill="#78350f" font-weight="700">الأكثر طلباً</text>
+      <text x="330" y="70" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">بريميوم</text>
+      <text x="330" y="92" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">149 ج.م</text>
+
+      <rect x="450" y="46" width="180" height="150" rx="14" fill="#fff" stroke="#e4e4e7"/>
+      <text x="540" y="70" text-anchor="middle" font-size="10" font-weight="700">متقدم</text>
+      <text x="540" y="90" text-anchor="middle" font-size="14" font-weight="800">349 ج.م</text>
+    </svg>
+  </div>
+  <p class="mockup-caption">Fig. 4.6 — Reconstructed from <code>SubscriptionPage</code> / <code>PlanCard</code>, matching real plan names and prices from <code>app/data/subscriptionPlans.ts</code>.</p>
+
+  <table>
+    <tr><th style="width:30%">Capability</th><th style="width:16%">Status</th><th>Detail</th></tr>
+    <tr><td>Plan comparison + period discount math</td><td><span class="badge b-done">Implemented</span></td><td>Correct client-side calculation of subtotal/discount/total.</td></tr>
+    <tr><td>Checkout order summary</td><td><span class="badge b-done">Implemented</span></td><td>Reads plan/period/account-type from URL search params.</td></tr>
+    <tr><td>Payment processing</td><td><span class="badge b-missing">Not started</span></td><td>"Confirm" button shows <code>toast.success("سيتم تفعيل الدفع قريباً")</code> — a deliberate placeholder, no payment gateway integrated.</td></tr>
+    <tr><td>Account type selector (student/parent/teacher)</td><td><span class="badge b-partial">Scaffolded</span></td><td>Data model exists; UI for it is commented out pending product decision.</td></tr>
+  </table>
+
+  <div class="pagenum">20</div>
+</section>
+
+<!-- ============ PAGE 21 — PROFILE ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 4.7</div><h1>Profile Management</h1></div></div>
+  <p>Route: <code>/profile</code>. Displays and (locally) edits the student's personal information, with real data loaded from <code>GET /users/me</code>.</p>
+
+  <div class="mockup-frame">
+    <div class="mockup-bar"><span></span><span></span><span></span></div>
+    <svg viewBox="0 0 660 220" width="100%" height="220" xmlns="http://www.w3.org/2000/svg" font-family="Cairo, Inter">
+      <rect width="660" height="220" fill="#f4f4f5"/>
+      <rect x="360" y="20" width="280" height="190" rx="16" fill="#fff" stroke="#e4e4e7"/>
+      <text x="620" y="46" text-anchor="end" font-size="11" font-weight="800" fill="#111">المعلومات الشخصية</text>
+      <rect x="560" y="34" width="60" height="24" rx="8" fill="#fff" stroke="#d4d4d8"/><text x="590" y="50" text-anchor="middle" font-size="7.5">تعديل</text>
+      <text x="620" y="76" text-anchor="end" font-size="8" fill="#71717a">الاسم</text>
+      <rect x="376" y="82" width="244" height="24" rx="8" fill="#fff" stroke="#d4d4d8"/>
+      <text x="620" y="126" text-anchor="end" font-size="8" fill="#71717a">البريد الإلكتروني</text>
+      <rect x="376" y="132" width="244" height="24" rx="8" fill="#f4f4f5"/>
+      <text x="620" y="176" text-anchor="end" font-size="8" fill="#71717a">المرحلة التعليمية</text>
+      <rect x="376" y="182" width="244" height="20" rx="8" fill="#f4f4f5"/>
+
+      <circle cx="180" cy="100" r="60" fill="#fff" stroke="#e4e4e7" stroke-width="6"/>
+      <circle cx="180" cy="100" r="46" fill="#e4e4e7"/>
+    </svg>
+  </div>
+  <p class="mockup-caption">Fig. 4.7 — Reconstructed from <code>ProfilePage</code>: photo upload, editable name/region/bio, read-only email/country/educational stage/grade level fields sourced from the backend.</p>
+
+  <div class="callout warn">
+    <strong>Gap</strong>
+    There is no <code>PATCH /users/me</code> (or equivalent) on the backend yet, so "Save" only updates local component state — edits are lost on refresh. Photo upload is wired to a file input with a <code>// TODO: Handle image upload</code> and no actual upload call.
+  </div>
+
+  <div class="pagenum">21</div>
+</section>
+
+<!-- ============ PAGE 22 — GAP ANALYSIS ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 5.1</div><h1>Gap Analysis Against Core Objectives</h1></div></div>
+  <p>Measuring the current frontend against the five pillars from the original product brief:</p>
+
+  <h4>1. AI Teacher — personalized, adaptive tutor</h4>
+  <p style="font-size:9.4pt"><span class="badge b-partial">Partially met</span> Chat UI and a working text+voice round-trip exist. Missing: awareness of which subject/lesson the student is in, adjustable explanation depth ("simplify / deepen"), and any persistence of the conversation.</p>
+
+  <h4>2. App Blocker — time/task-based blocking with Supervisor Mode</h4>
+  <p style="font-size:9.4pt"><span class="badge b-missing">Not met</span> No frontend implementation. This is also the pillar hardest to build as a web app in the first place — see the recommendation on native/OS-level scope in Section 5.2.</p>
+
+  <h4>3. Quiz &amp; Progress Tracking with spaced repetition</h4>
+  <p style="font-size:9.4pt"><span class="badge b-partial">Partially met</span> Question browsing/authoring is real; quiz-taking, scoring, history, and spaced-repetition scheduling are all unbuilt.</p>
+
+  <h4>4. Competitions &amp; Gamification</h4>
+  <p style="font-size:9.4pt"><span class="badge b-missing">Not met</span> Exists only as a hardcoded marketing card ("Rank #3 · 2,450 Points") and a line item in subscription-plan copy.</p>
+
+  <h4>5. Smart Planner — the central, adaptive hub</h4>
+  <p style="font-size:9.4pt"><span class="badge b-partial">Partially met</span> The UI and data model are well-designed and already anticipate the real product (AI-sourced tasks, focus sessions, mood tracking), but it currently has zero connection to a backend, and none of the "detects your most productive hours" / "auto-schedules focus sessions" intelligence exists yet.</p>
+
+  <div class="callout gap" style="margin-top:14px">
+    <strong>Headline gap</strong>
+    Per the project brief, "all modules MUST be interconnected." Today, every module is an island — Planner doesn't know about quiz results, quiz results don't feed spaced repetition, and nothing talks to a (non-existent) App Blocker. Closing this gap is more about backend + integration design than frontend polish, but the frontend's job is to be the layer that visibly ties it together once those pieces exist.
+  </div>
+
+  <div class="pagenum">22</div>
+</section>
+
+<!-- ============ PAGE 23 — ROADMAP 1 ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 5.2</div><h1>Recommended Next Steps (1/2)</h1></div></div>
+  <p>Prioritized by leverage: what unlocks the most product value per unit of engineering effort, given what's already built.</p>
+
+  <div class="roadmap-item">
+    <div class="roadmap-num">1</div>
+    <div><h4>Wire the Planner to a real backend</h4><p>The UI and data model already anticipate the real product. Add <code>planner.service.ts</code> + React Query hooks following the exact pattern used for subjects/lessons/questions; replace <code>app/data/days.ts</code> with fetched data. This is the single highest-leverage change since the Planner is the specified integration hub for every other module.</p></div>
+  </div>
+  <div class="roadmap-item">
+    <div class="roadmap-num">2</div>
+    <div><h4>Give the AI Teacher lesson context</h4><p>Pass the real <code>subjectId</code>/<code>lessonId</code> into <code>sendMessage()</code> instead of the hardcoded <code>"default"</code>; fix the hardcoded <code>localhost:8000</code> TTS URL to use <code>NEXT_PUBLIC_AI_API_URL</code>; persist chat history (even just per-lesson in React Query cache) so it survives navigation.</p></div>
+  </div>
+  <div class="roadmap-item">
+    <div class="roadmap-num">3</div>
+    <div><h4>Build the quiz-taking experience</h4><p>The <code>/quiz</code> route the "ابدأ" button links to doesn't exist yet. This is the natural next screen given how solid the questions data layer already is: question runner, scoring, and a results summary that can later feed spaced-repetition scheduling.</p></div>
+  </div>
+  <div class="roadmap-item">
+    <div class="roadmap-num">4</div>
+    <div><h4>Add a real payment gateway to Checkout</h4><p>The pricing/discount math and UI are done — only the "Confirm payment" action needs a real provider (e.g. Paymob or Fawry, both common for EGP transactions) behind it.</p></div>
+  </div>
+  <div class="roadmap-item">
+    <div class="roadmap-num">5</div>
+    <div><h4>Fix and consolidate route guarding into <code>middleware.ts</code></h4><p>A <code>middleware.ts</code> already exists at the project root but is inert (<code>isLoggedIn</code> hardcoded to <code>true</code>, and it references route paths — <code>/signin</code>, <code>/dashboard</code> — that don't match the app's actual routes). Since auth tokens live in <code>localStorage</code>, real middleware can't read them directly (middleware runs on the edge, before client JS); the fix is to also mirror the access token into an <code>httpOnly</code> cookie on login so middleware can check it server-side, then delete the two duplicated client-side checks in <code>(protected)/layout.tsx</code> and <code>ProtectedRoute.tsx</code> in favor of that one middleware. This removes the current logged-out UI flash and the triplicated logic.</p></div>
+  </div>
+
+  <div class="pagenum">23</div>
+</section>
+
+<!-- ============ PAGE 24 — ROADMAP 2 ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 5.2</div><h1>Recommended Next Steps (2/2)</h1></div></div>
+
+  <div class="roadmap-item">
+    <div class="roadmap-num">6</div>
+    <div><h4>Design the App Blocker's realistic scope</h4><p>True cross-app blocking isn't achievable from a web app's sandbox — it needs a companion mobile app (Android Accessibility/Usage-Stats APIs, or iOS Screen Time API) or a browser/desktop extension. Recommend scoping an MVP now: a "Focus Session" timer inside Motqin itself (blocks navigation within the app, shows a distraction-free mode) as a stepping stone toward real device-level blocking, and documenting the native-app requirement clearly for the project's next phase.</p></div>
+  </div>
+  <div class="roadmap-item">
+    <div class="roadmap-num">7</div>
+    <div><h4>Introduce a minimal Competitions/Gamification model</h4><p>Start small: points for completed quizzes/planner tasks (data already tracked in <code>PlannerDay</code>/<code>Task</code>), a simple leaderboard endpoint, and an achievements list — enough to replace the current hardcoded homepage stats with real ones.</p></div>
+  </div>
+  <div class="roadmap-item">
+    <div class="roadmap-num">8</div>
+    <div><h4>Generate API types from the backend's OpenAPI schema</h4><p>Domain types are currently hand-maintained per feature. Since the backend is .NET (likely already exposing Swagger/OpenAPI), generating TypeScript types automatically (e.g. via <code>openapi-typescript</code>) would remove an entire class of frontend/backend drift bugs — directly relevant given the refresh-token response-shape mismatch already documented in code comments.</p></div>
+  </div>
+  <div class="roadmap-item">
+    <div class="roadmap-num">9</div>
+    <div><h4>Add a profile update endpoint</h4><p>Frontend UI is ready; it just needs a <code>PATCH /users/me</code> (and an image-upload endpoint) on the backend to stop silently discarding edits.</p></div>
+  </div>
+  <div class="roadmap-item">
+    <div class="roadmap-num">10</div>
+    <div><h4>Housekeeping</h4><p>Remove leftover debug <code>console.log</code>s, delete the commented-out account-type selector once a decision is made, and add basic test coverage for the token-refresh logic given how much correctness depends on its timing/locking behavior.</p></div>
+  </div>
+
+  <div class="callout ok" style="margin-top:16px">
+    <strong>Suggested sequencing for the remaining project timeline</strong>
+    Planner integration → Quiz-taking → AI Teacher context fix → route-guard cleanup can realistically happen in parallel with backend work on payments and gamification, since the frontend patterns for all of them already exist in the codebase to copy from.
+  </div>
+
+  <div class="pagenum">24</div>
+</section>
+
+<!-- ============ PAGE 25 — APPENDIX ============ -->
+<section class="page">
+  <div class="pagehead"><div><div class="kicker">Section 5.3</div><h1>Appendix — Dependency &amp; API Reference</h1></div></div>
+
+  <h3>Full dependency list (package.json)</h3>
+  <div class="two-col" style="font-size:8.8pt">
+    <table style="font-size:8.6pt">
+      <tr><th>Package</th><th>Version</th></tr>
+      <tr><td class="mono">next</td><td>16.1.4</td></tr>
+      <tr><td class="mono">react / react-dom</td><td>19.2.3</td></tr>
+      <tr><td class="mono">typescript</td><td>^5</td></tr>
+      <tr><td class="mono">tailwindcss</td><td>^4</td></tr>
+      <tr><td class="mono">@tanstack/react-query</td><td>5.101.1</td></tr>
+      <tr><td class="mono">axios</td><td>1.18.0</td></tr>
+      <tr><td class="mono">zustand</td><td>5.0.14</td></tr>
+      <tr><td class="mono">react-hook-form</td><td>7.71.1</td></tr>
+      <tr><td class="mono">zod</td><td>4.3.6</td></tr>
+      <tr><td class="mono">@hookform/resolvers</td><td>5.2.2</td></tr>
+      <tr><td class="mono">@react-oauth/google</td><td>0.13.5</td></tr>
+      <tr><td class="mono">jwt-decode</td><td>4.0.0</td></tr>
+      <tr><td class="mono">framer-motion</td><td>12.40.0</td></tr>
+      <tr><td class="mono">lottie-react</td><td>2.4.1</td></tr>
+      <tr><td class="mono">lucide-react</td><td>0.563.0</td></tr>
+      <tr><td class="mono">react-icons</td><td>5.5.0</td></tr>
+      <tr><td class="mono">next-themes</td><td>0.4.6</td></tr>
+      <tr><td class="mono">sonner</td><td>2.0.7</td></tr>
+      <tr><td class="mono">@fullcalendar/core, daygrid, react</td><td>6.1.20</td></tr>
+      <tr><td class="mono">shadcn / @base-ui/react</td><td>4.13.0 / 1.6.0</td></tr>
+      <tr><td class="mono">class-variance-authority</td><td>0.7.1</td></tr>
+      <tr><td class="mono">clsx / tailwind-merge</td><td>2.1.1 / 3.4.0</td></tr>
+      <tr><td class="mono">sass</td><td>1.101.0</td></tr>
+    </table>
+  </div>
+
+  <h3>API routes consumed (from <code>app/constants/planner.constants.ts</code>)</h3>
+  <table style="font-size:8.6pt">
+    <tr><th>Group</th><th>Path</th></tr>
+    <tr><td>Auth</td><td class="mono">/auth/register-phone · /auth/phone-logIn-request · /auth/phone-verify · /auth/phone-complete-signup · /auth/google · /auth/facebook · /auth/refresh-token · /auth/logout</td></tr>
+    <tr><td>Users</td><td class="mono">/users/me</td></tr>
+    <tr><td>Subjects</td><td class="mono">/subjects</td></tr>
+    <tr><td>Lessons</td><td class="mono">/lessons</td></tr>
+    <tr><td>Questions</td><td class="mono">/questions/by-lesson · /questions/user/mcq · /questions/user/fill</td></tr>
+  </table>
+  <p style="font-size:8.6pt; color:#71717a">Base URL: <code>https://motqin-demo-2.runasp.net/api</code> (staging/demo .NET backend). AI service base URL is environment-configured separately (<code>NEXT_PUBLIC_AI_API_URL</code>, <code>NEXT_PUBLIC_AI_URL</code>).</p>
+
+  <div class="callout" style="margin-top:10px">
+    <strong>Methodology note</strong>
+    Every claim in this report was verified directly against the frontend source code in this repository (component-by-component read, not inferred from naming alone) as of July 13, 2026. Screenshots in Section 4 are faithful reconstructions of the actual implemented UI (matching real copy, colors, and layout from the source), not live browser captures — this document was generated from a sandboxed environment without a running dev server.
+  </div>
+
+  <div class="pagenum">25</div>
+</section>
+
+</body>
+</html>

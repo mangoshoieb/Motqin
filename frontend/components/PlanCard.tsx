@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/app/lib/utils";
 import { useAnimatedNumber } from "@/app/hooks/useAnimatedNumber";
 import type { SubscriptionPlan } from "@/app/data/subscriptionPlans";
@@ -9,9 +10,11 @@ interface PlanCardProps {
   plan: SubscriptionPlan;
   periodMonths: number;
   discountRate: number; // 0..1
+  accountType: string;
 }
 
-export const PlanCard = ({ plan, periodMonths, discountRate }: PlanCardProps) => {
+export const PlanCard = ({ plan, periodMonths, discountRate, accountType }: PlanCardProps) => {
+  const router = useRouter();
   const finalMonthly = Math.round(plan.monthlyPrice * (1 - discountRate));
   const animatedPrice = useAnimatedNumber(finalMonthly);
   const hasDiscount = discountRate > 0;
@@ -77,8 +80,13 @@ export const PlanCard = ({ plan, periodMonths, discountRate }: PlanCardProps) =>
 
       <button
         type="button"
+        onClick={() =>
+          router.push(
+            `/subscription/checkout?planId=${plan.id}&period=${periodMonths}&accountType=${accountType}`
+          )
+        }
         className={cn(
-          "mt-6 w-full py-3 rounded-full font-semibold transition",
+          "mt-6 w-full py-3 rounded-full font-semibold transition cursor-pointer",
           plan.highlighted
             ? "bg-white text-blue-950 hover:bg-blue-50"
             : "border border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40"

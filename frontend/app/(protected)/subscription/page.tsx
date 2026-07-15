@@ -30,8 +30,8 @@ const SubscriptionPage = () => {
         </p>
       </div>
 
-      <div className="max-w-5xl mx-auto flex flex-wrap items-end justify-center gap-4 mb-10">
-        <div className="flex flex-col gap-1">
+      <div className="max-w-5xl mx-auto flex flex-wrap items-end w-[30vw] justify-center gap-4   mb-10">
+        <div className="flex flex-col flex-1 gap-2">
           <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
             مدة الاشتراك
           </label>
@@ -48,7 +48,7 @@ const SubscriptionPage = () => {
           </select>
         </div>
 
-        <div className="flex flex-col gap-1">
+        {/* <div className="flex flex-1 flex-col gap-1">
           <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
             نوع الحساب
           </label>
@@ -63,7 +63,7 @@ const SubscriptionPage = () => {
               </option>
             ))}
           </select>
-        </div>
+        </div> */}
       </div>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
@@ -73,6 +73,7 @@ const SubscriptionPage = () => {
             plan={plan}
             periodMonths={selectedPeriod.value}
             discountRate={selectedPeriod.discount}
+            accountType={accountType}
           />
         ))}
       </div>

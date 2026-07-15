@@ -41,6 +41,12 @@ interface Lesson {
     questionText: string | null;
     difficultyLevel: string | null;
     questionType: string | null;
+    title: string | null;
+    description: string | null;
+    // Media for the quiz page (not rendered on the categories page) — shown
+    // to the student before they attempt the question there.
+    imageUrl: string | null;
+    audioUrl: string | null;
     answerOptions: string | null; // comma-separated options for MCQ
     correctAnswer: string | null; // MCQ correct option
     correctText: string | null; // fill-in-the-blank correct answer

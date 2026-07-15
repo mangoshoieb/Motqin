@@ -15,9 +15,10 @@ const showApiErrorToast = (error: unknown) => {
   const status = getApiErrorStatus(error);
   const message = getApiErrorMessage(error);
 
-  toast.error(message, {
-    description: status ? `Status: ${status}` : undefined, className: "!bg-red-200/80  !max-w-[500px]",
-  });
+  // toast.error(message, {
+  //   description: status ? `Status: ${status}` : undefined, className: "!bg-red-200/80  !max-w-[500px]",
+  // });
+  console.log(error)
 };
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
