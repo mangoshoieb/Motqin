@@ -16,6 +16,6 @@ export const motqinService = {
     });
 
     return response.data.data;
-  }
+  },
 }
 

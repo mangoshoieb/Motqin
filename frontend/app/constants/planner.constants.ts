@@ -76,6 +76,8 @@ export const API_ROUTES = {
     BY_LESSON: "/questions/by-lesson",
     ADD_MCQ: "/questions/user/mcq",
     ADD_FILL: "/questions/user/fill",
+    START: (questionId: string | number) => `/questions/${questionId}/start`,
+    END: (questionId: string | number) => `/questions/${questionId}/end`,
   },
 
   USERS:{

@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 
 interface QuizCardProps {
-  question: Question;
+  question: SessionItemPayload;
   answer: string;
   onAnswerChange: (value: string) => void;
 }
@@ -64,7 +64,7 @@ export const QuizCard = ({ question, answer, onAnswerChange }: QuizCardProps) =>
           </div>
 
           <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
-            {question.title || question.questionText}
+            {question.questionText}
           </p>
 
           <div className="flex-1 flex flex-col gap-3">
