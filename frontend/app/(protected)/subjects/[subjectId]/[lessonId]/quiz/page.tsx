@@ -45,10 +45,10 @@ const QuizPageContent = () => {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 px-6 py-12">
-      <div className="max-w-5xl mx-auto flex flex-col-reverse lg:flex-row gap-8 items-start">
+    <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 py-12">
+      <div className="max-w-7xl mx-auto flex flex-col-reverse lg:flex-row gap-10 items-start ">
         {groupProgress && (
-          <aside className="w-full lg:w-64 shrink-0">
+          <aside className="w-full lg:w-64 shrink-0 mt-10">
             <GroupProgressSidebar progress={groupProgress} />
           </aside>
         )}
