@@ -8,6 +8,9 @@ interface QuizCardProps {
   question: SessionItemPayload;
   answer: string;
   onAnswerChange: (value: string) => void;
+  // §1/§6.2 — a Filler card reviews an already-finished question; answering
+  // it never changes score or un-finishes the question.
+  isReview?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -15,7 +18,7 @@ const typeLabels: Record<string, string> = {
   FillInTheBlankQuestion: "أكمل الفراغ",
 };
 
-export const QuizCard = ({ question, answer, onAnswerChange }: QuizCardProps) => {
+export const QuizCard = ({ question, answer, onAnswerChange, isReview = false }: QuizCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const options = (question.answerOptions ?? "")
@@ -47,6 +50,11 @@ export const QuizCard = ({ question, answer, onAnswerChange }: QuizCardProps) =>
               {question.questionType && (
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                   {typeLabels[question.questionType] ?? question.questionType}
+                </span>
+              )}
+              {isReview && (
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                  مراجعة
                 </span>
               )}
             </div>

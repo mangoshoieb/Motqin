@@ -1,271 +1,303 @@
-// Pure module driving the quiz session flow. Zero imports from UI,
-// networking, or platform APIs — networking (group-completion reporting)
-// subscribes to this module's outputs from the caller (useLessonSession),
-// it is never invoked from in here.
+// Conforms to Motqin Learning Session Algorithm Spec v3.0 — do not change
+// behavior without bumping the spec and updating the §9 conformance tests.
 //
-// Flow: the lesson's questions are chunked into groups (GROUP_SIZE, last
-// group may be smaller). Within a group, items are chunked into pairs
-// (PAIR_SIZE): present both, then test both, in order. A wrong answer is
-// never retried immediately — it's deferred into a retry queue and
-// resurfaces once, right after the *next* pair boundary, mixed in among the
-// upcoming pairs rather than jumping the line. Once every new pair has been
-// processed, any remaining retries are drained one at a time (looping again
-// on repeat wrong answers) until every item in the group has been answered
-// correctly at least once. Every ANSWER shows a FeedbackCard first — the
-// flow only advances once that's dismissed with CONTINUE. The group then
-// ends on a GroupCompleteCard with stats; CONTINUE_TO_NEXT_GROUP moves on
-// if another group remains.
+// Pure module: init(payload, config) -> state, apply(state, event) -> state.
+// Zero imports from UI, networking, or platform APIs — networking
+// (session-completion reporting) subscribes to this module's outputs from
+// the caller (useLessonSession), it is never invoked from in here.
+//
+// Flow: questions are divided into fixed blocks of BATCH_SIZE, by their
+// position in the payload ("order"). Within a block, questions are
+// introduced INTRO_CHUNK at a time rather than all at once — the second
+// chunk (and any later one) is brought in only when the GAP crunch forces
+// it, before falling back to filler cards. next() runs these checks in
+// order, stopping at the first that applies:
+//   1. re-teach — a question flagged after a wrong answer gets its info
+//      card again immediately, unconditionally. This does NOT touch
+//      lastShown or pendingIntro.
+//   2. advance the block — once every question in the current block is
+//      finished, silently move to the next one (resetting pendingIntro),
+//      or the summary if that was the last block.
+//   3. introduce a chunk — open the block's first INTRO_CHUNK questions,
+//      or continue handing out the rest of a chunk already in progress.
+//   4. test, introduce (crunch fallback), or fill — pick a "studying"
+//      question whose spacing (GAP) allows it; if none qualifies, try
+//      bringing in the block's next chunk first (v3.0's new fallback),
+//      then a filler review (current block, then anywhere earlier in the
+//      lesson), or re-test anyway as a last resort.
+//
+// Info cards consume a turn (so they still add GAP distance) but never set
+// lastShown — only test/filler cards do. That's what lets a freshly
+// introduced question be tested on the very next turn (its lastShown
+// sentinel stays -1, which always clears the gap).
 
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
-  return out;
+function totalBlocks(payloadLength: number, config: SessionConfig): number {
+  return payloadLength === 0 ? 0 : Math.ceil(payloadLength / config.BATCH_SIZE);
 }
 
-function emptyProgress(): ItemProgress {
-  return { attempts: 0, correct: 0, wrong: 0 };
+function blockQuestions(state: SessionState, block: number): QuestionState[] {
+  const start = block * state.config.BATCH_SIZE;
+  const end = Math.min(start + state.config.BATCH_SIZE, state.payload.length);
+  return state.questions.slice(start, end);
 }
 
-function buildGroupFields(
-  group: SessionItemPayload[],
-  config: SessionGroupConfig
-): Pick<
-  SessionState,
-  "pairs" | "pairIndex" | "withinPairIndex" | "phase" | "retryQueue" | "activeRetryItem" | "progress"
-> {
-  return {
-    pairs: chunk(group, config.PAIR_SIZE),
-    pairIndex: 0,
-    withinPairIndex: 0,
-    phase: group.length > 0 ? "present" : "complete",
-    retryQueue: [],
-    activeRetryItem: null,
-    progress: Object.fromEntries(group.map((it) => [it.questionId, emptyProgress()])),
-  };
+function replaceQuestion(
+  questions: QuestionState[],
+  order: number,
+  patch: Partial<QuestionState>
+): QuestionState[] {
+  return questions.map((q) => (q.order === order ? { ...q, ...patch } : q));
 }
 
-function buildGroupStats(state: SessionState): GroupStats {
-  const group = state.pairs.flat();
-  let firstTryCorrectCount = 0;
-  let totalWrongAttempts = 0;
+function emptyStats(): SessionStats {
+  return { testCards: 0, fillerCards: 0, correct: 0, wrong: 0 };
+}
 
-  for (const it of group) {
-    const p = state.progress[it.questionId];
-    if (p.correct > 0 && p.wrong === 0) firstTryCorrectCount++;
-    totalWrongAttempts += p.wrong;
+function withCard(state: SessionState, card: SessionCard): SessionState {
+  return { ...state, currentCard: card };
+}
+
+function byLastShownThenOrder(a: QuestionState, b: QuestionState): number {
+  return a.lastShown !== b.lastShown ? a.lastShown - b.lastShown : a.order - b.order;
+}
+
+function next(state: SessionState): SessionState {
+  const T = state.turn + 1;
+
+  // STEP 1 — re-teach after a wrong answer (highest priority). Does not
+  // touch lastShown or pendingIntro — only clears the flag and consumes a turn.
+  if (state.reteach !== null) {
+    const item = state.payload[state.reteach];
+    return withCard({ ...state, reteach: null, turn: T }, { type: "info", item });
   }
 
-  return {
-    groupIndex: state.groupIndex,
-    itemCount: group.length,
-    firstTryCorrectCount,
-    totalWrongAttempts,
-    accuracy: group.length > 0 ? firstTryCorrectCount / group.length : 0,
-  };
-}
-
-function deriveCard(state: SessionState): SessionCard {
-  switch (state.phase) {
-    case "present":
-      return { type: "presentation", item: state.pairs[state.pairIndex][state.withinPairIndex] };
-    case "test":
-      return { type: "test", item: state.pairs[state.pairIndex][state.withinPairIndex] };
-    case "retry-present":
-    case "drain-present":
-      return { type: "presentation", item: state.activeRetryItem! };
-    case "retry-test":
-    case "drain-test":
-      return { type: "test", item: state.activeRetryItem! };
-    case "complete":
-      return {
-        type: "group-complete",
-        stats: buildGroupStats(state),
-        hasMoreGroups: state.groupIndex + 1 < state.groups.length,
-      };
+  // STEP 2 — advance the block, resetting pendingIntro on every advance.
+  const blocks = totalBlocks(state.payload.length, state.config);
+  let currentBlock = state.currentBlock;
+  let pendingIntro = state.pendingIntro;
+  while (currentBlock < blocks && blockQuestions(state, currentBlock).every((q) => q.done)) {
+    currentBlock++;
+    pendingIntro = 0;
   }
-}
-
-function withCard(state: SessionState): SessionState {
-  return { ...state, currentCard: deriveCard(state) };
-}
-
-// After finishing the current pair's tests (or a retry/drain test), decide
-// what comes next: another item in the pair, a deferred retry slotted in,
-// the next pair, the drain queue, or group-complete.
-function advanceToNextPairOrDrainOrComplete(state: SessionState): SessionState {
-  const nextPairIndex = state.pairIndex + 1;
-
-  if (nextPairIndex < state.pairs.length) {
-    return withCard({ ...state, pairIndex: nextPairIndex, withinPairIndex: 0, phase: "present" });
+  if (currentBlock >= blocks) {
+    // turn does NOT increment
+    return withCard({ ...state, currentBlock, pendingIntro }, { type: "summary", stats: state.stats });
   }
 
-  if (state.retryQueue.length > 0) {
-    const [activeRetryItem, ...rest] = state.retryQueue;
-    return withCard({
-      ...state,
-      pairIndex: nextPairIndex,
-      retryQueue: rest,
-      activeRetryItem,
-      phase: "drain-present",
+  let working: SessionState = { ...state, currentBlock, pendingIntro };
+
+  // STEP 3 — introduce new questions, a chunk at a time.
+  // 3a — open the block's first chunk if nothing has been seen yet.
+  if (working.pendingIntro === 0 && blockQuestions(working, currentBlock).every((q) => !q.seen)) {
+    working = { ...working, pendingIntro: working.config.INTRO_CHUNK };
+  }
+
+  // 3b
+  if (working.pendingIntro > 0) {
+    const waiting = blockQuestions(working, currentBlock).filter((q) => !q.seen);
+    if (waiting.length > 0) {
+      const q = waiting.reduce((min, w) => (w.order < min.order ? w : min));
+      const item = working.payload[q.order];
+      return withCard(
+        {
+          ...working,
+          questions: replaceQuestion(working.questions, q.order, { seen: true }),
+          pendingIntro: working.pendingIntro - 1,
+          turn: T,
+        },
+        { type: "info", item }
+      );
+    }
+    // chunk ends early; nothing left to introduce — fall through to step 4
+    working = { ...working, pendingIntro: 0 };
+  }
+
+  // STEP 4 — test, introduce (crunch fallback), or fill.
+  const studying = blockQuestions(working, currentBlock).filter((q) => q.seen && !q.done);
+
+  // 4a — eligible = studying questions whose last test/filler is far enough back
+  const eligible = studying.filter((q) => q.lastShown === -1 || T - q.lastShown > working.config.GAP);
+  if (eligible.length > 0) {
+    const q = eligible.reduce((best, it) => {
+      if (it.score !== best.score) return it.score < best.score ? it : best;
+      if (it.lastShown !== best.lastShown) return it.lastShown < best.lastShown ? it : best;
+      return it.order < best.order ? it : best;
     });
+    const item = working.payload[q.order];
+    return withCard(
+      {
+        ...working,
+        questions: replaceQuestion(working.questions, q.order, { lastShown: T }),
+        turn: T,
+      },
+      { type: "test", item }
+    );
   }
 
-  return withCard({ ...state, pairIndex: nextPairIndex, phase: "complete" });
-}
+  // 4b — end-of-block crunch: four fallbacks, in order
 
-function advancePastFeedback(state: SessionState): SessionState {
-  switch (state.phase) {
-    case "test": {
-      if (state.withinPairIndex + 1 < state.pairs[state.pairIndex].length) {
-        return withCard({ ...state, withinPairIndex: state.withinPairIndex + 1 });
-      }
-      // finished this pair's tests — mix in one deferred retry if there is one
-      if (state.retryQueue.length > 0) {
-        const [activeRetryItem, ...rest] = state.retryQueue;
-        return withCard({ ...state, retryQueue: rest, activeRetryItem, phase: "retry-present" });
-      }
-      return advanceToNextPairOrDrainOrComplete(state);
-    }
-    case "retry-test":
-      return advanceToNextPairOrDrainOrComplete({ ...state, activeRetryItem: null });
-    case "drain-test": {
-      const cleared = { ...state, activeRetryItem: null };
-      if (cleared.retryQueue.length > 0) {
-        const [activeRetryItem, ...rest] = cleared.retryQueue;
-        return withCard({ ...cleared, retryQueue: rest, activeRetryItem, phase: "drain-present" });
-      }
-      return withCard({ ...cleared, phase: "complete" });
-    }
-    default:
-      throw new Error(`Cannot advance past feedback from phase "${state.phase}"`);
-  }
-}
-
-function advancePastPresentation(state: SessionState): SessionState {
-  switch (state.phase) {
-    case "present": {
-      if (state.withinPairIndex + 1 < state.pairs[state.pairIndex].length) {
-        return withCard({ ...state, withinPairIndex: state.withinPairIndex + 1 });
-      }
-      return withCard({ ...state, withinPairIndex: 0, phase: "test" });
-    }
-    case "retry-present":
-      return withCard({ ...state, phase: "retry-test" });
-    case "drain-present":
-      return withCard({ ...state, phase: "drain-test" });
-    default:
-      throw new Error(`CONTINUE is not valid from phase "${state.phase}"`);
-  }
-}
-
-function handleAnswer(state: SessionState, correct: boolean): SessionState {
-  if (state.currentCard.type !== "test") {
-    throw new Error("ANSWER is only valid while the current card is a TestCard");
+  // 4b(i) — NEW in v3.0: bring in the next chunk instead of filling, if the
+  // block still has anything waiting.
+  const waitingForCrunch = blockQuestions(working, currentBlock).filter((q) => !q.seen);
+  if (waitingForCrunch.length > 0) {
+    const q = waitingForCrunch.reduce((min, w) => (w.order < min.order ? w : min));
+    const item = working.payload[q.order];
+    return withCard(
+      {
+        ...working,
+        questions: replaceQuestion(working.questions, q.order, { seen: true }),
+        pendingIntro: working.config.INTRO_CHUNK - 1,
+        turn: T,
+      },
+      { type: "info", item }
+    );
   }
 
-  const item = state.currentCard.item;
-  const prev = state.progress[item.questionId];
-  const progress = {
-    ...state.progress,
-    [item.questionId]: {
-      attempts: prev.attempts + 1,
-      correct: prev.correct + (correct ? 1 : 0),
-      wrong: prev.wrong + (correct ? 0 : 1),
+  // 4b(ii) — filler from the current block
+  const finishedInBlock = blockQuestions(working, currentBlock).filter((q) => q.done);
+  if (finishedInBlock.length > 0) {
+    const q = [...finishedInBlock].sort(byLastShownThenOrder)[0];
+    const item = working.payload[q.order];
+    return withCard(
+      {
+        ...working,
+        questions: replaceQuestion(working.questions, q.order, { lastShown: T }),
+        turn: T,
+      },
+      { type: "filler", item }
+    );
+  }
+
+  // 4b(iii) — filler from the start of the lesson (smallest order, i.e. earliest)
+  const finishedAnywhere = working.questions.filter((q) => q.done);
+  if (finishedAnywhere.length > 0) {
+    const q = finishedAnywhere.reduce((min, it) => (it.order < min.order ? it : min));
+    const item = working.payload[q.order];
+    return withCard(
+      {
+        ...working,
+        questions: replaceQuestion(working.questions, q.order, { lastShown: T }),
+        turn: T,
+      },
+      { type: "filler", item }
+    );
+  }
+
+  // 4b(iv) — nothing is finished anywhere yet: re-test anyway, gap ignored
+  const q = [...studying].sort(byLastShownThenOrder)[0];
+  const item = working.payload[q.order];
+  return withCard(
+    {
+      ...working,
+      questions: replaceQuestion(working.questions, q.order, { lastShown: T }),
+      turn: T,
     },
-  };
-
-  // A wrong answer is deferred, never retried on the spot — it goes to the
-  // back of the retry queue and surfaces later (see advancePastFeedback).
-  const retryQueue = correct ? state.retryQueue : [...state.retryQueue, item];
-
-  return {
-    ...state,
-    progress,
-    retryQueue,
-    currentCard: { type: "feedback", item, correct },
-  };
+    { type: "test", item }
+  );
 }
 
-function handleContinueToNextGroup(state: SessionState): SessionState {
-  if (state.currentCard.type !== "group-complete" || !state.currentCard.hasMoreGroups) {
-    throw new Error("CONTINUE_TO_NEXT_GROUP is only valid when another group remains");
-  }
-
-  const nextGroupIndex = state.groupIndex + 1;
-  const nextGroup = state.groups[nextGroupIndex] ?? [];
-
-  return withCard({
-    ...state,
-    groupIndex: nextGroupIndex,
-    ...buildGroupFields(nextGroup, state.config),
-  });
-}
-
+// §6 — on an info card, CONTINUE just advances; on a test/filler card,
+// ANSWER updates state per §6/§6.2 and then next() is always called.
 export function apply(state: SessionState, event: SessionEvent): SessionState {
-  if (event.type === "ANSWER") {
-    return handleAnswer(state, event.correct);
+  if (event.type === "CONTINUE") {
+    if (state.currentCard.type !== "info") {
+      throw new Error("CONTINUE is only valid while the current card is an InfoCard");
+    }
+    return next(state);
   }
 
-  if (event.type === "CONTINUE_TO_NEXT_GROUP") {
-    return handleContinueToNextGroup(state);
+  // event.type === "ANSWER"
+  if (state.currentCard.type === "test") {
+    const item = state.currentCard.item;
+    const q = state.questions.find((it) => state.payload[it.order].questionId === item.questionId)!;
+
+    let questions = state.questions;
+    let reteach = state.reteach;
+
+    if (event.correct) {
+      const score = q.score + 1;
+      questions = replaceQuestion(state.questions, q.order, { score, done: score >= state.config.GRADUATE });
+    } else {
+      questions = replaceQuestion(state.questions, q.order, { score: Math.max(0, q.score - 1) });
+      reteach = q.order;
+    }
+
+    const stats: SessionStats = {
+      ...state.stats,
+      testCards: state.stats.testCards + 1,
+      correct: state.stats.correct + (event.correct ? 1 : 0),
+      wrong: state.stats.wrong + (event.correct ? 0 : 1),
+    };
+
+    return next({ ...state, questions, reteach, stats });
   }
 
-  // event.type === "CONTINUE"
-  if (state.currentCard.type === "feedback") {
-    return advancePastFeedback(state);
+  if (state.currentCard.type === "filler") {
+    // §6.2 — recorded for stats only; score/done are untouched.
+    const stats: SessionStats = {
+      ...state.stats,
+      fillerCards: state.stats.fillerCards + 1,
+      correct: state.stats.correct + (event.correct ? 1 : 0),
+      wrong: state.stats.wrong + (event.correct ? 0 : 1),
+    };
+    return next({ ...state, stats });
   }
-  if (state.currentCard.type === "presentation") {
-    return advancePastPresentation(state);
-  }
-  throw new Error(`CONTINUE is not valid while the current card is "${state.currentCard.type}"`);
+
+  throw new Error(`ANSWER is only valid while the current card is a TestCard or FillerCard`);
 }
 
-export function init(allItems: SessionItemPayload[], config: SessionGroupConfig): SessionState {
-  const groups = chunk(allItems, config.GROUP_SIZE);
-  const firstGroup = groups[0] ?? [];
+// §8 — "the screen must always offer an End session button that jumps to
+// the summary with the current numbers."
+export function endSession(state: SessionState): SessionState {
+  return withCard(state, { type: "summary", stats: state.stats });
+}
 
-  const state: SessionState = {
+export function init(payload: SessionItemPayload[], config: SessionConfig): SessionState {
+  const questions: QuestionState[] = payload.map((_, order) => ({
+    order,
+    seen: false,
+    done: false,
+    score: 0,
+    lastShown: -1,
+  }));
+
+  const bootstrap: SessionState = {
     config,
-    groups,
-    groupIndex: 0,
-    ...buildGroupFields(firstGroup, config),
-    currentCard: { type: "group-complete", stats: buildGroupStats0(), hasMoreGroups: false },
+    payload,
+    questions,
+    turn: 0,
+    currentBlock: 0,
+    reteach: null,
+    pendingIntro: 0,
+    currentCard: { type: "summary", stats: emptyStats() }, // placeholder, replaced below
+    stats: emptyStats(),
   };
 
-  return withCard(state);
-}
-
-function buildGroupStats0(): GroupStats {
-  return { groupIndex: 0, itemCount: 0, firstTryCorrectCount: 0, totalWrongAttempts: 0, accuracy: 0 };
+  return next(bootstrap);
 }
 
 // For the sidebar: a 1-3 entry window (previous/current/next) around
-// wherever the student currently is within the group, plus a position
-// counter. Not part of card sequencing — purely a read of current state.
-export function getGroupProgress(state: SessionState): GroupProgress {
-  const group = state.pairs.flat();
-  const total = group.length;
+// wherever the student currently is within the current block, plus a
+// position counter. Not part of card sequencing — purely a read of state.
+export function getBlockProgress(state: SessionState): BlockProgress {
+  const start = state.currentBlock * state.config.BATCH_SIZE;
+  const end = Math.min(start + state.config.BATCH_SIZE, state.payload.length);
+  const blockPayload = state.payload.slice(start, end);
+  const total = blockPayload.length;
 
-  const currentItem = state.currentCard.type !== "group-complete" ? state.currentCard.item : null;
-  const currentIndex = currentItem
-    ? group.findIndex((it) => it.questionId === currentItem.questionId) + 1
-    : total;
+  const currentItem = state.currentCard.type !== "summary" ? state.currentCard.item : null;
+  const foundIndex = currentItem
+    ? blockPayload.findIndex((it) => it.questionId === currentItem.questionId) + 1
+    : 0;
+  const currentIndex = foundIndex > 0 ? foundIndex : total;
 
-  const retryIds = new Set(state.retryQueue.map((it) => it.questionId));
-  if (state.activeRetryItem) retryIds.add(state.activeRetryItem.questionId);
-
-  const items: GroupProgressItem[] = group.map((item, i) => {
+  const items: BlockProgressItem[] = blockPayload.map((item, i) => {
     const index = i + 1;
-    let status: GroupProgressItem["status"];
-    if (index === currentIndex && currentItem) {
-      status = "current";
-    } else if (state.progress[item.questionId].correct > 0) {
-      status = "done";
-    } else if (retryIds.has(item.questionId)) {
-      status = "retry-pending";
-    } else {
-      status = "pending";
-    }
+    const q = state.questions[start + i];
+    let status: BlockProgressItem["status"];
+    if (index === currentIndex && currentItem) status = "current";
+    else if (q.done) status = "done";
+    else status = "pending";
     return { index, item, status };
   });
 
@@ -274,12 +306,12 @@ export function getGroupProgress(state: SessionState): GroupProgress {
   return { current: currentIndex, total, window };
 }
 
-// Text normalization: trim, collapse internal whitespace runs.
+// §6.1 Text normalization: trim, collapse internal whitespace runs.
 export function normalizeText(input: string): string {
   return input.trim().replace(/\s+/g, " ");
 }
 
-// Answer correctness (client-side check), matching the backend's rules.
+// §6.1 Answer correctness (client-side check).
 export function checkAnswer(item: SessionItemPayload, userAnswer: string): boolean {
   if (item.questionType === "MultipleChoiceQuestion") {
     return normalizeText(userAnswer) === normalizeText(item.correctAnswer ?? "");

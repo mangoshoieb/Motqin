@@ -4,21 +4,23 @@ import { CheckCircle2, XCircle } from "lucide-react";
 
 interface FeedbackBannerProps {
   correct: boolean;
-  onContinue: () => void;
 }
 
-// Shown right after ANSWER, before the flow moves on — tells the student
-// whether they got it right, and if not, that it'll come back around later.
-export const FeedbackBanner = ({ correct, onContinue }: FeedbackBannerProps) => {
+// A brief, non-blocking flash after ANSWER — purely a UI overlay, not a
+// card in the algorithm. The flow already advanced to whatever's next
+// (including an immediate re-teach on wrong) by the time this shows; it
+// auto-dismisses on its own (see useLessonSession's feedback timer) rather
+// than waiting for a tap, so re-teach still feels immediate per spec.
+export const FeedbackBanner = ({ correct }: FeedbackBannerProps) => {
   return (
-    <div
-      className={`w-full max-w-xl flex items-center justify-between gap-4 rounded-2xl border p-4 ${
-        correct
-          ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900"
-          : "bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-900"
-      }`}
-    >
-      <div className="flex items-center gap-2">
+    <div className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-6 pointer-events-none">
+      <div
+        className={`flex items-center gap-2 rounded-full border px-4 py-2.5 shadow-lg ${
+          correct
+            ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950 dark:border-emerald-900"
+            : "bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-900"
+        }`}
+      >
         {correct ? (
           <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
         ) : (
@@ -29,19 +31,9 @@ export const FeedbackBanner = ({ correct, onContinue }: FeedbackBannerProps) => 
             correct ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300"
           }`}
         >
-          {correct ? "إجابة صحيحة!" : "إجابة خاطئة — ستظهر لك هذه السؤال مرة أخرى لاحقًا"}
+          {correct ? "إجابة صحيحة!" : "إجابة خاطئة"}
         </p>
       </div>
-
-      <button
-        type="button"
-        onClick={onContinue}
-        className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold text-white transition ${
-          correct ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"
-        }`}
-      >
-        متابعة
-      </button>
     </div>
   );
 };

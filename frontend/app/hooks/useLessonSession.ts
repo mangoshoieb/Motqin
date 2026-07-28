@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { questionService } from "../services/question.service";
 import { sessionReportingService } from "../services/session-reporting.service";
-import { apply, checkAnswer, getGroupProgress, init } from "../lib/session-algorithm";
-import { DEFAULT_GROUP_CONFIG } from "../constants/session.constants";
+import { apply, checkAnswer, endSession, getBlockProgress, init } from "../lib/session-algorithm";
+import { DEFAULT_SESSION_CONFIG } from "../constants/session.constants";
+
+const FEEDBACK_FLASH_MS = 1500;
 
 // The backend has no dedicated session-payload endpoint (confirmed against
 // swagger — only /questions/by-lesson and /questions/by-category-and-lesson
@@ -25,11 +27,10 @@ const toSessionItem = (q: Question): SessionItemPayload => ({
   caseSensitive: q.caseSensitive,
 });
 
-// Drives the grouped pair-based flow (see app/lib/session-algorithm.ts) for
-// one lesson: fetches the question list, keeps the SessionState in React
-// state, and reports a group to the backend exactly once, at the moment it
-// actually completes — never for a group the student abandons partway
-// through, per the "unfinished groups aren't saved" rule.
+// Drives the block/score-based flow (see app/lib/session-algorithm.ts, spec
+// v2.1) for one lesson: fetches the question list, keeps the SessionState
+// in React state, and reports to the backend exactly once, when the whole
+// lesson's Summary is reached.
 export const useLessonSession = (
   lessonId: string,
   filters?: { category?: string; questionType?: string }
@@ -65,18 +66,29 @@ export const useLessonSession = (
   const [initializedFor, setInitializedFor] = useState<Question[] | undefined>(undefined);
   if (questions && questions !== initializedFor && payload) {
     setInitializedFor(questions);
-    setState(init(payload, DEFAULT_GROUP_CONFIG));
+    setState(init(payload, DEFAULT_SESSION_CONFIG));
   }
 
-  // Guards against reporting the same completed group twice (e.g. React
-  // strict mode's double-invoke in dev, or an unrelated re-render).
-  const reportedGroupIndexRef = useRef<number | null>(null);
+  // Non-blocking "correct/wrong" flash — a UI-only overlay, not a real card
+  // in the algorithm, so re-teach/next-block transitions stay immediate.
+  const [feedback, setFeedback] = useState<{ correct: boolean } | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!state || state.currentCard.type !== "group-complete") return;
-    if (reportedGroupIndexRef.current === state.groupIndex) return;
-    reportedGroupIndexRef.current = state.groupIndex;
-    sessionReportingService.reportGroupCompletion(lessonId, state.currentCard.stats);
+    return () => {
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    };
+  }, []);
+
+  // Guards against reporting completion twice (e.g. React strict mode's
+  // double-invoke in dev, or an unrelated re-render).
+  const reportedRef = useRef(false);
+
+  useEffect(() => {
+    if (!state || state.currentCard.type !== "summary") return;
+    if (reportedRef.current) return;
+    reportedRef.current = true;
+    sessionReportingService.reportSessionCompletion(lessonId, state.currentCard.stats);
   }, [state, lessonId]);
 
   const continueCard = () => {
@@ -85,23 +97,30 @@ export const useLessonSession = (
 
   const submitAnswer = (userAnswer: string) => {
     setState((prev) => {
-      if (!prev || prev.currentCard.type !== "test") return prev;
+      if (!prev || (prev.currentCard.type !== "test" && prev.currentCard.type !== "filler")) return prev;
+
       const correct = checkAnswer(prev.currentCard.item, userAnswer);
+
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      setFeedback({ correct });
+      feedbackTimerRef.current = setTimeout(() => setFeedback(null), FEEDBACK_FLASH_MS);
+
       return apply(prev, { type: "ANSWER", correct, userAnswer });
     });
   };
 
-  const continueToNextGroup = () => {
-    setState((prev) => (prev ? apply(prev, { type: "CONTINUE_TO_NEXT_GROUP" }) : prev));
+  const endSessionNow = () => {
+    setState((prev) => (prev ? endSession(prev) : prev));
   };
 
   return {
     isLoading,
     error,
     currentCard: state?.currentCard ?? null,
-    groupProgress: state ? getGroupProgress(state) : null,
+    blockProgress: state ? getBlockProgress(state) : null,
+    feedback,
     continueCard,
     submitAnswer,
-    continueToNextGroup,
+    endSession: endSessionNow,
   };
 };

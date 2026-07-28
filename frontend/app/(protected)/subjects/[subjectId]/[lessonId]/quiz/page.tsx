@@ -1,20 +1,18 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
 
 import { useLessonSession } from "@/app/hooks/useLessonSession";
 import { QuizCard } from "@/components/QuizCard";
 import { PresentationCard } from "@/components/PresentationCard";
 import { FeedbackBanner } from "@/components/FeedbackBanner";
-import { GroupCompleteModal } from "@/components/GroupCompleteModal";
-import { GroupProgressSidebar } from "@/components/GroupProgressSidebar";
+import { SessionSummary } from "@/components/SessionSummary";
+import { BlockProgressSidebar } from "@/components/BlockProgressSidebar";
 
 const QuizPageContent = () => {
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const subjectIdSlug = params.subjectId as string;
   const lessonId = params.lessonId as string;
@@ -23,7 +21,7 @@ const QuizPageContent = () => {
   const category = searchParams.get("category") ?? undefined;
   const questionType = searchParams.get("type") ?? undefined;
 
-  const { isLoading, error, currentCard, groupProgress, continueCard, submitAnswer, continueToNextGroup } =
+  const { isLoading, error, currentCard, blockProgress, feedback, continueCard, submitAnswer, endSession } =
     useLessonSession(lessonId, { category, questionType });
 
   const [answer, setAnswer] = useState("");
@@ -44,83 +42,74 @@ const QuizPageContent = () => {
     );
   }
 
+  if (currentCard.type === "summary") {
+    return (
+      <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 flex flex-col items-center px-6 py-12">
+        <SessionSummary stats={currentCard.stats} backHref={lessonHref} />
+      </div>
+    );
+  }
+
+  const handleSubmit = () => {
+    submitAnswer(answer);
+    setAnswer("");
+  };
+
   return (
-    <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 py-12">
-      <div className="max-w-7xl mx-auto flex flex-col-reverse lg:flex-row gap-10 items-start ">
-        {groupProgress && (
-          <aside className="w-full lg:w-64 shrink-0 mt-10">
-            <GroupProgressSidebar progress={groupProgress} />
+    <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 px-6 py-12">
+      <div className=" mx-auto flex flex-col-reverse lg:flex-row gap-10 items-start">
+        {blockProgress && (
+          <aside className="w-full lg:w-64 shrink-0 mt-9">
+            <BlockProgressSidebar progress={blockProgress} />
           </aside>
         )}
 
         <div className="flex-1 w-full flex flex-col items-center">
-          <div className="w-full max-w-xl flex justify-end mb-4">
-            <Link
-              href={lessonHref}
+          <div className="w-full max-w-2xl flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={endSession}
               className="text-sm text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 transition"
             >
               إنهاء الجلسة
-            </Link>
+            </button>
           </div>
 
-          {currentCard.type === "presentation" && <PresentationCard item={currentCard.item} />}
+          {currentCard.type === "info" && <PresentationCard item={currentCard.item} />}
 
-          {currentCard.type === "test" && (
-            <QuizCard question={currentCard.item} answer={answer} onAnswerChange={setAnswer} />
-          )}
-
-          {currentCard.type === "feedback" && (
-            <QuizCard question={currentCard.item} answer={answer} onAnswerChange={() => {}} />
-          )}
-
-          {(currentCard.type === "presentation" || currentCard.type === "test") && (
-            <div className="w-full max-w-xl flex items-center justify-end mt-6">
-              {currentCard.type === "presentation" ? (
-                <button
-                  type="button"
-                  onClick={continueCard}
-                  className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition"
-                >
-                  متابعة
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => submitAnswer(answer)}
-                  disabled={!answer}
-                  className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition disabled:opacity-40"
-                >
-                  إرسال الإجابة
-                </button>
-              )}
-            </div>
-          )}
-
-          {currentCard.type === "feedback" && (
-            <div className="mt-6">
-              <FeedbackBanner
-                correct={currentCard.correct}
-                onContinue={() => {
-                  setAnswer("");
-                  continueCard();
-                }}
-              />
-            </div>
-          )}
-
-          {currentCard.type === "group-complete" && (
-            <GroupCompleteModal
-              stats={currentCard.stats}
-              hasMoreGroups={currentCard.hasMoreGroups}
-              onContinue={() => {
-                setAnswer("");
-                continueToNextGroup();
-              }}
-              onStop={() => router.push(lessonHref)}
+          {(currentCard.type === "test" || currentCard.type === "filler") && (
+            <QuizCard
+              question={currentCard.item}
+              answer={answer}
+              onAnswerChange={setAnswer}
+              isReview={currentCard.type === "filler"}
             />
           )}
+
+          <div className="w-full max-w-2xl flex items-center justify-end mt-6">
+            {currentCard.type === "info" ? (
+              <button
+                type="button"
+                onClick={continueCard}
+                className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition"
+              >
+                متابعة
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!answer}
+                className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition disabled:opacity-40"
+              >
+                إرسال الإجابة
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {feedback && <FeedbackBanner correct={feedback.correct} />}
     </div>
   );
 };

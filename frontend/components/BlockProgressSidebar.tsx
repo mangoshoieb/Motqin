@@ -1,31 +1,29 @@
 "use client";
 
-import { Check, AlertTriangle } from "lucide-react";
+import { Check } from "lucide-react";
 
-interface GroupProgressSidebarProps {
-  progress: GroupProgress;
+interface BlockProgressSidebarProps {
+  progress: BlockProgress;
 }
 
-const dotStyles: Record<GroupProgressItem["status"], string> = {
+const dotStyles: Record<BlockProgressItem["status"], string> = {
   done: "size-4 bg-emerald-600",
   current: "size-5 bg-blue-600 ring-4 ring-blue-600/20",
-  "retry-pending": "size-4 bg-amber-500",
   pending: "size-3 bg-white border-2 border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700",
 };
 
-const labelStyles: Record<GroupProgressItem["status"], string> = {
+const labelStyles: Record<BlockProgressItem["status"], string> = {
   done: "text-zinc-500 dark:text-zinc-400",
   current: "text-zinc-900 dark:text-zinc-100 font-semibold",
-  "retry-pending": "text-amber-600 dark:text-amber-400",
   pending: "text-zinc-400 dark:text-zinc-600",
 };
 
 // A vertical connected-dot timeline (line + dot per question), windowed to
 // just previous/current/next around wherever the student is in the current
-// group — never the whole group.
-export const GroupProgressSidebar = ({ progress }: GroupProgressSidebarProps) => {
+// block — never the whole block.
+export const BlockProgressSidebar = ({ progress }: BlockProgressSidebarProps) => {
   return (
-    <div className="w-full rounded-2xl bg-zinc-50 border border-zinc-200 p-5 dark:bg-zinc-900 dark:border-zinc-800">
+    <div className="w-full rounded-2xl bg-white border border-zinc-200 p-5 dark:bg-zinc-900 dark:border-zinc-800">
       <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-5">
         السؤال {progress.current} من {progress.total}
       </p>
@@ -44,7 +42,6 @@ export const GroupProgressSidebar = ({ progress }: GroupProgressSidebarProps) =>
                 className={`flex items-center justify-center rounded-full shrink-0 text-white ${dotStyles[entry.status]}`}
               >
                 {entry.status === "done" && <Check className="size-2.5" />}
-                {entry.status === "retry-pending" && <AlertTriangle className="size-2.5" />}
               </span>
               <div
                 className={`w-0.5 flex-1 min-h-[10px] ${

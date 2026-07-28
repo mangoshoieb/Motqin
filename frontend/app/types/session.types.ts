@@ -5,7 +5,10 @@ declare global {
   // Question fields needed to render a card. Same data as the existing
   // `Question` type (questionID etc.) — see useLessonSession's toSessionItem
   // mapper — just camelCased to its own name since this flow only cares
-  // about the fields it actually renders/grades.
+  // about the fields it actually renders/grades. Kept in the backend's real
+  // casing/values (questionId/questionType: "MultipleChoiceQuestion"...)
+  // rather than the spec doc's shorthand (id/type: "MCQ"|"FIB") since this
+  // is what the API actually returns (confirmed via swagger).
   interface SessionItemPayload {
     questionId: number;
     questionType: SessionQuestionType;
@@ -22,19 +25,27 @@ declare global {
     caseSensitive: boolean | null; // FIB only
   }
 
-  interface SessionGroupConfig {
-    GROUP_SIZE: number; // questions per group (the last group may be smaller)
-    PAIR_SIZE: number; // questions introduced/tested together within a group
+  // §2 — supplied as config, never hard-coded into the algorithm.
+  interface SessionConfig {
+    BATCH_SIZE: number; // block size
+    GRADUATE: number; // correct answers (net score) to finish a question
+    GAP: number; // other cards required before the same question can be tested again
+    INTRO_CHUNK: number; // how many new questions are introduced at a time
   }
 
-  interface ItemProgress {
-    attempts: number;
-    correct: number;
-    wrong: number;
+  // §5 per-question state.
+  interface QuestionState {
+    order: number; // fixed position in the payload array; also fixes its block
+    seen: boolean; // has its info card been shown yet
+    done: boolean; // finished/graduated — once true, stays true (§6.2)
+    score: number; // 0..GRADUATE, correct +1 / wrong -1 (floor 0)
+    // Turn its test or filler card last appeared; -1 = never tested. Info
+    // cards do NOT update this (v3.0 change) — only test/filler do.
+    lastShown: number;
   }
 
-  interface PresentationCard {
-    type: "presentation";
+  interface InfoCard {
+    type: "info";
     item: SessionItemPayload;
   }
 
@@ -43,82 +54,62 @@ declare global {
     item: SessionItemPayload;
   }
 
-  // Shown right after ANSWER, before the flow advances — "inform him" of
-  // whether he got it right, and whether it'll come back around.
-  interface FeedbackCard {
-    type: "feedback";
+  // §1/§6.2 — reviews an already-finished question. Answering it is recorded
+  // for stats but never changes score or un-finishes the question.
+  interface FillerCard {
+    type: "filler";
     item: SessionItemPayload;
-    correct: boolean;
   }
 
-  interface GroupStats {
-    groupIndex: number; // 0-based
-    itemCount: number;
-    firstTryCorrectCount: number;
-    totalWrongAttempts: number;
-    accuracy: number; // firstTryCorrectCount / itemCount
+  interface SessionStats {
+    testCards: number;
+    fillerCards: number;
+    correct: number; // across both test and filler answers
+    wrong: number;
   }
 
-  // The "continue or stop" popup, shown once every item in the group has
-  // been answered correctly at least once.
-  interface GroupCompleteCard {
-    type: "group-complete";
-    stats: GroupStats;
-    hasMoreGroups: boolean;
+  // The end screen — shown once every question in the lesson is finished,
+  // or early via endSession() (§8's "End session" escape hatch).
+  interface SummaryCard {
+    type: "summary";
+    stats: SessionStats;
   }
 
-  type SessionCard = PresentationCard | TestCard | FeedbackCard | GroupCompleteCard;
-
-  // present/test walk the current pair in order. retry-present/retry-test
-  // handle one deferred wrong answer, injected right after the pair
-  // boundary that follows it. drain-present/drain-test handle whatever's
-  // left in the retry queue once there are no more new pairs to interleave
-  // with. complete means every item in the group has been answered
-  // correctly.
-  type SessionPhase =
-    | "present"
-    | "test"
-    | "retry-present"
-    | "retry-test"
-    | "drain-present"
-    | "drain-test"
-    | "complete";
+  type SessionCard = InfoCard | TestCard | FillerCard | SummaryCard;
 
   interface SessionState {
-    config: SessionGroupConfig;
+    config: SessionConfig;
+    payload: SessionItemPayload[]; // the whole lesson, fixed order (order = index)
+    questions: QuestionState[]; // parallel to payload
 
-    groups: SessionItemPayload[][]; // the whole lesson, chunked by GROUP_SIZE
-    groupIndex: number;
-
-    pairs: SessionItemPayload[][]; // current group's items, chunked by PAIR_SIZE
-    pairIndex: number;
-    withinPairIndex: number;
-    phase: SessionPhase;
-
-    retryQueue: SessionItemPayload[]; // items answered wrong, awaiting a deferred retry
-    activeRetryItem: SessionItemPayload | null; // set while phase is retry-*/drain-*
-
-    progress: Record<number, ItemProgress>; // keyed by questionId, current group only
+    turn: number; // cards shown so far; first card is turn 1; summary doesn't count
+    currentBlock: number;
+    reteach: number | null; // order of the question flagged after a wrong answer
+    // How many info cards of the current introduction chunk are still owed.
+    // Set to INTRO_CHUNK when a chunk opens, decremented per info card
+    // shown, forced back to 0 when the block advances or runs out of
+    // waiting questions early.
+    pendingIntro: number;
 
     currentCard: SessionCard;
+    stats: SessionStats;
   }
 
   type SessionEvent =
-    | { type: "CONTINUE" } // advance past a PresentationCard, or past a FeedbackCard
-    | { type: "ANSWER"; correct: boolean; userAnswer: string } // submit on a TestCard
-    | { type: "CONTINUE_TO_NEXT_GROUP" }; // advance past a GroupCompleteCard
+    | { type: "CONTINUE" } // advance past an InfoCard
+    | { type: "ANSWER"; correct: boolean; userAnswer: string }; // submit on a Test or Filler card
 
-  // For the sidebar: where the student is within the current group, and a
-  // small window of neighboring questions (not the whole group).
-  interface GroupProgressItem {
-    index: number; // 1-based position within the current group
+  // For the sidebar: where the student is within the current block, and a
+  // small window of neighboring questions (not the whole block).
+  interface BlockProgressItem {
+    index: number; // 1-based position within the current block
     item: SessionItemPayload;
-    status: "done" | "current" | "retry-pending" | "pending";
+    status: "done" | "current" | "pending";
   }
 
-  interface GroupProgress {
-    current: number; // 1-based index of the active item (= total once the group is complete)
-    total: number; // items in the current group
-    window: GroupProgressItem[]; // previous (if any) + current + next (if any) — 1 to 3 entries
+  interface BlockProgress {
+    current: number; // 1-based index of the active item (= total once the block/lesson is complete)
+    total: number; // items in the current block
+    window: BlockProgressItem[]; // previous (if any) + current + next (if any) — 1 to 3 entries
   }
 }
