@@ -26,7 +26,7 @@ export const QuizCard = ({ question, answer, onAnswerChange }: QuizCardProps) =>
   const hasInfo = Boolean(question.description || question.imageUrl || question.audioUrl);
 
   return (
-    <div className="w-full max-w-xl" style={{ perspective: "1200px" }}>
+    <div className="w-full max-w-2xl" style={{ perspective: "1200px" }}>
       <div
         className={cn(
           "grid w-full transition-transform duration-500",

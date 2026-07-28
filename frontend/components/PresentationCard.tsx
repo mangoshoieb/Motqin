@@ -8,7 +8,7 @@ interface PresentationCardProps {
 // answering. Advanced by the CONTINUE event (the parent renders the button).
 export const PresentationCard = ({ item }: PresentationCardProps) => {
   return (
-    <div className="w-full max-w-xl flex flex-col rounded-3xl bg-white border border-zinc-200 p-6 max-h-[75vh] overflow-y-auto dark:bg-zinc-900 dark:border-zinc-800">
+    <div className="w-full max-w-2xl flex flex-col rounded-3xl bg-white border border-zinc-200 p-6 max-h-[75vh] overflow-y-auto dark:bg-zinc-900 dark:border-zinc-800">
       <span className="self-start px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 mb-4">
         معلومة
       </span>
