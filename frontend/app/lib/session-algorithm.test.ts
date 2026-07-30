@@ -286,18 +286,45 @@ describe("edge cases (§8)", () => {
 });
 
 describe("getBlockProgress", () => {
-  it("windows to just previous/current/next within the current block", () => {
-    const [A, B] = [1, 2].map(makeItem);
-    const state = init([A, B], { BATCH_SIZE: 3, GRADUATE: 3, GAP: 2, INTRO_CHUNK: 1 });
+  it("lists every question in the current block with its waiting/studying/done status", () => {
+    const [A, B, C] = [1, 2, 3].map(makeItem);
+    let state = init([A, B, C], { BATCH_SIZE: 3, GRADUATE: 2, GAP: 2, INTRO_CHUNK: 1 });
 
-    // At Info(A): only current + next exist (no previous).
+    // At Info(A): seen flips true the moment a question's info card is
+    // produced (§5 step 3b marks it seen and shows the card together), so
+    // A already reads "studying", not "waiting" — only B/C, never
+    // introduced yet, are "waiting".
     expect(getBlockProgress(state)).toEqual({
-      current: 1,
-      total: 2,
-      window: [
-        { index: 1, item: A, status: "current" },
-        { index: 2, item: B, status: "pending" },
+      blockNumber: 1,
+      totalBlocks: 1,
+      items: [
+        { index: 1, item: A, status: "studying", isCurrent: true },
+        { index: 2, item: B, status: "waiting", isCurrent: false },
+        { index: 3, item: C, status: "waiting", isCurrent: false },
       ],
     });
+
+    state = apply(state, CONTINUE); // Info(A) -> Test(A)
+    expect(state.currentCard).toEqual({ type: "test", item: A });
+    // Answer A correct once (score 1 of GRADUATE=2, still studying) to
+    // exercise the "studying" status distinctly from "waiting" and "done".
+    state = apply(state, correct);
+
+    const progress = getBlockProgress(state);
+    expect(progress.items.find((it) => it.item.questionId === A.questionId)?.status).toBe("studying");
+  });
+
+  it("moves on to the next block once the current one finishes", () => {
+    const [A, B] = [1, 2].map(makeItem);
+    let state = init([A, B], { BATCH_SIZE: 1, GRADUATE: 1, GAP: 1, INTRO_CHUNK: 1 });
+
+    state = apply(state, CONTINUE); // Info(A) -> Test(A)
+    state = apply(state, correct); // A finishes, block advances to 1 -> Info(B)
+
+    const progress = getBlockProgress(state);
+    expect(progress.blockNumber).toBe(2);
+    expect(progress.totalBlocks).toBe(2);
+    // B's own info card is showing, so it's already "studying" too.
+    expect(progress.items).toEqual([{ index: 1, item: B, status: "studying", isCurrent: true }]);
   });
 });

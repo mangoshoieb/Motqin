@@ -276,34 +276,27 @@ export function init(payload: SessionItemPayload[], config: SessionConfig): Sess
   return next(bootstrap);
 }
 
-// For the sidebar: a 1-3 entry window (previous/current/next) around
-// wherever the student currently is within the current block, plus a
-// position counter. Not part of card sequencing — purely a read of state.
+// For the sidebar: every question in the current block, in its §5
+// waiting/studying/finished state, plus which one (if any) is the one
+// currently on screen. Not part of card sequencing — purely a read of
+// state. Once a block finishes and next() silently advances currentBlock,
+// this naturally reflects the new block on the next read.
 export function getBlockProgress(state: SessionState): BlockProgress {
   const start = state.currentBlock * state.config.BATCH_SIZE;
   const end = Math.min(start + state.config.BATCH_SIZE, state.payload.length);
   const blockPayload = state.payload.slice(start, end);
-  const total = blockPayload.length;
 
   const currentItem = state.currentCard.type !== "summary" ? state.currentCard.item : null;
-  const foundIndex = currentItem
-    ? blockPayload.findIndex((it) => it.questionId === currentItem.questionId) + 1
-    : 0;
-  const currentIndex = foundIndex > 0 ? foundIndex : total;
 
   const items: BlockProgressItem[] = blockPayload.map((item, i) => {
-    const index = i + 1;
     const q = state.questions[start + i];
-    let status: BlockProgressItem["status"];
-    if (index === currentIndex && currentItem) status = "current";
-    else if (q.done) status = "done";
-    else status = "pending";
-    return { index, item, status };
+    const status: BlockProgressItem["status"] = q.done ? "done" : q.seen ? "studying" : "waiting";
+    return { index: i + 1, item, status, isCurrent: currentItem?.questionId === item.questionId };
   });
 
-  const window = items.filter((it) => it.index >= currentIndex - 1 && it.index <= currentIndex + 1);
+  const totalBlocks = state.payload.length === 0 ? 0 : Math.ceil(state.payload.length / state.config.BATCH_SIZE);
 
-  return { current: currentIndex, total, window };
+  return { blockNumber: state.currentBlock + 1, totalBlocks, items };
 }
 
 // §6.1 Text normalization: trim, collapse internal whitespace runs.

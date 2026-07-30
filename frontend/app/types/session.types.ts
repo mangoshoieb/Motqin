@@ -99,17 +99,19 @@ declare global {
     | { type: "CONTINUE" } // advance past an InfoCard
     | { type: "ANSWER"; correct: boolean; userAnswer: string }; // submit on a Test or Filler card
 
-  // For the sidebar: where the student is within the current block, and a
-  // small window of neighboring questions (not the whole block).
+  // For the sidebar: every question in the current block (§5's
+  // waiting/studying/finished states), plus which one (if any) is on
+  // screen right now.
   interface BlockProgressItem {
     index: number; // 1-based position within the current block
     item: SessionItemPayload;
-    status: "done" | "current" | "pending";
+    status: "waiting" | "studying" | "done"; // !seen / seen && !done / done
+    isCurrent: boolean;
   }
 
   interface BlockProgress {
-    current: number; // 1-based index of the active item (= total once the block/lesson is complete)
-    total: number; // items in the current block
-    window: BlockProgressItem[]; // previous (if any) + current + next (if any) — 1 to 3 entries
+    blockNumber: number; // 1-based
+    totalBlocks: number;
+    items: BlockProgressItem[]; // every question in the current block
   }
 }
