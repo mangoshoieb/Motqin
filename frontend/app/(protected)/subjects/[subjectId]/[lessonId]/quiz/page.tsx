@@ -56,7 +56,7 @@ const QuizPageContent = () => {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 px-6 py-12">
+    <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 px-10 py-12">
       <div className=" mx-auto flex flex-col-reverse lg:flex-row gap-10 items-start">
         {blockProgress && (
           <aside className="w-full lg:w-64 shrink-0 mt-9">
@@ -69,7 +69,7 @@ const QuizPageContent = () => {
             <button
               type="button"
               onClick={endSession}
-              className="text-sm text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 transition"
+              className="text-sm text-zinc-500 cursor-pointer hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 transition"
             >
               إنهاء الجلسة
             </button>
