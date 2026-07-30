@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import UserMenu from "./userMenu";
-import { useState } from "react";
+import { SessionBreadcrumb } from "./SessionBreadcrumb";
+import { Suspense, useState } from "react";
 import { useAuth } from "@/app/(public)/context/auth.context";
 import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 import { useLogout } from "@/app/hooks/useLogout";
@@ -33,7 +34,7 @@ const Nav = () => {
 const firstName = user?.fullName?.trim().split(/\s+/)[0];
   return (
     <nav className="w-full border-b border-zinc-200 bg-[var(--background)] transition-colors duration-300 dark:border-zinc-800">
-      <div className="mx-auto h-16 max-w-7xl flex justify-between items-center px-3">
+      <div className="mx-auto h-16 max-w-7xl flex items-center px-3">
         {/* Left Section */}
         <div className="flex items-center justify-start">
           {user || isLoading ? (
@@ -73,6 +74,13 @@ const firstName = user?.fullName?.trim().split(/\s+/)[0];
           ) : (
             <div />
           )}
+        </div>
+
+        {/* Center: breadcrumb — desktop only, only on subject/lesson pages */}
+        <div className="flex-1 flex justify-center">
+          <Suspense fallback={null}>
+            <SessionBreadcrumb />
+          </Suspense>
         </div>
 
         {/* Right Section */}
