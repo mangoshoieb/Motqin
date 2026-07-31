@@ -16,7 +16,6 @@
   --input-text: #515158;
   --input-border: #d4d4d8;
   --input-placeholder: #71717a;
-  --daycard-bg: #d9d9d9;
   --chat-toolbar-bg: #ffffff;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -65,7 +64,6 @@
   --input-text: #b3b6bb;
   --input-border: #3f3f46;
   --input-placeholder: #a1a1aa;
-  --daycard-bg: #d9d9d2;
   --chat-toolbar-bg: #0f0f12;
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);

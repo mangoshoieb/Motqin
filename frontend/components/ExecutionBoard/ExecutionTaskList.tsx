@@ -6,10 +6,14 @@ import { ExecutionTaskRow } from "./ExecutionTaskRow";
 interface ExecutionTaskListProps {
   title: string;
   tasks: ExecutionTask[];
-  sessionsByTaskId: Map<string, ExecutionSession>;
+  sessionsByTaskId: Map<string, ExecutionSession[]>;
   onToggleComplete: (id: string) => void;
-  onStartDaily?: (task: ExecutionTask) => void;
+  onAddSession?: (task: ExecutionTask) => void;
+  onToggleSession?: (sessionId: string) => void;
+  onDeleteSession?: (sessionId: string) => void;
   onStartRevision?: (task: ExecutionTask) => void;
+  onPostpone?: (task: ExecutionTask) => void;
+  onNotesChange: (id: string, notes: string) => void;
 }
 
 export const ExecutionTaskList = ({
@@ -17,8 +21,12 @@ export const ExecutionTaskList = ({
   tasks,
   sessionsByTaskId,
   onToggleComplete,
-  onStartDaily,
+  onAddSession,
+  onToggleSession,
+  onDeleteSession,
   onStartRevision,
+  onPostpone,
+  onNotesChange,
 }: ExecutionTaskListProps) => {
   return (
     <section className="flex flex-col gap-3">
@@ -32,10 +40,14 @@ export const ExecutionTaskList = ({
             <ExecutionTaskRow
               key={task.id}
               task={task}
-              session={sessionsByTaskId.get(task.id)}
+              sessions={sessionsByTaskId.get(task.id) ?? []}
               onToggleComplete={onToggleComplete}
-              onStartDaily={onStartDaily}
+              onAddSession={onAddSession}
+              onToggleSession={onToggleSession}
+              onDeleteSession={onDeleteSession}
               onStartRevision={onStartRevision}
+              onPostpone={onPostpone}
+              onNotesChange={onNotesChange}
             />
           ))}
         </div>

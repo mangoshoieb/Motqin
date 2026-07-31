@@ -80,29 +80,29 @@ export default function DayCard({
       onClick={onClick}
       dir="rtl"
       className={cn(
-        "flex flex-col overflow-hidden h-full cursor-pointer bg-white  transition-all duration-200 hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900 ",
-        index !== 7 && "border-l border-zinc-200",
+        "flex flex-col overflow-hidden h-full cursor-pointer bg-white transition-all duration-200 hover:shadow-lg dark:bg-zinc-900",
+        index !== 7 && "border-l border-zinc-200 dark:border-zinc-800",
       )}
     >
       {/* Header */}
-      <div className="bg-indigo-500 p-2 ">
+      <div className="p-3 border-b border-zinc-100 dark:border-zinc-800 bg-blue-600/20">
         <div className="flex items-center justify-between">
-          <h3 className="text-2xl font-semibold">{dayName}</h3>
+          <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{dayName}</h3>
 
-          <span className="text-sm opacity-90">{date}</span>
+          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{date}</span>
         </div>
 
-        <div className="mt-6 flex items-center gap-2">
-          <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/80">
+        <div className="mt-4 flex items-center gap-2">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
             <div
-              className="h-full rounded-full bg-sky-400 transition-all"
+              className="h-full rounded-full bg-blue-600 dark:bg-blue-500 transition-all"
               style={{
                 width: `${progress}%`,
               }}
             />
           </div>
 
-          <span className="text-sm">
+          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
             {completedTasks}/{totalTasks}
           </span>
         </div>
@@ -110,22 +110,22 @@ export default function DayCard({
 
       {/* Body */}
       <div
-        className="flex flex-1 flex-col p-3 bg-[var(--daycard-bg)]"
+        className="flex flex-1 flex-col p-3 bg-white dark:bg-zinc-900"
         dir="rtl"
       >
         {/* Performance */}
         <section>
-          <h4 className="mb-3 text-2xl font-semibold text-right">الأداء</h4>
+          <h4 className="mb-3 text-lg font-semibold text-right text-zinc-900 dark:text-zinc-100">الأداء</h4>
 
-          <div className="space-y-2 text-md">
+          <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
             <div className="flex justify-between">
               <span>ساعات العمل</span>
-              <span>{workingHours}</span>
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{workingHours}</span>
             </div>
 
             <div className="flex justify-between">
               <span>جلسات التركيز</span>
-              <span>{focusSessions}</span>
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{focusSessions}</span>
             </div>
 
             <div className="flex items-center justify-between">
@@ -147,10 +147,7 @@ export default function DayCard({
                 </button>
 
                 {open && (
-                  <div
-                    className="
-                    top-full  left-0  mt-2  w-32  border  rounded-lg  bg-white  shadow-lg  z-50  p-2  absolute "
-                  >
+                  <div className="top-full left-0 mt-2 w-32 border border-zinc-200 rounded-lg bg-white shadow-lg z-50 p-2 absolute dark:border-zinc-700 dark:bg-zinc-800">
                     <div className="space-y-2">
                       {moodOptions.map((option) => (
                         <button
@@ -183,7 +180,7 @@ export default function DayCard({
 
         {/* Tasks */}
         <section className="mt-8">
-          <h4 className="mb-3 text-xl font-medium text-right">المهام</h4>
+          <h4 className="mb-3 text-base font-semibold text-right text-zinc-900 dark:text-zinc-100">المهام</h4>
 
           <div className="space-y-2">
             {visibleTasks.map((task) => (
@@ -195,17 +192,17 @@ export default function DayCard({
                   }}
                 >
                   {task.completed ? (
-                    <CheckSquare size={20} className="text-indigo-500 mt-1" />
+                    <CheckSquare size={20} className="text-blue-600 dark:text-blue-400 mt-1" />
                   ) : (
-                    <Square size={20} className="text-zinc-400 mt-1" />
+                    <Square size={20} className="text-zinc-400 dark:text-zinc-600 mt-1" />
                   )}
                 </button>
 
                 <span
                   title={task.title}
                   className={cn(
-                    "text-md flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-right",
-                    task.completed && "text-zinc-500 line-through opacity-60 "
+                    "text-sm flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300",
+                    task.completed && "text-zinc-400 dark:text-zinc-600 line-through opacity-60"
                   )}
                 >
                   {task.title}
@@ -215,7 +212,7 @@ export default function DayCard({
           </div>
 
           {remainingTasks > 0 && (
-            <p className="mt-3 text-sm text-zinc-500">
+            <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-500">
               + {remainingTasks} more tasks
             </p>
           )}
