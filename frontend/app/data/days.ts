@@ -94,6 +94,7 @@ export const weekData : PlannerDay[]  = [
     workingHours: 5,
     focusSessions: 4,
     mood: "ممتاز",
+    isToday: true,
     tasks: [
       task("6", "درس اللغة الإنجليزية", true, "lesson", 60, "high", "ai"),
       task("7", "مهمة مراجعة", true, "revision", 45, "medium", "ai"),

@@ -2,7 +2,6 @@
 import { CheckSquare, Square } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { useState } from "react";
-import { title } from "process";
 
 export interface Task {
   id: string;
@@ -39,7 +38,6 @@ interface DayCardProps {
   focusSessions: number;
 
   mood:"مذهل" | "ممتاز" | "جيد" | "متوسط";
-  showBorder: boolean;
   tasks: Task[];
 
   onClick?: () => void;
@@ -55,7 +53,6 @@ export default function DayCard({
   focusSessions,
   mood,
   tasks,
-  showBorder,
   onClick,
 }: DayCardProps) {
   const [open, setOpen] = useState(false);
@@ -78,23 +75,13 @@ export default function DayCard({
   const visibleTasks = taskList?.slice(0, 4) ?? [];
   const remainingTasks = Math.max(taskList?.length - 4, 0);
 
-  function hideBorder(): boolean {
-    if (showBorder == true && index == 5) {
-      return false;
-    } else if (showBorder == false && index == 7) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-  console.log(showBorder)
   return (
     <div
       onClick={onClick}
       dir="rtl"
       className={cn(
         "flex flex-col overflow-hidden h-full cursor-pointer bg-white  transition-all duration-200 hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900 ",
-        hideBorder() && "border-l border-zinc-200",
+        index !== 7 && "border-l border-zinc-200",
       )}
     >
       {/* Header */}

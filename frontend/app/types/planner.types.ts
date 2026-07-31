@@ -53,4 +53,5 @@ export interface PlannerDay {
   mood: Mood;
   tasks: Task[];
   sessions: Session[];
+  isToday?: boolean;
 }
