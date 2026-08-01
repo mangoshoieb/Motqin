@@ -95,7 +95,7 @@ export default function DayCard({
         <div className="mt-4 flex items-center gap-2">
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
             <div
-              className="h-full rounded-full bg-blue-600 dark:bg-blue-500 transition-all"
+              className="h-full rounded-full bg-blue-600/50  transition-all"
               style={{
                 width: `${progress}%`,
               }}

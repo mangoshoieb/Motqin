@@ -26,7 +26,7 @@ export const ExecutionBoardHeader = ({ dayName, date, outputs }: ExecutionBoardH
         <PlannerViewSwitch />
 
         <Link
-          href="/planner/preferences"
+          href="/settings/planner"
           className="shrink-0 px-5 py-2.5 rounded-full border border-zinc-200 text-zinc-600 text-sm font-medium transition hover:bg-white dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           تفضيلات المخطط

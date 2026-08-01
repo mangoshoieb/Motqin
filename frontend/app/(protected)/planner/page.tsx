@@ -10,7 +10,7 @@ const Planner = () => {
   return (
     <main className="h-full w-full bg-zinc-100 dark:bg-zinc-950" dir="rtl">
       <div className="px-6 py-8">
-        <div className="flex items-center justify-between flex-wrap gap-4 mb-6 px-16.5">
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-6 px-17">
           <PlannerViewSwitch />
 
           <div className="flex items-baseline gap-4">
