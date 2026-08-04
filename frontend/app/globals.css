@@ -49,6 +49,13 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  --glow-strong: oklch(0.75 0.13 255 / 25%);
+  --glow-mid: oklch(0.75 0.13 255 / 20%);
+  --glow-soft: oklch(0.8 0.1 255 / 15%);
+  --ambient-wash-from: oklch(0.95 0.02 255 / 70%);
+  --ambient-wash-via: oklch(1 0 0);
+  --ambient-wash-to: oklch(0.96 0 0);
 }
 
 .dark {
@@ -94,6 +101,13 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  --glow-strong: oklch(1 0 0 / 10%);
+  --glow-mid: oklch(1 0 0 / 10%);
+  --glow-soft: oklch(1 0 0 / 5%);
+  --ambient-wash-from: oklch(0.145 0 0);
+  --ambient-wash-via: oklch(0.19 0 0);
+  --ambient-wash-to: oklch(0.145 0 0);
 }
 
 /* =========================
@@ -139,6 +153,36 @@
 
   .black_btn:active {
     transform: translateY(1px);
+  }
+
+  /* Ambient page background for the home page: a soft vertical wash plus
+     three blurred glow blobs, all as background-image layers (not separate
+     positioned elements). background-attachment: fixed pins it to the
+     viewport while scrolling — unlike position: fixed, this can't get
+     trapped by a transformed/animated ancestor turning it into something
+     that scrolls with the page, and it paints as this element's own
+     background, so it always sits behind this element's own children
+     (Footer included) without any z-index bookkeeping. */
+  .home-ambient-bg {
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-image: radial-gradient(
+        30rem 30rem at -4rem -4rem,
+        var(--glow-strong),
+        transparent 70%
+      ),
+      radial-gradient(
+        30rem 30rem at calc(100% + 4rem) calc(100% + 4rem),
+        var(--glow-mid),
+        transparent 70%
+      ),
+      radial-gradient(26rem 26rem at 50% 45%, var(--glow-soft), transparent 70%),
+      linear-gradient(
+        to bottom,
+        var(--ambient-wash-from),
+        var(--ambient-wash-via),
+        var(--ambient-wash-to)
+      );
   }
 }
 

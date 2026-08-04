@@ -82,6 +82,5 @@ export const API_ROUTES = {
 
   USERS:{
     CURRENT_USER: "/users/me",
-
   }
 };

@@ -1,7 +1,7 @@
 // components/planner/DayCard.tsx
 import { CheckSquare, Square } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface Task {
   id: string;
@@ -59,6 +59,11 @@ export default function DayCard({
   const [selectedMood, setSelectedMood] = useState(moodOptions[1]);
 
   const [taskList, setTaskList] = useState(tasks);
+
+  useEffect(() => {
+    setTaskList(tasks);
+  }, [tasks]);
+
   completedTasks = taskList.filter((task) => task.completed).length;
 
   totalTasks = taskList.length;

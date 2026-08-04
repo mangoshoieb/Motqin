@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import DayCard from "@/components/DayCard";
 import { weekData } from "@/app/data/days";
 import { PlannerViewSwitch } from "@/components/Planner/PlannerViewSwitch";
+import GoalsSection from "@/components/Planner/GoalsSection";
 
 const Planner = () => {
   const router = useRouter();
@@ -34,9 +35,7 @@ const Planner = () => {
           ))}
         </div>
 
-        <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 p-6 text-center text-sm text-zinc-400 dark:text-zinc-600">
-          الأهداف (قريبًا)
-        </div>
+        <GoalsSection />
       </div>
     </main>
   );

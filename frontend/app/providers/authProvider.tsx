@@ -12,7 +12,6 @@ export default function AuthProvider({
   useAutoRefresh();
 
   const { data, isFetching, refetch } = useCurrentUser();
-  console.log(data)
 
   return (
     <AuthContext.Provider
