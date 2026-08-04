@@ -34,20 +34,23 @@ export default function BentoGrid() {
           />
         </Link>
         {/* Competitions - Wide card */}
-        <FeatureCard
-          title="Competitions"
-          description="Challenge friends and climb the leaderboard"
-          icon={Trophy}
-          variant="competition"
-          backgroundIcon={Trophy}
-          size="large"
-          stats={[
-            { label: "Rank", value: "#3" },
-            { label: "Points", value: "2,450" },
-          ]}
-          className="col-span-5 row-span-3 bg-amber-400"
-          // onClick={() => console.log("Navigate to Competitions")}
-        />
+        <Link
+          href="/competitions"
+          className="col-span-5 row-span-3 bg-amber-400 rounded-3xl"
+        >
+          <FeatureCard
+            title="Competitions"
+            description="Challenge friends and climb the leaderboard"
+            icon={Trophy}
+            variant="competition"
+            backgroundIcon={Trophy}
+            size="large"
+            stats={[
+              { label: "Rank", value: "#6" },
+              { label: "Points", value: "1,755" },
+            ]}
+          />
+        </Link>
 
         {/* Quiz - Square card */}
         <Link

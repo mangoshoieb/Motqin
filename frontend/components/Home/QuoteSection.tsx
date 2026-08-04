@@ -93,6 +93,7 @@ export default function QuoteSection() {
 
           <p className="mt-6 text-center text-2xl font-bold leading-relaxed text-blue-900 dark:text-blue-100 md:text-3xl">
             {quote.content}
+            النجاح هو مجموع الجهود الصغيرة المتكررة يومًا بعد يوم
           </p>
 
           {quote.author && (

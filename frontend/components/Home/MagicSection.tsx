@@ -77,6 +77,7 @@ const pieces: PuzzlePiece[] = [
     title: "المسابقات",
     description: "نافس أصدقاءك وتصدر لوحة الترتيب",
     icon: Trophy,
+    href:"/competitions",
     gradientFrom: "#fbbf24",
     gradientTo: "#d97706",
     shimmerDelay: "0s",

@@ -10,6 +10,8 @@ import {
   CircleHelp,
   LogOut,
   ChevronRight,
+  Trophy,
+  ShieldOff,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import ThemeSubMenu from "../Navbar/ThemeMenu";
@@ -25,6 +27,11 @@ const menuItems = [
     label: "الملف الشخصي",
     href: "/profile",
     icon: User,
+  },
+  {
+    label: "منع المشتتات",
+    href: "/focus",
+    icon: ShieldOff,
   },
   {
     label: "الإشعارات",
