@@ -2,27 +2,35 @@ export {};
 declare global {
   type SessionQuestionType = "MultipleChoiceQuestion" | "FillInTheBlankQuestion";
 
-  // Question fields needed to render a card. Same data as the existing
-  // `Question` type (questionID etc.) — see useLessonSession's toSessionItem
-  // mapper — just camelCased to its own name since this flow only cares
-  // about the fields it actually renders/grades. Kept in the backend's real
-  // casing/values (questionId/questionType: "MultipleChoiceQuestion"...)
-  // rather than the spec doc's shorthand (id/type: "MCQ"|"FIB") since this
-  // is what the API actually returns (confirmed via swagger).
+  // One *renderable form* of a question. A backend Information row carries an
+  // MCQ card and a fill-in-the-blank card about the same fact, so a payload
+  // item holds up to two of these. Which one a test card shows is decided from
+  // the question's live score when the card is built — see formFor() in
+  // session-algorithm.ts — never fixed at fetch time.
+  interface SessionItemForm {
+    questionType: SessionQuestionType;
+    questionText: string;
+    answerOptions: string | null; // MCQ only, comma-joined
+    correctAnswer: string | null; // MCQ only
+    correctText: string | null; // FIB only
+    caseSensitive: boolean | null; // FIB only
+  }
+
+  // The shared, form-independent part of a question: what identifies it and
+  // what its info card teaches. Mapped from LessonInformation — see
+  // useLessonSession's toSessionItem.
   interface SessionItemPayload {
     questionId: number;
-    questionType: SessionQuestionType;
 
     title: string | null;
     description: string;
     imageUrl: string | null;
     audioUrl: string | null;
 
-    questionText: string;
-    answerOptions: string | null; // MCQ only, comma-joined
-    correctAnswer: string | null; // MCQ only
-    correctText: string | null; // FIB only
-    caseSensitive: boolean | null; // FIB only
+    // At least one of these is always non-null; init() rejects an item with
+    // neither, since such a question could never be tested.
+    mcq: SessionItemForm | null;
+    fib: SessionItemForm | null;
   }
 
   // §2 — supplied as config, never hard-coded into the algorithm.
@@ -52,6 +60,10 @@ declare global {
   interface TestCard {
     type: "test";
     item: SessionItemPayload;
+    // Which form this particular showing uses. Resolved from the question's
+    // score at build time, so the same item can be an MCQ now and a
+    // fill-in-the-blank two turns later.
+    form: SessionItemForm;
   }
 
   // §1/§6.2 — reviews an already-finished question. Answering it is recorded
@@ -59,6 +71,7 @@ declare global {
   interface FillerCard {
     type: "filler";
     item: SessionItemPayload;
+    form: SessionItemForm;
   }
 
   interface SessionStats {

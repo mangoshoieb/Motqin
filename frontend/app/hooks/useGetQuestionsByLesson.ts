@@ -1,12 +1,8 @@
 // hooks/useGetQuestionsByLesson.ts
+//
+// @deprecated The backend no longer returns the flat `Question` shape from
+// /questions/by-lesson — it returns LessonInformation rows. Use
+// useGetLessonInformation instead. Kept as a re-export so any straggling
+// import keeps compiling; delete once nothing references it.
 
-import { useQuery } from "@tanstack/react-query";
-import { questionService } from "../services/question.service";
-
-export const useGetQuestionsByLesson = (lessonId: string) => {
-  return useQuery<Question[]>({
-    queryKey: ["questions", "by-lesson", lessonId],
-    queryFn: () => questionService.getQuestionsByLesson(lessonId),
-    enabled: !!lessonId,
-  });
-};
+export { useGetLessonInformation as useGetQuestionsByLesson } from "./useGetLessonInformation";

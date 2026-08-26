@@ -5,7 +5,11 @@ import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 
 interface QuizCardProps {
+  // Shared, form-independent part: the info shown on the flip side.
   question: SessionItemPayload;
+  // The form this showing uses — MCQ or fill-in-the-blank, decided by the
+  // question's score when the card was built.
+  form: SessionItemForm;
   answer: string;
   onAnswerChange: (value: string) => void;
   // §1/§6.2 — a Filler card reviews an already-finished question; answering
@@ -18,10 +22,10 @@ const typeLabels: Record<string, string> = {
   FillInTheBlankQuestion: "أكمل الفراغ",
 };
 
-export const QuizCard = ({ question, answer, onAnswerChange, isReview = false }: QuizCardProps) => {
+export const QuizCard = ({ question, form, answer, onAnswerChange, isReview = false }: QuizCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const options = (question.answerOptions ?? "")
+  const options = (form.answerOptions ?? "")
     .split(",")
     .map((o) => o.trim())
     .filter(Boolean);
@@ -47,11 +51,9 @@ export const QuizCard = ({ question, answer, onAnswerChange, isReview = false }:
         >
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="flex flex-wrap gap-2">
-              {question.questionType && (
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                  {typeLabels[question.questionType] ?? question.questionType}
-                </span>
-              )}
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                {typeLabels[form.questionType] ?? form.questionType}
+              </span>
               {isReview && (
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
                   مراجعة
@@ -72,11 +74,11 @@ export const QuizCard = ({ question, answer, onAnswerChange, isReview = false }:
           </div>
 
           <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
-            {question.questionText}
+            {form.questionText}
           </p>
 
           <div className="flex-1 flex flex-col gap-3">
-            {question.questionType === "MultipleChoiceQuestion" ? (
+            {form.questionType === "MultipleChoiceQuestion" ? (
               options.map((option) => (
                 <button
                   key={option}

@@ -4,14 +4,14 @@ import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
-import { useGetQuestionsByLesson } from "@/app/hooks/useGetQuestionsByLesson";
+import { useGetLessonInformation } from "@/app/hooks/useGetLessonInformation";
 import { useGetLessons } from "@/app/hooks/useGetLessons";
 import { QuestionCard } from "@/components/QuestionCard";
 import { AddQuestionForm } from "@/components/AddQuestionForm";
 import { cn } from "@/app/lib/utils";
 
-// Category tabs are fixed per the product spec (Basic / Hard / Advanced).
-// Matching casing seen in the backend's questionCategory field.
+// Category tabs are fixed per the product spec. The values must match the
+// backend's `informationCategory` string verbatim.
 const CATEGORY_TABS = [
   { value: "أساسيات", label: "أساسي" },
   { value: "معلومات إضافية", label: "إضافية" },
@@ -20,13 +20,10 @@ const CATEGORY_TABS = [
 
 type CategoryValue = (typeof CATEGORY_TABS)[number]["value"];
 
-const TYPE_FILTERS = [
-  { value: "all", label: "كل الأنواع" },
-  { value: "MultipleChoiceQuestion", label: "اختيار من متعدد" },
-  { value: "FillInTheBlankQuestion", label: "أكمل الفراغ" },
-] as const;
-
-type TypeFilterValue = (typeof TYPE_FILTERS)[number]["value"];
+// There is deliberately no question-type filter. Every information row has
+// both an MCQ and a fill-in-the-blank form, and the session algorithm chooses
+// between them from the question's score — the fill-in-the-blank is the
+// graduation gate. Letting the student pin one form would defeat that.
 
 const LessonQuestionsPage = () => {
   const params = useParams();
@@ -34,9 +31,8 @@ const LessonQuestionsPage = () => {
   const subjectId = subjectIdSlug.split("-")[0];
   const lessonId = params.lessonId as string;
 
-  const { data: questions, isLoading, error } = useGetQuestionsByLesson(lessonId);
+  const { data: information, isLoading, error } = useGetLessonInformation(lessonId);
   const { data: lessonsData } = useGetLessons(subjectId);
-  console.log(questions)
 
   const lessonTitle = lessonsData?.lessons?.find(
     (l) => String(l.lessonId) === lessonId
@@ -45,7 +41,6 @@ const LessonQuestionsPage = () => {
   const [activeCategory, setActiveCategory] = useState<CategoryValue>(
     CATEGORY_TABS[0].value
   );
-  const [typeFilter, setTypeFilter] = useState<TypeFilterValue>("all");
   const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
 
@@ -65,12 +60,14 @@ const LessonQuestionsPage = () => {
   };
 
   const visibleQuestions = useMemo(() => {
-    return (questions ?? []).filter((q) => {
-      if (hiddenIds.has(q.questionID)) return false;
-      if (typeFilter !== "all" && q.questionType !== typeFilter) return false;
-      return (q.questionCategory ?? "").toLowerCase() === activeCategory.toLowerCase();
-    });
-  }, [questions, hiddenIds, typeFilter, activeCategory]);
+    return (information ?? [])
+      .filter(
+        (item) =>
+          !hiddenIds.has(item.informationID) &&
+          (item.informationCategory ?? "").trim() === activeCategory
+      )
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+  }, [information, hiddenIds, activeCategory]);
 
   if (isLoading) {
     return (
@@ -97,7 +94,12 @@ const LessonQuestionsPage = () => {
         </h1>
 
         <Link
-          href={`/subjects/${subjectIdSlug}/${lessonId}/quiz?category=${activeCategory}&type=${typeFilter}`}
+          // activeCategory is Arabic text — it must be percent-encoded, or it
+          // ends up raw in an HTTP header and throws
+          // "Cannot convert argument to a ByteString".
+          href={`/subjects/${subjectIdSlug}/${lessonId}/quiz?category=${encodeURIComponent(
+            activeCategory
+          )}`}
           aria-disabled={visibleQuestions.length === 0}
           className={cn(
             "px-6 py-3 rounded-full bg-blue-600 text-white font-semibold transition",
@@ -110,7 +112,7 @@ const LessonQuestionsPage = () => {
         </Link>
       </div>
 
-      {/* Category tabs + question type select, same row */}
+      {/* Category tabs */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="inline-flex items-center gap-1.5 rounded-2xl bg-zinc-200/70 dark:bg-zinc-900 p-1.5">
           {CATEGORY_TABS.map((tab) => (
@@ -129,18 +131,6 @@ const LessonQuestionsPage = () => {
             </button>
           ))}
         </div>
-
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value as TypeFilterValue)}
-          className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 outline-none transition cursor-pointer focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:focus:border-blue-500"
-        >
-          {TYPE_FILTERS.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Questions list */}
@@ -151,8 +141,12 @@ const LessonQuestionsPage = () => {
           </p>
         )}
 
-        {visibleQuestions.map((q) => (
-          <QuestionCard key={q.questionID} question={q} onHide={hideQuestion} />
+        {visibleQuestions.map((item) => (
+          <QuestionCard
+            key={item.informationID}
+            information={item}
+            onHide={hideQuestion}
+          />
         ))}
       </div>
 

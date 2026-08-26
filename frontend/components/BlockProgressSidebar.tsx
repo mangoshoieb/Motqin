@@ -52,7 +52,10 @@ export const BlockProgressSidebar = ({ progress }: BlockProgressSidebarProps) =>
               </span>
 
               <p className={`text-sm truncate ${labelStyles[entry.status]}`}>
-                {entry.index}. {entry.item.title || entry.item.questionText}
+                {entry.index}.{" "}
+                {entry.item.title ||
+                  entry.item.mcq?.questionText ||
+                  entry.item.fib?.questionText}
               </p>
             </div>
           );

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/امجدمحمودعبدالرحمنمح/AppData/Local/Temp/claude/C--Users----------------------Desktop-motquin-app-New-folder-Motqin-frontend/6cd2eff2-82ec-4f06-947a-85fbfb271bd1/scratchpad/**)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)",
+      "Bash(npx eslint *)",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "Bash(node -e ' *)",
+      "Bash(rm -f swagger_tmp.json)",
+      "Bash(curl -s \"https://motqin-demo-2.runasp.net/swagger/v1/swagger.json\" -o swagger_tmp2.json)",
+      "Bash(rm -f swagger_tmp2.json)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(find .. -maxdepth 4 -type d -not -path \"*/node_modules/*\" -not -path \"*/.git/*\" -not -path \"*/.next/*\" -not -path \"*/bin/*\" -not -path \"*/obj/*\" 2>/dev/null | head -60)",
+      "WebSearch"
+    ]
+  }
+}

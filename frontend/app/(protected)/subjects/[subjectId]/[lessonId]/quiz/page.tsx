@@ -18,11 +18,13 @@ const QuizPageContent = () => {
   const lessonId = params.lessonId as string;
   const lessonHref = `/subjects/${subjectIdSlug}/${lessonId}`;
 
+  // No type filter any more — the algorithm decides MCQ vs fill-in-the-blank
+  // from each question's score, so letting the student pin one would break the
+  // graduation rule.
   const category = searchParams.get("category") ?? undefined;
-  const questionType = searchParams.get("type") ?? undefined;
 
   const { isLoading, error, currentCard, blockProgress, feedback, continueCard, submitAnswer, endSession } =
-    useLessonSession(lessonId, { category, questionType });
+    useLessonSession(lessonId, { category });
 
   const [answer, setAnswer] = useState("");
 
@@ -80,6 +82,7 @@ const QuizPageContent = () => {
           {(currentCard.type === "test" || currentCard.type === "filler") && (
             <QuizCard
               question={currentCard.item}
+              form={currentCard.form}
               answer={answer}
               onAnswerChange={setAnswer}
               isReview={currentCard.type === "filler"}

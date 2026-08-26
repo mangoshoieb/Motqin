@@ -61,6 +61,35 @@ function byLastShownThenOrder(a: QuestionState, b: QuestionState): number {
   return a.lastShown !== b.lastShown ? a.lastShown - b.lastShown : a.order - b.order;
 }
 
+// §6.3 — the form escalates with the score. The step that graduates a
+// question is ALWAYS the fill-in-the-blank, so nothing finishes without the
+// student producing the answer from memory; every step below that is
+// multiple choice.
+//
+//   score 0 -> MCQ      score 1 -> MCQ      score 2 -> FIB      score 3 -> done
+//
+// Deliberately `=== GRADUATE - 1`, not `>=`. A finished question sits at
+// GRADUATE, and finished questions only ever come back as filler reviews —
+// which should be the lighter MCQ form, not the graduation gate.
+//
+// Getting the fill-in-the-blank wrong applies the normal -1, dropping the
+// question to GRADUATE - 2, so its next test is an MCQ again and it has to
+// climb back before earning another attempt at the gate.
+function formFor(
+  item: SessionItemPayload,
+  score: number,
+  config: SessionConfig
+): SessionItemForm {
+  const preferred = score === config.GRADUATE - 1 ? item.fib : item.mcq;
+  // Rows that only carry one of the two forms fall back to what exists, so a
+  // question is never unanswerable and can still graduate.
+  const form = preferred ?? item.fib ?? item.mcq;
+  if (!form) {
+    throw new Error(`Question ${item.questionId} has neither an MCQ nor a fill-in-the-blank form`);
+  }
+  return form;
+}
+
 function next(state: SessionState): SessionState {
   const T = state.turn + 1;
 
@@ -130,7 +159,7 @@ function next(state: SessionState): SessionState {
         questions: replaceQuestion(working.questions, q.order, { lastShown: T }),
         turn: T,
       },
-      { type: "test", item }
+      { type: "test", item, form: formFor(item, q.score, working.config) }
     );
   }
 
@@ -164,7 +193,7 @@ function next(state: SessionState): SessionState {
         questions: replaceQuestion(working.questions, q.order, { lastShown: T }),
         turn: T,
       },
-      { type: "filler", item }
+      { type: "filler", item, form: formFor(item, q.score, working.config) }
     );
   }
 
@@ -179,7 +208,7 @@ function next(state: SessionState): SessionState {
         questions: replaceQuestion(working.questions, q.order, { lastShown: T }),
         turn: T,
       },
-      { type: "filler", item }
+      { type: "filler", item, form: formFor(item, q.score, working.config) }
     );
   }
 
@@ -192,7 +221,7 @@ function next(state: SessionState): SessionState {
       questions: replaceQuestion(working.questions, q.order, { lastShown: T }),
       turn: T,
     },
-    { type: "test", item }
+    { type: "test", item, form: formFor(item, q.score, working.config) }
   );
 }
 
@@ -253,6 +282,14 @@ export function endSession(state: SessionState): SessionState {
 }
 
 export function init(payload: SessionItemPayload[], config: SessionConfig): SessionState {
+  // Fail loudly rather than shipping a question that can never be tested.
+  const formless = payload.find((item) => !item.mcq && !item.fib);
+  if (formless) {
+    throw new Error(
+      `Question ${formless.questionId} has neither an MCQ nor a fill-in-the-blank form`
+    );
+  }
+
   const questions: QuestionState[] = payload.map((_, order) => ({
     order,
     seen: false,
@@ -304,15 +341,17 @@ export function normalizeText(input: string): string {
   return input.trim().replace(/\s+/g, " ");
 }
 
-// §6.1 Answer correctness (client-side check).
-export function checkAnswer(item: SessionItemPayload, userAnswer: string): boolean {
-  if (item.questionType === "MultipleChoiceQuestion") {
-    return normalizeText(userAnswer) === normalizeText(item.correctAnswer ?? "");
+// §6.1 Answer correctness (client-side check). Grades against the form that
+// was actually shown — the card carries it, since a question's form changes
+// with its score.
+export function checkAnswer(form: SessionItemForm, userAnswer: string): boolean {
+  if (form.questionType === "MultipleChoiceQuestion") {
+    return normalizeText(userAnswer) === normalizeText(form.correctAnswer ?? "");
   }
 
   const given = normalizeText(userAnswer);
-  const expected = normalizeText(item.correctText ?? "");
-  if (item.caseSensitive === false) {
+  const expected = normalizeText(form.correctText ?? "");
+  if (form.caseSensitive === false) {
     return given.toLocaleLowerCase() === expected.toLocaleLowerCase();
   }
   return given === expected;

@@ -74,6 +74,7 @@ export const API_ROUTES = {
 
   QUESTIONS: {
     BY_LESSON: "/questions/by-lesson",
+    BY_CATEGORY_AND_LESSON: "/questions/by-category-and-lesson",
     ADD_MCQ: "/questions/user/mcq",
     ADD_FILL: "/questions/user/fill",
     START: (questionId: string | number) => `/questions/${questionId}/start`,

@@ -1,4 +1,4 @@
-{
+`{
   "name": "motqin",
   "version": "0.1.0",
   "private": true,
@@ -16,8 +16,8 @@
     "@fullcalendar/react": "^6.1.20",
     "@hookform/resolvers": "^5.2.2",
     "@react-oauth/google": "^0.13.5",
-    "@tanstack/react-query": "^5.101.1",
-    "@tanstack/react-query-devtools": "^5.101.1",
+    "@tanstack/react-query": "5.102.3",
+    "@tanstack/react-query-devtools": "5.102.3",
     "axios": "^1.18.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -31,6 +31,59 @@ interface Lesson {
   title:string;
 }
 
+  // ---------------------------------------------------------------------
+  // Current backend shape (GET /api/questions/by-lesson and
+  // /api/questions/by-category-and-lesson).
+  //
+  // The backend moved from one-row-per-question (QuestionReadDto, below) to
+  // one-row-per-*information*, where a single row carries up to three cards:
+  // a teaching card, an MCQ card, and a fill-in-the-blank card, all about the
+  // same fact. There is no longer a `questionType` field — a row's "type" is
+  // just which cards are non-null.
+  //
+  // "informationCategory" observed values (Arabic, sent verbatim):
+  //   "أساسيات", "معلومات إضافية", "معلومات مهمة".
+  // NOTE: prefixed `Lesson*` on purpose. session.types.ts already declares a
+  // global `InfoCard` (the session algorithm's card union), and same-named
+  // interfaces in the global scope MERGE rather than conflict — which would
+  // silently produce a broken hybrid type.
+  interface LessonInfoCard {
+    title: string | null;
+    explanation: string | null;
+    imageUrl: string | null;
+    audioUrl: string | null;
+    videoUrl: string | null;
+  }
+
+  interface LessonMcqCard {
+    text: string | null;
+    options: string[] | null;
+    correctAnswer: string | null;
+  }
+
+  interface LessonFibCard {
+    // `correctText` is an array — a blank can accept more than one wording.
+    text: string | null;
+    correctText: string[] | null;
+  }
+
+  interface LessonInformation {
+    informationID: number;
+    lessonID: number;
+    displayOrder: number;
+    informationCategory: string | null;
+    title: string | null;
+    infoCard: LessonInfoCard | null;
+    mcqCard: LessonMcqCard | null;
+    fibCard: LessonFibCard | null;
+  }
+
+  // ---------------------------------------------------------------------
+  // LEGACY — the pre-Information response shape. Still referenced by the
+  // session/quiz flow (app/hooks/useLessonSession.ts, app/lib/session-algorithm.ts)
+  // until that flow is migrated against the new algorithm spec. Nothing on the
+  // lesson-questions page uses it any more.
+  //
   // "questionCategory" observed values: "Basic", "Hard", "Advanced".
   // "questionType" observed values: "MultipleChoiceQuestion", "FillInTheBlankQuestion".
   // Confirmed against GET /api/questions/by-lesson via Swagger — see QuestionReadDto.
