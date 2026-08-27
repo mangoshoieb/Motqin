@@ -18,13 +18,17 @@ const QuizPageContent = () => {
   const lessonId = params.lessonId as string;
   const lessonHref = `/subjects/${subjectIdSlug}/${lessonId}`;
 
+  // The route segment is a "{id}-{slug}" pair (see the subject page); the
+  // spaced-repetition endpoints want the bare numeric id.
+  const subjectId = subjectIdSlug.split("-")[0];
+
   // No type filter any more — the algorithm decides MCQ vs fill-in-the-blank
   // from each question's score, so letting the student pin one would break the
   // graduation rule.
   const category = searchParams.get("category") ?? undefined;
 
   const { isLoading, error, currentCard, blockProgress, feedback, continueCard, submitAnswer, endSession } =
-    useLessonSession(lessonId, { category });
+    useLessonSession(lessonId, { category, subjectId });
 
   const [answer, setAnswer] = useState("");
 

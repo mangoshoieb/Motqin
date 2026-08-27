@@ -122,11 +122,13 @@ describe("§9.1 — chunked intro (INTRO_CHUNK = BATCH_SIZE), re-teach, filler, 
     expect(state.currentCard).toMatchObject({ type: "test", item: D });
     state = apply(state, correct);
 
-    // Summary — 5 info cards, 10 test cards, 1 filler; 10 correct, 1 wrong
+    // Summary — 5 info cards, 10 test cards, 1 filler; 10 correct, 1 wrong.
+    // testCorrect is 9, not 10: the only wrong answer was a test card
+    // (turn 6), and the one correct filler (turn 9) doesn't count toward it.
     expect(state.turn).toBe(16);
     expect(state.currentCard).toEqual({
       type: "summary",
-      stats: { testCards: 10, fillerCards: 1, correct: 10, wrong: 1 },
+      stats: { testCards: 10, fillerCards: 1, correct: 10, wrong: 1, testCorrect: 9 },
     });
   });
 });
@@ -206,7 +208,7 @@ describe("§9.2 — chunked introduction fires 4b(i) instead of a filler", () =>
     expect(state.turn).toBe(12);
     expect(state.currentCard).toEqual({
       type: "summary",
-      stats: { testCards: 8, fillerCards: 0, correct: 8, wrong: 0 },
+      stats: { testCards: 8, fillerCards: 0, correct: 8, wrong: 0, testCorrect: 8 },
     });
   });
 });
@@ -264,7 +266,8 @@ describe("§9.3 — the two deep fallbacks (4b(iii) and 4b(iv))", () => {
     expect(state.turn).toBe(7);
     expect(state.currentCard).toEqual({
       type: "summary",
-      stats: { testCards: 4, fillerCards: 1, correct: 5, wrong: 0 },
+      // 5 correct answers overall, but only 4 of them on test cards.
+      stats: { testCards: 4, fillerCards: 1, correct: 5, wrong: 0, testCorrect: 4 },
     });
   });
 });
@@ -275,7 +278,7 @@ describe("edge cases (§8)", () => {
     expect(state.turn).toBe(0);
     expect(state.currentCard).toEqual({
       type: "summary",
-      stats: { testCards: 0, fillerCards: 0, correct: 0, wrong: 0 },
+      stats: { testCards: 0, fillerCards: 0, correct: 0, wrong: 0, testCorrect: 0 },
     });
   });
 
@@ -290,7 +293,13 @@ describe("edge cases (§8)", () => {
     const ended = endSession(state);
     expect(ended.currentCard.type).toBe("summary");
     if (ended.currentCard.type === "summary") {
-      expect(ended.currentCard.stats).toEqual({ testCards: 1, fillerCards: 0, correct: 1, wrong: 0 });
+      expect(ended.currentCard.stats).toEqual({
+        testCards: 1,
+        fillerCards: 0,
+        correct: 1,
+        wrong: 0,
+        testCorrect: 1,
+      });
     }
   });
 });

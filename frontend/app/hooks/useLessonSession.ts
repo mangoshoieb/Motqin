@@ -65,7 +65,7 @@ const toSessionItem = (info: LessonInformation): SessionItemPayload | null => {
 // lesson's Summary is reached.
 export const useLessonSession = (
   lessonId: string,
-  filters?: { category?: string }
+  filters?: { category?: string; subjectId?: string | number }
 ) => {
   const {
     data: questions,
@@ -113,16 +113,63 @@ export const useLessonSession = (
     };
   }, []);
 
-  // Guards against reporting completion twice (e.g. React strict mode's
-  // double-invoke in dev, or an unrelated re-render).
+  // ── Backend session tracking (POST /spaced-repetition/start + /end) ────
+  //
+  // start fires once, as soon as we know the lesson has questions to show;
+  // end fires once, when the Summary card is reached (naturally or via the
+  // "End session" button). The sessionId handed back by start is the only
+  // link between the two.
+  //
+  // The guards are refs rather than state: they must flip synchronously,
+  // before a second effect run can read them, which is what stops React
+  // strict mode's dev double-invoke from opening two sessions. The
+  // sessionId itself IS state — a very short session can reach the Summary
+  // before start resolves, and the re-render is what re-runs the end
+  // effect once the id finally lands.
+  const [sessionId, setSessionId] = useState<number | null>(null);
+  const startedRef = useRef(false);
   const reportedRef = useRef(false);
+
+  const numericSubjectId = Number(filters?.subjectId);
+  const numericLessonId = Number(lessonId);
+
+  useEffect(() => {
+    if (startedRef.current) return;
+    if (!state || state.payload.length === 0) return;
+    if (!Number.isFinite(numericSubjectId) || !Number.isFinite(numericLessonId)) return;
+
+    startedRef.current = true;
+
+    sessionReportingService
+      .startSession({
+        subjectId: numericSubjectId,
+        lessonId: numericLessonId,
+        category: filters?.category ?? null,
+      })
+      .then(setSessionId)
+      .catch((err) => {
+        // A failed start must not block the student from studying — the
+        // session just goes unrecorded, and /end is skipped below since
+        // there's no sessionId to send.
+        console.error("[session-reporting] failed to start session:", err);
+      });
+  }, [state, numericSubjectId, numericLessonId, filters?.category]);
 
   useEffect(() => {
     if (!state || state.currentCard.type !== "summary") return;
     if (reportedRef.current) return;
+
+    // start may still be in flight (a very short session), or may have
+    // failed. Without a sessionId there is nothing to close, so leave the
+    // guard down and let the next render retry once the id lands.
+    if (sessionId === null) return;
+
     reportedRef.current = true;
-    sessionReportingService.reportSessionCompletion(lessonId, state.currentCard.stats);
-  }, [state, lessonId]);
+
+    sessionReportingService.endSession(sessionId, state).catch((err) => {
+      console.error("[session-reporting] failed to end session:", err);
+    });
+  }, [state, sessionId]);
 
   const continueCard = () => {
     setState((prev) => (prev ? apply(prev, { type: "CONTINUE" }) : prev));

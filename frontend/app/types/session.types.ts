@@ -79,6 +79,12 @@ declare global {
     fillerCards: number;
     correct: number; // across both test and filler answers
     wrong: number;
+    // Correct answers on TEST cards only — filler/review answers excluded.
+    // This is the numerator of the "right|appeared" score sent to
+    // POST /spaced-repetition/end; testCards is its denominator. Kept
+    // separate from `correct` (which the summary screen uses for accuracy)
+    // because the backend score deliberately ignores review cards.
+    testCorrect: number;
   }
 
   // The end screen — shown once every question in the lesson is finished,
@@ -126,5 +132,40 @@ declare global {
     blockNumber: number; // 1-based
     totalBlocks: number;
     items: BlockProgressItem[]; // every question in the current block
+  }
+
+  // ── Spaced-repetition session tracking ────────────────────────────────
+  // POST /api/spaced-repetition/start  ->  StartSessionDto / SessionResponseDto
+  // POST /api/spaced-repetition/end    ->  EndSessionDto
+
+  interface StartSessionDto {
+    subjectId: number;
+    lessonId: number;
+    category: string | null;
+  }
+
+  // What /start actually returns. The live endpoint names the field `id`,
+  // not `sessionId` as the DTO name suggests — both are declared optional
+  // here so the service can resolve whichever is present rather than
+  // betting on one and silently losing the handle.
+  interface SessionResponseDto {
+    id?: number;
+    sessionId?: number;
+    // The endpoint may carry more fields we don't consume.
+    [key: string]: unknown;
+  }
+
+  interface EndSessionDto {
+    sessionId: number;
+    // The score, split across two integers (it was a single "4|9" string
+    // before the backend was updated). Both count TEST cards only —
+    // filler/review cards re-test questions that already graduated and
+    // would inflate the total. The same question re-tested counts once per
+    // showing, which is what stats.testCards already tracks.
+    correctAnswersCount: number;
+    totalQuestionsCount: number;
+    endTime: string; // ISO 8601
+    finishedQuestionIds: number[]; // graduated questions only
+    lessonCompleted: boolean; // false when the user ended the session early
   }
 }

@@ -81,6 +81,12 @@ export const API_ROUTES = {
     END: (questionId: string | number) => `/questions/${questionId}/end`,
   },
 
+  SPACED_REPETITION: {
+    START: "/spaced-repetition/start",
+    END: "/spaced-repetition/end",
+    SET_PLAN: (sessionId: string | number) => `/spaced-repetition/set-plan/${sessionId}`,
+  },
+
   USERS:{
     CURRENT_USER: "/users/me",
   }

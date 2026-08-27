@@ -50,7 +50,7 @@ function replaceQuestion(
 }
 
 function emptyStats(): SessionStats {
-  return { testCards: 0, fillerCards: 0, correct: 0, wrong: 0 };
+  return { testCards: 0, fillerCards: 0, correct: 0, wrong: 0, testCorrect: 0 };
 }
 
 function withCard(state: SessionState, card: SessionCard): SessionState {
@@ -256,6 +256,9 @@ export function apply(state: SessionState, event: SessionEvent): SessionState {
       testCards: state.stats.testCards + 1,
       correct: state.stats.correct + (event.correct ? 1 : 0),
       wrong: state.stats.wrong + (event.correct ? 0 : 1),
+      // Test cards are the only thing the backend score counts, so this
+      // tracks alongside `correct` rather than replacing it.
+      testCorrect: state.stats.testCorrect + (event.correct ? 1 : 0),
     };
 
     return next({ ...state, questions, reteach, stats });
