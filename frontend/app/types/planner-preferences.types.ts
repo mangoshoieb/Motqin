@@ -12,7 +12,14 @@ export interface TimeRange {
   end: string; // "HH:MM", 24h
 }
 
-export type WeekDay = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
+export type WeekDay =
+  | "sunday"
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday";
 
 export const WEEKDAYS: { key: WeekDay; label: string }[] = [
   { key: "sunday", label: "الأحد" },
@@ -34,27 +41,29 @@ export interface BusyTimeEntry {
 // actually enforcing it (an automatic end-of-day/week sweep that searches
 // for free slots against busyTimes) is separate follow-up work tied to the
 // existing POST /planner/generate-schedule endpoint.
-export type UnfinishedTaskPolicy = "next-week" | "same-week" | "hybrid";
+export type UnfinishedTaskPolicy =
+  | 1 // AutomatedReschedule
+  | 2 // UserReschedule
+  | 3 // OverworkedNextDay
+  | 4; // Tolerate
 
 export type BusyTimesByDay = Record<WeekDay, BusyTimeEntry[]>;
 
 export interface PlannerPreferences {
-  sleepStart: string; // "HH:MM"
-  sleepEnd: string; // "HH:MM"
-  // Doubles as both the default session length and the Pomodoro work
-  // interval before a break — these were two separate fields at first, but
-  // they're the same number in practice, so they're merged into one.
-  breakIntervalMinutes: number;
-  breakDurationMinutes: number;
-  maxDailyStudyHours: number;
-  unfinishedTaskPolicy: UnfinishedTaskPolicy;
+  minWorkHours: number;
+  maxWorkHours: number;
+  startSleepTime: string;
+  endSleepTime: string;
+  pomodoroWorkMinutes: number;
+  pomodoroBreakMinutes: number;
+  planFailureDecision: number;
   busyTimes: BusyTimesByDay;
 }
 
 const emptyBusyTimes: BusyTimesByDay = {
   sunday: [],
   monday: [],
-  tuesday: [],
+  tuesday: [],  
   wednesday: [],
   thursday: [],
   friday: [],
@@ -62,11 +71,14 @@ const emptyBusyTimes: BusyTimesByDay = {
 };
 
 export const DEFAULT_PLANNER_PREFERENCES: PlannerPreferences = {
-  sleepStart: "23:00",
-  sleepEnd: "07:00",
-  breakIntervalMinutes: 45,
-  breakDurationMinutes: 10,
-  maxDailyStudyHours: 6,
-  unfinishedTaskPolicy: "hybrid",
+  startSleepTime: "23:00",
+  endSleepTime: "07:00",
+  pomodoroWorkMinutes: 90,
+  pomodoroBreakMinutes: 5,
+  minWorkHours: 1,
+  maxWorkHours: 3,
+  planFailureDecision: 1,
   busyTimes: emptyBusyTimes,
 };
+
+export type UpdatePlannerPreferencesRequest = PlannerPreferences;

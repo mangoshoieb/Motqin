@@ -61,13 +61,13 @@ export const API_ROUTES = {
     VERIFY_PHONE: "/auth/phone-verify",
     VERIFY_EMAIL: "/auth/verify-email",
     COMPLETE_PROFILE: "/auth/phone-complete-signup",
-    LOGOUT:"/auth/logout"
+    LOGOUT: "/auth/logout",
   },
-  
+
   SUBJECTS: {
     GET_ALL: "/subjects",
   },
-  
+
   LESSONS: {
     GET_ALL: "/lessons",
   },
@@ -84,10 +84,17 @@ export const API_ROUTES = {
   SPACED_REPETITION: {
     START: "/spaced-repetition/start",
     END: "/spaced-repetition/end",
-    SET_PLAN: (sessionId: string | number) => `/spaced-repetition/set-plan/${sessionId}`,
+    SET_PLAN: (sessionId: string | number) =>
+      `/spaced-repetition/set-plan/${sessionId}`,
   },
 
-  USERS:{
+  USERS: {
     CURRENT_USER: "/users/me",
-  }
+  },
+  USER_PREFERENCES: {
+    GET: "/user-preferences",
+    UPDATE: "/user-preferences",
+    DELETE: "/user-preferences",
+    POST: "/user-preferences",
+  },
 };
