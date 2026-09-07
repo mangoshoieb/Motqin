@@ -54,10 +54,10 @@ export interface PlannerPreferences {
   maxWorkHours: number;
   startSleepTime: string;
   endSleepTime: string;
-  pomodoroWorkMinutes: number;
+  pomodoroWorkingMinutes: number;
   pomodoroBreakMinutes: number;
   planFailureDecision: number;
-  busyTimes: BusyTimesByDay;
+  // busyTimes: BusyTimesByDay;
 }
 
 const emptyBusyTimes: BusyTimesByDay = {
@@ -73,12 +73,19 @@ const emptyBusyTimes: BusyTimesByDay = {
 export const DEFAULT_PLANNER_PREFERENCES: PlannerPreferences = {
   startSleepTime: "23:00",
   endSleepTime: "07:00",
-  pomodoroWorkMinutes: 90,
+  pomodoroWorkingMinutes: 90,
   pomodoroBreakMinutes: 5,
   minWorkHours: 1,
   maxWorkHours: 3,
   planFailureDecision: 1,
-  busyTimes: emptyBusyTimes,
+  // busyTimes: emptyBusyTimes,
 };
-
-export type UpdatePlannerPreferencesRequest = PlannerPreferences;
+export interface UpdatePlannerPreferencesRequest {
+  minWorkHours: number;
+  maxWorkHours: number;
+  startSleepTime: string;
+  endSleepTime: string;
+  pomodoroWorkingMinutes: number;
+  pomodoroBreakMinutes: number;
+  planFailureDecision: number;
+}

@@ -97,4 +97,16 @@ export const API_ROUTES = {
     DELETE: "/user-preferences",
     POST: "/user-preferences",
   },
+  COURSE_SCHEDULES: {
+    GET_ALL: "/user-preferences/courses-schedules",
+    POST: "/user-preferences/course-schedule",
+    UPDATE: (id: string | number) => `/user-preferences/courses-schedule/${id}`,
+    DELETE: (id: string | number) => `/user-preferences/courses-schedule/${id}`,
+  },
+  BUSY_TIMES: {
+    GET_REPEATED: "/user-preferences/busytime/repeated",
+    POST: "/user-preferences/busytime",
+    UPDATE: (id: string | number) => `/user-preferences/busytime/${id}`,
+    DELETE: (id: string | number) => `/user-preferences/busytime/${id}`,
+  },
 };

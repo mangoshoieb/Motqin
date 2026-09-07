@@ -10,7 +10,8 @@ import {
 } from "@/app/types/planner-preferences.types";
 
 import { SettingsField } from "@/components/Settings/SettingsField";
-import { BusyTimesEditor } from "@/components/Settings/Planner/BusyTimesEditor";
+import { CourseScheduleEditor } from "@/components/Settings/Planner/CourseScheduleEditor";
+import { RegularBusyTimeEditor } from "@/components/Settings/Planner/RegularBusyTimeEditor";
 
 const timeInputClass =
   "rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-blue-500";
@@ -76,18 +77,22 @@ const PlannerSettingsPage = () => {
   const handleSave = async () => {
     // Basic client-side validation
     if (draft.minWorkHours < 1) {
-      toast.error("الحد الأدنى لساعات الدراسة يجب أن يكون ساعة واحدة على الأقل.");
+      toast.error(
+        "الحد الأدنى لساعات الدراسة يجب أن يكون ساعة واحدة على الأقل.",
+      );
       return;
     }
 
     if (draft.maxWorkHours < 1) {
-      toast.error("الحد الأقصى لساعات الدراسة يجب أن يكون ساعة واحدة على الأقل.");
+      toast.error(
+        "الحد الأقصى لساعات الدراسة يجب أن يكون ساعة واحدة على الأقل.",
+      );
       return;
     }
 
     if (draft.minWorkHours > draft.maxWorkHours) {
       toast.error(
-        "الحد الأدنى لساعات الدراسة لا يمكن أن يكون أكبر من الحد الأقصى."
+        "الحد الأدنى لساعات الدراسة لا يمكن أن يكون أكبر من الحد الأقصى.",
       );
       return;
     }
@@ -106,6 +111,7 @@ const PlannerSettingsPage = () => {
 
       toast.success("تم حفظ التفضيلات");
     } catch {
+      console.log("hi");
       toast.error("حدث خطأ أثناء حفظ التفضيلات.");
     }
   };
@@ -113,16 +119,23 @@ const PlannerSettingsPage = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-          تفضيلات المخطط
-        </h1>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+            تفضيلات المخطط
+          </h1>
 
-        {error && (
-          <p className="mt-1 text-sm text-red-500">
-            {error}
-          </p>
-        )}
+          {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+        </div>
+     {/* Save */}
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={isSaving}
+        className="self-start  rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isSaving ? "جاري الحفظ..." : "حفظ التفضيلات"}
+      </button>
       </div>
 
       {/* Main Preferences */}
@@ -220,11 +233,11 @@ const PlannerSettingsPage = () => {
             <input
               type="number"
               min={5}
-              value={draft.pomodoroWorkMinutes}
+              value={draft.pomodoroWorkingMinutes}
               onChange={(e) =>
                 setDraft({
                   ...draft,
-                  pomodoroWorkMinutes: Number(e.target.value),
+                  pomodoroWorkingMinutes: Number(e.target.value),
                 })
               }
               className={numberInputClass}
@@ -264,17 +277,14 @@ const PlannerSettingsPage = () => {
               setDraft({
                 ...draft,
                 planFailureDecision: Number(
-                  e.target.value
+                  e.target.value,
                 ) as UnfinishedTaskPolicy,
               })
             }
             className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-blue-500"
           >
             {UNFINISHED_POLICY_OPTIONS.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-              >
+              <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
@@ -283,36 +293,19 @@ const PlannerSettingsPage = () => {
       </div>
 
       {/* Busy Times */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="mb-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">
-          الأوقات المشغولة
-        </h2>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="mb-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">جدول الدروس</h2>
+          <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">أضف الدروس التي تتكرر في أيام محددة من الأسبوع.</p>
+          <CourseScheduleEditor />
+        </div>
 
-        <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
-          أضف الأوقات التي لا تكون فيها متفرغًا للدراسة، لكل يوم على
-          حدة — يمكنك إضافة أكثر من وقت لكل يوم.
-        </p>
-
-        <BusyTimesEditor
-          value={draft.busyTimes}
-          onChange={(busyTimes) =>
-            setDraft({
-              ...draft,
-              busyTimes,
-            })
-          }
-        />
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="mb-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">أوقات مشغولة أخرى</h2>
+          <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">أضف موعدًا بعنوان، إما بوقت البداية والنهاية أو بمدة تقريبية.</p>
+          <RegularBusyTimeEditor />
+        </div>
       </div>
-
-      {/* Save */}
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={isSaving}
-        className="self-start rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isSaving ? "جاري الحفظ..." : "حفظ التفضيلات"}
-      </button>
     </div>
   );
 };
