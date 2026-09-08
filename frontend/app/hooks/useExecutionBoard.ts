@@ -2,8 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { weekData } from "@/app/data/days";
-import { executionBoardData } from "@/app/data/executionBoard";
 import { getPostponedTasks } from "@/app/data/postponedTasksStore";
+import { studyPlansService } from "@/app/services/motqin";
+import {
+  currentWeekDates,
+  studyPlanSessions,
+  studyPlanToExecutionTask,
+} from "@/app/lib/study-plan";
 import { ExecutionDayDetail } from "@/app/types/execution-board.types";
 import { PlannerDay } from "@/app/types/planner.types";
 
@@ -12,27 +17,41 @@ export interface ExecutionBoardData {
   detail: ExecutionDayDetail;
 }
 
-// Mock for now — there is no backend endpoint yet that returns a
-// day-shaped plan (see the planner review). This is the single seam to
-// replace with a real fetch (e.g. GET /api/planner/execution/{dayIndex})
-// once one exists; the returned shape is what the page/components consume,
-// so nothing downstream should need to change.
 async function fetchExecutionBoard(dayIndex: number): Promise<ExecutionBoardData | null> {
-  const day = weekData.find((d) => d.index === dayIndex);
-  const detail = executionBoardData.find((d) => d.dayIndex === dayIndex);
-  if (!day || !detail) return null;
+  const baseDay = weekData.find((d) => d.index === dayIndex);
+  const date = currentWeekDates()[dayIndex - 1];
+  if (!baseDay || !date) return null;
 
-  // Merge in anything postponed to this day from a previous one — done at
-  // fetch time (not via query-cache injection) so it shows up reliably
-  // whenever this day loads, regardless of caching order.
+  const response = await studyPlansService.filter({
+    duration: 1,
+    startDate: date,
+    endDate: date,
+  });
+  const items = response.items.filter((item) => item.date === date);
+  const apiTasks = items.map(studyPlanToExecutionTask);
+
   const postponed = getPostponedTasks(dayIndex);
   const mergedDetail: ExecutionDayDetail = {
-    ...detail,
-    dailyTasks: [...detail.dailyTasks, ...postponed.filter((t) => t.kind === "daily")],
-    revisionTasks: [...detail.revisionTasks, ...postponed.filter((t) => t.kind === "revision")],
+    dayIndex,
+    dailyTasks: [
+      ...apiTasks.filter((task) => task.kind === "daily"),
+      ...postponed.filter((task) => task.kind === "daily"),
+    ],
+    revisionTasks: [
+      ...apiTasks.filter((task) => task.kind === "revision"),
+      ...postponed.filter((task) => task.kind === "revision"),
+    ],
+    sessions: studyPlanSessions(items),
+    outputs: {
+      tasksCompleted: apiTasks.filter((task) => task.completed).length,
+      totalTasks: apiTasks.length,
+      totalSessions: studyPlanSessions(items).length,
+      totalStudyMinutes: 0,
+      quizAccuracy: null,
+    },
   };
 
-  return { day, detail: mergedDetail };
+  return { day: { ...baseDay, date }, detail: mergedDetail };
 }
 
 export const useExecutionBoard = (dayIndex: number) => {

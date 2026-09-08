@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { useGetSubjects } from "@/app/hooks/useGetSubjects";
 import { useGetLessons } from "@/app/hooks/useGetLessons";
 import {
@@ -106,7 +105,6 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
   const [estimatedHours, setEstimatedHours] = useState(1);
   const [breakdownCount, setBreakdownCount] = useState(1);
   const [priority, setPriority] = useState<TaskPriority>("medium");
-  const [rollover, setRollover] = useState(false);
   const [subTasks, setSubTasks] = useState<GoalSubTask[]>([]);
 
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -149,7 +147,6 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
     setEstimatedHours(1);
     setBreakdownCount(1);
     setPriority("medium");
-    setRollover(false);
     setSubTasks([]);
   };
 
@@ -168,7 +165,7 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
       estimatedHours,
       breakdownCount,
       priority,
-      rolloverToNextWeek: rollover,
+      rolloverToNextWeek: false,
       subTasks,
     };
 
@@ -432,12 +429,6 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
             </Select>
           </div>
 
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-              ترحيل تلقائي للأسبوع القادم عند عدم الإكمال
-            </label>
-            <Switch checked={rollover} onCheckedChange={setRollover} />
-          </div>
         </div>
       </div>
 
@@ -556,11 +547,6 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
                       <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-500 shadow-sm dark:bg-zinc-800 dark:text-zinc-400">
                         {goal.estimatedHours} س · مقسم إلى {goal.breakdownCount}
                       </span>
-                      {goal.rolloverToNextWeek && (
-                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                          يُرحّل تلقائيًا
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>

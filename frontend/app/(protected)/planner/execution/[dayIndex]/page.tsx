@@ -12,6 +12,7 @@ import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.typ
 import { ExecutionBoardHeader } from "@/components/ExecutionBoard/ExecutionBoardHeader";
 import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList";
 import { ExecutionNotesSummary } from "@/components/ExecutionBoard/ExecutionNotesSummary";
+import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
 
 const ExecutionBoardPage = () => {
   const params = useParams();
@@ -23,6 +24,7 @@ const ExecutionBoardPage = () => {
 
   const [tasks, setTasks] = useState<ExecutionTask[]>([]);
   const [sessions, setSessions] = useState<ExecutionSession[]>([]);
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
 
   // Seed local state once the (mock, for now) data resolves. Adjusting
   // state during render instead of in an effect, per React's rules on
@@ -51,9 +53,6 @@ const ExecutionBoardPage = () => {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  const dailyTasks = tasks.filter((t) => t.kind === "daily");
-  const revisionTasks = tasks.filter((t) => t.kind === "revision");
 
   const sessionsByTaskId = useMemo(() => {
     const map = new Map<string, ExecutionSession[]>();
@@ -168,28 +167,41 @@ const ExecutionBoardPage = () => {
           }}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ExecutionTaskList
-            title="المهام اليومية"
-            tasks={dailyTasks}
-            sessionsByTaskId={sessionsByTaskId}
-            onToggleComplete={toggleTaskComplete}
-            onAddSession={addSessionForTask}
-            onToggleSession={toggleSession}
-            onDeleteSession={deleteSession}
-            onPostpone={postponeTask}
-            onNotesChange={updateTaskNotes}
-          />
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">مهام اليوم</h2>
+          <button
+            type="button"
+            onClick={() => setIsAddTaskOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            <span className="text-xl leading-none">+</span>
+            إضافة مهمة
+          </button>
+        </div>
 
-          <ExecutionTaskList
-            title="مهام المراجعة (التكرار المتباعد)"
-            tasks={revisionTasks}
-            sessionsByTaskId={sessionsByTaskId}
-            onToggleComplete={toggleTaskComplete}
-            onStartRevision={startRevision}
-            onPostpone={postponeTask}
-            onNotesChange={updateTaskNotes}
+        <ExecutionTaskList
+          title=""
+          tasks={tasks}
+          sessionsByTaskId={sessionsByTaskId}
+          onToggleComplete={toggleTaskComplete}
+          onAddSession={addSessionForTask}
+          onToggleSession={toggleSession}
+          onDeleteSession={deleteSession}
+          onStartRevision={startRevision}
+          onPostpone={postponeTask}
+          onNotesChange={updateTaskNotes}
+        />
+
+        {isAddTaskOpen && (
+          <AddTaskDialog
+            date={data.day.date}
+            onClose={() => setIsAddTaskOpen(false)}
+            onCreated={(task) => setTasks((previous) => [...previous, task])}
           />
+        )}
+
+        <div className="hidden">
+          {tasks.length}
         </div>
 
         <ExecutionNotesSummary tasks={tasks} />

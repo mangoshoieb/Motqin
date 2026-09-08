@@ -29,6 +29,49 @@ export interface BusyTime extends BusyTimePayload {
   id: number;
 }
 
+export interface CreateStudyPlanPayload {
+  subjectId?: number;
+  lessonId?: number;
+  date: string;
+  title: string;
+  durationInMinutes: number;
+  goalCategoryId: number;
+}
+
+export interface CreatedStudyPlan extends CreateStudyPlanPayload {
+  id?: number;
+}
+
+export interface StudySessionDto {
+  id: number;
+  userID: string;
+  studyPlanId: number;
+  lessonID: number;
+  description: string;
+  goalCategoryId: number;
+  durationInMinutes: number;
+  startTime: string;
+  endTime: string;
+  status: number;
+  notes: string[];
+}
+
+export interface StudyPlanItem extends CreateStudyPlanPayload {
+  id: number;
+  userId: string;
+  toBePlanned: number;
+  priority: number;
+  status: number;
+  systemNotes: string[];
+  userNotes: string[];
+  studySessions: StudySessionDto[];
+}
+
+export interface StudyPlanFilterResponse {
+  items: StudyPlanItem[];
+  total: number;
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -108,5 +151,29 @@ export const busyTimesService = {
 
   async remove(id: number): Promise<void> {
     await axiosInstance.delete(API_ROUTES.BUSY_TIMES.DELETE(id));
+  },
+};
+
+export const studyPlansService = {
+  async filter(params: {
+    duration?: number;
+    status?: number;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<StudyPlanFilterResponse> {
+    const { data } = await axiosInstance.get<StudyPlanFilterResponse | ApiEnvelope<StudyPlanFilterResponse>>(
+      API_ROUTES.STUDY_PLANS.FILTER,
+      { params },
+    );
+
+    return unwrap(data) ?? { items: [], total: 0 };
+  },
+
+  async create(payload: CreateStudyPlanPayload): Promise<CreatedStudyPlan> {
+    const { data } = await axiosInstance.post<
+      CreatedStudyPlan | ApiEnvelope<CreatedStudyPlan>
+    >(API_ROUTES.STUDY_PLANS.CREATE, payload);
+
+    return unwrap(data);
   },
 };

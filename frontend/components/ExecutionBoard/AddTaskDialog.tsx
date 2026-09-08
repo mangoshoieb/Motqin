@@ -1,0 +1,119 @@
+"use client";
+
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { BookOpen, X } from "lucide-react";
+import { toast } from "sonner";
+
+import { useGetLessons } from "@/app/hooks/useGetLessons";
+import { useGetSubjects } from "@/app/hooks/useGetSubjects";
+import {
+  CreateStudyPlanPayload,
+  studyPlansService,
+} from "@/app/services/motqin";
+import { cn } from "@/app/lib/utils";
+import { ExecutionTask } from "@/app/types/execution-board.types";
+import { goalTypeOptions } from "@/app/constants/goal.constants";
+import { GoalType } from "@/app/types/goal.types";
+
+const inputClass =
+  "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
+
+const goalCategoryIds: Record<GoalType, number> = {
+  study: 1,
+  revision: 2,
+  other: 3,
+};
+
+interface AddTaskDialogProps {
+  date: string;
+  onCreated: (task: ExecutionTask) => void;
+  onClose: () => void;
+}
+
+export const AddTaskDialog = ({ date, onCreated, onClose }: AddTaskDialogProps) => {
+  const queryClient = useQueryClient();
+  const [source, setSource] = useState<"systematic" | "regular">("systematic");
+  const [subjectId, setSubjectId] = useState("");
+  const [lessonId, setLessonId] = useState("");
+  const [title, setTitle] = useState("");
+  const [goalType, setGoalType] = useState<GoalType>("study");
+  const [duration, setDuration] = useState("60");
+  const { data: subjects } = useGetSubjects();
+  const { data: lessonsData, isFetching: lessonsLoading } = useGetLessons(subjectId);
+  const selectedLesson = lessonsData?.lessons?.find((lesson) => String(lesson.lessonId) === lessonId);
+  const resolvedTitle = source === "systematic" ? selectedLesson?.title ?? "" : title.trim();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (!resolvedTitle) throw new Error("title-required");
+      if (source === "systematic" && (!subjectId || !lessonId)) {
+        throw new Error("lesson-required");
+      }
+      if (!duration || Number(duration) <= 0) throw new Error("duration-required");
+
+      const payload: CreateStudyPlanPayload = {
+        date,
+        title: resolvedTitle,
+        durationInMinutes: Number(duration),
+        goalCategoryId: goalCategoryIds[goalType],
+      };
+      if (source === "systematic") {
+        payload.subjectId = Number(subjectId);
+        payload.lessonId = Number(lessonId);
+      }
+      console.log("Creating study plan with payload:", payload);
+      return studyPlansService.create(payload);
+    },
+    onSuccess: (created) => {
+      onCreated({
+        id: String(created.id ?? crypto.randomUUID()),
+        kind: goalType === "revision" ? "revision" : "daily",
+        title: created.title,
+        subjectName: subjects?.find((subject) => subject.subjectID === Number(subjectId))?.name,
+        estimatedMinutes: created.durationInMinutes,
+        completed: false,
+        quizLink: goalType === "revision" && subjectId && lessonId
+          ? { subjectIdSlug: `${subjectId}-${subjects?.find((subject) => subject.subjectID === Number(subjectId))?.name ?? ""}`, lessonId, category: "أساسيات" }
+          : undefined,
+      });
+       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      toast.success("تمت إضافة المهمة");
+      onClose();
+    },
+    onError: (error) => toast.error(error.message === "title-required" ? "العنوان مطلوب." : error.message === "lesson-required" ? "يرجى اختيار المادة والدرس." : error.message === "duration-required" ? "المدة يجب أن تكون أكبر من صفر." : "حدث خطأ أثناء إضافة المهمة."),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" dir="rtl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2"><BookOpen className="text-blue-600" size={20} /><h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">إضافة مهمة</h2></div>
+          <button type="button" onClick={onClose} title="إغلاق" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white"><X size={20} /></button>
+        </div>
+
+        <div className="mb-5 flex gap-2 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
+          {(["systematic", "regular"] as const).map((value) => (
+            <button key={value} type="button" onClick={() => setSource(value)} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-semibold", source === value ? "bg-white text-blue-700 shadow-sm dark:bg-zinc-900 dark:text-blue-400" : "text-zinc-500")}>{value === "systematic" ? "مهمة مرتبطة بالتطبيق" : "مهمة عادية"}</button>
+          ))}
+        </div>
+
+        {source === "systematic" ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="text-sm text-zinc-700 dark:text-zinc-300">المادة<select value={subjectId} onChange={(event) => { setSubjectId(event.target.value); setLessonId(""); }} className={inputClass}><option value="">اختر المادة</option>{subjects?.map((subject) => <option key={subject.subjectID} value={subject.subjectID}>{subject.name}</option>)}</select></label>
+            <label className="text-sm text-zinc-700 dark:text-zinc-300">الدرس<select value={lessonId} onChange={(event) => setLessonId(event.target.value)} disabled={!subjectId || lessonsLoading} className={inputClass}><option value="">{lessonsLoading ? "جاري التحميل..." : "اختر الدرس"}</option>{lessonsData?.lessons?.map((lesson) => <option key={lesson.lessonId} value={lesson.lessonId}>{lesson.title}</option>)}</select></label>
+          </div>
+        ) : (
+          <label className="block text-sm text-zinc-700 dark:text-zinc-300">عنوان المهمة<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="مثال: قراءة الفصل الثاني" className={inputClass} /></label>
+        )}
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="text-sm text-zinc-700 dark:text-zinc-300">نوع المهمة<select value={goalType} onChange={(event) => setGoalType(event.target.value as GoalType)} className={inputClass}>{goalTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+          <label className="text-sm text-zinc-700 dark:text-zinc-300">المدة بالدقائق<input type="number" min={1} value={duration} onChange={(event) => setDuration(event.target.value)} className={inputClass} /></label>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-700">إلغاء</button><button type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">{mutation.isPending ? "جاري الإضافة..." : "إضافة المهمة"}</button></div>
+      </div>
+    </div>
+  );
+};

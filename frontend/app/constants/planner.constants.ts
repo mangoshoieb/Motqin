@@ -109,4 +109,8 @@ export const API_ROUTES = {
     UPDATE: (id: string | number) => `/user-preferences/busytime/${id}`,
     DELETE: (id: string | number) => `/user-preferences/busytime/${id}`,
   },
+  STUDY_PLANS: {
+    CREATE: "/study-plan/create",
+    FILTER: "/study-plan/filter",
+  },
 };

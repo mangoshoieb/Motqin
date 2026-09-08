@@ -30,7 +30,7 @@ export const ExecutionTaskList = ({
 }: ExecutionTaskListProps) => {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{title}</h2>
+      {title && <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{title}</h2>}
 
       {tasks.length === 0 ? (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">لا توجد مهام هنا لهذا اليوم</p>
