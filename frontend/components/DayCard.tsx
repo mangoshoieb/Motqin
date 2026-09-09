@@ -1,7 +1,7 @@
 // components/planner/DayCard.tsx
 import { CheckSquare, Square } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export interface Task {
   id: string;
@@ -39,6 +39,8 @@ interface DayCardProps {
 
   mood:"مذهل" | "ممتاز" | "جيد" | "متوسط";
   tasks: Task[];
+  isFuture?: boolean;
+  onTaskComplete?: (taskId: string, completed: boolean) => Promise<void>;
 
   onClick?: () => void;
 }
@@ -51,18 +53,20 @@ export default function DayCard({
   totalTasks,
   workingHours,
   focusSessions,
-  mood,
   tasks,
+  isFuture = false,
+  onTaskComplete,
   onClick,
 }: DayCardProps) {
   const [open, setOpen] = useState(false);
   const [selectedMood, setSelectedMood] = useState(moodOptions[1]);
 
   const [taskList, setTaskList] = useState(tasks);
-
-  useEffect(() => {
+  const [initializedTasks, setInitializedTasks] = useState(tasks);
+  if (tasks !== initializedTasks) {
+    setInitializedTasks(tasks);
     setTaskList(tasks);
-  }, [tasks]);
+  }
 
   completedTasks = taskList.filter((task) => task.completed).length;
 
@@ -70,12 +74,22 @@ export default function DayCard({
   const progress =
     totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
-  const toggleTask = (taskId: string) => {
-    setTaskList((prev) =>
-      prev.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const toggleTask = async (taskId: string) => {
+    const task = taskList.find((item) => item.id === taskId);
+    if (!task) return;
+    const completed = !task.completed;
+
+    setTaskList((prev) => prev.map((item) =>
+      item.id === taskId ? { ...item, completed } : item,
+    ));
+
+    try {
+      await onTaskComplete?.(taskId, completed);
+    } catch {
+      setTaskList((prev) => prev.map((item) =>
+        item.id === taskId ? { ...item, completed: task.completed } : item,
+      ));
+    }
   };
   const visibleTasks = taskList?.slice(0, 4) ?? [];
   const remainingTasks = Math.max(taskList?.length - 4, 0);
@@ -118,8 +132,8 @@ export default function DayCard({
         className="flex flex-1 flex-col p-3 bg-white dark:bg-zinc-900"
         dir="rtl"
       >
-        {/* Performance */}
-        <section>
+        {/* Performance is only meaningful after the day has started. */}
+        {!isFuture && <section>
           <h4 className="mb-3 text-lg font-semibold text-right text-zinc-900 dark:text-zinc-100">الأداء</h4>
 
           <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -181,7 +195,7 @@ export default function DayCard({
               </div>
             </div>
           </div>
-        </section>
+        </section>}
 
         {/* Tasks */}
         <section className="mt-8">
@@ -193,7 +207,7 @@ export default function DayCard({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleTask(task.id);
+                    void toggleTask(task.id);
                   }}
                 >
                   {task.completed ? (

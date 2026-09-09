@@ -30,9 +30,12 @@ export const studyPlanToExecutionTask = (item: StudyPlanItem): ExecutionTask => 
   id: String(item.id),
   kind: item.goalCategoryId === 2 ? "revision" : "daily",
   title: item.title,
+  goalCategoryId: item.goalCategoryId,
+  priority: item.priority,
+  date: item.date,
   estimatedMinutes: item.durationInMinutes,
   completed: item.status === completedStatus,
-  notes: [...item.systemNotes, ...item.userNotes].join("\n"),
+  notes: item.userNotes.join("\n") || item.systemNotes.join("\n"),
 });
 
 const sessionStatus = (status: number): ExecutionSession["status"] => {
@@ -58,9 +61,13 @@ export const studyPlanSessions = (items: StudyPlanItem[]): ExecutionSession[] =>
 export const dateOnly = (value: Date) =>
   `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 
-export const currentWeekDates = () => {
+export const currentWeekDates = (weekOffset = 0) => {
   const today = new Date();
-  const sunday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+  const sunday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - today.getDay() + weekOffset * 7,
+  );
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(sunday);
     date.setDate(sunday.getDate() + index);

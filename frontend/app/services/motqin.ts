@@ -36,6 +36,9 @@ export interface CreateStudyPlanPayload {
   title: string;
   durationInMinutes: number;
   goalCategoryId: number;
+  priority?: number;
+  status?: number;
+  userNotes?: string[];
 }
 
 export interface CreatedStudyPlan extends CreateStudyPlanPayload {
@@ -175,5 +178,20 @@ export const studyPlansService = {
     >(API_ROUTES.STUDY_PLANS.CREATE, payload);
 
     return unwrap(data);
+  },
+
+  async update(
+    id: number,
+    payload: Partial<CreateStudyPlanPayload>,
+  ): Promise<StudyPlanItem> {
+    const { data } = await axiosInstance.put<
+      StudyPlanItem | ApiEnvelope<StudyPlanItem>
+    >(API_ROUTES.STUDY_PLANS.UPDATE(id), payload);
+
+    return unwrap(data);
+  },
+
+  async remove(id: number): Promise<void> {
+    await axiosInstance.delete(API_ROUTES.STUDY_PLANS.DELETE(id));
   },
 };

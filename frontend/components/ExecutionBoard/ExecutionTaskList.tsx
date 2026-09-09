@@ -14,6 +14,9 @@ interface ExecutionTaskListProps {
   onStartRevision?: (task: ExecutionTask) => void;
   onPostpone?: (task: ExecutionTask) => void;
   onNotesChange: (id: string, notes: string) => void;
+  onEdit?: (task: ExecutionTask) => void;
+  onDelete?: (task: ExecutionTask) => void;
+  onDropTask?: (draggedId: string, targetId: string) => void;
 }
 
 export const ExecutionTaskList = ({
@@ -27,6 +30,9 @@ export const ExecutionTaskList = ({
   onStartRevision,
   onPostpone,
   onNotesChange,
+  onEdit,
+  onDelete,
+  onDropTask,
 }: ExecutionTaskListProps) => {
   return (
     <section className="flex flex-col gap-3">
@@ -48,6 +54,9 @@ export const ExecutionTaskList = ({
               onStartRevision={onStartRevision}
               onPostpone={onPostpone}
               onNotesChange={onNotesChange}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onDropTask={onDropTask}
             />
           ))}
         </div>

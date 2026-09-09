@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckSquare, Square, Play, Pause, X, StickyNote, SkipForward } from "lucide-react";
+import { CheckSquare, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 
@@ -15,6 +15,9 @@ interface ExecutionTaskRowProps {
   onStartRevision?: (task: ExecutionTask) => void; // navigates into the real quiz flow
   onPostpone?: (task: ExecutionTask) => void; // sends an unfinished task to tomorrow
   onNotesChange: (id: string, notes: string) => void;
+  onEdit?: (task: ExecutionTask) => void;
+  onDelete?: (task: ExecutionTask) => void;
+  onDropTask?: (draggedId: string, targetId: string) => void;
 }
 
 const formatMinutes = (minutes: number) => {
@@ -33,11 +36,28 @@ export const ExecutionTaskRow = ({
   onStartRevision,
   onPostpone,
   onNotesChange,
+  onEdit,
+  onDelete,
+  onDropTask,
 }: ExecutionTaskRowProps) => {
-  const [notesOpen, setNotesOpen] = useState(Boolean(task.notes));
+  const [noteEditing, setNoteEditing] = useState(false);
+  const [noteDraft, setNoteDraft] = useState(task.notes ?? "");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const priority = Math.max(0, Math.min(3, task.priority ?? 0));
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-white border border-zinc-200 p-4 dark:bg-zinc-900 dark:border-zinc-800">
+    <div
+      draggable
+      onDragStart={(event) => event.dataTransfer.setData("text/task-id", task.id)}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        const draggedId = event.dataTransfer.getData("text/task-id");
+        if (draggedId && draggedId !== task.id) onDropTask?.(draggedId, task.id);
+      }}
+      className="grid cursor-grab grid-cols-1 overflow-hidden bg-transparent p-0 active:cursor-grabbing lg:grid-cols-[0.94fr_1.06fr]"
+    >
+      <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-white p-5 dark:bg-zinc-900">
       <div className="flex items-center gap-3">
         <button type="button" onClick={() => onToggleComplete(task.id)} className="shrink-0">
           {task.completed ? (
@@ -63,31 +83,24 @@ export const ExecutionTaskRow = ({
               ? ` · التكرار #${task.repetitionNumber}`
               : ""}
           </p>
+          <div className="mt-1 flex gap-0.5" aria-label={`الأولوية ${priority} من 3`}>
+            {[1, 2, 3].map((star) => (
+              <Star key={star} size={13} fill={star <= priority ? "currentColor" : "none"} className={star <= priority ? "text-amber-400" : "text-zinc-300 dark:text-zinc-700"} />
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => setNotesOpen((prev) => !prev)}
-            title="ملاحظة"
-            className={cn(
-              "flex items-center justify-center size-8 rounded-full transition hover:bg-zinc-100 dark:hover:bg-zinc-800",
-              task.notes ? "text-blue-600 dark:text-blue-400" : "text-zinc-400 dark:text-zinc-500"
+          <div className="relative">
+            <button type="button" title="خيارات المهمة" onClick={() => setMenuOpen((open) => !open)} className="flex size-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"><MoreVertical size={17} /></button>
+            {menuOpen && (
+              <div className="absolute left-0 top-9 z-20 min-w-36 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                <button type="button" onClick={() => { setMenuOpen(false); onEdit?.(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700"><Pencil size={14} /> تعديل المهمة</button>
+                {!task.completed && onPostpone && <button type="button" onClick={() => { setMenuOpen(false); onPostpone(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700"><SkipForward size={14} /> إرسال إلى الغد</button>}
+                <button type="button" onClick={() => { setMenuOpen(false); onDelete?.(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"><Trash2 size={14} /> حذف المهمة</button>
+              </div>
             )}
-          >
-            <StickyNote size={16} />
-          </button>
-
-          {!task.completed && onPostpone && (
-            <button
-              type="button"
-              onClick={() => onPostpone(task)}
-              title="إرسال إلى الغد"
-              className="flex items-center justify-center size-8 rounded-full text-zinc-400 transition hover:bg-zinc-100 dark:text-zinc-500 dark:hover:bg-zinc-800"
-            >
-              <SkipForward size={16} />
-            </button>
-          )}
+          </div>
 
           {task.kind === "revision" && (
             <button
@@ -144,18 +157,67 @@ export const ExecutionTaskRow = ({
           </button>
         </div>
       )}
+      </div>
 
-      {notesOpen && (
-        <div className="pr-9">
-          <textarea
-            value={task.notes ?? ""}
-            onChange={(e) => onNotesChange(task.id, e.target.value)}
-            placeholder="أضف ملاحظة..."
-            rows={2}
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2 text-sm outline-none transition focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:focus:border-blue-500"
-          />
+      <div className="flex h-[90%] mt-3 min-h-50 flex-col rounded-l-2xl bg-zinc-50 p-5 dark:bg-zinc-800">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">ملاحظات المهمة</h3>
         </div>
-      )}
+
+        {noteEditing ? (
+          <div className="flex flex-col gap-3">
+            <textarea
+              value={noteDraft}
+              onChange={(event) => setNoteDraft(event.target.value)}
+              placeholder="أضف ملاحظة..."
+              rows={5}
+              autoFocus
+              className="min-h-22 w-full resize-y rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm outline-none transition focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:focus:border-blue-500"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setNoteDraft(task.notes ?? "");
+                  setNoteEditing(false);
+                }}
+                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onNotesChange(task.id, noteDraft.trim());
+                  setNoteEditing(false);
+                }}
+                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+              >
+                حفظ
+              </button>
+            </div>
+          </div>
+        ) : task.notes ? (
+          <button
+            type="button"
+            onClick={() => setNoteEditing(true)}
+            className="flex flex-1 whitespace-pre-wrap rounded-lg bg-zinc-50 p-3 text-right text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+          >
+            {task.notes}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setNoteDraft("");
+              setNoteEditing(true);
+            }}
+            className="flex flex-1 items-center justify-center px-3 py-8 text-sm text-zinc-400 transition hover:text-blue-600 dark:hover:text-blue-400"
+          >
+            لا يوجد ملاحظات أضف ملاحظة
+          </button>
+        )}
+      </div>
     </div>
   );
 };

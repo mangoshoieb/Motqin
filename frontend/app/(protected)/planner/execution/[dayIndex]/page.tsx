@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -11,20 +11,28 @@ import { addPostponedTask } from "@/app/data/postponedTasksStore";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 import { ExecutionBoardHeader } from "@/components/ExecutionBoard/ExecutionBoardHeader";
 import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList";
-import { ExecutionNotesSummary } from "@/components/ExecutionBoard/ExecutionNotesSummary";
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
+import { studyPlansService } from "@/app/services/motqin";
+import { currentWeekDates } from "@/app/lib/study-plan";
 
 const ExecutionBoardPage = () => {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
   const dayIndex = Number(params.dayIndex);
+  const parsedWeek = Number(searchParams.get("week") ?? "0");
+  const weekOffset = Number.isFinite(parsedWeek) ? Math.max(0, Math.min(1, parsedWeek)) : 0;
 
-  const { data, isLoading } = useExecutionBoard(dayIndex);
+  const { data, isLoading } = useExecutionBoard(dayIndex, weekOffset);
 
   const [tasks, setTasks] = useState<ExecutionTask[]>([]);
   const [sessions, setSessions] = useState<ExecutionSession[]>([]);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<ExecutionTask | null>(null);
+
+  const sortByPriority = (items: ExecutionTask[]) =>
+    [...items].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
   // Seed local state once the (mock, for now) data resolves. Adjusting
   // state during render instead of in an effect, per React's rules on
@@ -32,7 +40,7 @@ const ExecutionBoardPage = () => {
   const [initializedFor, setInitializedFor] = useState<ExecutionBoardData | null | undefined>(undefined);
   if (data && data !== initializedFor) {
     setInitializedFor(data);
-    setTasks([...data.detail.dailyTasks, ...data.detail.revisionTasks]);
+    setTasks(sortByPriority([...data.detail.dailyTasks, ...data.detail.revisionTasks]));
     setSessions(data.detail.sessions);
   }
 
@@ -65,11 +73,34 @@ const ExecutionBoardPage = () => {
   }, [sessions]);
 
   const toggleTaskComplete = (id: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+    const task = tasks.find((item) => item.id === id);
+    if (!task) return;
+
+    const completed = !task.completed;
+    setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, completed } : item)));
+
+    void studyPlansService.update(Number(id), { status: completed ? 1 : 3 })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
+      .catch(() => {
+        setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, completed: task.completed } : item)));
+        toast.error("تعذر حفظ حالة المهمة");
+      });
   };
 
   const updateTaskNotes = (id: string, notes: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, notes } : t)));
+    const task = tasks.find((item) => item.id === id);
+    if (!task) return;
+
+    setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, notes } : item)));
+
+    void studyPlansService.update(Number(id), {
+      userNotes: notes.trim() ? [notes.trim()] : [],
+    })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
+      .catch(() => {
+        setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, notes: task.notes } : item)));
+        toast.error("تعذر حفظ ملاحظة المهمة");
+      });
   };
 
   // Only one session is ever "active" app-wide — starting or resuming one
@@ -123,11 +154,58 @@ const ExecutionBoardPage = () => {
       return;
     }
     const targetDayIndex = dayIndex + 1;
-    addPostponedTask(targetDayIndex, { ...task, completed: false });
-    queryClient.invalidateQueries({ queryKey: ["execution-board", targetDayIndex] });
-    setTasks((prev) => prev.filter((t) => t.id !== task.id));
-    setSessions((prev) => prev.filter((s) => s.taskId !== task.id));
-    toast.success("تم إرسال المهمة إلى الغد");
+    const targetDate = currentWeekDates(weekOffset)[targetDayIndex - 1];
+
+    void studyPlansService.update(Number(task.id), { date: targetDate }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["execution-board", targetDayIndex] });
+      setTasks((prev) => prev.filter((t) => t.id !== task.id));
+      setSessions((prev) => prev.filter((s) => s.taskId !== task.id));
+      toast.success("تم إرسال المهمة إلى الغد");
+    }).catch(() => {
+      // Keep the task visible when the server rejects the move.
+      addPostponedTask(targetDayIndex, { ...task, completed: false });
+      toast.error("تعذر إرسال المهمة إلى الغد");
+    });
+  };
+
+  const deleteTask = (task: ExecutionTask) => {
+    if (!window.confirm("هل تريد حذف هذه المهمة؟")) return;
+    void studyPlansService.remove(Number(task.id)).then(() => {
+      setTasks((prev) => prev.filter((item) => item.id !== task.id));
+      setSessions((prev) => prev.filter((session) => session.taskId !== task.id));
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      toast.success("تم حذف المهمة");
+    }).catch(() => toast.error("تعذر حذف المهمة"));
+  };
+
+  const reorderTasks = (draggedId: string, targetId: string) => {
+    setTasks((previous) => {
+      const next = [...previous];
+      const from = next.findIndex((task) => task.id === draggedId);
+      const to = next.findIndex((task) => task.id === targetId);
+      if (from < 0 || to < 0) return previous;
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      const prioritized = next.map((task, index) => ({
+        ...task,
+        priority: index === 0 ? 3 : index === 1 ? 2 : index === 2 ? 1 : 0,
+      }));
+      void Promise.all(
+        prioritized
+          .filter((task) => task.priority !== previous.find((item) => item.id === task.id)?.priority)
+          .map((task) => studyPlansService.update(Number(task.id), { priority: task.priority })),
+      ).then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
+        .catch(() => toast.error("تعذر حفظ ترتيب الأولويات"));
+      return prioritized;
+    });
+  };
+
+  const saveTaskFromDialog = (nextTask: ExecutionTask) => {
+    setTasks((previous) => sortByPriority(previous.some((task) => task.id === nextTask.id)
+      ? previous.map((task) => (task.id === nextTask.id ? nextTask : task))
+      : [...previous, nextTask]));
+    setEditingTask(null);
   };
 
   if (isLoading) {
@@ -190,13 +268,17 @@ const ExecutionBoardPage = () => {
           onStartRevision={startRevision}
           onPostpone={postponeTask}
           onNotesChange={updateTaskNotes}
+          onEdit={setEditingTask}
+          onDelete={deleteTask}
+          onDropTask={reorderTasks}
         />
 
-        {isAddTaskOpen && (
+        {(isAddTaskOpen || editingTask) && (
           <AddTaskDialog
             date={data.day.date}
-            onClose={() => setIsAddTaskOpen(false)}
-            onCreated={(task) => setTasks((previous) => [...previous, task])}
+            task={editingTask ?? undefined}
+            onClose={() => { setIsAddTaskOpen(false); setEditingTask(null); }}
+            onCreated={saveTaskFromDialog}
           />
         )}
 
@@ -204,7 +286,6 @@ const ExecutionBoardPage = () => {
           {tasks.length}
         </div>
 
-        <ExecutionNotesSummary tasks={tasks} />
       </div>
     </div>
   );

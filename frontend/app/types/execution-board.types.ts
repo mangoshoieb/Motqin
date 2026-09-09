@@ -19,6 +19,9 @@ export interface ExecutionTask {
   id: string;
   kind: ExecutionTaskKind;
   title: string;
+  goalCategoryId?: number;
+  priority?: number;
+  date?: string;
   subjectName?: string;
   estimatedMinutes: number;
   completed: boolean;

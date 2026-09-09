@@ -29,16 +29,20 @@ interface AddTaskDialogProps {
   date: string;
   onCreated: (task: ExecutionTask) => void;
   onClose: () => void;
+  task?: ExecutionTask;
 }
 
-export const AddTaskDialog = ({ date, onCreated, onClose }: AddTaskDialogProps) => {
+export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogProps) => {
   const queryClient = useQueryClient();
-  const [source, setSource] = useState<"systematic" | "regular">("systematic");
+  const isEditing = Boolean(task);
+  const [source, setSource] = useState<"systematic" | "regular">("regular");
   const [subjectId, setSubjectId] = useState("");
   const [lessonId, setLessonId] = useState("");
-  const [title, setTitle] = useState("");
-  const [goalType, setGoalType] = useState<GoalType>("study");
-  const [duration, setDuration] = useState("60");
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [goalType, setGoalType] = useState<GoalType>(
+    task?.goalCategoryId === 2 ? "revision" : task?.goalCategoryId === 3 ? "other" : "study",
+  );
+  const [duration, setDuration] = useState(String(task?.estimatedMinutes ?? 60));
   const { data: subjects } = useGetSubjects();
   const { data: lessonsData, isFetching: lessonsLoading } = useGetLessons(subjectId);
   const selectedLesson = lessonsData?.lessons?.find((lesson) => String(lesson.lessonId) === lessonId);
@@ -47,6 +51,12 @@ export const AddTaskDialog = ({ date, onCreated, onClose }: AddTaskDialogProps) 
   const mutation = useMutation({
     mutationFn: async () => {
       if (!resolvedTitle) throw new Error("title-required");
+      if (isEditing && task) {
+        return studyPlansService.update(Number(task.id), {
+          title: resolvedTitle,
+          goalCategoryId: goalCategoryIds[goalType],
+        });
+      }
       if (source === "systematic" && (!subjectId || !lessonId)) {
         throw new Error("lesson-required");
       }
@@ -67,21 +77,24 @@ export const AddTaskDialog = ({ date, onCreated, onClose }: AddTaskDialogProps) 
     },
     onSuccess: (created) => {
       onCreated({
-        id: String(created.id ?? crypto.randomUUID()),
+        ...task,
+        id: String(created.id ?? task?.id ?? crypto.randomUUID()),
         kind: goalType === "revision" ? "revision" : "daily",
         title: created.title,
+        goalCategoryId: created.goalCategoryId,
+        priority: created.priority ?? task?.priority,
         subjectName: subjects?.find((subject) => subject.subjectID === Number(subjectId))?.name,
         estimatedMinutes: created.durationInMinutes,
-        completed: false,
+        completed: task?.completed ?? false,
         quizLink: goalType === "revision" && subjectId && lessonId
           ? { subjectIdSlug: `${subjectId}-${subjects?.find((subject) => subject.subjectID === Number(subjectId))?.name ?? ""}`, lessonId, category: "أساسيات" }
           : undefined,
       });
        queryClient.invalidateQueries({ queryKey: ["study-plans"] });
-      toast.success("تمت إضافة المهمة");
+      toast.success(isEditing ? "تم تحديث المهمة" : "تمت إضافة المهمة");
       onClose();
     },
-    onError: (error) => toast.error(error.message === "title-required" ? "العنوان مطلوب." : error.message === "lesson-required" ? "يرجى اختيار المادة والدرس." : error.message === "duration-required" ? "المدة يجب أن تكون أكبر من صفر." : "حدث خطأ أثناء إضافة المهمة."),
+    onError: (error) => toast.error(error.message === "title-required" ? "العنوان مطلوب." : error.message === "lesson-required" ? "يرجى اختيار المادة والدرس." : error.message === "duration-required" ? "المدة يجب أن تكون أكبر من صفر." : "حدث خطأ أثناء حفظ المهمة."),
   });
 
   return (
@@ -92,13 +105,15 @@ export const AddTaskDialog = ({ date, onCreated, onClose }: AddTaskDialogProps) 
           <button type="button" onClick={onClose} title="إغلاق" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white"><X size={20} /></button>
         </div>
 
-        <div className="mb-5 flex gap-2 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
+        {!isEditing && <div className="mb-5 flex gap-2 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
           {(["systematic", "regular"] as const).map((value) => (
             <button key={value} type="button" onClick={() => setSource(value)} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-semibold", source === value ? "bg-white text-blue-700 shadow-sm dark:bg-zinc-900 dark:text-blue-400" : "text-zinc-500")}>{value === "systematic" ? "مهمة مرتبطة بالتطبيق" : "مهمة عادية"}</button>
           ))}
-        </div>
+        </div>}
 
-        {source === "systematic" ? (
+        {isEditing ? (
+          <label className="block text-sm text-zinc-700 dark:text-zinc-300">عنوان المهمة<input value={title} onChange={(event) => setTitle(event.target.value)} className={inputClass} /></label>
+        ) : source === "systematic" ? (
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm text-zinc-700 dark:text-zinc-300">المادة<select value={subjectId} onChange={(event) => { setSubjectId(event.target.value); setLessonId(""); }} className={inputClass}><option value="">اختر المادة</option>{subjects?.map((subject) => <option key={subject.subjectID} value={subject.subjectID}>{subject.name}</option>)}</select></label>
             <label className="text-sm text-zinc-700 dark:text-zinc-300">الدرس<select value={lessonId} onChange={(event) => setLessonId(event.target.value)} disabled={!subjectId || lessonsLoading} className={inputClass}><option value="">{lessonsLoading ? "جاري التحميل..." : "اختر الدرس"}</option>{lessonsData?.lessons?.map((lesson) => <option key={lesson.lessonId} value={lesson.lessonId}>{lesson.title}</option>)}</select></label>
@@ -109,10 +124,10 @@ export const AddTaskDialog = ({ date, onCreated, onClose }: AddTaskDialogProps) 
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="text-sm text-zinc-700 dark:text-zinc-300">نوع المهمة<select value={goalType} onChange={(event) => setGoalType(event.target.value as GoalType)} className={inputClass}>{goalTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
-          <label className="text-sm text-zinc-700 dark:text-zinc-300">المدة بالدقائق<input type="number" min={1} value={duration} onChange={(event) => setDuration(event.target.value)} className={inputClass} /></label>
+          {!isEditing && <label className="text-sm text-zinc-700 dark:text-zinc-300">المدة بالدقائق<input type="number" min={1} value={duration} onChange={(event) => setDuration(event.target.value)} className={inputClass} /></label>}
         </div>
 
-        <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-700">إلغاء</button><button type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">{mutation.isPending ? "جاري الإضافة..." : "إضافة المهمة"}</button></div>
+        <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-700">إلغاء</button><button type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">{mutation.isPending ? "جاري الحفظ..." : isEditing ? "حفظ التعديل" : "إضافة المهمة"}</button></div>
       </div>
     </div>
   );

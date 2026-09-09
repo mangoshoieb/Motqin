@@ -17,9 +17,9 @@ export interface ExecutionBoardData {
   detail: ExecutionDayDetail;
 }
 
-async function fetchExecutionBoard(dayIndex: number): Promise<ExecutionBoardData | null> {
+async function fetchExecutionBoard(dayIndex: number, weekOffset: number): Promise<ExecutionBoardData | null> {
   const baseDay = weekData.find((d) => d.index === dayIndex);
-  const date = currentWeekDates()[dayIndex - 1];
+  const date = currentWeekDates(weekOffset)[dayIndex - 1];
   if (!baseDay || !date) return null;
 
   const response = await studyPlansService.filter({
@@ -54,10 +54,10 @@ async function fetchExecutionBoard(dayIndex: number): Promise<ExecutionBoardData
   return { day: { ...baseDay, date }, detail: mergedDetail };
 }
 
-export const useExecutionBoard = (dayIndex: number) => {
+export const useExecutionBoard = (dayIndex: number, weekOffset = 0) => {
   return useQuery({
-    queryKey: ["execution-board", dayIndex],
-    queryFn: () => fetchExecutionBoard(dayIndex),
+    queryKey: ["execution-board", dayIndex, weekOffset],
+    queryFn: () => fetchExecutionBoard(dayIndex, weekOffset),
     enabled: Number.isFinite(dayIndex),
   });
 };

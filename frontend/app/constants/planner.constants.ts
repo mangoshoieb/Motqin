@@ -112,5 +112,7 @@ export const API_ROUTES = {
   STUDY_PLANS: {
     CREATE: "/study-plan/create",
     FILTER: "/study-plan/filter",
+    UPDATE: (id: string | number) => `/study-plan/${id}`,
+    DELETE: (id: string | number) => `/study-plan/${id}`,
   },
 };

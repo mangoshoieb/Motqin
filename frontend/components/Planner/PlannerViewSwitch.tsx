@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/app/lib/utils";
-import { weekData } from "@/app/data/days";
 
 // Segmented control for switching between the week board and today's
 // execution board — self-contained (looks up "today" from weekData) so it
@@ -11,7 +10,7 @@ import { weekData } from "@/app/data/days";
 export const PlannerViewSwitch = () => {
   const pathname = usePathname();
   const isExecution = pathname.startsWith("/planner/execution");
-  const todayIndex = weekData.find((d) => d.isToday)?.index ?? weekData[0]?.index ?? 1;
+  const todayIndex = new Date().getDay() + 1;
 
   return (
     <div className="inline-flex items-center gap-1.5 rounded-2xl bg-zinc-200/70 dark:bg-zinc-900 p-1.5">
@@ -27,7 +26,7 @@ export const PlannerViewSwitch = () => {
         عرض الأسبوع
       </Link>
       <Link
-        href={`/planner/execution/${todayIndex}`}
+        href={`/planner/execution/${todayIndex}?week=0`}
         className={cn(
           "px-5 py-2 rounded-xl text-sm font-bold transition-all",
           isExecution
