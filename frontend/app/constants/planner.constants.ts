@@ -115,4 +115,12 @@ export const API_ROUTES = {
     UPDATE: (id: string | number) => `/study-plan/${id}`,
     DELETE: (id: string | number) => `/study-plan/${id}`,
   },
+  STUDY_SESSIONS: {
+    CREATE: "/study-session/create",
+    UPDATE: (id: string | number) => `/study-session/${id}`,
+    DELETE: (id: string | number) => `/study-session/${id}`,
+    START: (id: string | number) => `/study-session/${id}/start`,
+    END: (id: string | number) => `/study-session/${id}/end`,
+    PAUSE: (id: string | number) => `/study-session/${id}/pause`,
+  },
 };

@@ -59,6 +59,26 @@ export interface StudySessionDto {
   notes: string[];
 }
 
+export interface CreateStudySessionPayload {
+  studyPlanId?: number;
+  date: string;
+  description?: string;
+  durationInMinutes?: number;
+  goalCategoryId?: number;
+}
+
+export interface UpdateStudySessionPayload {
+  studyPlanId?: number;
+  description?: string;
+  goalCategoryId?: number;
+  durationInMinutes?: number;
+  // The backend types this as a free-form string rather than the numeric
+  // Statuses enum it returns — we leave it unset until we know the accepted
+  // values, and let /start, /end and /pause own the status transitions.
+  status?: string;
+  notes?: string[];
+}
+
 export interface StudyPlanItem extends CreateStudyPlanPayload {
   id: number;
   userId: string;
@@ -193,5 +213,56 @@ export const studyPlansService = {
 
   async remove(id: number): Promise<void> {
     await axiosInstance.delete(API_ROUTES.STUDY_PLANS.DELETE(id));
+  },
+};
+
+export const studySessionsService = {
+  async create(payload: CreateStudySessionPayload): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.post<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.CREATE, payload);
+
+    return unwrap(data);
+  },
+
+  async update(
+    id: number,
+    payload: UpdateStudySessionPayload,
+  ): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.put<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.UPDATE(id), payload);
+
+    return unwrap(data);
+  },
+
+  async remove(id: number): Promise<void> {
+    await axiosInstance.delete(API_ROUTES.STUDY_SESSIONS.DELETE(id));
+  },
+
+  // /start, /end and /pause take no body — the id in the path is the whole
+  // request, and each one answers with the session in its new state.
+  async start(id: number): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.put<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.START(id));
+
+    return unwrap(data);
+  },
+
+  async end(id: number): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.put<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.END(id));
+
+    return unwrap(data);
+  },
+
+  async pause(id: number): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.put<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.PAUSE(id));
+
+    return unwrap(data);
   },
 };

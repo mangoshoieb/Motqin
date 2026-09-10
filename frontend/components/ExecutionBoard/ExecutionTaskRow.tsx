@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckSquare, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2 } from "lucide-react";
+import { Check, CheckSquare, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 
@@ -11,6 +11,9 @@ interface ExecutionTaskRowProps {
   onToggleComplete: (id: string) => void;
   onAddSession?: (task: ExecutionTask) => void; // starts a new session for this task
   onToggleSession?: (sessionId: string) => void; // play/pause an existing session
+  onEndSession?: (sessionId: string) => void; // finish it before its time is up
+  // title / duration edits from the expanded card, saved per field on blur
+  onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => void;
   onDeleteSession?: (sessionId: string) => void;
   onStartRevision?: (task: ExecutionTask) => void; // navigates into the real quiz flow
   onPostpone?: (task: ExecutionTask) => void; // sends an unfinished task to tomorrow
@@ -20,11 +23,15 @@ interface ExecutionTaskRowProps {
   onDropTask?: (draggedId: string, targetId: string) => void;
 }
 
-const formatMinutes = (minutes: number) => {
-  const hrs = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+// mm:ss — the session clock runs in real time, so seconds are what move.
+const formatClock = (totalSeconds: number) => {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = Math.floor(totalSeconds % 60);
+  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
+
+const sessionInputClass =
+  "mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-900 outline-none focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
 
 export const ExecutionTaskRow = ({
   task,
@@ -32,6 +39,8 @@ export const ExecutionTaskRow = ({
   onToggleComplete,
   onAddSession,
   onToggleSession,
+  onEndSession,
+  onUpdateSession,
   onDeleteSession,
   onStartRevision,
   onPostpone,
@@ -43,7 +52,24 @@ export const ExecutionTaskRow = ({
   const [noteEditing, setNoteEditing] = useState(false);
   const [noteDraft, setNoteDraft] = useState(task.notes ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [durationDraft, setDurationDraft] = useState("");
+  const [notesDraft, setNotesDraft] = useState("");
   const priority = Math.max(0, Math.min(3, task.priority ?? 0));
+
+  // Opening a card seeds the drafts from whatever the session currently holds.
+  const openSession = (session: ExecutionSession) => {
+    setExpandedSessionId(session.id);
+    setTitleDraft(session.title);
+    setDurationDraft(String(session.sessionDurationMinutes));
+    setNotesDraft(session.notes ?? "");
+  };
+
+  const toggleExpanded = (session: ExecutionSession) => {
+    if (expandedSessionId === session.id) setExpandedSessionId(null);
+    else openSession(session);
+  };
 
   return (
     <div
@@ -55,7 +81,7 @@ export const ExecutionTaskRow = ({
         const draggedId = event.dataTransfer.getData("text/task-id");
         if (draggedId && draggedId !== task.id) onDropTask?.(draggedId, task.id);
       }}
-      className="grid cursor-grab grid-cols-1 overflow-hidden bg-transparent p-0 active:cursor-grabbing lg:grid-cols-[0.94fr_1.06fr]"
+      className="grid cursor-grab grid-cols-1 overflow-hidden bg-transparent p-0 active:cursor-grabbing lg:grid-cols-[1.1fr_0.9fr]"
     >
       <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-white p-5 dark:bg-zinc-900">
       <div className="flex items-center gap-3">
@@ -116,37 +142,156 @@ export const ExecutionTaskRow = ({
 
       {task.kind === "daily" && (
         <div className="flex flex-col gap-2 pr-9">
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              className="flex items-center gap-2 rounded-xl border border-zinc-200 px-3 py-1.5 dark:border-zinc-700"
-            >
-              {session.status === "completed" ? (
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">مكتمل</span>
-              ) : (
-                <button type="button" onClick={() => onToggleSession?.(session.id)} className="shrink-0">
-                  {session.status === "active" ? (
-                    <Pause size={16} className="text-blue-600 dark:text-blue-400" />
-                  ) : (
-                    <Play size={16} className="text-blue-600 dark:text-blue-400" />
-                  )}
-                </button>
-              )}
+          {sessions.map((session) => {
+            const expanded = expandedSessionId === session.id;
+            const elapsedSeconds = session.elapsedSeconds ?? session.actualMinutes * 60;
 
-              <span className="flex-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                {formatMinutes(session.actualMinutes)} / {formatMinutes(session.sessionDurationMinutes)}
-              </span>
-
-              <button
-                type="button"
-                onClick={() => onDeleteSession?.(session.id)}
-                title="حذف الجلسة"
-                className="shrink-0 text-zinc-400 transition hover:text-red-600 dark:hover:text-red-400"
+            return (
+              <div
+                key={session.id}
+                className="rounded-xl border border-zinc-200 dark:border-zinc-700"
               >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
+                {/* Collapsed header. Clicking it — the play icon included —
+                    opens the card; play only runs the session once open. */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleExpanded(session)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      toggleExpanded(session);
+                    }
+                  }}
+                  className="flex cursor-pointer items-center gap-2 px-3 py-1.5"
+                >
+                  {session.status === "completed" ? (
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">مكتمل</span>
+                  ) : (
+                    <button
+                      type="button"
+                      title={expanded ? (session.status === "active" ? "إيقاف مؤقت" : "بدء الجلسة") : "فتح الجلسة"}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (expanded) onToggleSession?.(session.id);
+                        else openSession(session);
+                      }}
+                      className="shrink-0"
+                    >
+                      {session.status === "active" ? (
+                        <Pause size={16} className="text-blue-600 dark:text-blue-400" />
+                      ) : (
+                        <Play size={16} className="text-blue-600 dark:text-blue-400" />
+                      )}
+                    </button>
+                  )}
+
+                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                    {session.title}
+                  </span>
+
+                  <span className="shrink-0 text-xs font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
+                    {formatClock(elapsedSeconds)} / {formatClock(session.sessionDurationMinutes * 60)}
+                  </span>
+
+                  {session.status !== "completed" && session.status !== "idle" && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onEndSession?.(session.id);
+                      }}
+                      title="إنهاء الجلسة"
+                      className="shrink-0 text-zinc-400 transition hover:text-emerald-600 dark:hover:text-emerald-400"
+                    >
+                      <Check size={15} />
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDeleteSession?.(session.id);
+                    }}
+                    title="حذف الجلسة"
+                    className="shrink-0 text-zinc-400 transition hover:text-red-600 dark:hover:text-red-400"
+                  >
+                    <X size={14} />
+                  </button>
+
+                  {expanded ? (
+                    <ChevronUp size={14} className="shrink-0 text-zinc-400" />
+                  ) : (
+                    <ChevronDown size={14} className="shrink-0 text-zinc-400" />
+                  )}
+                </div>
+
+                {expanded && (
+                  <div className="flex flex-col gap-3 border-t border-zinc-200 px-3 py-3 dark:border-zinc-700">
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                    <label className="flex-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      عنوان الجلسة
+                      <input
+                        value={titleDraft}
+                        onChange={(event) => setTitleDraft(event.target.value)}
+                        onBlur={() => onUpdateSession?.(session.id, { title: titleDraft })}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") event.currentTarget.blur();
+                          if (event.key === "Escape") {
+                            setTitleDraft(session.title);
+                            event.currentTarget.blur();
+                          }
+                        }}
+                        placeholder="مثال: مراجعة الفصل الأول"
+                        className={sessionInputClass}
+                      />
+                    </label>
+
+                    <label className="text-[11px] text-zinc-500 sm:w-32 dark:text-zinc-400">
+                      المدة بالدقائق
+                      <input
+                        type="number"
+                        min={1}
+                        value={durationDraft}
+                        onChange={(event) => setDurationDraft(event.target.value)}
+                        onBlur={() =>
+                          onUpdateSession?.(session.id, { durationMinutes: Number(durationDraft) })
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") event.currentTarget.blur();
+                          if (event.key === "Escape") {
+                            setDurationDraft(String(session.sessionDurationMinutes));
+                            event.currentTarget.blur();
+                          }
+                        }}
+                        className={sessionInputClass}
+                      />
+                    </label>
+                    </div>
+
+                    <label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      ملاحظات الجلسة
+                      <textarea
+                        rows={2}
+                        value={notesDraft}
+                        onChange={(event) => setNotesDraft(event.target.value)}
+                        onBlur={() => onUpdateSession?.(session.id, { notes: notesDraft })}
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape") {
+                            setNotesDraft(session.notes ?? "");
+                            event.currentTarget.blur();
+                          }
+                        }}
+                        placeholder="أضف ملاحظة عن هذه الجلسة..."
+                        className={cn(sessionInputClass, "resize-y")}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           <button
             type="button"
@@ -159,7 +304,7 @@ export const ExecutionTaskRow = ({
       )}
       </div>
 
-      <div className="flex h-[90%] mt-3 min-h-50 flex-col rounded-l-2xl bg-zinc-50 p-5 dark:bg-zinc-800">
+      <div className="flex my-3 min-h-30 flex-col rounded-2xl bg-zinc-50 p-5 dark:bg-zinc-800">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">ملاحظات المهمة</h3>
         </div>

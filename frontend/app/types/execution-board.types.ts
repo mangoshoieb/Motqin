@@ -38,6 +38,10 @@ export interface ExecutionSession {
   title: string;
   sessionDurationMinutes: number;
   actualMinutes: number;
+  // Real seconds on the clock. actualMinutes stays the rounded-down figure the
+  // day totals are summed from; this is what the running timer ticks.
+  elapsedSeconds?: number;
+  notes?: string; // free-form note for this session, stored as StudySession.notes
   status: "idle" | "active" | "paused" | "completed";
 }
 

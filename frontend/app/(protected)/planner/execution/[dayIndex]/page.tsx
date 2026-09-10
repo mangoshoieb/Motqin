@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,8 +12,9 @@ import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.typ
 import { ExecutionBoardHeader } from "@/components/ExecutionBoard/ExecutionBoardHeader";
 import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList";
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
-import { studyPlansService } from "@/app/services/motqin";
-import { currentWeekDates } from "@/app/lib/study-plan";
+import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
+import { studyPlansService, studySessionsService } from "@/app/services/motqin";
+import { currentWeekDates, studySessionToExecutionSession } from "@/app/lib/study-plan";
 
 const ExecutionBoardPage = () => {
   const params = useParams();
@@ -30,6 +31,7 @@ const ExecutionBoardPage = () => {
   const [sessions, setSessions] = useState<ExecutionSession[]>([]);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ExecutionTask | null>(null);
+  const [sessionPendingDelete, setSessionPendingDelete] = useState<ExecutionSession | null>(null);
 
   const sortByPriority = (items: ExecutionTask[]) =>
     [...items].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
@@ -44,23 +46,75 @@ const ExecutionBoardPage = () => {
     setSessions(data.detail.sessions);
   }
 
-  // Ticks any "active" daily-task session once a second (1 tick = 1
-  // displayed minute, for a demo pace).
+  // The ticker below runs off an interval that is set up once, so it reads
+  // the sessions through a ref instead of a stale closure.
+  const sessionsRef = useRef<ExecutionSession[]>([]);
+  useEffect(() => {
+    sessionsRef.current = sessions;
+  }, [sessions]);
+
+  const setSessionStatus = (sessionId: string, status: ExecutionSession["status"]) =>
+    setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, status } : s)));
+
+  // Guards the window between the timer running out and /end coming back,
+  // so a session is only ever ended once.
+  const endingRef = useRef<Set<string>>(new Set());
+
+  const finishSession = useCallback(
+    async (sessionId: string) => {
+      if (endingRef.current.has(sessionId)) return;
+      endingRef.current.add(sessionId);
+
+      setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, status: "completed" } : s)));
+
+      try {
+        await studySessionsService.end(Number(sessionId));
+        queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      } catch {
+        // Back to paused rather than active: leaving it running would make
+        // the ticker retry /end every second.
+        setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, status: "paused" } : s)));
+        toast.error("تعذر إنهاء الجلسة");
+      } finally {
+        endingRef.current.delete(sessionId);
+      }
+    },
+    [queryClient],
+  );
+
+  // Ticks the running session in real time — a session of 25 minutes takes 25
+  // minutes — and ends it on the server once its time is up. Only one session
+  // is ever running, so there is at most one to tick.
   useEffect(() => {
     const interval = setInterval(() => {
+      const active = sessionsRef.current.find((s) => s.status === "active");
+      if (!active) return;
+
+      const totalSeconds = active.sessionDurationMinutes * 60;
+      const elapsed = (active.elapsedSeconds ?? active.actualMinutes * 60) + 1;
+
+      if (elapsed < totalSeconds) {
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === active.id
+              ? { ...s, elapsedSeconds: elapsed, actualMinutes: Math.floor(elapsed / 60) }
+              : s,
+          ),
+        );
+        return;
+      }
+
       setSessions((prev) =>
-        prev.map((s) => {
-          if (s.status !== "active") return s;
-          const nextMinutes = s.actualMinutes + 1;
-          if (nextMinutes >= s.sessionDurationMinutes) {
-            return { ...s, actualMinutes: s.sessionDurationMinutes, status: "completed" };
-          }
-          return { ...s, actualMinutes: nextMinutes };
-        })
+        prev.map((s) =>
+          s.id === active.id
+            ? { ...s, elapsedSeconds: totalSeconds, actualMinutes: s.sessionDurationMinutes }
+            : s,
+        ),
       );
+      void finishSession(active.id);
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [finishSession]);
 
   const sessionsByTaskId = useMemo(() => {
     const map = new Map<string, ExecutionSession[]>();
@@ -103,41 +157,158 @@ const ExecutionBoardPage = () => {
       });
   };
 
-  // Only one session is ever "active" app-wide — starting or resuming one
-  // pauses whatever else was running, matching how a person actually studies.
-  const addSessionForTask = (task: ExecutionTask) => {
-    setSessions((prev) => {
-      const pausedOthers = prev.map((s) => (s.status === "active" ? { ...s, status: "paused" as const } : s));
-      const sessionNumber = pausedOthers.filter((s) => s.taskId === task.id).length + 1;
-      return [
-        ...pausedOthers,
+  // Only one session runs app-wide, so starting one pauses whatever else was
+  // running — on the server too, not just in local state. This is what makes
+  // resuming a session match how a person actually studies.
+  const startSession = async (sessionId: string) => {
+    const running = sessionsRef.current.find((s) => s.status === "active" && s.id !== sessionId);
+    const previous = sessionsRef.current.find((s) => s.id === sessionId)?.status ?? "idle";
+
+    setSessionStatus(sessionId, "active");
+    if (running) setSessionStatus(running.id, "paused");
+
+    try {
+      if (running) await studySessionsService.pause(Number(running.id));
+      await studySessionsService.start(Number(sessionId));
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+    } catch {
+      setSessionStatus(sessionId, previous);
+      if (running) setSessionStatus(running.id, "active");
+      toast.error("تعذر بدء الجلسة");
+    }
+  };
+
+  const pauseSession = async (sessionId: string) => {
+    setSessionStatus(sessionId, "paused");
+
+    try {
+      await studySessionsService.pause(Number(sessionId));
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+    } catch {
+      setSessionStatus(sessionId, "active");
+      toast.error("تعذر إيقاف الجلسة مؤقتًا");
+    }
+  };
+
+  // Adds the session and leaves it idle: the user opens the card to name it
+  // and set its duration, then presses play to actually start it.
+  const addSessionForTask = async (task: ExecutionTask) => {
+    const sessionNumber = sessions.filter((s) => s.taskId === task.id).length + 1;
+    const description = `جلسة ${sessionNumber}`;
+
+    try {
+      const created = await studySessionsService.create({
+        studyPlanId: Number(task.id),
+        date: data?.day.date ?? currentWeekDates(weekOffset)[dayIndex - 1],
+        description,
+        durationInMinutes: task.estimatedMinutes,
+        goalCategoryId: task.goalCategoryId,
+      });
+
+      const session = studySessionToExecutionSession(created, task.id, description);
+      setSessions((prev) => [
+        ...prev,
         {
-          id: crypto.randomUUID(),
-          taskId: task.id,
-          title: `جلسة ${sessionNumber}`,
-          sessionDurationMinutes: task.estimatedMinutes,
+          ...session,
+          sessionDurationMinutes: session.sessionDurationMinutes || task.estimatedMinutes,
           actualMinutes: 0,
-          status: "active",
+          elapsedSeconds: 0,
+          status: "idle",
         },
-      ];
-    });
+      ]);
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+    } catch {
+      toast.error("تعذر إنشاء الجلسة");
+    }
   };
 
   const toggleSession = (sessionId: string) => {
-    setSessions((prev) => {
-      const target = prev.find((s) => s.id === sessionId);
-      if (!target || target.status === "completed") return prev;
-      const makeActive = target.status !== "active";
-      return prev.map((s) => {
-        if (s.id === sessionId) return { ...s, status: makeActive ? "active" : "paused" };
-        if (makeActive && s.status === "active") return { ...s, status: "paused" };
-        return s;
+    const target = sessions.find((s) => s.id === sessionId);
+    if (!target || target.status === "completed") return;
+
+    void (target.status === "active" ? pauseSession(sessionId) : startSession(sessionId));
+  };
+
+  // Each field in the expanded card saves on blur, so only what actually
+  // changed goes in the PUT.
+  const updateSession = (
+    sessionId: string,
+    changes: { title?: string; durationMinutes?: number; notes?: string },
+  ) => {
+    const target = sessions.find((s) => s.id === sessionId);
+    if (!target) return;
+
+    const title = changes.title?.trim();
+    const nextTitle = title && title !== target.title ? title : undefined;
+    const nextDuration =
+      changes.durationMinutes && changes.durationMinutes > 0 &&
+      changes.durationMinutes !== target.sessionDurationMinutes
+        ? changes.durationMinutes
+        : undefined;
+    // Notes, unlike the title, may legitimately be cleared.
+    const notes = changes.notes?.trim();
+    const nextNotes = notes !== undefined && notes !== (target.notes ?? "").trim() ? notes : undefined;
+
+    if (nextTitle === undefined && nextDuration === undefined && nextNotes === undefined) return;
+
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId
+          ? {
+              ...s,
+              title: nextTitle ?? s.title,
+              sessionDurationMinutes: nextDuration ?? s.sessionDurationMinutes,
+              notes: nextNotes ?? s.notes,
+            }
+          : s,
+      ),
+    );
+
+    void studySessionsService.update(Number(sessionId), {
+      ...(nextTitle !== undefined ? { description: nextTitle } : {}),
+      ...(nextDuration !== undefined ? { durationInMinutes: nextDuration } : {}),
+      ...(nextNotes !== undefined ? { notes: nextNotes ? [nextNotes] : [] } : {}),
+    })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
+      .catch(() => {
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sessionId
+              ? {
+                  ...s,
+                  title: target.title,
+                  sessionDurationMinutes: target.sessionDurationMinutes,
+                  notes: target.notes,
+                }
+              : s,
+          ),
+        );
+        toast.error("تعذر حفظ تعديلات الجلسة");
       });
-    });
   };
 
   const deleteSession = (sessionId: string) => {
+    const index = sessions.findIndex((s) => s.id === sessionId);
+    const target = sessions[index];
+    if (!target) return;
+
+    setSessionPendingDelete(null);
+
     setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+
+    void studySessionsService.remove(Number(sessionId))
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+        toast.success("تم حذف الجلسة");
+      })
+      .catch(() => {
+        setSessions((prev) => {
+          const next = [...prev];
+          next.splice(index, 0, target);
+          return next;
+        });
+        toast.error("تعذر حذف الجلسة");
+      });
   };
 
   const startRevision = (task: ExecutionTask) => {
@@ -264,7 +435,11 @@ const ExecutionBoardPage = () => {
           onToggleComplete={toggleTaskComplete}
           onAddSession={addSessionForTask}
           onToggleSession={toggleSession}
-          onDeleteSession={deleteSession}
+          onEndSession={(sessionId) => void finishSession(sessionId)}
+          onUpdateSession={updateSession}
+          onDeleteSession={(sessionId) =>
+            setSessionPendingDelete(sessions.find((s) => s.id === sessionId) ?? null)
+          }
           onStartRevision={startRevision}
           onPostpone={postponeTask}
           onNotesChange={updateTaskNotes}
@@ -272,6 +447,16 @@ const ExecutionBoardPage = () => {
           onDelete={deleteTask}
           onDropTask={reorderTasks}
         />
+
+        {sessionPendingDelete && (
+          <ConfirmDialog
+            title="هل تريد حذف هذه الجلسة؟"
+            description={`سيتم حذف "${sessionPendingDelete.title}" نهائيًا.`}
+            confirmLabel="حذف"
+            onConfirm={() => deleteSession(sessionPendingDelete.id)}
+            onClose={() => setSessionPendingDelete(null)}
+          />
+        )}
 
         {(isAddTaskOpen || editingTask) && (
           <AddTaskDialog

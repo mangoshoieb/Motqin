@@ -1,4 +1,4 @@
-import { StudyPlanItem } from "@/app/services/motqin";
+import { StudyPlanItem, StudySessionDto } from "@/app/services/motqin";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 import { PlannerDay, Task } from "@/app/types/planner.types";
 
@@ -45,17 +45,26 @@ const sessionStatus = (status: number): ExecutionSession["status"] => {
   return "idle";
 };
 
+export const studySessionToExecutionSession = (
+  session: StudySessionDto,
+  taskId: string,
+  fallbackTitle: string,
+): ExecutionSession => ({
+  id: String(session.id),
+  taskId,
+  title: session.description || fallbackTitle,
+  sessionDurationMinutes: session.durationInMinutes,
+  actualMinutes: session.status === 1 ? session.durationInMinutes : 0,
+  elapsedSeconds: session.status === 1 ? session.durationInMinutes * 60 : 0,
+  notes: session.notes?.join("\n") ?? "",
+  status: sessionStatus(session.status),
+});
+
 export const studyPlanSessions = (items: StudyPlanItem[]): ExecutionSession[] =>
   items.flatMap((item) =>
-    item.studySessions.map((session) => ({
-      id: String(session.id),
-      taskId: String(item.id),
-      title: session.description || item.title,
-      sessionDurationMinutes: session.durationInMinutes,
-      actualMinutes:
-        session.status === 1 ? session.durationInMinutes : 0,
-      status: sessionStatus(session.status),
-    })),
+    item.studySessions.map((session) =>
+      studySessionToExecutionSession(session, String(item.id), item.title),
+    ),
   );
 
 export const dateOnly = (value: Date) =>

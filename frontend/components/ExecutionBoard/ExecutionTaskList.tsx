@@ -10,6 +10,8 @@ interface ExecutionTaskListProps {
   onToggleComplete: (id: string) => void;
   onAddSession?: (task: ExecutionTask) => void;
   onToggleSession?: (sessionId: string) => void;
+  onEndSession?: (sessionId: string) => void;
+  onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => void;
   onDeleteSession?: (sessionId: string) => void;
   onStartRevision?: (task: ExecutionTask) => void;
   onPostpone?: (task: ExecutionTask) => void;
@@ -26,6 +28,8 @@ export const ExecutionTaskList = ({
   onToggleComplete,
   onAddSession,
   onToggleSession,
+  onEndSession,
+  onUpdateSession,
   onDeleteSession,
   onStartRevision,
   onPostpone,
@@ -50,6 +54,8 @@ export const ExecutionTaskList = ({
               onToggleComplete={onToggleComplete}
               onAddSession={onAddSession}
               onToggleSession={onToggleSession}
+              onEndSession={onEndSession}
+              onUpdateSession={onUpdateSession}
               onDeleteSession={onDeleteSession}
               onStartRevision={onStartRevision}
               onPostpone={onPostpone}
