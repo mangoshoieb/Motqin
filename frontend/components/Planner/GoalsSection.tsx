@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   BookOpen,
   Minus,
   Plus,
   RefreshCw,
   Sparkles,
+  StickyNote,
   Target,
   Trash2,
 } from "lucide-react";
@@ -21,17 +24,52 @@ import {
 } from "@/components/ui/select";
 import { useGetSubjects } from "@/app/hooks/useGetSubjects";
 import { useGetLessons } from "@/app/hooks/useGetLessons";
-import {
-  goalPriorityOptions,
-  goalTypeOptions,
-  WEEKDAY_NAMES,
-} from "@/app/constants/goal.constants";
-import { Goal, GoalSource, GoalSubTask, GoalType } from "@/app/types/goal.types";
+import { goalPriorityOptions, WEEKDAY_NAMES } from "@/app/constants/goal.constants";
+import { Goal, GoalSource, GoalSubTask } from "@/app/types/goal.types";
 import { TaskPriority } from "@/app/types/planner.types";
+import { GoalPicker } from "@/components/Planner/GoalPicker";
+import { aiService, ToBePlannedPlanPayload } from "@/app/services/motqin";
 
-interface GoalsSectionProps {
-  onGeneratePlan?: (goals: Goal[]) => void;
-}
+const importanceFor: Record<TaskPriority, string> = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+};
+
+const splitNotes = (notes: string) =>
+  notes
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+// The AI endpoint has no date field — it decides placement itself — so a
+// goal the user split into N parts goes over as N separate items (each with
+// its own title and share of the time) rather than one big block.
+const goalToPlanItems = (goal: Goal): ToBePlannedPlanPayload[] => {
+  const base = {
+    subjectId: goal.subjectId,
+    lessonId: goal.lessonId,
+    goalCategoryId: goal.goalCategoryId,
+    importance: importanceFor[goal.priority],
+    userNotes: splitNotes(goal.notes),
+  };
+
+  if (goal.subTasks.length > 1) {
+    return goal.subTasks.map((st) => ({
+      ...base,
+      title: st.title,
+      durationInMinutes: st.estimatedMinutes,
+    }));
+  }
+
+  return [
+    {
+      ...base,
+      title: goal.title,
+      durationInMinutes: Math.round(goal.estimatedHours * 60),
+    },
+  ];
+};
 
 let goalIdCounter = 0;
 const nextGoalId = () => `goal-${Date.now()}-${goalIdCounter++}`;
@@ -94,20 +132,40 @@ function NumberStepper({
   );
 }
 
-export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
+interface GoalsSectionProps {
+  // Called once the AI has planned next week — the page switches to the
+  // manual board so the generated tasks are visible right away.
+  onPlanned?: () => void;
+}
+
+export default function GoalsSection({ onPlanned }: GoalsSectionProps) {
+  const queryClient = useQueryClient();
   const [source, setSource] = useState<GoalSource>("systematic");
 
   const [subjectId, setSubjectId] = useState<string>("");
   const [lessonId, setLessonId] = useState<string>("");
   const [regularTitle, setRegularTitle] = useState("");
 
-  const [goalType, setGoalType] = useState<GoalType>("study");
+  const [goalCategoryId, setGoalCategoryId] = useState<number | null>(null);
+  const [goalCategoryTitle, setGoalCategoryTitle] = useState<string | undefined>();
   const [estimatedHours, setEstimatedHours] = useState(1);
   const [breakdownCount, setBreakdownCount] = useState(1);
   const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [notes, setNotes] = useState("");
   const [subTasks, setSubTasks] = useState<GoalSubTask[]>([]);
 
   const [goals, setGoals] = useState<Goal[]>([]);
+
+  const generatePlan = useMutation({
+    mutationFn: (items: Goal[]) => aiService.planWithAi(items.flatMap(goalToPlanItems)),
+    onSuccess: () => {
+      toast.success("تم توليد خطة الأسبوع القادم");
+      setGoals([]);
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      onPlanned?.();
+    },
+    onError: () => toast.error("تعذر توليد الخطة، حاول مرة أخرى."),
+  });
 
   const { data: subjects } = useGetSubjects();
   const { data: lessonsData, isFetching: lessonsLoading } =
@@ -137,16 +195,19 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
     );
   };
 
-  const isValid = resolvedTitle.length > 0 && estimatedHours > 0;
+  const isValid =
+    resolvedTitle.length > 0 && estimatedHours > 0 && goalCategoryId !== null;
 
   const resetForm = () => {
     setSubjectId("");
     setLessonId("");
     setRegularTitle("");
-    setGoalType("study");
+    setGoalCategoryId(null);
+    setGoalCategoryTitle(undefined);
     setEstimatedHours(1);
     setBreakdownCount(1);
     setPriority("medium");
+    setNotes("");
     setSubTasks([]);
   };
 
@@ -161,7 +222,9 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
       subjectName: selectedSubject?.name,
       lessonId: selectedLesson?.lessonId,
       lessonName: selectedLesson?.title,
-      goalType,
+      goalCategoryId,
+      goalCategoryTitle,
+      notes: notes.trim(),
       estimatedHours,
       breakdownCount,
       priority,
@@ -350,25 +413,13 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
             <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               نوع الهدف
             </label>
-            <Select
-              value={goalType}
-              onValueChange={(v) => setGoalType(v as GoalType)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue>
-                  {(v: string | null) =>
-                    goalTypeOptions.find((opt) => opt.value === v)?.label
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent dir="rtl">
-                {goalTypeOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <GoalPicker
+              value={goalCategoryId}
+              onChange={(id, goal) => {
+                setGoalCategoryId(id);
+                setGoalCategoryTitle(goal?.title);
+              }}
+            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -429,6 +480,22 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
             </Select>
           </div>
 
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+              <StickyNote size={13} />
+              ملاحظات للمخطط الذكي (اختياري)
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="مثال: أفضّل الدراسة صباحًا، أو ركّز على حل التمارين أكثر من القراءة"
+              className="w-full resize-none rounded-xl border border-zinc-200 bg-transparent px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-zinc-700 dark:text-zinc-100 dark:focus:ring-blue-950"
+            />
+            <p className="text-[11px] text-zinc-400">
+              كل سطر يُرسل كملاحظة مستقلة تساعد الذكاء الاصطناعي على توزيع المهام بشكل أفضل.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -531,12 +598,11 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
                     </span>
 
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                        {
-                          goalTypeOptions.find((o) => o.value === goal.goalType)
-                            ?.label
-                        }
-                      </span>
+                      {goal.goalCategoryTitle && (
+                        <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                          {goal.goalCategoryTitle}
+                        </span>
+                      )}
                       <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                         {
                           goalPriorityOptions.find(
@@ -548,6 +614,13 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
                         {goal.estimatedHours} س · مقسم إلى {goal.breakdownCount}
                       </span>
                     </div>
+
+                    {goal.notes && (
+                      <p className="flex items-start gap-1.5 whitespace-pre-line text-xs text-zinc-500 dark:text-zinc-400">
+                        <StickyNote size={13} className="mt-0.5 shrink-0" />
+                        {goal.notes}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -568,12 +641,18 @@ export default function GoalsSection({ onGeneratePlan }: GoalsSectionProps) {
       <div className="mt-6 border-t border-zinc-100 pt-6 dark:border-zinc-800">
         <button
           type="button"
-          disabled={goals.length === 0}
-          onClick={() => onGeneratePlan?.(goals)}
+          disabled={goals.length === 0 || generatePlan.isPending}
+          onClick={() => generatePlan.mutate(goals)}
           className="flex w-[60%] m-auto items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         >
-          <Sparkles size={20} />
-          توليد خطة الأسبوع القادم بالذكاء الاصطناعي
+          {generatePlan.isPending ? (
+            <RefreshCw size={20} className="animate-spin" />
+          ) : (
+            <Sparkles size={20} />
+          )}
+          {generatePlan.isPending
+            ? "جاري توليد الخطة..."
+            : "توليد خطة الأسبوع القادم بالذكاء الاصطناعي"}
         </button>
 
         {goals.length === 0 && (

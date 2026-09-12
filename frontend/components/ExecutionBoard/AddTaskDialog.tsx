@@ -13,17 +13,10 @@ import {
 } from "@/app/services/motqin";
 import { cn } from "@/app/lib/utils";
 import { ExecutionTask } from "@/app/types/execution-board.types";
-import { goalTypeOptions } from "@/app/constants/goal.constants";
-import { GoalType } from "@/app/types/goal.types";
+import { GoalPicker } from "@/components/Planner/GoalPicker";
 
 const inputClass =
   "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
-
-const goalCategoryIds: Record<GoalType, number> = {
-  study: 1,
-  revision: 2,
-  other: 3,
-};
 
 interface AddTaskDialogProps {
   date: string;
@@ -39,9 +32,7 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
   const [subjectId, setSubjectId] = useState("");
   const [lessonId, setLessonId] = useState("");
   const [title, setTitle] = useState(task?.title ?? "");
-  const [goalType, setGoalType] = useState<GoalType>(
-    task?.goalCategoryId === 2 ? "revision" : task?.goalCategoryId === 3 ? "other" : "study",
-  );
+  const [goalCategoryId, setGoalCategoryId] = useState<number | null>(task?.goalCategoryId ?? null);
   const [duration, setDuration] = useState(String(task?.estimatedMinutes ?? 60));
   const { data: subjects } = useGetSubjects();
   const { data: lessonsData, isFetching: lessonsLoading } = useGetLessons(subjectId);
@@ -51,10 +42,11 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
   const mutation = useMutation({
     mutationFn: async () => {
       if (!resolvedTitle) throw new Error("title-required");
+      if (goalCategoryId === null) throw new Error("goal-required");
       if (isEditing && task) {
         return studyPlansService.update(Number(task.id), {
           title: resolvedTitle,
-          goalCategoryId: goalCategoryIds[goalType],
+          goalCategoryId,
         });
       }
       if (source === "systematic" && (!subjectId || !lessonId)) {
@@ -66,35 +58,32 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
         date,
         title: resolvedTitle,
         durationInMinutes: Number(duration),
-        goalCategoryId: goalCategoryIds[goalType],
+        goalCategoryId,
       };
       if (source === "systematic") {
         payload.subjectId = Number(subjectId);
         payload.lessonId = Number(lessonId);
       }
-      console.log("Creating study plan with payload:", payload);
       return studyPlansService.create(payload);
     },
     onSuccess: (created) => {
       onCreated({
         ...task,
         id: String(created.id ?? task?.id ?? crypto.randomUUID()),
-        kind: goalType === "revision" ? "revision" : "daily",
+        kind: task?.kind ?? "daily",
         title: created.title,
-        goalCategoryId: created.goalCategoryId,
+        goalCategoryId: created.goalCategoryId ?? goalCategoryId,
         priority: created.priority ?? task?.priority,
         subjectName: subjects?.find((subject) => subject.subjectID === Number(subjectId))?.name,
         estimatedMinutes: created.durationInMinutes,
         completed: task?.completed ?? false,
-        quizLink: goalType === "revision" && subjectId && lessonId
-          ? { subjectIdSlug: `${subjectId}-${subjects?.find((subject) => subject.subjectID === Number(subjectId))?.name ?? ""}`, lessonId, category: "أساسيات" }
-          : undefined,
+        quizLink: task?.quizLink,
       });
        queryClient.invalidateQueries({ queryKey: ["study-plans"] });
       toast.success(isEditing ? "تم تحديث المهمة" : "تمت إضافة المهمة");
       onClose();
     },
-    onError: (error) => toast.error(error.message === "title-required" ? "العنوان مطلوب." : error.message === "lesson-required" ? "يرجى اختيار المادة والدرس." : error.message === "duration-required" ? "المدة يجب أن تكون أكبر من صفر." : "حدث خطأ أثناء حفظ المهمة."),
+    onError: (error) => toast.error(error.message === "title-required" ? "العنوان مطلوب." : error.message === "lesson-required" ? "يرجى اختيار المادة والدرس." : error.message === "goal-required" ? "يرجى اختيار الهدف." : error.message === "duration-required" ? "المدة يجب أن تكون أكبر من صفر." : "حدث خطأ أثناء حفظ المهمة."),
   });
 
   return (
@@ -123,7 +112,7 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
         )}
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="text-sm text-zinc-700 dark:text-zinc-300">نوع المهمة<select value={goalType} onChange={(event) => setGoalType(event.target.value as GoalType)} className={inputClass}>{goalTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+          <div className="text-sm text-zinc-700 dark:text-zinc-300">الهدف<div className="mt-1"><GoalPicker value={goalCategoryId} onChange={(id) => setGoalCategoryId(id)} className="rounded-lg border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800" /></div></div>
           {!isEditing && <label className="text-sm text-zinc-700 dark:text-zinc-300">المدة بالدقائق<input type="number" min={1} value={duration} onChange={(event) => setDuration(event.target.value)} className={inputClass} /></label>}
         </div>
 

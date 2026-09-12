@@ -90,6 +90,8 @@ export const API_ROUTES = {
 
   USERS: {
     CURRENT_USER: "/users/me",
+    GOALS: "/users/goals",
+    GOAL: (id: string | number) => `/users/goals/${id}`,
   },
   USER_PREFERENCES: {
     GET: "/user-preferences",
@@ -115,6 +117,9 @@ export const API_ROUTES = {
     UPDATE: (id: string | number) => `/study-plan/${id}`,
     DELETE: (id: string | number) => `/study-plan/${id}`,
   },
+  AI: {
+    PLAN_WITH_AI: "/ai/plan-with-ai",
+  },
   STUDY_SESSIONS: {
     CREATE: "/study-session/create",
     UPDATE: (id: string | number) => `/study-session/${id}`,
@@ -122,5 +127,6 @@ export const API_ROUTES = {
     START: (id: string | number) => `/study-session/${id}/start`,
     END: (id: string | number) => `/study-session/${id}/end`,
     PAUSE: (id: string | number) => `/study-session/${id}/pause`,
+    ADD_TIME: (id: string | number) => `/study-session/${id}/add-time`,
   },
 };

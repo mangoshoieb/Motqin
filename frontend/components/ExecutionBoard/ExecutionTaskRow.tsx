@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CheckSquare, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2 } from "lucide-react";
+import { Check, CheckSquare, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 
@@ -12,6 +12,9 @@ interface ExecutionTaskRowProps {
   onAddSession?: (task: ExecutionTask) => void; // starts a new session for this task
   onToggleSession?: (sessionId: string) => void; // play/pause an existing session
   onEndSession?: (sessionId: string) => void; // finish it before its time is up
+  // overtime counter shown after the clock ran out — credit it or drop it
+  onSaveOvertime?: (sessionId: string) => void;
+  onDismissOvertime?: (sessionId: string) => void;
   // title / duration edits from the expanded card, saved per field on blur
   onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => void;
   onDeleteSession?: (sessionId: string) => void;
@@ -40,6 +43,8 @@ export const ExecutionTaskRow = ({
   onAddSession,
   onToggleSession,
   onEndSession,
+  onSaveOvertime,
+  onDismissOvertime,
   onUpdateSession,
   onDeleteSession,
   onStartRevision,
@@ -226,6 +231,38 @@ export const ExecutionTaskRow = ({
                     <ChevronDown size={14} className="shrink-0 text-zinc-400" />
                   )}
                 </div>
+
+                {session.overtimeRunning && (
+                  <div
+                    onClick={(event) => event.stopPropagation()}
+                    className="flex items-center gap-2 border-t border-amber-200 bg-amber-50 px-3 py-1.5 dark:border-amber-900/50 dark:bg-amber-950/30"
+                  >
+                    <TimerReset size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span className="min-w-0 flex-1 truncate text-xs text-amber-800 dark:text-amber-200">
+                      انتهى وقت الجلسة — ما زلت تعمل؟ الوقت الإضافي:
+                    </span>
+                    <span className="shrink-0 text-xs font-bold tabular-nums text-amber-800 dark:text-amber-200">
+                      +{formatClock(session.overtimeSeconds ?? 0)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onSaveOvertime?.(session.id)}
+                      title="إضافة الوقت الإضافي إلى الجلسة"
+                      className="flex shrink-0 items-center gap-1 rounded-md bg-amber-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-amber-700"
+                    >
+                      <Save size={12} />
+                      حفظ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDismissOvertime?.(session.id)}
+                      title="تجاهل"
+                      className="shrink-0 text-amber-500 hover:text-amber-800 dark:hover:text-amber-200"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
 
                 {expanded && (
                   <div className="flex flex-col gap-3 border-t border-zinc-200 px-3 py-3 dark:border-zinc-700">

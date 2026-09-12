@@ -13,8 +13,9 @@ import { ExecutionBoardHeader } from "@/components/ExecutionBoard/ExecutionBoard
 import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList";
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
 import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
-import { studyPlansService, studySessionsService } from "@/app/services/motqin";
+import { StudyPlanItemStatus, studyPlansService, studySessionsService } from "@/app/services/motqin";
 import { currentWeekDates, studySessionToExecutionSession } from "@/app/lib/study-plan";
+import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
 
 const ExecutionBoardPage = () => {
   const params = useParams();
@@ -60,12 +61,25 @@ const ExecutionBoardPage = () => {
   // so a session is only ever ended once.
   const endingRef = useRef<Set<string>>(new Set());
 
+  // `timedOut` marks a session the clock finished (as opposed to the user
+  // ending it early): those keep counting overtime until the user saves it.
   const finishSession = useCallback(
-    async (sessionId: string) => {
+    async (sessionId: string, timedOut = false) => {
       if (endingRef.current.has(sessionId)) return;
       endingRef.current.add(sessionId);
 
-      setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, status: "completed" } : s)));
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === sessionId
+            ? {
+                ...s,
+                status: "completed",
+                ...(timedOut ? { overtimeRunning: true, overtimeSeconds: 0 } : {}),
+              }
+            : s,
+        ),
+      );
+      clearSessionClock(sessionId);
 
       try {
         await studySessionsService.end(Number(sessionId));
@@ -73,7 +87,13 @@ const ExecutionBoardPage = () => {
       } catch {
         // Back to paused rather than active: leaving it running would make
         // the ticker retry /end every second.
-        setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, status: "paused" } : s)));
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sessionId
+              ? { ...s, status: "paused", overtimeRunning: false, overtimeSeconds: 0 }
+              : s,
+          ),
+        );
         toast.error("تعذر إنهاء الجلسة");
       } finally {
         endingRef.current.delete(sessionId);
@@ -87,6 +107,15 @@ const ExecutionBoardPage = () => {
   // is ever running, so there is at most one to tick.
   useEffect(() => {
     const interval = setInterval(() => {
+      // Overtime counters run independently of the (single) active session.
+      if (sessionsRef.current.some((s) => s.overtimeRunning)) {
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.overtimeRunning ? { ...s, overtimeSeconds: (s.overtimeSeconds ?? 0) + 1 } : s,
+          ),
+        );
+      }
+
       const active = sessionsRef.current.find((s) => s.status === "active");
       if (!active) return;
 
@@ -94,6 +123,7 @@ const ExecutionBoardPage = () => {
       const elapsed = (active.elapsedSeconds ?? active.actualMinutes * 60) + 1;
 
       if (elapsed < totalSeconds) {
+        saveSessionClock(active.id, elapsed, true);
         setSessions((prev) =>
           prev.map((s) =>
             s.id === active.id
@@ -111,7 +141,7 @@ const ExecutionBoardPage = () => {
             : s,
         ),
       );
-      void finishSession(active.id);
+      void finishSession(active.id, true);
     }, 1000);
     return () => clearInterval(interval);
   }, [finishSession]);
@@ -133,7 +163,9 @@ const ExecutionBoardPage = () => {
     const completed = !task.completed;
     setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, completed } : item)));
 
-    void studyPlansService.update(Number(id), { status: completed ? 1 : 3 })
+    void studyPlansService.update(Number(id), {
+      status: completed ? StudyPlanItemStatus.Completed : StudyPlanItemStatus.Upcoming,
+    })
       .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
       .catch(() => {
         setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, completed: task.completed } : item)));
@@ -167,6 +199,10 @@ const ExecutionBoardPage = () => {
     setSessionStatus(sessionId, "active");
     if (running) setSessionStatus(running.id, "paused");
 
+    const starting = sessionsRef.current.find((s) => s.id === sessionId);
+    saveSessionClock(sessionId, starting?.elapsedSeconds ?? (starting?.actualMinutes ?? 0) * 60, true);
+    if (running) saveSessionClock(running.id, running.elapsedSeconds ?? running.actualMinutes * 60, false);
+
     try {
       if (running) await studySessionsService.pause(Number(running.id));
       await studySessionsService.start(Number(sessionId));
@@ -180,6 +216,8 @@ const ExecutionBoardPage = () => {
 
   const pauseSession = async (sessionId: string) => {
     setSessionStatus(sessionId, "paused");
+    const pausing = sessionsRef.current.find((s) => s.id === sessionId);
+    if (pausing) saveSessionClock(sessionId, pausing.elapsedSeconds ?? pausing.actualMinutes * 60, false);
 
     try {
       await studySessionsService.pause(Number(sessionId));
@@ -221,6 +259,50 @@ const ExecutionBoardPage = () => {
       toast.error("تعذر إنشاء الجلسة");
     }
   };
+
+  // Credits the overtime to the session on the server, then hides the counter.
+  const saveOvertime = async (sessionId: string) => {
+    const target = sessions.find((s) => s.id === sessionId);
+    if (!target?.overtimeRunning) return;
+
+    const minutesToAdd = Math.max(1, Math.round((target.overtimeSeconds ?? 0) / 60));
+
+    setSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, overtimeRunning: false } : s)),
+    );
+
+    try {
+      await studySessionsService.addTime(Number(sessionId), minutesToAdd);
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === sessionId
+            ? {
+                ...s,
+                overtimeSeconds: 0,
+                sessionDurationMinutes: s.sessionDurationMinutes + minutesToAdd,
+                actualMinutes: s.actualMinutes + minutesToAdd,
+                elapsedSeconds: (s.elapsedSeconds ?? s.actualMinutes * 60) + minutesToAdd * 60,
+              }
+            : s,
+        ),
+      );
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      toast.success(`تمت إضافة ${minutesToAdd} دقيقة إلى الجلسة`);
+    } catch {
+      // Resume the counter so nothing the user worked is lost.
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, overtimeRunning: true } : s)),
+      );
+      toast.error("تعذر حفظ الوقت الإضافي");
+    }
+  };
+
+  const dismissOvertime = (sessionId: string) =>
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId ? { ...s, overtimeRunning: false, overtimeSeconds: 0 } : s,
+      ),
+    );
 
   const toggleSession = (sessionId: string) => {
     const target = sessions.find((s) => s.id === sessionId);
@@ -295,6 +377,7 @@ const ExecutionBoardPage = () => {
     setSessionPendingDelete(null);
 
     setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    clearSessionClock(sessionId);
 
     void studySessionsService.remove(Number(sessionId))
       .then(() => {
@@ -436,6 +519,8 @@ const ExecutionBoardPage = () => {
           onAddSession={addSessionForTask}
           onToggleSession={toggleSession}
           onEndSession={(sessionId) => void finishSession(sessionId)}
+          onSaveOvertime={(sessionId) => void saveOvertime(sessionId)}
+          onDismissOvertime={dismissOvertime}
           onUpdateSession={updateSession}
           onDeleteSession={(sessionId) =>
             setSessionPendingDelete(sessions.find((s) => s.id === sessionId) ?? null)

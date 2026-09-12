@@ -1,7 +1,5 @@
 import { TaskPriority } from "./planner.types";
 
-export type GoalType = "study" | "revision" | "other";
-
 export type GoalSource = "systematic" | "regular";
 
 export interface GoalSubTask {
@@ -21,7 +19,14 @@ export interface Goal {
   lessonId?: number;
   lessonName?: string;
 
-  goalType: GoalType;
+  // The user's own goal this item contributes to (GET /users/goals). Sent to
+  // the study-plan APIs as `goalCategoryId`.
+  goalCategoryId: number | null;
+  goalCategoryTitle?: string;
+
+  // Free-form guidance for the AI planner, sent as `userNotes`.
+  notes: string;
+
   estimatedHours: number;
   breakdownCount: number;
   priority: TaskPriority;

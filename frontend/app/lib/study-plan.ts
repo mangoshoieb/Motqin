@@ -1,14 +1,20 @@
-import { StudyPlanItem, StudySessionDto } from "@/app/services/motqin";
+import {
+  StudyPlanItem,
+  StudyPlanItemStatus,
+  StudySessionDto,
+  StudySessionStatus,
+} from "@/app/services/motqin";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 import { PlannerDay, Task } from "@/app/types/planner.types";
+import { elapsedSinceStart, restoreSessionClock } from "@/app/lib/session-clock";
 
-const completedStatus = 1;
+const completedStatus: number = StudyPlanItemStatus.Completed;
 
-const categoryFor = (goalCategoryId: number): Task["category"] => {
-  if (goalCategoryId === 2) return "revision";
-  if (goalCategoryId === 3) return "other";
-  return "lesson";
-};
+// goalCategoryId now points at one of the user's own goals (GET /users/goals),
+// so it says nothing about the *kind* of work — only whether the plan is tied
+// to a lesson does.
+const categoryFor = (item: StudyPlanItem): Task["category"] =>
+  item.lessonId ? "lesson" : "other";
 
 const priorityFor = (priority: number): Task["priority"] => {
   if (priority >= 2) return "high";
@@ -20,7 +26,7 @@ export const studyPlanToPlannerTask = (item: StudyPlanItem): Task => ({
   id: String(item.id),
   title: item.title,
   completed: item.status === completedStatus,
-  category: categoryFor(item.goalCategoryId),
+  category: categoryFor(item),
   estimatedTimeMinutes: item.durationInMinutes,
   priority: priorityFor(item.priority),
   source: item.toBePlanned ? "ai" : "manual",
@@ -28,7 +34,7 @@ export const studyPlanToPlannerTask = (item: StudyPlanItem): Task => ({
 
 export const studyPlanToExecutionTask = (item: StudyPlanItem): ExecutionTask => ({
   id: String(item.id),
-  kind: item.goalCategoryId === 2 ? "revision" : "daily",
+  kind: "daily",
   title: item.title,
   goalCategoryId: item.goalCategoryId,
   priority: item.priority,
@@ -39,26 +45,43 @@ export const studyPlanToExecutionTask = (item: StudyPlanItem): ExecutionTask => 
 });
 
 const sessionStatus = (status: number): ExecutionSession["status"] => {
-  if (status === 1) return "completed";
-  if (status === 4) return "active";
-  if (status === 3) return "paused";
+  if (status === StudySessionStatus.Completed) return "completed";
+  if (status === StudySessionStatus.InProgress) return "active";
+  if (status === StudySessionStatus.Paused) return "paused";
   return "idle";
+};
+
+// How far a running/paused session's clock has run. The server only tells
+// us the status, so this comes from the local clock record, falling back to
+// the server's startTime for a session this browser never saw run.
+const elapsedSecondsFor = (session: StudySessionDto, status: ExecutionSession["status"]) => {
+  const total = session.durationInMinutes * 60;
+  if (status === "completed") return total;
+  if (status === "idle") return 0;
+
+  const stored = restoreSessionClock(String(session.id), status === "active");
+  const elapsed = stored ?? (status === "active" ? elapsedSinceStart(session.startTime) : null) ?? 0;
+  return Math.min(elapsed, total);
 };
 
 export const studySessionToExecutionSession = (
   session: StudySessionDto,
   taskId: string,
   fallbackTitle: string,
-): ExecutionSession => ({
-  id: String(session.id),
-  taskId,
-  title: session.description || fallbackTitle,
-  sessionDurationMinutes: session.durationInMinutes,
-  actualMinutes: session.status === 1 ? session.durationInMinutes : 0,
-  elapsedSeconds: session.status === 1 ? session.durationInMinutes * 60 : 0,
-  notes: session.notes?.join("\n") ?? "",
-  status: sessionStatus(session.status),
-});
+): ExecutionSession => {
+  const status = sessionStatus(session.status);
+  const elapsedSeconds = elapsedSecondsFor(session, status);
+  return {
+    id: String(session.id),
+    taskId,
+    title: session.description || fallbackTitle,
+    sessionDurationMinutes: session.durationInMinutes,
+    actualMinutes: Math.floor(elapsedSeconds / 60),
+    elapsedSeconds,
+    notes: session.notes?.join("\n") ?? "",
+    status,
+  };
+};
 
 export const studyPlanSessions = (items: StudyPlanItem[]): ExecutionSession[] =>
   items.flatMap((item) =>

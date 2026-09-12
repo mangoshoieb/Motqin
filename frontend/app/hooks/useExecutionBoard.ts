@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { weekData } from "@/app/data/days";
 import { getPostponedTasks } from "@/app/data/postponedTasksStore";
-import { studyPlansService } from "@/app/services/motqin";
+import { StudyPlanDuration, studyPlansService } from "@/app/services/motqin";
 import {
   currentWeekDates,
   studyPlanSessions,
@@ -22,8 +22,10 @@ async function fetchExecutionBoard(dayIndex: number, weekOffset: number): Promis
   const date = currentWeekDates(weekOffset)[dayIndex - 1];
   if (!baseDay || !date) return null;
 
+  // CustomRange rather than Day: the board can show any day of this week
+  // or next, not just today.
   const response = await studyPlansService.filter({
-    duration: 1,
+    duration: StudyPlanDuration.CustomRange,
     startDate: date,
     endDate: date,
   });

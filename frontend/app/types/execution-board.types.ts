@@ -43,6 +43,10 @@ export interface ExecutionSession {
   elapsedSeconds?: number;
   notes?: string; // free-form note for this session, stored as StudySession.notes
   status: "idle" | "active" | "paused" | "completed";
+  // Set when the timer ran out but the user kept going: seconds worked past
+  // the planned duration, ticking until they save (PUT /add-time) or dismiss.
+  overtimeRunning?: boolean;
+  overtimeSeconds?: number;
 }
 
 export interface DayOutputs {

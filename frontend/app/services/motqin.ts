@@ -29,6 +29,19 @@ export interface BusyTime extends BusyTimePayload {
   id: number;
 }
 
+// A user-defined goal (e.g. "الحصول على درجة كاملة في الرياضيات"). Its id is
+// what study plans / sessions carry as `goalCategoryId`.
+export interface UserGoalPayload {
+  title: string;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
+export interface UserGoal extends UserGoalPayload {
+  id: number;
+  isIgnored?: boolean;
+}
+
 export interface CreateStudyPlanPayload {
   subjectId?: number;
   lessonId?: number;
@@ -44,6 +57,18 @@ export interface CreateStudyPlanPayload {
 export interface CreatedStudyPlan extends CreateStudyPlanPayload {
   id?: number;
 }
+
+// The `status` carried by a study session. Completed is 2 (confirmed by the
+// backend); the rest mirror the study-plan numbering, with 3 = paused as
+// observed from /pause responses.
+export const StudySessionStatus = {
+  Upcoming: 0,
+  InProgress: 1,
+  Completed: 2,
+  Paused: 3,
+  Missed: 4,
+} as const;
+export type StudySessionStatus = (typeof StudySessionStatus)[keyof typeof StudySessionStatus];
 
 export interface StudySessionDto {
   id: number;
@@ -79,6 +104,18 @@ export interface UpdateStudySessionPayload {
   notes?: string[];
 }
 
+// One item the AI planner should place somewhere in next week. Mirrors the
+// backend's ToBePlannedPlanDto — no date: the AI picks it.
+export interface ToBePlannedPlanPayload {
+  subjectId?: number;
+  lessonId?: number;
+  userNotes?: string[];
+  title: string;
+  durationInMinutes: number;
+  goalCategoryId: number | null;
+  importance?: string;
+}
+
 export interface StudyPlanItem extends CreateStudyPlanPayload {
   id: number;
   userId: string;
@@ -88,6 +125,45 @@ export interface StudyPlanItem extends CreateStudyPlanPayload {
   systemNotes: string[];
   userNotes: string[];
   studySessions: StudySessionDto[];
+}
+
+// Query enums for GET /study-plan/filter (see Swagger).
+export const StudyPlanDuration = {
+  All: 0,
+  Day: 1,
+  Week: 2,
+  NextWeek: 3,
+  Month: 4,
+  CustomRange: 5,
+} as const;
+export type StudyPlanDuration = (typeof StudyPlanDuration)[keyof typeof StudyPlanDuration];
+
+// NOTE: this is the *filter* enum and is NOT the same numbering as the
+// `status` field on a returned study plan — see StudyPlanItemStatus.
+export const StudyPlanStatus = {
+  All: 0,
+  Completed: 1,
+  Missed: 2,
+  Upcoming: 3,
+  InProgress: 4,
+} as const;
+export type StudyPlanStatus = (typeof StudyPlanStatus)[keyof typeof StudyPlanStatus];
+
+// The `status` carried by a StudyPlanItem, and what PUT /study-plan/{id}
+// expects when the user toggles a task done/undone.
+export const StudyPlanItemStatus = {
+  Upcoming: 0,
+  InProgress: 1,
+  Completed: 2,
+  Missed: 4,
+} as const;
+export type StudyPlanItemStatus = (typeof StudyPlanItemStatus)[keyof typeof StudyPlanItemStatus];
+
+export interface StudyPlanFilterParams {
+  duration?: StudyPlanDuration;
+  status?: StudyPlanStatus;
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string; // YYYY-MM-DD
 }
 
 export interface StudyPlanFilterResponse {
@@ -111,6 +187,43 @@ async getAllSubjects(): Promise<getSubjectsResponse> {
     return data;
   },
 }
+
+export const userGoalsService = {
+  async getAll(): Promise<UserGoal[]> {
+    const { data } = await axiosInstance.get<
+      UserGoal[] | ApiEnvelope<UserGoal[]> | { items: UserGoal[] }
+    >(API_ROUTES.USERS.GOALS);
+
+    // Swagger documents no response schema for this endpoint, so accept a
+    // bare array, a `data` envelope, or an `items` list.
+    const unwrapped = unwrap(data as UserGoal[] | ApiEnvelope<UserGoal[]>);
+    if (Array.isArray(unwrapped)) return unwrapped;
+    const items = (unwrapped as unknown as { items?: UserGoal[] })?.items;
+    return Array.isArray(items) ? items : [];
+  },
+
+  async create(payload: UserGoalPayload): Promise<UserGoal> {
+    const { data } = await axiosInstance.post<UserGoal | ApiEnvelope<UserGoal>>(
+      API_ROUTES.USERS.GOALS,
+      payload,
+    );
+
+    return unwrap(data);
+  },
+
+  async update(id: number, payload: Partial<UserGoalPayload>): Promise<UserGoal> {
+    const { data } = await axiosInstance.put<UserGoal | ApiEnvelope<UserGoal>>(
+      API_ROUTES.USERS.GOAL(id),
+      payload,
+    );
+
+    return unwrap(data);
+  },
+
+  async remove(id: number): Promise<void> {
+    await axiosInstance.delete(API_ROUTES.USERS.GOAL(id));
+  },
+};
 
 export const courseSchedulesService = {
   async getAll(): Promise<CourseSchedule[]> {
@@ -178,12 +291,7 @@ export const busyTimesService = {
 };
 
 export const studyPlansService = {
-  async filter(params: {
-    duration?: number;
-    status?: number;
-    startDate?: string;
-    endDate?: string;
-  }): Promise<StudyPlanFilterResponse> {
+  async filter(params: StudyPlanFilterParams): Promise<StudyPlanFilterResponse> {
     const { data } = await axiosInstance.get<StudyPlanFilterResponse | ApiEnvelope<StudyPlanFilterResponse>>(
       API_ROUTES.STUDY_PLANS.FILTER,
       { params },
@@ -213,6 +321,15 @@ export const studyPlansService = {
 
   async remove(id: number): Promise<void> {
     await axiosInstance.delete(API_ROUTES.STUDY_PLANS.DELETE(id));
+  },
+};
+
+export const aiService = {
+  // Swagger documents no response body; callers refetch the study plans
+  // instead of relying on what comes back.
+  async planWithAi(items: ToBePlannedPlanPayload[]): Promise<unknown> {
+    const { data } = await axiosInstance.post(API_ROUTES.AI.PLAN_WITH_AI, items);
+    return unwrap(data);
   },
 };
 
@@ -262,6 +379,16 @@ export const studySessionsService = {
     const { data } = await axiosInstance.put<
       StudySessionDto | ApiEnvelope<StudySessionDto>
     >(API_ROUTES.STUDY_SESSIONS.PAUSE(id));
+
+    return unwrap(data);
+  },
+
+  // Credits extra minutes the user kept working after the session's timer
+  // ran out; the backend adds them to the session's finished time.
+  async addTime(id: number, minutesToAdd: number): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.put<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.ADD_TIME(id), { minutesToAdd });
 
     return unwrap(data);
   },

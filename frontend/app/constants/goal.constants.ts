@@ -1,11 +1,4 @@
-import { GoalType } from "../types/goal.types";
 import { TaskPriority } from "../types/planner.types";
-
-export const goalTypeOptions: { value: GoalType; label: string }[] = [
-  { value: "study", label: "دراسة" },
-  { value: "revision", label: "مراجعة" },
-  { value: "other", label: "أخرى" },
-];
 
 export const goalPriorityOptions: { value: TaskPriority; label: string }[] = [
   { value: "low", label: "منخفضة" },
