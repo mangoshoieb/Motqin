@@ -6,7 +6,7 @@ import { PencilRuler, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import DayCard from "@/components/DayCard";
 import { weekData } from "@/app/data/days";
-import { StudyPlanDuration, StudyPlanItemStatus, studyPlansService } from "@/app/services/motqin";
+import { StudyPlanDuration, studyPlansService } from "@/app/services/motqin";
 import { applyStudyPlansToDay, currentWeekDates, dateOnly, formatPlannerDate } from "@/app/lib/study-plan";
 import { cn } from "@/app/lib/utils";
 import { PlannerViewSwitch } from "@/components/Planner/PlannerViewSwitch";
@@ -45,14 +45,15 @@ const Planner = () => {
     return {
       ...applyStudyPlansToDay({ ...day, date, isToday: date === todayDate }, items),
       isFuture: date > todayDate,
+      isPast: date < todayDate,
     };
   });
 
-  const updateTaskCompletion = async (taskId: string, completed: boolean) => {
+  // The checkbox is a toggle on the server too — DayCard handles the
+  // optimistic flip and reverts if this throws.
+  const updateTaskCompletion = async (taskId: string) => {
     try {
-      await studyPlansService.update(Number(taskId), {
-        status: completed ? StudyPlanItemStatus.Completed : StudyPlanItemStatus.Upcoming,
-      });
+      await studyPlansService.toggleStatus(Number(taskId));
       await queryClient.invalidateQueries({ queryKey: ["study-plans"] });
     } catch (error) {
       toast.error("تعذر حفظ حالة المهمة");
@@ -83,6 +84,13 @@ const Planner = () => {
                 {...day}
                 onClick={() => router.push(`/planner/execution/${day.index}?week=0`)}
                 onTaskComplete={updateTaskCompletion}
+                // Adding happens on the day's execution board: land there
+                // with the dialog already open.
+                onAddTask={
+                  day.isPast
+                    ? undefined
+                    : () => router.push(`/planner/execution/${day.index}?week=0&addTask=1`)
+                }
               />
             </div>
           ))}
@@ -91,6 +99,7 @@ const Planner = () => {
         {isLoading && (
           <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">جاري تحميل مهام الأسبوع...</p>
         )}
+
 
         {/* Planning next week: AI-generated from goals, or built by hand day by day. */}
         <section className="mt-10">

@@ -43,7 +43,6 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
     mutationFn: async () => {
       if (!resolvedTitle) throw new Error("title-required");
       if (source === "systematic" && (!subjectId || !lessonId)) throw new Error("lesson-required");
-      if (goalCategoryId === null) throw new Error("goal-required");
       if (!duration || Number(duration) <= 0) throw new Error("duration-required");
 
       const payload: CreateStudyPlanPayload = {
@@ -69,11 +68,9 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
           ? "العنوان مطلوب."
           : error.message === "lesson-required"
             ? "يرجى اختيار المادة والدرس."
-            : error.message === "goal-required"
-              ? "يرجى اختيار الهدف."
-              : error.message === "duration-required"
-                ? "المدة يجب أن تكون أكبر من صفر."
-                : "حدث خطأ أثناء حفظ المهمة.",
+            : error.message === "duration-required"
+              ? "المدة يجب أن تكون أكبر من صفر."
+              : "حدث خطأ أثناء حفظ المهمة.",
       ),
   });
 
@@ -92,7 +89,7 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
                 : "text-zinc-500",
             )}
           >
-            {value === "systematic" ? "مهمة مرتبطة بالتطبيق" : "مهمة عادية"}
+            {value === "systematic" ? "مهمة مرتبطة بمواد الدراسة" : "مهمة أخرى"}
           </button>
         ))}
       </div>
@@ -136,7 +133,7 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
         </div>
       ) : (
         <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-          عنوان المهمة
+          الأسم
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -148,7 +145,7 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-          الهدف
+          فئة الهدف <span className="font-normal text-zinc-400">(اختياري)</span>
           <div className="mt-1">
             <GoalPicker
               value={goalCategoryId}
@@ -212,6 +209,17 @@ function NextWeekDayCard({
   const [showForm, setShowForm] = useState(false);
   const totalMinutes = items.reduce((sum, item) => sum + item.durationInMinutes, 0);
 
+  const collapse = () => {
+    setShowForm(false);
+    onToggle();
+  };
+
+  // From the collapsed card: expand straight into the add-task form.
+  const openForm = () => {
+    setShowForm(true);
+    if (!expanded) onToggle();
+  };
+
   return (
     <div
       dir="rtl"
@@ -227,7 +235,8 @@ function NextWeekDayCard({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          onToggle();
+          if (expanded) collapse();
+          else onToggle();
         }}
         className={cn(
           "flex w-full items-center justify-between border-b border-zinc-100 p-3 text-right dark:border-zinc-800",
@@ -272,6 +281,21 @@ function NextWeekDayCard({
           </ul>
         )}
 
+        {!expanded && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openForm();
+            }}
+            title="إضافة مهمة لهذا اليوم"
+            className="mt-auto flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-blue-300 px-2 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40"
+          >
+            <Plus size={14} />
+            إضافة مهمة
+          </button>
+        )}
+
         {expanded && (
           <div className="mt-auto border-t border-zinc-100 pt-3 dark:border-zinc-800">
             {showForm ? (
@@ -300,7 +324,7 @@ function NextWeekDayCard({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowForm(true);
+                  openForm();
                 }}
                 className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-blue-300 px-3 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40"
               >

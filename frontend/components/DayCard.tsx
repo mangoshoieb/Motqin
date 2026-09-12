@@ -1,5 +1,5 @@
 // components/planner/DayCard.tsx
-import { CheckSquare, Square } from "lucide-react";
+import { CheckSquare, Plus, Square, Star } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { useState } from "react";
 
@@ -7,25 +7,32 @@ export interface Task {
   id: string;
   title: string;
   completed: boolean;
+  priorityValue?: number; // backend priority slot, see planner.types
 }
+
+// Light tints so the rating reads as a label, not a call to action.
 const moodOptions = [
   {
     value: "مذهل",
-    color: "bg-purple-500",
+    color: "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
   },
   {
     value: "ممتاز",
-    color: "bg-green-500",
+    color: "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300",
   },
   {
     value: "جيد",
-    color: "bg-blue-500",
+    color: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
   },
   {
     value: "متوسط",
-    color: "bg-orange-500",
+    color: "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300",
   },
 ];
+
+// 1 → ★★★, 2 → ★★, 3 → ★, anything else → no stars.
+const starsFor = (priorityValue?: number) =>
+  priorityValue && priorityValue >= 1 && priorityValue <= 3 ? 4 - priorityValue : 0;
 interface DayCardProps {
   index: number;
   dayName: string;
@@ -43,6 +50,9 @@ interface DayCardProps {
   onTaskComplete?: (taskId: string, completed: boolean) => Promise<void>;
 
   onClick?: () => void;
+  // Shown only for today and future days — the backend rejects tasks on
+  // past dates anyway. Pinned to the card's bottom edge.
+  onAddTask?: () => void;
 }
 
 export default function DayCard({
@@ -57,6 +67,7 @@ export default function DayCard({
   isFuture = false,
   onTaskComplete,
   onClick,
+  onAddTask,
 }: DayCardProps) {
   const [open, setOpen] = useState(false);
   const [selectedMood, setSelectedMood] = useState(moodOptions[1]);
@@ -158,7 +169,7 @@ export default function DayCard({
                     setOpen(!open);
                   }}
                   className={cn(
-                    "rounded-full px-3 py-1 text-xs text-white",
+                    "rounded-full px-3 py-1 text-xs font-semibold",
                     selectedMood.color
                   )}
                 >
@@ -181,7 +192,7 @@ export default function DayCard({
                         >
                           <span
                             className={cn(
-                              "inline-block rounded-full px-3 py-1 text-xs text-white",
+                              "inline-block rounded-full px-3 py-1 text-xs font-semibold",
                               option.color
                             )}
                           >
@@ -220,22 +231,58 @@ export default function DayCard({
                 <span
                   title={task.title}
                   className={cn(
-                    "text-sm flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300",
+                    "text-sm flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300",
                     task.completed && "text-zinc-400 dark:text-zinc-600 line-through opacity-60"
                   )}
                 >
                   {task.title}
                 </span>
+
+                {starsFor(task.priorityValue) > 0 && (
+                  <span
+                    className="mt-1.5 flex shrink-0 gap-px"
+                    title={`الأولوية ${task.priorityValue}`}
+                    aria-label={`الأولوية ${starsFor(task.priorityValue)} من 3`}
+                  >
+                    {[1, 2, 3].map((star) => (
+                      <Star
+                        key={star}
+                        size={11}
+                        fill={star <= starsFor(task.priorityValue) ? "currentColor" : "none"}
+                        className={
+                          star <= starsFor(task.priorityValue)
+                            ? "text-amber-400"
+                            : "text-zinc-300 dark:text-zinc-700"
+                        }
+                      />
+                    ))}
+                  </span>
+                )}
               </div>
             ))}
           </div>
 
           {remainingTasks > 0 && (
             <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-500">
-              + {remainingTasks} more tasks
+              + {remainingTasks} مهام أخرى
             </p>
           )}
+
         </section>
+
+        {onAddTask && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddTask();
+            }}
+            className="mt-auto flex items-center justify-center gap-1 self-center rounded-md border border-dashed border-blue-300 px-5 py-1 text-[11px] font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40"
+          >
+            <Plus size={12} />
+            إضافة مهمة
+          </button>
+        )}
       </div>
     </div>
   );

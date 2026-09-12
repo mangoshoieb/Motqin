@@ -31,3 +31,32 @@ export function useCreateUserGoal(onCreated?: (goal: UserGoal) => void) {
     },
   });
 }
+
+export function useUpdateUserGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number } & Partial<UserGoalPayload>) =>
+      userGoalsService.update(id, payload),
+    onSuccess: (updated, variables) => {
+      queryClient.setQueryData<UserGoal[]>(USER_GOALS_QUERY_KEY, (prev) =>
+        prev?.map((goal) => (goal.id === variables.id ? { ...goal, ...variables, ...(updated?.id ? updated : {}) } : goal)),
+      );
+      queryClient.invalidateQueries({ queryKey: USER_GOALS_QUERY_KEY });
+    },
+  });
+}
+
+export function useDeleteUserGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => userGoalsService.remove(id),
+    onSuccess: (_, id) => {
+      queryClient.setQueryData<UserGoal[]>(USER_GOALS_QUERY_KEY, (prev) =>
+        prev?.filter((goal) => goal.id !== id),
+      );
+      queryClient.invalidateQueries({ queryKey: USER_GOALS_QUERY_KEY });
+    },
+  });
+}

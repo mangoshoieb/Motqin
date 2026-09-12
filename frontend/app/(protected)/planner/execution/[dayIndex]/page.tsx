@@ -13,7 +13,7 @@ import { ExecutionBoardHeader } from "@/components/ExecutionBoard/ExecutionBoard
 import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList";
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
 import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
-import { StudyPlanItemStatus, studyPlansService, studySessionsService } from "@/app/services/motqin";
+import { studyPlansService, studySessionsService } from "@/app/services/motqin";
 import { currentWeekDates, studySessionToExecutionSession } from "@/app/lib/study-plan";
 import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
 
@@ -30,12 +30,33 @@ const ExecutionBoardPage = () => {
 
   const [tasks, setTasks] = useState<ExecutionTask[]>([]);
   const [sessions, setSessions] = useState<ExecutionSession[]>([]);
-  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
+  // `?addTask=1` (from the week board's "إضافة مهمة") opens the dialog on
+  // arrival; the param is dropped from the URL so a refresh doesn't reopen it.
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(searchParams.get("addTask") === "1");
+  useEffect(() => {
+    if (searchParams.get("addTask") === "1") {
+      router.replace(`/planner/execution/${dayIndex}?week=${weekOffset}`);
+    }
+    // Only on mount — the param is consumed once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [editingTask, setEditingTask] = useState<ExecutionTask | null>(null);
   const [sessionPendingDelete, setSessionPendingDelete] = useState<ExecutionSession | null>(null);
 
+  // Priority is a focus slot, not a score: 1 = the one task to do first
+  // (three stars), 2 = next (two stars), 3 = then (one star). Anything else
+  // (0 / unset) is an extra task with no stars, listed after the three.
+  const priorityRank = (task: ExecutionTask) =>
+    task.priority && task.priority >= 1 && task.priority <= 3 ? task.priority : Number.MAX_SAFE_INTEGER;
   const sortByPriority = (items: ExecutionTask[]) =>
-    [...items].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+    [...items].sort((a, b) => priorityRank(a) - priorityRank(b));
+
+  // Lowest free slot among 1..3 for a task being added, or 0 when all
+  // three are taken.
+  const nextFreePriority = (items: ExecutionTask[]) => {
+    const taken = new Set(items.map((task) => task.priority));
+    return [1, 2, 3].find((slot) => !taken.has(slot)) ?? 0;
+  };
 
   // Seed local state once the (mock, for now) data resolves. Adjusting
   // state during render instead of in an effect, per React's rules on
@@ -163,9 +184,7 @@ const ExecutionBoardPage = () => {
     const completed = !task.completed;
     setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, completed } : item)));
 
-    void studyPlansService.update(Number(id), {
-      status: completed ? StudyPlanItemStatus.Completed : StudyPlanItemStatus.Upcoming,
-    })
+    void studyPlansService.toggleStatus(Number(id))
       .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
       .catch(() => {
         setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, completed: task.completed } : item)));
@@ -441,9 +460,11 @@ const ExecutionBoardPage = () => {
       if (from < 0 || to < 0) return previous;
       const [moved] = next.splice(from, 1);
       next.splice(to, 0, moved);
+      // Position is priority: the first three rows take slots 1, 2, 3 and
+      // the rest lose their stars.
       const prioritized = next.map((task, index) => ({
         ...task,
-        priority: index === 0 ? 3 : index === 1 ? 2 : index === 2 ? 1 : 0,
+        priority: index < 3 ? index + 1 : 0,
       }));
       void Promise.all(
         prioritized
@@ -455,11 +476,38 @@ const ExecutionBoardPage = () => {
     });
   };
 
-  const saveTaskFromDialog = (nextTask: ExecutionTask) => {
-    setTasks((previous) => sortByPriority(previous.some((task) => task.id === nextTask.id)
-      ? previous.map((task) => (task.id === nextTask.id ? nextTask : task))
-      : [...previous, nextTask]));
+  const saveTaskFromDialog = (nextTask: ExecutionTask, createdSessions: ExecutionSession[]) => {
+    const existing = tasks.find((task) => task.id === nextTask.id);
+
+    if (existing) {
+      // Edits keep whatever priority the backend already has for the task.
+      setTasks((previous) =>
+        sortByPriority(previous.map((task) => (task.id === nextTask.id ? { ...nextTask, priority: existing.priority } : task))),
+      );
+      setEditingTask(null);
+      return;
+    }
+
+    // A new task takes the first free focus slot, and that goes to the
+    // backend right away so a reload shows the same stars.
+    const priority = nextFreePriority(tasks);
+    const created = { ...nextTask, priority };
+    setTasks((previous) => sortByPriority([...previous, created]));
+    // The backend already generated this task's sessions — show them now
+    // rather than after the next refetch.
+    if (createdSessions.length > 0) {
+      setSessions((previous) => [
+        ...previous.filter((s) => s.taskId !== created.id),
+        ...createdSessions,
+      ]);
+    }
     setEditingTask(null);
+
+    if (priority > 0) {
+      void studyPlansService.update(Number(created.id), { priority })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
+        .catch(() => toast.error("تعذر حفظ أولوية المهمة"));
+    }
   };
 
   if (isLoading) {

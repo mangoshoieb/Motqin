@@ -195,8 +195,7 @@ export default function GoalsSection({ onPlanned }: GoalsSectionProps) {
     );
   };
 
-  const isValid =
-    resolvedTitle.length > 0 && estimatedHours > 0 && goalCategoryId !== null;
+  const isValid = resolvedTitle.length > 0 && estimatedHours > 0;
 
   const resetForm = () => {
     setSubjectId("");
@@ -411,7 +410,7 @@ export default function GoalsSection({ onPlanned }: GoalsSectionProps) {
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-              نوع الهدف
+              فئة الهدف <span className="font-normal text-zinc-400">(اختياري)</span>
             </label>
             <GoalPicker
               value={goalCategoryId}

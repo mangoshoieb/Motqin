@@ -5,6 +5,7 @@ import Image from "next/image";
 import Skeleton from "@/components/ui/Skeleton";
 import RegionSelect from "@/components/RegionSelect";
 import { useCurrentUser } from "@/app/hooks/useCurrentUser";
+import GoalsManager from "@/components/Profile/GoalsManager";
 
 const PROFILE_IMAGE = "/my-notion-face-portrait.png";
 
@@ -101,7 +102,7 @@ export default function ProfilePage() {
               </p>
             </div>
           </div>
-          <Skeleton className="w-full mt-10 h-[36vh]" />
+          <GoalsManager />
         </div>
 
         {/* Information */}

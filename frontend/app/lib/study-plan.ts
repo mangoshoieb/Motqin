@@ -16,9 +16,11 @@ const completedStatus: number = StudyPlanItemStatus.Completed;
 const categoryFor = (item: StudyPlanItem): Task["category"] =>
   item.lessonId ? "lesson" : "other";
 
+// Backend priority is a focus slot: 1 = do first, 2 = next, 3 = then; 0 or
+// anything else is an extra task.
 const priorityFor = (priority: number): Task["priority"] => {
-  if (priority >= 2) return "high";
-  if (priority === 1) return "medium";
+  if (priority === 1) return "high";
+  if (priority === 2) return "medium";
   return "low";
 };
 
@@ -29,6 +31,7 @@ export const studyPlanToPlannerTask = (item: StudyPlanItem): Task => ({
   category: categoryFor(item),
   estimatedTimeMinutes: item.durationInMinutes,
   priority: priorityFor(item.priority),
+  priorityValue: item.priority,
   source: item.toBePlanned ? "ai" : "manual",
 });
 
@@ -36,7 +39,7 @@ export const studyPlanToExecutionTask = (item: StudyPlanItem): ExecutionTask => 
   id: String(item.id),
   kind: "daily",
   title: item.title,
-  goalCategoryId: item.goalCategoryId,
+  goalCategoryId: item.goalCategoryId ?? undefined,
   priority: item.priority,
   date: item.date,
   estimatedMinutes: item.durationInMinutes,

@@ -116,6 +116,7 @@ export const API_ROUTES = {
     FILTER: "/study-plan/filter",
     UPDATE: (id: string | number) => `/study-plan/${id}`,
     DELETE: (id: string | number) => `/study-plan/${id}`,
+    TOGGLE_STATUS: (id: string | number) => `/study-plan/${id}/toggle-study-plan-status`,
   },
   AI: {
     PLAN_WITH_AI: "/ai/plan-with-ai",

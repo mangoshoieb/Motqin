@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { BookOpen, Check, Clock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useGetSubjects } from "@/app/hooks/useGetSubjects";
-import {
-  CourseSchedule,
-  courseSchedulesService,
-} from "@/app/services/motqin";
+import { cn } from "@/app/lib/utils";
+import { CourseSchedule, courseSchedulesService } from "@/app/services/motqin";
 import { WEEKDAYS, WeekDay } from "@/app/types/planner-preferences.types";
 
 const inputClass =
@@ -27,18 +25,14 @@ const dayNumbers: Record<WeekDay, number> = {
 
 interface Draft {
   subjectId: string;
-  days: WeekDay[];
   startTime: string;
   endTime: string;
 }
 
-const emptyDraft: Draft = {
-  subjectId: "",
-  days: [],
-  startTime: "09:00",
-  endTime: "10:00",
-};
+const emptyDraft: Draft = { subjectId: "", startTime: "09:00", endTime: "10:00" };
 
+// The backend stores a lecture as a full datetime; we anchor it to the
+// matching weekday of the current week so only the weekday + time matter.
 const getWeekDate = (day: WeekDay, time: string) => {
   const now = new Date();
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -52,12 +46,91 @@ const getTime = (value: string) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? ""
-    : `${String(date.getHours()).padStart(2, "0")}:${String(
-        date.getMinutes(),
-      ).padStart(2, "0")}`;
+    : `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 };
 
-const scheduleId = (schedule: CourseSchedule) => schedule.id;
+const dayOf = (schedule: CourseSchedule): WeekDay | undefined =>
+  WEEKDAYS.find(({ key }) => new Date(schedule.startTime).getDay() === dayNumbers[key])?.key;
+
+// Subject + from/to row, used for both adding under a day and editing a row.
+function LectureForm({
+  draft,
+  onChange,
+  onSubmit,
+  onCancel,
+  submitLabel,
+  pending,
+  subjects,
+  subjectsLoading,
+}: {
+  draft: Draft;
+  onChange: (next: Draft) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  submitLabel: string;
+  pending: boolean;
+  subjects?: { subjectID: number; name: string }[];
+  subjectsLoading: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 rounded-xl border border-blue-200 bg-blue-50/40 p-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end dark:border-blue-900/50 dark:bg-blue-950/20">
+      <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+        المادة
+        <select
+          autoFocus
+          value={draft.subjectId}
+          onChange={(e) => onChange({ ...draft, subjectId: e.target.value })}
+          disabled={subjectsLoading || pending}
+          className={inputClass}
+        >
+          <option value="">اختر المادة</option>
+          {subjects?.map((subject) => (
+            <option key={subject.subjectID} value={subject.subjectID}>
+              {subject.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+        من
+        <input
+          type="time"
+          value={draft.startTime}
+          onChange={(e) => onChange({ ...draft, startTime: e.target.value })}
+          className={inputClass}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+        إلى
+        <input
+          type="time"
+          value={draft.endTime}
+          onChange={(e) => onChange({ ...draft, endTime: e.target.value })}
+          className={inputClass}
+        />
+      </label>
+      <div className="flex gap-1.5">
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={pending}
+          className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Check size={14} />
+          {pending ? "جاري الحفظ..." : submitLabel}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          title="إلغاء"
+          className="flex items-center rounded-lg border border-zinc-200 px-2.5 py-2 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export const CourseScheduleEditor = () => {
   const queryClient = useQueryClient();
@@ -66,152 +139,191 @@ export const CourseScheduleEditor = () => {
     queryKey: ["course-schedules"],
     queryFn: courseSchedulesService.getAll,
   });
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
-  const [editingId, setEditingId] = useState<number | null>(null);
 
-  const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: ["course-schedules"] });
+  // Which day has its add form open, and which lecture row is being edited.
+  const [addingDay, setAddingDay] = useState<WeekDay | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["course-schedules"] });
+
+  const closeForms = () => {
+    setAddingDay(null);
+    setEditingId(null);
+    setDraft(emptyDraft);
+  };
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      if (!draft.subjectId || draft.days.length === 0) {
-        throw new Error("subject-and-days-required");
-      }
-      if (draft.startTime >= draft.endTime) {
-        throw new Error("invalid-time-range");
-      }
+    mutationFn: async ({ day, id }: { day: WeekDay; id: number | null }) => {
+      if (!draft.subjectId) throw new Error("subject-required");
+      if (draft.startTime >= draft.endTime) throw new Error("invalid-time-range");
 
-      const payload = (day: WeekDay) => ({
+      const payload = {
         subjectId: Number(draft.subjectId),
         startTime: getWeekDate(day, draft.startTime),
         endTime: getWeekDate(day, draft.endTime),
-      });
-
-      if (editingId !== null) {
-        return courseSchedulesService.update(editingId, payload(draft.days[0]));
-      }
-
-      return Promise.all(draft.days.map((day) => courseSchedulesService.create(payload(day))));
+      };
+      return id === null
+        ? courseSchedulesService.create(payload)
+        : courseSchedulesService.update(id, payload);
     },
-    onSuccess: () => {
-      toast.success(editingId === null ? "تمت إضافة جدول المادة" : "تم تحديث جدول المادة");
-      setDraft(emptyDraft);
-      setEditingId(null);
+    onSuccess: (_, { id }) => {
+      toast.success(id === null ? "تمت إضافة المحاضرة" : "تم تحديث المحاضرة");
+      closeForms();
       refresh();
     },
-    onError: (error) => {
-      const message =
+    onError: (error) =>
+      toast.error(
         error.message === "invalid-time-range"
           ? "وقت النهاية يجب أن يكون بعد وقت البداية."
-          : error.message === "subject-and-days-required"
-            ? "يرجى اختيار المادة ويوم واحد على الأقل."
-            : "حدث خطأ أثناء حفظ جدول المادة.";
-      toast.error(message);
-    },
+          : error.message === "subject-required"
+            ? "يرجى اختيار المادة."
+            : "حدث خطأ أثناء حفظ المحاضرة.",
+      ),
   });
 
   const deleteMutation = useMutation({
     mutationFn: courseSchedulesService.remove,
     onSuccess: () => {
-      toast.success("تم حذف جدول المادة");
+      toast.success("تم حذف المحاضرة");
       refresh();
     },
-    onError: () => toast.error("حدث خطأ أثناء حذف جدول المادة."),
+    onError: () => toast.error("حدث خطأ أثناء حذف المحاضرة."),
   });
 
-  const toggleDay = (day: WeekDay) => {
-    setDraft((current) => ({
-      ...current,
-      days: current.days.includes(day)
-        ? current.days.filter((selectedDay) => selectedDay !== day)
-        : [...current.days, day],
-    }));
+  const openAdd = (day: WeekDay) => {
+    setEditingId(null);
+    setAddingDay(day);
+    setDraft(emptyDraft);
   };
 
-  const editSchedule = (schedule: CourseSchedule) => {
-    const day = WEEKDAYS.find(
-      ({ key }) => new Date(schedule.startTime).getDay() === dayNumbers[key],
-    )?.key;
-    if (!day) return;
-    setEditingId(scheduleId(schedule));
+  const openEdit = (schedule: CourseSchedule) => {
+    setAddingDay(null);
+    setEditingId(schedule.id);
     setDraft({
       subjectId: String(schedule.subjectId),
-      days: [day],
       startTime: getTime(schedule.startTime),
       endTime: getTime(schedule.endTime),
     });
   };
 
+  const subjectName = (id: number) =>
+    subjects?.find((subject) => subject.subjectID === id)?.name ?? `مادة ${id}`;
+
+  const byDay = WEEKDAYS.map(({ key, label }) => ({
+    key,
+    label,
+    lectures: schedules
+      .filter((schedule) => dayOf(schedule) === key)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime)),
+  }));
+
+  if (schedulesLoading) {
+    return <p className="text-sm text-zinc-500">جاري التحميل...</p>;
+  }
+
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto_auto] lg:items-end">
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          المادة
-          <select
-            value={draft.subjectId}
-            onChange={(event) => setDraft({ ...draft, subjectId: event.target.value })}
-            disabled={subjectsLoading || saveMutation.isPending}
-            className={inputClass}
+    <div className="space-y-3">
+      {byDay.map(({ key, label, lectures }) => {
+        const isAdding = addingDay === key;
+
+        return (
+          <section
+            key={key}
+            className={cn(
+              "rounded-xl border p-3 transition-colors",
+              isAdding
+                ? "border-blue-200 dark:border-blue-900/50"
+                : "border-zinc-200 dark:border-zinc-800",
+            )}
           >
-            <option value="">اختر المادة</option>
-            {subjects?.map((subject) => (
-              <option key={subject.subjectID} value={subject.subjectID}>
-                {subject.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                {label}
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                  {lectures.length === 0 ? "لا محاضرات" : `${lectures.length} محاضرة`}
+                </span>
+              </h3>
+              {!isAdding && (
+                <button
+                  type="button"
+                  onClick={() => openAdd(key)}
+                  className="flex items-center gap-1 rounded-lg border border-dashed border-blue-300 px-2.5 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40"
+                >
+                  <Plus size={14} />
+                  إضافة محاضرة
+                </button>
+              )}
+            </div>
 
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          من
-          <input type="time" value={draft.startTime} onChange={(event) => setDraft({ ...draft, startTime: event.target.value })} className={inputClass} />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          إلى
-          <input type="time" value={draft.endTime} onChange={(event) => setDraft({ ...draft, endTime: event.target.value })} className={inputClass} />
-        </label>
-      </div>
+            {lectures.length > 0 && (
+              <ul className="space-y-1.5">
+                {lectures.map((schedule) =>
+                  editingId === schedule.id ? (
+                    <li key={schedule.id}>
+                      <LectureForm
+                        draft={draft}
+                        onChange={setDraft}
+                        onSubmit={() => saveMutation.mutate({ day: key, id: schedule.id })}
+                        onCancel={closeForms}
+                        submitLabel="حفظ"
+                        pending={saveMutation.isPending}
+                        subjects={subjects}
+                        subjectsLoading={subjectsLoading}
+                      />
+                    </li>
+                  ) : (
+                    <li
+                      key={schedule.id}
+                      className="flex items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-sm dark:bg-zinc-800/60"
+                    >
+                      <BookOpen size={15} className="shrink-0 text-blue-600 dark:text-blue-400" />
+                      <span className="min-w-0 flex-1 truncate font-medium text-zinc-800 dark:text-zinc-200">
+                        {subjectName(schedule.subjectId)}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1 rounded-md bg-white px-2 py-0.5 text-xs tabular-nums text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                        <Clock size={12} />
+                        {getTime(schedule.startTime)} – {getTime(schedule.endTime)}
+                      </span>
+                      <button
+                        type="button"
+                        title="تعديل"
+                        onClick={() => openEdit(schedule)}
+                        className="text-zinc-400 transition hover:text-blue-600"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        title="حذف"
+                        onClick={() => deleteMutation.mutate(schedule.id)}
+                        className="text-zinc-400 transition hover:text-red-600"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </li>
+                  ),
+                )}
+              </ul>
+            )}
 
-      <div>
-        <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">أيام المحاضرة</p>
-        <div className="flex flex-wrap gap-2">
-          {WEEKDAYS.map(({ key, label }) => (
-            <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700">
-              <input type="checkbox" checked={draft.days.includes(key)} onChange={() => toggleDay(key)} disabled={saveMutation.isPending} />
-              {label}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex gap-2">
-        <button type="button" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
-          <Plus size={16} />
-          {saveMutation.isPending ? "جاري الحفظ..." : editingId === null ? "إضافة جدول" : "حفظ التعديل"}
-        </button>
-        {editingId !== null && (
-          <button type="button" onClick={() => { setDraft(emptyDraft); setEditingId(null); }} className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
-            <X size={16} /> إلغاء
-          </button>
-        )}
-      </div>
-
-      <div className="space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-        <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">الجداول المضافة</h3>
-        {schedulesLoading && <p className="text-sm text-zinc-500">جاري التحميل...</p>}
-        {!schedulesLoading && schedules.length === 0 && <p className="text-sm text-zinc-500 dark:text-zinc-400">لم تتم إضافة جداول بعد.</p>}
-        {schedules.map((schedule) => (
-          <div key={scheduleId(schedule)} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700">
-            <span className="text-zinc-700 dark:text-zinc-300">
-              {subjects?.find((subject) => subject.subjectID === schedule.subjectId)?.name ?? `مادة ${schedule.subjectId}`} - {new Date(schedule.startTime).toLocaleDateString("ar", { weekday: "long" })} من {getTime(schedule.startTime)} إلى {getTime(schedule.endTime)}
-            </span>
-            <span className="flex gap-2">
-              <button type="button" title="تعديل" onClick={() => editSchedule(schedule)} className="text-zinc-500 hover:text-blue-600"><Pencil size={16} /></button>
-              <button type="button" title="حذف" onClick={() => deleteMutation.mutate(scheduleId(schedule))} className="text-zinc-500 hover:text-red-600"><Trash2 size={16} /></button>
-            </span>
-          </div>
-        ))}
-      </div>
+            {isAdding && (
+              <div className={cn(lectures.length > 0 && "mt-2")}>
+                <LectureForm
+                  draft={draft}
+                  onChange={setDraft}
+                  onSubmit={() => saveMutation.mutate({ day: key, id: null })}
+                  onCancel={closeForms}
+                  submitLabel="إضافة"
+                  pending={saveMutation.isPending}
+                  subjects={subjects}
+                  subjectsLoading={subjectsLoading}
+                />
+              </div>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 };

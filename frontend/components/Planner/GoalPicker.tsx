@@ -37,8 +37,6 @@ export function GoalPicker({
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newStart, setNewStart] = useState("");
-  const [newEnd, setNewEnd] = useState("");
 
   const { data: goals = [], isLoading } = useUserGoals();
 
@@ -55,8 +53,6 @@ export function GoalPicker({
   const resetAddForm = () => {
     setAdding(false);
     setNewTitle("");
-    setNewStart("");
-    setNewEnd("");
   };
 
   const createGoal = useCreateUserGoal((created) => {
@@ -83,18 +79,8 @@ export function GoalPicker({
       toast.error("عنوان الهدف مطلوب.");
       return;
     }
-    if (newStart && newEnd && newEnd < newStart) {
-      toast.error("تاريخ النهاية يجب أن يكون بعد تاريخ البداية.");
-      return;
-    }
-    createGoal.mutate(
-      {
-        title,
-        startDate: newStart || null,
-        endDate: newEnd || null,
-      },
-      { onError: () => toast.error("تعذر إضافة الهدف.") },
-    );
+    // Quick-add is title-only; start/end dates are edited from the profile.
+    createGoal.mutate({ title }, { onError: () => toast.error("تعذر إضافة الهدف.") });
   };
 
   return (
@@ -163,31 +149,9 @@ export function GoalPicker({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                      تاريخ البداية
-                    </label>
-                    <input
-                      type="date"
-                      value={newStart}
-                      onChange={(e) => setNewStart(e.target.value)}
-                      className={fieldClass}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                      تاريخ النهاية
-                    </label>
-                    <input
-                      type="date"
-                      value={newEnd}
-                      min={newStart || undefined}
-                      onChange={(e) => setNewEnd(e.target.value)}
-                      className={fieldClass}
-                    />
-                  </div>
-                </div>
+                <p className="text-[11px] text-zinc-400">
+                  يمكنك تحديد تاريخ البداية والنهاية أو تعديل الهدف لاحقًا من صفحة الملف الشخصي.
+                </p>
 
                 <button
                   type="button"

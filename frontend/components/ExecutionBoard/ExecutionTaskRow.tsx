@@ -61,7 +61,9 @@ export const ExecutionTaskRow = ({
   const [titleDraft, setTitleDraft] = useState("");
   const [durationDraft, setDurationDraft] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
-  const priority = Math.max(0, Math.min(3, task.priority ?? 0));
+  // Backend priority 1/2/3 = focus slot; 1 is the most urgent and shows the
+  // most stars. Anything else is an extra task with no stars.
+  const stars = task.priority && task.priority >= 1 && task.priority <= 3 ? 4 - task.priority : 0;
 
   // Opening a card seeds the drafts from whatever the session currently holds.
   const openSession = (session: ExecutionSession) => {
@@ -99,14 +101,32 @@ export const ExecutionTaskRow = ({
         </button>
 
         <div className="flex-1 min-w-0">
-          <p
-            className={cn(
-              "text-sm font-medium truncate",
-              task.completed && "line-through text-zinc-500 opacity-60"
+          <div className="flex items-center gap-2">
+            <p
+              className={cn(
+                "min-w-0 flex-1 text-sm font-medium truncate",
+                task.completed && "line-through text-zinc-500 opacity-60"
+              )}
+            >
+              {task.title}
+            </p>
+            {stars > 0 && (
+              <div
+                className="flex shrink-0 gap-0.5"
+                title={`الأولوية ${task.priority}`}
+                aria-label={`الأولوية ${stars} من 3`}
+              >
+                {[1, 2, 3].map((star) => (
+                  <Star
+                    key={star}
+                    size={18}
+                    fill={star <= stars ? "currentColor" : "none"}
+                    className={star <= stars ? "text-amber-400" : "text-zinc-300 dark:text-zinc-700"}
+                  />
+                ))}
+              </div>
             )}
-          >
-            {task.title}
-          </p>
+          </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
             {task.subjectName ? `${task.subjectName} · ` : ""}
             {task.estimatedMinutes} دقيقة
@@ -114,11 +134,6 @@ export const ExecutionTaskRow = ({
               ? ` · التكرار #${task.repetitionNumber}`
               : ""}
           </p>
-          <div className="mt-1 flex gap-0.5" aria-label={`الأولوية ${priority} من 3`}>
-            {[1, 2, 3].map((star) => (
-              <Star key={star} size={13} fill={star <= priority ? "currentColor" : "none"} className={star <= priority ? "text-amber-400" : "text-zinc-300 dark:text-zinc-700"} />
-            ))}
-          </div>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
@@ -156,8 +171,8 @@ export const ExecutionTaskRow = ({
                 key={session.id}
                 className="rounded-xl border border-zinc-200 dark:border-zinc-700"
               >
-                {/* Collapsed header. Clicking it — the play icon included —
-                    opens the card; play only runs the session once open. */}
+                {/* Collapsed header: clicking it (or the chevron) opens the
+                    card for editing; play/pause acts right away. */}
                 <div
                   role="button"
                   tabIndex={0}
@@ -175,18 +190,17 @@ export const ExecutionTaskRow = ({
                   ) : (
                     <button
                       type="button"
-                      title={expanded ? (session.status === "active" ? "إيقاف مؤقت" : "بدء الجلسة") : "فتح الجلسة"}
+                      title={session.status === "active" ? "إيقاف مؤقت" : "بدء الجلسة"}
                       onClick={(event) => {
                         event.stopPropagation();
-                        if (expanded) onToggleSession?.(session.id);
-                        else openSession(session);
+                        onToggleSession?.(session.id);
                       }}
-                      className="shrink-0"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40"
                     >
                       {session.status === "active" ? (
-                        <Pause size={16} className="text-blue-600 dark:text-blue-400" />
+                        <Pause size={16} />
                       ) : (
-                        <Play size={16} className="text-blue-600 dark:text-blue-400" />
+                        <Play size={16} />
                       )}
                     </button>
                   )}
@@ -195,7 +209,14 @@ export const ExecutionTaskRow = ({
                     {session.title}
                   </span>
 
-                  <span className="shrink-0 text-xs font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-lg px-2 py-0.5 text-xs font-medium tabular-nums",
+                      session.status === "active"
+                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
+                        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+                    )}
+                  >
                     {formatClock(elapsedSeconds)} / {formatClock(session.sessionDurationMinutes * 60)}
                   </span>
 
@@ -225,11 +246,17 @@ export const ExecutionTaskRow = ({
                     <X size={14} />
                   </button>
 
-                  {expanded ? (
-                    <ChevronUp size={14} className="shrink-0 text-zinc-400" />
-                  ) : (
-                    <ChevronDown size={14} className="shrink-0 text-zinc-400" />
-                  )}
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleExpanded(session);
+                    }}
+                    title={expanded ? "إغلاق" : "تعديل الجلسة"}
+                    className="shrink-0 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  >
+                    {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
                 </div>
 
                 {session.overtimeRunning && (
@@ -343,7 +370,7 @@ export const ExecutionTaskRow = ({
 
       <div className="flex my-3 min-h-30 flex-col rounded-2xl bg-zinc-50 p-5 dark:bg-zinc-800">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">ملاحظات المهمة</h3>
+          <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">الملاحظات </h3>
         </div>
 
         {noteEditing ? (

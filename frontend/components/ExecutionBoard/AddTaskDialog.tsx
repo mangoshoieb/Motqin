@@ -12,7 +12,8 @@ import {
   studyPlansService,
 } from "@/app/services/motqin";
 import { cn } from "@/app/lib/utils";
-import { ExecutionTask } from "@/app/types/execution-board.types";
+import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
+import { studySessionToExecutionSession } from "@/app/lib/study-plan";
 import { GoalPicker } from "@/components/Planner/GoalPicker";
 
 const inputClass =
@@ -20,7 +21,8 @@ const inputClass =
 
 interface AddTaskDialogProps {
   date: string;
-  onCreated: (task: ExecutionTask) => void;
+  // `sessions` are the ones the backend generated for a newly created task.
+  onCreated: (task: ExecutionTask, sessions: ExecutionSession[]) => void;
   onClose: () => void;
   task?: ExecutionTask;
 }
@@ -42,7 +44,6 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
   const mutation = useMutation({
     mutationFn: async () => {
       if (!resolvedTitle) throw new Error("title-required");
-      if (goalCategoryId === null) throw new Error("goal-required");
       if (isEditing && task) {
         return studyPlansService.update(Number(task.id), {
           title: resolvedTitle,
@@ -67,23 +68,27 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
       return studyPlansService.create(payload);
     },
     onSuccess: (created) => {
+      const taskId = String(created.id ?? task?.id ?? crypto.randomUUID());
+      const sessions = (created.studySessions ?? []).map((session) =>
+        studySessionToExecutionSession(session, taskId, created.title),
+      );
       onCreated({
         ...task,
-        id: String(created.id ?? task?.id ?? crypto.randomUUID()),
+        id: taskId,
         kind: task?.kind ?? "daily",
         title: created.title,
-        goalCategoryId: created.goalCategoryId ?? goalCategoryId,
+        goalCategoryId: created.goalCategoryId ?? goalCategoryId ?? undefined,
         priority: created.priority ?? task?.priority,
         subjectName: subjects?.find((subject) => subject.subjectID === Number(subjectId))?.name,
         estimatedMinutes: created.durationInMinutes,
         completed: task?.completed ?? false,
         quizLink: task?.quizLink,
-      });
+      }, sessions);
        queryClient.invalidateQueries({ queryKey: ["study-plans"] });
       toast.success(isEditing ? "تم تحديث المهمة" : "تمت إضافة المهمة");
       onClose();
     },
-    onError: (error) => toast.error(error.message === "title-required" ? "العنوان مطلوب." : error.message === "lesson-required" ? "يرجى اختيار المادة والدرس." : error.message === "goal-required" ? "يرجى اختيار الهدف." : error.message === "duration-required" ? "المدة يجب أن تكون أكبر من صفر." : "حدث خطأ أثناء حفظ المهمة."),
+    onError: (error) => toast.error(error.message === "title-required" ? "العنوان مطلوب." : error.message === "lesson-required" ? "يرجى اختيار المادة والدرس." : error.message === "duration-required" ? "المدة يجب أن تكون أكبر من صفر." : "حدث خطأ أثناء حفظ المهمة."),
   });
 
   return (
@@ -112,7 +117,7 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
         )}
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="text-sm text-zinc-700 dark:text-zinc-300">الهدف<div className="mt-1"><GoalPicker value={goalCategoryId} onChange={(id) => setGoalCategoryId(id)} className="rounded-lg border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800" /></div></div>
+          <div className="text-sm text-zinc-700 dark:text-zinc-300">فئة الهدف <span className="text-xs text-zinc-400">(اختياري)</span><div className="mt-1"><GoalPicker value={goalCategoryId} onChange={(id) => setGoalCategoryId(id)} className="rounded-lg border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800" /></div></div>
           {!isEditing && <label className="text-sm text-zinc-700 dark:text-zinc-300">المدة بالدقائق<input type="number" min={1} value={duration} onChange={(event) => setDuration(event.target.value)} className={inputClass} /></label>}
         </div>
 

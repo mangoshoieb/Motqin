@@ -48,7 +48,7 @@ export interface CreateStudyPlanPayload {
   date: string;
   title: string;
   durationInMinutes: number;
-  goalCategoryId: number;
+  goalCategoryId?: number | null;
   priority?: number;
   status?: number;
   userNotes?: string[];
@@ -56,6 +56,8 @@ export interface CreateStudyPlanPayload {
 
 export interface CreatedStudyPlan extends CreateStudyPlanPayload {
   id?: number;
+  // The backend auto-generates sessions for a new plan and returns them.
+  studySessions?: StudySessionDto[];
 }
 
 // The `status` carried by a study session. Completed is 2 (confirmed by the
@@ -321,6 +323,12 @@ export const studyPlansService = {
 
   async remove(id: number): Promise<void> {
     await axiosInstance.delete(API_ROUTES.STUDY_PLANS.DELETE(id));
+  },
+
+  // Flips the plan between completed and not — no body, the backend decides
+  // the new status (and may later trim unfinished sessions on completion).
+  async toggleStatus(id: number): Promise<void> {
+    await axiosInstance.put(API_ROUTES.STUDY_PLANS.TOGGLE_STATUS(id));
   },
 };
 

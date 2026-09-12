@@ -20,6 +20,9 @@ export interface Task {
   estimatedTimeMinutes: number;
 
   priority: TaskPriority;
+  // Raw backend value: 1 = do first (★★★), 2 = next (★★), 3 = then (★);
+  // anything else is an extra task with no stars.
+  priorityValue?: number;
 
   source: TaskSource;
 }

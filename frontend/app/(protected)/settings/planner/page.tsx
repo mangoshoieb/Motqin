@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CalendarClock, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
+
+import { cn } from "@/app/lib/utils";
 
 import { usePlannerPreferences } from "@/app/hooks/usePlannerPreferences";
 import {
@@ -41,6 +44,23 @@ const UNFINISHED_POLICY_OPTIONS: {
   },
 ];
 
+type BusyTab = "courses" | "other";
+
+const BUSY_TABS: { value: BusyTab; label: string; description: string; icon: typeof GraduationCap }[] = [
+  {
+    value: "courses",
+    label: "جدول الدروس",
+    description: "أضف محاضراتك تحت كل يوم من أيام الأسبوع.",
+    icon: GraduationCap,
+  },
+  {
+    value: "other",
+    label: "أوقات مشغولة أخرى",
+    description: "أضف موعدًا بعنوان، إما بوقت البداية والنهاية أو بمدة تقريبية.",
+    icon: CalendarClock,
+  },
+];
+
 const PlannerSettingsPage = () => {
   const {
     preferences,
@@ -53,6 +73,7 @@ const PlannerSettingsPage = () => {
   } = usePlannerPreferences();
 
   const [draft, setDraft] = useState<PlannerPreferences | null>(null);
+  const [busyTab, setBusyTab] = useState<BusyTab>("courses");
 
   /*
    * Sync the editable draft whenever preferences are loaded.
@@ -292,19 +313,32 @@ const PlannerSettingsPage = () => {
         </SettingsField>
       </div>
 
-      {/* Busy Times */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="mb-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">جدول الدروس</h2>
-          <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">أضف الدروس التي تتكرر في أيام محددة من الأسبوع.</p>
-          <CourseScheduleEditor />
+      {/* Busy Times — one card, two tabs */}
+      <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mb-5 inline-flex items-center gap-1.5 rounded-2xl bg-zinc-100 p-1.5 dark:bg-zinc-800">
+          {BUSY_TABS.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setBusyTab(value)}
+              className={cn(
+                "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all",
+                busyTab === value
+                  ? "bg-white text-blue-700 shadow-sm dark:bg-zinc-900 dark:text-blue-400"
+                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200",
+              )}
+            >
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="mb-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">أوقات مشغولة أخرى</h2>
-          <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">أضف موعدًا بعنوان، إما بوقت البداية والنهاية أو بمدة تقريبية.</p>
-          <RegularBusyTimeEditor />
-        </div>
+        <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
+          {BUSY_TABS.find((tab) => tab.value === busyTab)?.description}
+        </p>
+
+        {busyTab === "courses" ? <CourseScheduleEditor /> : <RegularBusyTimeEditor />}
       </div>
     </div>
   );
