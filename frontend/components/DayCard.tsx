@@ -47,7 +47,12 @@ interface DayCardProps {
   mood:"مذهل" | "ممتاز" | "جيد" | "متوسط";
   tasks: Task[];
   isFuture?: boolean;
+  // Past days can't receive tasks (the backend rejects it), so they're not
+  // drop targets.
+  isPast?: boolean;
   onTaskComplete?: (taskId: string, completed: boolean) => Promise<void>;
+  // A task from another day was dropped on this one.
+  onTaskDrop?: (taskId: string) => void;
 
   onClick?: () => void;
   // Shown only for today and future days — the backend rejects tasks on
@@ -65,11 +70,15 @@ export default function DayCard({
   focusSessions,
   tasks,
   isFuture = false,
+  isPast = false,
   onTaskComplete,
+  onTaskDrop,
   onClick,
   onAddTask,
 }: DayCardProps) {
   const [open, setOpen] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const canDrop = Boolean(onTaskDrop) && !isPast;
   const [selectedMood, setSelectedMood] = useState(moodOptions[1]);
 
   const [taskList, setTaskList] = useState(tasks);
@@ -108,10 +117,27 @@ export default function DayCard({
   return (
     <div
       onClick={onClick}
+      onDragOver={(e) => {
+        if (!canDrop || !e.dataTransfer.types.includes("text/task-id")) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        setDragOver(false);
+        if (!canDrop) return;
+        const taskId = e.dataTransfer.getData("text/task-id");
+        const fromDate = e.dataTransfer.getData("text/task-date");
+        if (!taskId || fromDate === date) return;
+        e.preventDefault();
+        onTaskDrop?.(taskId);
+      }}
       dir="rtl"
       className={cn(
         "flex flex-col overflow-hidden h-full cursor-pointer bg-white transition-all duration-200 hover:shadow-lg dark:bg-zinc-900",
         index !== 7 && "border-l border-zinc-200 dark:border-zinc-800",
+        dragOver && "bg-blue-50 ring-2 ring-inset ring-blue-400 dark:bg-blue-950/30",
       )}
     >
       {/* Header */}
@@ -149,7 +175,7 @@ export default function DayCard({
 
           <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
             <div className="flex justify-between">
-              <span>ساعات العمل</span>
+              <span>ساعات الأنجاز</span>
               <span className="font-medium text-zinc-900 dark:text-zinc-100">{workingHours}</span>
             </div>
 
@@ -214,7 +240,17 @@ export default function DayCard({
 
           <div className="space-y-2">
             {visibleTasks.map((task) => (
-              <div key={task.id} className="flex items-start gap-2">
+              <div
+                key={task.id}
+                draggable
+                onDragStart={(e) => {
+                  e.stopPropagation();
+                  e.dataTransfer.setData("text/task-id", task.id);
+                  e.dataTransfer.setData("text/task-date", date);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                className="flex cursor-grab items-start gap-2 rounded-md active:cursor-grabbing"
+              >
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

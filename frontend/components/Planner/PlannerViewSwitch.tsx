@@ -23,7 +23,7 @@ export const PlannerViewSwitch = () => {
             : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
         )}
       >
-        عرض الأسبوع
+        خطة الأسبوع
       </Link>
       <Link
         href={`/planner/execution/${todayIndex}?week=0`}
@@ -34,7 +34,7 @@ export const PlannerViewSwitch = () => {
             : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
         )}
       >
-        لوحة اليوم
+        خطة اليوم
       </Link>
     </div>
   );

@@ -47,7 +47,7 @@ export const ExecutionBoardHeader = ({ dayName, date, outputs }: ExecutionBoardH
         </div>
         <div className="rounded-2xl bg-white border border-zinc-200 p-4 dark:bg-zinc-900 dark:border-zinc-800">
           <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{outputs.totalSessions}</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">جلسات</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1"> جلسات تركيز</p>
         </div>
         <div className="rounded-2xl bg-white border border-zinc-200 p-4 dark:bg-zinc-900 dark:border-zinc-800">
           <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">

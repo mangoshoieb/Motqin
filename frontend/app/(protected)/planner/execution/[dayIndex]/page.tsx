@@ -484,6 +484,14 @@ const ExecutionBoardPage = () => {
       setTasks((previous) =>
         sortByPriority(previous.map((task) => (task.id === nextTask.id ? { ...nextTask, priority: existing.priority } : task))),
       );
+      // A duration change makes the server rebuild the task's sessions —
+      // swap ours for the ones it returned so the clocks match.
+      if (createdSessions.length > 0) {
+        setSessions((previous) => [
+          ...previous.filter((s) => s.taskId !== nextTask.id),
+          ...createdSessions,
+        ]);
+      }
       setEditingTask(null);
       return;
     }

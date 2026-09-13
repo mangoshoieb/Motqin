@@ -45,9 +45,13 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
     mutationFn: async () => {
       if (!resolvedTitle) throw new Error("title-required");
       if (isEditing && task) {
+        if (!duration || Number(duration) <= 0) throw new Error("duration-required");
+        // Changing the duration makes the backend regenerate the sessions;
+        // the response carries the new ones.
         return studyPlansService.update(Number(task.id), {
           title: resolvedTitle,
           goalCategoryId,
+          durationInMinutes: Number(duration),
         });
       }
       if (source === "systematic" && (!subjectId || !lessonId)) {
@@ -101,7 +105,7 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
 
         {!isEditing && <div className="mb-5 flex gap-2 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
           {(["systematic", "regular"] as const).map((value) => (
-            <button key={value} type="button" onClick={() => setSource(value)} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-semibold", source === value ? "bg-white text-blue-700 shadow-sm dark:bg-zinc-900 dark:text-blue-400" : "text-zinc-500")}>{value === "systematic" ? "مهمة مرتبطة بالتطبيق" : "مهمة عادية"}</button>
+            <button key={value} type="button" onClick={() => setSource(value)} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-semibold", source === value ? "bg-white text-blue-700 shadow-sm dark:bg-zinc-900 dark:text-blue-400" : "text-zinc-500")}>{value === "systematic" ? "مهمة مرتبطة بمواد الدراسة" : "مهمة أخرى"}</button>
           ))}
         </div>}
 
@@ -118,7 +122,7 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="text-sm text-zinc-700 dark:text-zinc-300">فئة الهدف <span className="text-xs text-zinc-400">(اختياري)</span><div className="mt-1"><GoalPicker value={goalCategoryId} onChange={(id) => setGoalCategoryId(id)} className="rounded-lg border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800" /></div></div>
-          {!isEditing && <label className="text-sm text-zinc-700 dark:text-zinc-300">المدة بالدقائق<input type="number" min={1} value={duration} onChange={(event) => setDuration(event.target.value)} className={inputClass} /></label>}
+          <label className="text-sm text-zinc-700 dark:text-zinc-300">المدة بالدقائق<input type="number" min={1} value={duration} onChange={(event) => setDuration(event.target.value)} className={inputClass} /></label>
         </div>
 
         <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-700">إلغاء</button><button type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">{mutation.isPending ? "جاري الحفظ..." : isEditing ? "حفظ التعديل" : "إضافة المهمة"}</button></div>

@@ -49,6 +49,19 @@ const Planner = () => {
     };
   });
 
+  // Drag a task from one day column onto another: PUT the new date. The
+  // backend refuses past dates, and DayCard already blocks dropping there.
+  const moveTask = async (taskId: string, date: string) => {
+    try {
+      await studyPlansService.update(Number(taskId), { date });
+      await queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["execution-board"] });
+      toast.success(`تم نقل المهمة إلى ${formatPlannerDate(date)}`);
+    } catch {
+      toast.error("تعذر نقل المهمة إلى هذا اليوم");
+    }
+  };
+
   // The checkbox is a toggle on the server too — DayCard handles the
   // optimistic flip and reverts if this throws.
   const updateTaskCompletion = async (taskId: string) => {
@@ -84,6 +97,7 @@ const Planner = () => {
                 {...day}
                 onClick={() => router.push(`/planner/execution/${day.index}?week=0`)}
                 onTaskComplete={updateTaskCompletion}
+                onTaskDrop={(taskId) => void moveTask(taskId, dates[day.index - 1])}
                 // Adding happens on the day's execution board: land there
                 // with the dialog already open.
                 onAddTask={

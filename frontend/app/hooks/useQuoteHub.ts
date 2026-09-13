@@ -8,6 +8,7 @@ import { authStorage } from "../lib/auth-storage";
 import { DailyQuote, QuoteComment, QuoteReactionUser, ReactionType } from "../types/quote.types";
 import { QUOTE_TODAY_QUERY_KEY } from "./useTodayQuote";
 import { applyReaction, quoteReactionsKey, removeUserReaction } from "./useQuoteReaction";
+import { insertComment, patchComment, removeComment } from "../lib/quote-comments";
 
 // The hub lives next to the REST API: NEXT_PUBLIC_BASE_URL is ".../api", the
 // hub is ".../quoteHub".
@@ -38,40 +39,6 @@ interface ReactionRemovedPayload {
   quoteId: number;
   userId: string;
 }
-
-// ---- pure cache helpers -------------------------------------------------
-
-const upsertComment = (list: QuoteComment[], incoming: QuoteComment): QuoteComment[] => {
-  // Top-level comment.
-  if (!incoming.parentCommentId) {
-    return list.some((c) => c.id === incoming.id)
-      ? list.map((c) => (c.id === incoming.id ? { ...c, ...incoming } : c))
-      : [...list, incoming];
-  }
-  // Reply: nest under its parent (one level, matching CommentRenderDto).
-  return list.map((c) =>
-    c.id === incoming.parentCommentId
-      ? {
-          ...c,
-          replies: (c.replies ?? []).some((r) => r.id === incoming.id)
-            ? (c.replies ?? []).map((r) => (r.id === incoming.id ? { ...r, ...incoming } : r))
-            : [...(c.replies ?? []), incoming],
-        }
-      : c,
-  );
-};
-
-const patchComment = (list: QuoteComment[], incoming: QuoteComment): QuoteComment[] =>
-  list.map((c) =>
-    c.id === incoming.id
-      ? { ...c, content: incoming.content, isDeletedByAdmin: incoming.isDeletedByAdmin }
-      : { ...c, replies: c.replies ? patchComment(c.replies, incoming) : c.replies },
-  );
-
-const removeComment = (list: QuoteComment[], commentId: number): QuoteComment[] =>
-  list
-    .filter((c) => c.id !== commentId)
-    .map((c) => (c.replies ? { ...c, replies: removeComment(c.replies, commentId) } : c));
 
 /**
  * Keeps today's quote live: joins the SignalR room for `quoteId` and folds
@@ -106,7 +73,7 @@ export function useQuoteHub(quoteId: number | null | undefined, currentUserId?: 
     // Handlers go on BEFORE start() so nothing early is missed.
     connection.on(EVENTS.comment, (comment: QuoteComment) => {
       if (comment.quoteId !== quoteId) return;
-      setToday((prev) => ({ ...prev, comments: upsertComment(prev.comments ?? [], comment) }));
+      setToday((prev) => ({ ...prev, comments: insertComment(prev.comments ?? [], comment) }));
     });
 
     connection.on(EVENTS.commentUpdate, (comment: QuoteComment) => {

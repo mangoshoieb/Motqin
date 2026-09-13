@@ -10,6 +10,7 @@ import {
   useUpdateQuoteComment,
 } from "@/app/hooks/useQuoteComment";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { buildThread, countAll, flattenReplies } from "@/app/lib/quote-comments";
 import ReportCommentDialog from "./ReportCommentDialog";
 
 const AVATAR_COLORS = [
@@ -43,24 +44,6 @@ function timeAgo(isoDate: string) {
   return `منذ ${days} يوم`;
 }
 
-// The API nests replies one level deep (CommentRenderDto.replies). If a
-// response ever comes back flat with parentCommentId set instead, fold those
-// under their parents so the UI is the same either way.
-function buildThread(comments: QuoteComment[]): QuoteComment[] {
-  const flatReplies = comments.filter((c) => c.parentCommentId);
-  if (flatReplies.length === 0) return comments;
-
-  const roots = comments.filter((c) => !c.parentCommentId);
-  return roots.map((root) => {
-    const extra = flatReplies.filter((r) => r.parentCommentId === root.id);
-    const existing = root.replies ?? [];
-    const merged = [...existing, ...extra.filter((r) => !existing.some((e) => e.id === r.id))];
-    return merged.length ? { ...root, replies: merged } : root;
-  });
-}
-
-const countAll = (comments: QuoteComment[]): number =>
-  comments.reduce((sum, c) => sum + 1 + (c.replies?.length ?? 0), 0);
 
 // Comments shown before "عرض كل التعليقات", and after expanding (the rest
 // scroll inside the box).
@@ -164,15 +147,15 @@ function ReplyBox({
 function CommentItem({
   comment,
   quoteId,
-  depth = 0,
-  threadParentId,
+  isReply = false,
+  replyingTo,
 }: {
   comment: QuoteComment;
   quoteId: number;
-  depth?: number;
-  // For replies: the top-level comment a new reply should attach to (the
-  // API nests one level only).
-  threadParentId?: number;
+  isReply?: boolean;
+  // For a reply that answers another reply (not the root): whose name to
+  // show, Facebook-style, since deep threads render at one indent.
+  replyingTo?: string;
 }) {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -190,8 +173,8 @@ function CommentItem({
 
   const isOwnComment = !!user && comment.userId === user.id;
   const displayName = comment.userName || "مستخدم";
-  const isReply = depth > 0;
-  const replies = comment.replies ?? [];
+  // Deep threads are flattened for display; the data stays truly nested.
+  const replies = isReply ? [] : flattenReplies(comment);
   const removedByAdmin = Boolean(comment.isDeletedByAdmin);
 
   const handleSaveEdit = () => {
@@ -224,6 +207,12 @@ function CommentItem({
             </span>
             <span className="text-xs text-zinc-400">{timeAgo(comment.createdAt)}</span>
           </div>
+
+          {replyingTo && !isEditing && (
+            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-zinc-400">
+              <CornerDownLeft size={11} /> ردًا على {replyingTo}
+            </p>
+          )}
 
           {isEditing ? (
             <div className="mt-1.5 flex items-center gap-2">
@@ -310,7 +299,7 @@ function CommentItem({
         {replying && (
           <ReplyBox
             quoteId={quoteId}
-            parentId={threadParentId ?? comment.id}
+            parentId={comment.id}
             replyingTo={isReply ? displayName : undefined}
             onDone={() => setReplying(false)}
           />
@@ -335,13 +324,13 @@ function CommentItem({
 
             {showReplies && (
               <div className="mt-2 space-y-3 border-e-2 border-zinc-100 pe-3 dark:border-zinc-800">
-                {replies.map((reply) => (
+                {replies.map(({ comment: reply, replyingTo: target }) => (
                   <CommentItem
                     key={reply.id}
                     comment={reply}
                     quoteId={quoteId}
-                    depth={depth + 1}
-                    threadParentId={threadParentId ?? comment.id}
+                    isReply
+                    replyingTo={target}
                   />
                 ))}
               </div>
