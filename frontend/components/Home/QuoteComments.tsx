@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Flag, Pencil, Send, Trash2, X } from "lucide-react";
+import { CornerDownLeft, Flag, FlagOff, Pencil, Reply, Send, ShieldOff, Trash2, X } from "lucide-react";
 import { QuoteComment } from "@/app/types/quote.types";
 import { useAuth } from "@/app/(public)/context/auth.context";
 import {
   useAddQuoteComment,
   useDeleteQuoteComment,
-  useReportQuoteComment,
   useUpdateQuoteComment,
 } from "@/app/hooks/useQuoteComment";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import ReportCommentDialog from "./ReportCommentDialog";
 
 const AVATAR_COLORS = [
   "bg-blue-500",
@@ -43,18 +43,119 @@ function timeAgo(isoDate: string) {
   return `منذ ${days} يوم`;
 }
 
-function CommentItem({ comment }: { comment: QuoteComment }) {
+// The API nests replies one level deep (CommentRenderDto.replies). If a
+// response ever comes back flat with parentCommentId set instead, fold those
+// under their parents so the UI is the same either way.
+function buildThread(comments: QuoteComment[]): QuoteComment[] {
+  const flatReplies = comments.filter((c) => c.parentCommentId);
+  if (flatReplies.length === 0) return comments;
+
+  const roots = comments.filter((c) => !c.parentCommentId);
+  return roots.map((root) => {
+    const extra = flatReplies.filter((r) => r.parentCommentId === root.id);
+    const existing = root.replies ?? [];
+    const merged = [...existing, ...extra.filter((r) => !existing.some((e) => e.id === r.id))];
+    return merged.length ? { ...root, replies: merged } : root;
+  });
+}
+
+const countAll = (comments: QuoteComment[]): number =>
+  comments.reduce((sum, c) => sum + 1 + (c.replies?.length ?? 0), 0);
+
+// Inline "write a reply" box shown under a comment.
+function ReplyBox({
+  quoteId,
+  parentId,
+  replyingTo,
+  onDone,
+}: {
+  quoteId: number;
+  parentId: number;
+  replyingTo?: string;
+  onDone: () => void;
+}) {
+  const [text, setText] = useState("");
+  const { mutate: addComment, isPending } = useAddQuoteComment();
+
+  const submit = () => {
+    const content = text.trim();
+    if (!content) return;
+    addComment(
+      { quoteId, content, parentCommentId: parentId },
+      {
+        onSuccess: () => {
+          setText("");
+          onDone();
+        },
+      },
+    );
+  };
+
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <CornerDownLeft size={14} className="shrink-0 text-zinc-300 dark:text-zinc-600" />
+      <input
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+          if (e.key === "Escape") onDone();
+        }}
+        placeholder={replyingTo ? `الرد على ${replyingTo}...` : "اكتب ردًا..."}
+        className="min-w-0 flex-1 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+      />
+      <button
+        type="button"
+        onClick={submit}
+        disabled={isPending || !text.trim()}
+        title="إرسال الرد"
+        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <Send size={14} />
+      </button>
+      <button
+        type="button"
+        onClick={onDone}
+        title="إلغاء"
+        className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+      >
+        <X size={16} />
+      </button>
+    </div>
+  );
+}
+
+function CommentItem({
+  comment,
+  quoteId,
+  depth = 0,
+  threadParentId,
+}: {
+  comment: QuoteComment;
+  quoteId: number;
+  depth?: number;
+  // For replies: the top-level comment a new reply should attach to (the
+  // API nests one level only).
+  threadParentId?: number;
+}) {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(comment.content);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [replying, setReplying] = useState(false);
+  // Remembered for this session so the same comment isn't reported twice.
+  const [reported, setReported] = useState(false);
 
   const { mutate: updateComment, isPending: isUpdating } = useUpdateQuoteComment();
   const { mutate: deleteComment, isPending: isDeleting } = useDeleteQuoteComment();
-  const { mutate: reportComment } = useReportQuoteComment();
 
   const isOwnComment = !!user && comment.userId === user.id;
   const displayName = comment.userName || "مستخدم";
+  const isReply = depth > 0;
+  const replies = comment.replies ?? [];
+  const removedByAdmin = Boolean(comment.isDeletedByAdmin);
 
   const handleSaveEdit = () => {
     const content = draft.trim();
@@ -71,9 +172,9 @@ function CommentItem({ comment }: { comment: QuoteComment }) {
   return (
     <div className="flex items-start gap-3">
       <span
-        className={`flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${avatarColorFor(
-          displayName
-        )}`}
+        className={`flex shrink-0 items-center justify-center rounded-full font-bold text-white ${
+          isReply ? "size-7 text-xs" : "size-9 text-sm"
+        } ${avatarColorFor(displayName)}`}
       >
         {initialsFor(displayName)}
       </span>
@@ -115,6 +216,10 @@ function CommentItem({ comment }: { comment: QuoteComment }) {
                 <X size={16} />
               </button>
             </div>
+          ) : removedByAdmin ? (
+            <p className="mt-1 flex items-center gap-1.5 text-sm italic text-zinc-400">
+              <ShieldOff size={14} /> تم حذف هذا التعليق من قِبل الإدارة
+            </p>
           ) : (
             <p className="mt-1 whitespace-pre-wrap break-words text-sm text-zinc-700 dark:text-zinc-300">
               {comment.content}
@@ -122,8 +227,15 @@ function CommentItem({ comment }: { comment: QuoteComment }) {
           )}
         </div>
 
-        {!isEditing && (
+        {!isEditing && !removedByAdmin && (
           <div className="mt-1 flex items-center gap-3 px-1 text-xs text-zinc-400">
+            <button
+              type="button"
+              onClick={() => setReplying((open) => !open)}
+              className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              <Reply size={12} /> رد
+            </button>
             {isOwnComment ? (
               <>
                 <button
@@ -143,17 +255,54 @@ function CommentItem({ comment }: { comment: QuoteComment }) {
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={() => reportComment({ commentId: comment.id, reason: "محتوى غير لائق" })}
-                className="flex items-center gap-1 hover:text-amber-600 dark:hover:text-amber-400"
-              >
-                <Flag size={12} /> إبلاغ
-              </button>
+              reported ? (
+                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                  <FlagOff size={12} /> تم الإبلاغ
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setReporting(true)}
+                  className="flex items-center gap-1 hover:text-amber-600 dark:hover:text-amber-400"
+                >
+                  <Flag size={12} /> إبلاغ
+                </button>
+              )
             )}
           </div>
         )}
+
+        {replying && (
+          <ReplyBox
+            quoteId={quoteId}
+            parentId={threadParentId ?? comment.id}
+            replyingTo={isReply ? displayName : undefined}
+            onDone={() => setReplying(false)}
+          />
+        )}
+
+        {replies.length > 0 && (
+          <div className="mt-3 space-y-3 border-e-2 border-zinc-100 pe-3 dark:border-zinc-800">
+            {replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                quoteId={quoteId}
+                depth={depth + 1}
+                threadParentId={threadParentId ?? comment.id}
+              />
+            ))}
+          </div>
+        )}
       </div>
+
+      {reporting && (
+        <ReportCommentDialog
+          commentId={comment.id}
+          onClose={() => setReporting(false)}
+          onReported={() => setReported(true)}
+        />
+      )}
 
       {confirmingDelete && (
         <ConfirmDialog
@@ -180,6 +329,7 @@ export default function QuoteComments({
 }) {
   const [newComment, setNewComment] = useState("");
   const { mutate: addComment, isPending } = useAddQuoteComment();
+  const thread = buildThread(comments);
 
   const handleSubmit = () => {
     const content = newComment.trim();
@@ -194,7 +344,7 @@ export default function QuoteComments({
   return (
     <div className="mt-6 border-t border-zinc-100 pt-5 dark:border-zinc-800">
       <h3 className="mb-4 text-sm font-bold text-zinc-700 dark:text-zinc-300">
-        التعليقات ({comments.length})
+        التعليقات ({countAll(thread)})
       </h3>
 
       <div className="flex items-center gap-2">
@@ -215,10 +365,10 @@ export default function QuoteComments({
         </button>
       </div>
 
-      {comments.length > 0 ? (
-        <div className="mt-5 max-h-80 space-y-4 overflow-y-auto pe-1">
-          {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
+      {thread.length > 0 ? (
+        <div className="mt-5 max-h-96 space-y-4 overflow-y-auto pe-1">
+          {thread.map((comment) => (
+            <CommentItem key={comment.id} comment={comment} quoteId={quoteId} />
           ))}
         </div>
       ) : (

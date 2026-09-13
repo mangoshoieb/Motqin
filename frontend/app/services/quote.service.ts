@@ -3,6 +3,7 @@ import { QUOTE_API_ROUTES } from "../constants/quote.constants";
 import {
   CreateCommentInput,
   DailyQuote,
+  EducationalDay,
   QuoteComment,
   QuoteMyStats,
   QuoteReactionInput,
@@ -20,7 +21,9 @@ const unwrap = <T>(data: unknown): T =>
 export const quoteService = {
   async getTodayQuote(): Promise<DailyQuote> {
     const { data } = await axiosInstance.get(QUOTE_API_ROUTES.TODAY);
-    return unwrap<DailyQuote>(data);
+    const quote = unwrap<DailyQuote>(data);
+    // The hub and the rest of the app use `quoteId`; the DTO calls it `id`.
+    return quote ? { ...quote, quoteId: quote.id } : quote;
   },
 
   async addComment(input: CreateCommentInput): Promise<QuoteComment> {
@@ -53,7 +56,13 @@ export const quoteService = {
 
   async getQuoteReactions(quoteId: number): Promise<QuoteReactionUser[]> {
     const { data } = await axiosInstance.get(QUOTE_API_ROUTES.QUOTE_REACTIONS(quoteId));
-    return unwrap<QuoteReactionUser[]>(data) ?? [];
+    const body = unwrap<{ reactions?: QuoteReactionUser[] } | QuoteReactionUser[]>(data);
+    return Array.isArray(body) ? body : body?.reactions ?? [];
+  },
+
+  async getEducationalDay(): Promise<EducationalDay> {
+    const { data } = await axiosInstance.get(QUOTE_API_ROUTES.EDUCATIONAL_DAY);
+    return unwrap<EducationalDay>(data);
   },
 
   async getMyStats(): Promise<QuoteMyStats> {

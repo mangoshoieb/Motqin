@@ -9,6 +9,7 @@
 // quote.constants.ts are a placeholder until confirmed.
 export type ReactionType = 1 | 2 | 3 | 4 | 5;
 
+// Matches CommentRenderDto (also what the SignalR hub broadcasts).
 export interface QuoteComment {
   id: number;
   quoteId: number;
@@ -17,22 +18,24 @@ export interface QuoteComment {
   createdAt: string;
   userId?: string;
   userName?: string;
+  isDeletedByAdmin?: boolean;
+  replies?: QuoteComment[];
 }
 
-export interface QuoteReactionSummary {
-  reactionType: ReactionType;
-  count: number;
-}
-
+// GET /quotes/today → data. `quoteId` is filled in by the service from `id`
+// so the rest of the app has one name for it.
 export interface DailyQuote {
+  id: number;
   quoteId: number;
   content: string;
   author: string | null;
   publishDate: string;
+  viewsCount?: number;
+  commentsCount?: number;
+  reactionsCount?: number;
   comments?: QuoteComment[];
-  reactionCounts?: QuoteReactionSummary[];
-  totalReactions?: number;
-  userReaction?: ReactionType | null;
+  // The current user's reaction, or null/0 when they haven't reacted.
+  userReactionType?: ReactionType | null;
 }
 
 export interface CreateCommentInput {
@@ -56,10 +59,19 @@ export interface ReportCommentInput {
   reason: string;
 }
 
+// One row of GET /quotes/{quoteId}/reactions → data.reactions
 export interface QuoteReactionUser {
+  id?: number;
+  quoteId?: number;
   userId: string;
-  userName?: string;
   reactionType: ReactionType;
+  createdAt?: string;
+}
+
+// GET /admin/quotes/educational-day → data
+export interface EducationalDay {
+  stage: number;
+  dayNum: number; // 1-based day of the school year
 }
 
 export interface QuoteMyStats {
