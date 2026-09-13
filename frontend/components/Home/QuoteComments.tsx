@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CornerDownLeft, Flag, FlagOff, Pencil, Reply, Send, ShieldOff, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, CornerDownLeft, Flag, FlagOff, MessageCircle, Pencil, Reply, Send, ShieldOff, Trash2, X } from "lucide-react";
 import { QuoteComment } from "@/app/types/quote.types";
 import { useAuth } from "@/app/(public)/context/auth.context";
 import {
@@ -61,6 +61,41 @@ function buildThread(comments: QuoteComment[]): QuoteComment[] {
 
 const countAll = (comments: QuoteComment[]): number =>
   comments.reduce((sum, c) => sum + 1 + (c.replies?.length ?? 0), 0);
+
+// Comments shown before "عرض كل التعليقات", and after expanding (the rest
+// scroll inside the box).
+const COLLAPSED_COMMENTS = 2;
+const EXPANDED_COMMENTS = 5;
+
+// Long comments are clamped with a "عرض المزيد" toggle, Facebook-style.
+const LONG_TEXT_CHARS = 180;
+const LONG_TEXT_LINES = 3;
+
+function CommentText({ content }: { content: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = content.length > LONG_TEXT_CHARS || content.split("\n").length > LONG_TEXT_LINES;
+
+  return (
+    <div className="mt-1">
+      <p
+        className={`whitespace-pre-wrap break-words text-sm text-zinc-700 dark:text-zinc-300 ${
+          isLong && !expanded ? "line-clamp-3" : ""
+        }`}
+      >
+        {content}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((open) => !open)}
+          className="mt-0.5 text-xs font-semibold text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400"
+        >
+          {expanded ? "عرض أقل" : "عرض المزيد"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 // Inline "write a reply" box shown under a comment.
 function ReplyBox({
@@ -145,6 +180,8 @@ function CommentItem({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [replying, setReplying] = useState(false);
+  // Replies stay folded behind "عرض N ردود" until asked for, like Facebook.
+  const [showReplies, setShowReplies] = useState(false);
   // Remembered for this session so the same comment isn't reported twice.
   const [reported, setReported] = useState(false);
 
@@ -221,9 +258,7 @@ function CommentItem({
               <ShieldOff size={14} /> تم حذف هذا التعليق من قِبل الإدارة
             </p>
           ) : (
-            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-zinc-700 dark:text-zinc-300">
-              {comment.content}
-            </p>
+            <CommentText content={comment.content} />
           )}
         </div>
 
@@ -282,16 +317,35 @@ function CommentItem({
         )}
 
         {replies.length > 0 && (
-          <div className="mt-3 space-y-3 border-e-2 border-zinc-100 pe-3 dark:border-zinc-800">
-            {replies.map((reply) => (
-              <CommentItem
-                key={reply.id}
-                comment={reply}
-                quoteId={quoteId}
-                depth={depth + 1}
-                threadParentId={threadParentId ?? comment.id}
-              />
-            ))}
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setShowReplies((open) => !open)}
+              className="flex items-center gap-1 px-1 text-xs font-semibold text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              <CornerDownLeft size={12} />
+              {showReplies
+                ? "إخفاء الردود"
+                : replies.length === 1
+                  ? "عرض الرد"
+                  : replies.length === 2
+                    ? "عرض الردّين"
+                    : `عرض ${replies.length} ردود`}
+            </button>
+
+            {showReplies && (
+              <div className="mt-2 space-y-3 border-e-2 border-zinc-100 pe-3 dark:border-zinc-800">
+                {replies.map((reply) => (
+                  <CommentItem
+                    key={reply.id}
+                    comment={reply}
+                    quoteId={quoteId}
+                    depth={depth + 1}
+                    threadParentId={threadParentId ?? comment.id}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -328,8 +382,12 @@ export default function QuoteComments({
   comments: QuoteComment[];
 }) {
   const [newComment, setNewComment] = useState("");
+  const [expanded, setExpanded] = useState(false);
   const { mutate: addComment, isPending } = useAddQuoteComment();
   const thread = buildThread(comments);
+  const total = countAll(thread);
+  const visible = expanded ? thread : thread.slice(0, COLLAPSED_COMMENTS);
+  const hiddenCount = thread.length - visible.length;
 
   const handleSubmit = () => {
     const content = newComment.trim();
@@ -343,9 +401,22 @@ export default function QuoteComments({
 
   return (
     <div className="mt-6 border-t border-zinc-100 pt-5 dark:border-zinc-800">
-      <h3 className="mb-4 text-sm font-bold text-zinc-700 dark:text-zinc-300">
-        التعليقات ({countAll(thread)})
-      </h3>
+      <button
+        type="button"
+        onClick={() => setExpanded((open) => !open)}
+        className="mb-4 flex w-full items-center justify-between text-sm font-bold text-zinc-700 dark:text-zinc-300"
+      >
+        <span className="flex items-center gap-1.5">
+          <MessageCircle size={15} className="text-blue-600 dark:text-blue-400" />
+          التعليقات ({total})
+        </span>
+        {thread.length > COLLAPSED_COMMENTS && (
+          <span className="flex items-center gap-1 text-xs font-semibold text-zinc-400">
+            {expanded ? "عرض أقل" : "عرض الكل"}
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </span>
+        )}
+      </button>
 
       <div className="flex items-center gap-2">
         <input
@@ -366,11 +437,28 @@ export default function QuoteComments({
       </div>
 
       {thread.length > 0 ? (
-        <div className="mt-5 max-h-96 space-y-4 overflow-y-auto pe-1">
-          {thread.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} quoteId={quoteId} />
-          ))}
-        </div>
+        <>
+          {/* Expanded: ~EXPANDED_COMMENTS rows tall, the rest scroll. */}
+          <div
+            className={`mt-5 space-y-4 pe-1 ${expanded ? "overflow-y-auto" : ""}`}
+            style={expanded ? { maxHeight: `${EXPANDED_COMMENTS * 5.6}rem` } : undefined}
+          >
+            {visible.map((comment) => (
+              <CommentItem key={comment.id} comment={comment} quoteId={quoteId} />
+            ))}
+          </div>
+
+          {!expanded && hiddenCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="mt-3 flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              <ChevronDown size={14} />
+              عرض كل التعليقات ({thread.length})
+            </button>
+          )}
+        </>
       ) : (
         <p className="mt-5 text-center text-sm text-zinc-400">
           لا توجد تعليقات بعد، كن أول من يعلّق

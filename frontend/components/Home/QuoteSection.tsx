@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Eye, MessageCircle, Quote as QuoteIcon } from "lucide-react";
+import { CalendarDays, Eye, Heart, Quote as QuoteIcon } from "lucide-react";
 import { useEducationalDay } from "@/app/hooks/useEducationalDay";
 import { useTodayQuote } from "@/app/hooks/useTodayQuote";
 import { useQuoteHub } from "@/app/hooks/useQuoteHub";
@@ -19,12 +19,10 @@ import QuoteComments from "./QuoteComments";
 function ReactionBar({
   quoteId,
   userReaction,
-  totalReactions,
   currentUserId,
 }: {
   quoteId: number;
   userReaction: ReactionType | null | undefined;
-  totalReactions: number;
   currentUserId?: string | null;
 }) {
   // Per-type counts come from the reactions list; today's quote only carries
@@ -38,7 +36,6 @@ function ReactionBar({
   const isPending = isAdding || isRemoving;
 
   const countFor = (type: ReactionType) => counts.get(type) ?? 0;
-  const total = reactions ? reactions.length : totalReactions;
 
   const handleClick = (type: ReactionType) => {
     if (isPending) return;
@@ -51,12 +48,6 @@ function ReactionBar({
 
   return (
     <div className="flex flex-col items-center gap-3">
-      {total > 0 && (
-        <p className="text-xs text-zinc-400">
-          {total === 1 ? "تفاعل واحد" : total === 2 ? "تفاعلان" : `${total} تفاعلات`}
-        </p>
-      )}
-
       <div className="flex flex-wrap items-center justify-center gap-2">
         {reactionOptions.map((option) => {
           const isActive = userReaction === option.type;
@@ -99,6 +90,9 @@ export default function QuoteSection() {
   const { data: quote, isLoading, isError } = useTodayQuote();
   const { data: educationalDay } = useEducationalDay();
   const { user } = useAuth();
+  // Live total for the meta line (the list is what the hub keeps current).
+  const { data: liveReactions } = useQuoteReactions(quote?.quoteId);
+  const reactionTotal = liveReactions ? liveReactions.length : quote?.reactionsCount ?? 0;
 
   // Live reactions/comments for today's quote.
   useQuoteHub(quote?.quoteId, user?.id);
@@ -153,26 +147,29 @@ export default function QuoteSection() {
             </p>
           )}
 
-          {(quote.viewsCount != null || quote.commentsCount != null) && (
-            <div dir="rtl" className="mt-3 flex items-center justify-center gap-4 text-xs text-zinc-400">
-              {quote.viewsCount != null && (
-                <span className="flex items-center gap-1">
-                  <Eye size={13} /> {quote.viewsCount} مشاهدة
-                </span>
-              )}
-              {quote.commentsCount != null && (
-                <span className="flex items-center gap-1">
-                  <MessageCircle size={13} /> {quote.comments?.length ?? quote.commentsCount} تعليق
-                </span>
-              )}
-            </div>
-          )}
+          <div
+            dir="rtl"
+            className="mt-3 flex items-center justify-center gap-4 text-xs text-zinc-400"
+          >
+            {quote.viewsCount != null && (
+              <span className="flex items-center gap-1">
+                <Eye size={13} /> {quote.viewsCount} مشاهدة
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Heart size={13} />{" "}
+              {reactionTotal === 1
+                ? "تفاعل واحد"
+                : reactionTotal === 2
+                  ? "تفاعلان"
+                  : `${reactionTotal} تفاعلات`}
+            </span>
+          </div>
 
           <div className="mt-8">
             <ReactionBar
               quoteId={quote.quoteId}
               userReaction={quote.userReactionType || null}
-              totalReactions={quote.reactionsCount ?? 0}
               currentUserId={user?.id}
             />
           </div>
