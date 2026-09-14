@@ -91,6 +91,7 @@ export const API_ROUTES = {
   USERS: {
     CURRENT_USER: "/users/me",
     GOALS: "/users/goals",
+    UPLOAD_PHOTO: "/users/upload-photo",
     GOAL: (id: string | number) => `/users/goals/${id}`,
   },
   USER_PREFERENCES: {

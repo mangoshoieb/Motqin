@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useExecutionBoard, ExecutionBoardData } from "@/app/hooks/useExecutionBoard";
+import { useBreakMinutes } from "@/app/hooks/useBreakMinutes";
 import { weekData } from "@/app/data/days";
 import { addPostponedTask } from "@/app/data/postponedTasksStore";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
@@ -16,6 +17,7 @@ import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
 import { studyPlansService, studySessionsService } from "@/app/services/motqin";
 import { currentWeekDates, studySessionToExecutionSession } from "@/app/lib/study-plan";
 import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
+import { API_ROUTES } from "@/app/constants/planner.constants";
 
 const ExecutionBoardPage = () => {
   const params = useParams();
@@ -27,6 +29,8 @@ const ExecutionBoardPage = () => {
   const weekOffset = Number.isFinite(parsedWeek) ? Math.max(0, Math.min(1, parsedWeek)) : 0;
 
   const { data, isLoading } = useExecutionBoard(dayIndex, weekOffset);
+  // Break between sessions, from the user's saved planner preferences.
+  const { breakMinutes } = useBreakMinutes();
 
   const [tasks, setTasks] = useState<ExecutionTask[]>([]);
   const [sessions, setSessions] = useState<ExecutionSession[]>([]);
@@ -103,7 +107,14 @@ const ExecutionBoardPage = () => {
       clearSessionClock(sessionId);
 
       try {
-        await studySessionsService.end(Number(sessionId));
+        console.log("[SESSION END] request →", {
+          method: "PUT",
+          url: API_ROUTES.STUDY_SESSIONS.END(Number(sessionId)),
+          body: null,
+          timedOut,
+        });
+        const ended = await studySessionsService.end(Number(sessionId));
+        console.log("[SESSION END] response ←", ended);
         queryClient.invalidateQueries({ queryKey: ["study-plans"] });
       } catch {
         // Back to paused rather than active: leaving it running would make
@@ -223,8 +234,23 @@ const ExecutionBoardPage = () => {
     if (running) saveSessionClock(running.id, running.elapsedSeconds ?? running.actualMinutes * 60, false);
 
     try {
-      if (running) await studySessionsService.pause(Number(running.id));
-      await studySessionsService.start(Number(sessionId));
+      if (running) {
+        console.log("[SESSION PAUSE] (auto, before start) request →", {
+          method: "PUT",
+          url: API_ROUTES.STUDY_SESSIONS.PAUSE(Number(running.id)),
+          body: null,
+        });
+        const paused = await studySessionsService.pause(Number(running.id));
+        console.log("[SESSION PAUSE] (auto, before start) response ←", paused);
+      }
+      console.log("[SESSION START] request →", {
+        method: "PUT",
+        url: API_ROUTES.STUDY_SESSIONS.START(Number(sessionId)),
+        body: null,
+        previousStatus: previous,
+      });
+      const started = await studySessionsService.start(Number(sessionId));
+      console.log("[SESSION START] response ←", started);
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
     } catch {
       setSessionStatus(sessionId, previous);
@@ -239,7 +265,13 @@ const ExecutionBoardPage = () => {
     if (pausing) saveSessionClock(sessionId, pausing.elapsedSeconds ?? pausing.actualMinutes * 60, false);
 
     try {
-      await studySessionsService.pause(Number(sessionId));
+      console.log("[SESSION PAUSE] request →", {
+        method: "PUT",
+        url: API_ROUTES.STUDY_SESSIONS.PAUSE(Number(sessionId)),
+        body: null,
+      });
+      const paused = await studySessionsService.pause(Number(sessionId));
+      console.log("[SESSION PAUSE] response ←", paused);
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
     } catch {
       setSessionStatus(sessionId, "active");
@@ -571,6 +603,7 @@ const ExecutionBoardPage = () => {
           title=""
           tasks={tasks}
           sessionsByTaskId={sessionsByTaskId}
+          breakMinutes={breakMinutes}
           onToggleComplete={toggleTaskComplete}
           onAddSession={addSessionForTask}
           onToggleSession={toggleSession}

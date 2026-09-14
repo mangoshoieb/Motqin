@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { Camera, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import Skeleton from "@/components/ui/Skeleton";
+import { useUploadProfilePhoto } from "@/app/hooks/useUploadProfilePhoto";
 import RegionSelect from "@/components/RegionSelect";
 import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 import GoalsManager from "@/components/Profile/GoalsManager";
@@ -14,6 +17,33 @@ export default function ProfilePage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [showBio, setShowBio] = useState(false);
+
+  // Local preview shown while the upload is in flight; cleared once
+  // /users/me comes back with the stored photoUrl.
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const { mutate: uploadPhoto, isPending: isUploading } = useUploadProfilePhoto();
+
+  const handlePhotoChange = (file: File | undefined) => {
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    setPhotoPreview(preview);
+    uploadPhoto(file, {
+      onSuccess: () => toast.success("تم تحديث الصورة الشخصية"),
+      onError: (error) => {
+        setPhotoPreview(null);
+        toast.error(
+          error.message === "not-image"
+            ? "يرجى اختيار ملف صورة."
+            : error.message === "too-large"
+              ? "حجم الصورة يجب ألا يتجاوز 5 ميجابايت."
+              : "تعذر رفع الصورة، حاول مرة أخرى.",
+        );
+      },
+      onSettled: () => URL.revokeObjectURL(preview),
+    });
+  };
+
+  const photoSrc = photoPreview ?? user?.photoUrl ?? PROFILE_IMAGE;
 
   const [form, setForm] = useState({
     name: "",
@@ -75,30 +105,49 @@ export default function ProfilePage() {
                   type="file"
                   accept="image/*"
                   className="hidden"
+                  disabled={isUploading}
                   onChange={(e) => {
-                    // TODO: Handle image upload
-                    console.log(e.target.files?.[0]);
+                    handlePhotoChange(e.target.files?.[0]);
+                    // Allow picking the same file again after a failure.
+                    e.target.value = "";
                   }}
                 />
 
                 <div className="relative">
-                  <Image
-                    src={PROFILE_IMAGE}
-                    alt="الصورة الشخصية"
-                    width={220}
-                    height={220}
-                    className="h-40 w-40 sm:h-48 sm:w-48 lg:h-56 lg:w-56 rounded-full border-4 border-zinc-200 object-cover transition duration-300 group-hover:brightness-75 dark:border-zinc-700"
-                  />
+                  {photoSrc === PROFILE_IMAGE ? (
+                    <Image
+                      src={PROFILE_IMAGE}
+                      alt="الصورة الشخصية"
+                      width={220}
+                      height={220}
+                      className="h-40 w-40 sm:h-48 sm:w-48 lg:h-56 lg:w-56 rounded-full border-4 border-zinc-200 object-cover transition duration-300 group-hover:brightness-75 dark:border-zinc-700"
+                    />
+                  ) : (
+                    // Remote/blob URL: plain <img> avoids next/image's
+                    // remote-host allowlist for the API's storage domain.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photoSrc}
+                      alt="الصورة الشخصية"
+                      className="h-40 w-40 sm:h-48 sm:w-48 lg:h-56 lg:w-56 rounded-full border-4 border-zinc-200 object-cover transition duration-300 group-hover:brightness-75 dark:border-zinc-700"
+                    />
+                  )}
+
+                  {isUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white">
+                      <Loader2 className="animate-spin" size={28} />
+                    </div>
+                  )}
 
                   {/* Change Icon */}
                   <div className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-lg transition group-hover:scale-110">
-                    +
+                    <Camera size={18} />
                   </div>
                 </div>
               </label>
 
               <p className="mt-6 text-sm text-zinc-500">
-                اضغط على الصورة لتغييرها
+                {isUploading ? "جاري رفع الصورة..." : "اضغط على الصورة لتغييرها"}
               </p>
             </div>
           </div>
@@ -213,6 +262,28 @@ export default function ProfilePage() {
 
               <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                 {user?.email}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block font-medium">رقم الهاتف</label>
+
+              <div
+                dir="ltr"
+                className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-right text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+              >
+                {user?.phoneNumber ? (
+                  <span className="flex items-center justify-end gap-2">
+                    {user.phoneNumberConfirmed && (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                        مؤكد
+                      </span>
+                    )}
+                    {user.phoneNumber}
+                  </span>
+                ) : (
+                  <span className="text-zinc-400">—</span>
+                )}
               </div>
             </div>
 

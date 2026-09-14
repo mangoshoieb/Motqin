@@ -68,6 +68,18 @@ export const authService = {
     return data;
   },
 
+  // POST /users/upload-photo — multipart with a single `Photo` part. The
+  // backend stores the file and sets the user's photoUrl; GET /users/me
+  // returns the new URL afterwards.
+  async uploadProfilePhoto(file: File): Promise<void> {
+    const form = new FormData();
+    form.append("Photo", file);
+    // Let the browser set the multipart boundary.
+    await axiosInstance.post(API_ROUTES.USERS.UPLOAD_PHOTO, form, {
+      headers: { "Content-Type": undefined },
+    });
+  },
+
   async logout(): Promise<{ message: string }> {
     const refreshToken = authStorage.getRefreshToken();
 

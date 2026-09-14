@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CheckSquare, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset } from "lucide-react";
+import { Check, CheckSquare, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 
 interface ExecutionTaskRowProps {
   task: ExecutionTask;
   sessions: ExecutionSession[]; // daily tasks only — every session logged for this task
+  breakMinutes?: number; // break shown between sessions, from user preferences
   onToggleComplete: (id: string) => void;
   onAddSession?: (task: ExecutionTask) => void; // starts a new session for this task
   onToggleSession?: (sessionId: string) => void; // play/pause an existing session
@@ -39,6 +40,7 @@ const sessionInputClass =
 export const ExecutionTaskRow = ({
   task,
   sessions,
+  breakMinutes,
   onToggleComplete,
   onAddSession,
   onToggleSession,
@@ -162,13 +164,29 @@ export const ExecutionTaskRow = ({
 
       {task.kind === "daily" && (
         <div className="flex flex-col gap-2 pr-9">
-          {sessions.map((session) => {
+          {sessions.length > 0 && breakMinutes != null && breakMinutes > 0 && (
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+              <Coffee size={13} className="shrink-0 text-amber-500" />
+              استراحة بين الجلسات: {breakMinutes} دقيقة
+            </div>
+          )}
+          {sessions.map((session, index) => {
             const expanded = expandedSessionId === session.id;
             const elapsedSeconds = session.elapsedSeconds ?? session.actualMinutes * 60;
 
             return (
+              <div key={session.id} className="flex flex-col gap-2">
+              {/* Break marker between one session and the next, from
+                  pomodoroBreakMinutes in the user's preferences. */}
+              {index > 0 && breakMinutes != null && breakMinutes > 0 && (
+                <div className="flex items-center gap-2 px-1 text-[11px] text-amber-700 dark:text-amber-300">
+                  <span className="h-px flex-1 bg-amber-200 dark:bg-amber-900/60" />
+                  <Coffee size={12} className="shrink-0" />
+                  <span className="shrink-0">استراحة {breakMinutes} دقيقة</span>
+                  <span className="h-px flex-1 bg-amber-200 dark:bg-amber-900/60" />
+                </div>
+              )}
               <div
-                key={session.id}
                 className="rounded-xl border border-zinc-200 dark:border-zinc-700"
               >
                 {/* Collapsed header: clicking it (or the chevron) opens the
@@ -353,6 +371,7 @@ export const ExecutionTaskRow = ({
                     </label>
                   </div>
                 )}
+              </div>
               </div>
             );
           })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarClock, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,6 +63,11 @@ const BUSY_TABS: { value: BusyTab; label: string; description: string; icon: typ
 ];
 
 const PlannerSettingsPage = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // "?return=/planner?tab=ai" — set by the AI-planning intro card so the
+  // user lands back on it once their preferences are saved.
+  const returnTo = searchParams.get("return");
   const {
     preferences,
     hasPreferences,
@@ -131,6 +137,7 @@ const PlannerSettingsPage = () => {
       }
 
       toast.success("تم حفظ التفضيلات");
+      if (returnTo && returnTo.startsWith("/")) router.push(returnTo);
     } catch {
       console.log("hi");
       toast.error("حدث خطأ أثناء حفظ التفضيلات.");

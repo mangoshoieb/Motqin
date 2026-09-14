@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, CornerDownLeft, Flag, FlagOff, MessageCircle, Pencil, Reply, Send, ShieldOff, Trash2, X } from "lucide-react";
 import { QuoteComment } from "@/app/types/quote.types";
 import { useAuth } from "@/app/(public)/context/auth.context";
@@ -50,6 +50,78 @@ function timeAgo(isoDate: string) {
 const COLLAPSED_COMMENTS = 2;
 const EXPANDED_COMMENTS = 5;
 
+// Hard cap on a comment's length, enforced in the box and on submit.
+export const COMMENT_MAX_CHARS = 300;
+const COMMENT_MAX_ROWS = 3;
+
+// One-line box that grows to COMMENT_MAX_ROWS as the user types, then
+// scrolls — so long text wraps instead of sliding out of view. Enter
+// submits, Shift+Enter inserts a newline, Escape cancels.
+function CommentBox({
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  placeholder,
+  autoFocus,
+  className = "",
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  onSubmit: () => void;
+  onCancel?: () => void;
+  placeholder?: string;
+  autoFocus?: boolean;
+  className?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  // Fit height to content, capped at COMMENT_MAX_ROWS lines.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
+    const padding = el.offsetHeight - el.clientHeight;
+    const max = lineHeight * COMMENT_MAX_ROWS + padding;
+    el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+    el.style.overflowY = el.scrollHeight > max ? "auto" : "hidden";
+  }, [value]);
+
+  const remaining = COMMENT_MAX_CHARS - value.length;
+
+  return (
+    <div className="relative min-w-0 flex-1">
+      <textarea
+        ref={ref}
+        rows={1}
+        autoFocus={autoFocus}
+        value={value}
+        maxLength={COMMENT_MAX_CHARS}
+        onChange={(e) => onChange(e.target.value.slice(0, COMMENT_MAX_CHARS))}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            onSubmit();
+          }
+          if (e.key === "Escape") onCancel?.();
+        }}
+        placeholder={placeholder}
+        className={`block w-full resize-none whitespace-pre-wrap break-words text-sm leading-5 text-zinc-900 outline-none dark:text-zinc-100 ${className}`}
+      />
+      {remaining <= 50 && (
+        <span
+          className={`pointer-events-none absolute bottom-1 left-3 text-[10px] tabular-nums ${
+            remaining === 0 ? "text-red-500" : "text-zinc-400"
+          }`}
+        >
+          {remaining}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // Long comments are clamped with a "عرض المزيد" toggle, Facebook-style.
 const LONG_TEXT_CHARS = 180;
 const LONG_TEXT_LINES = 3;
@@ -97,7 +169,7 @@ function ReplyBox({
 
   const submit = () => {
     const content = text.trim();
-    if (!content) return;
+    if (!content || content.length > COMMENT_MAX_CHARS) return;
     addComment(
       { quoteId, content, parentCommentId: parentId },
       {
@@ -110,18 +182,16 @@ function ReplyBox({
   };
 
   return (
-    <div className="mt-2 flex items-center gap-2">
-      <CornerDownLeft size={14} className="shrink-0 text-zinc-300 dark:text-zinc-600" />
-      <input
+    <div className="mt-2 flex items-end gap-2">
+      <CornerDownLeft size={14} className="mb-2 shrink-0 text-zinc-300 dark:text-zinc-600" />
+      <CommentBox
         autoFocus
         value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") submit();
-          if (e.key === "Escape") onDone();
-        }}
+        onChange={setText}
+        onSubmit={submit}
+        onCancel={onDone}
         placeholder={replyingTo ? `الرد على ${replyingTo}...` : "اكتب ردًا..."}
-        className="min-w-0 flex-1 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        className="rounded-2xl border border-zinc-200 bg-white px-3 py-1.5 focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-900"
       />
       <button
         type="button"
@@ -179,7 +249,7 @@ function CommentItem({
 
   const handleSaveEdit = () => {
     const content = draft.trim();
-    if (!content || content === comment.content) {
+    if (!content || content.length > COMMENT_MAX_CHARS || content === comment.content) {
       setIsEditing(false);
       return;
     }
@@ -215,13 +285,17 @@ function CommentItem({
           )}
 
           {isEditing ? (
-            <div className="mt-1.5 flex items-center gap-2">
-              <input
+            <div className="mt-1.5 flex items-end gap-2">
+              <CommentBox
                 autoFocus
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
-                className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                onChange={setDraft}
+                onSubmit={handleSaveEdit}
+                onCancel={() => {
+                  setIsEditing(false);
+                  setDraft(comment.content);
+                }}
+                className="rounded-lg border border-zinc-300 bg-white px-2 py-1 focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-900"
               />
               <button
                 type="button"
@@ -380,7 +454,7 @@ export default function QuoteComments({
 
   const handleSubmit = () => {
     const content = newComment.trim();
-    if (!content) return;
+    if (!content || content.length > COMMENT_MAX_CHARS) return;
 
     addComment(
       { quoteId, content },
@@ -407,13 +481,13 @@ export default function QuoteComments({
         )}
       </button>
 
-      <div className="flex items-center gap-2">
-        <input
+      <div className="flex items-end gap-2">
+        <CommentBox
           value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          onChange={setNewComment}
+          onSubmit={handleSubmit}
           placeholder="اكتب تعليقًا..."
-          className="min-w-0 flex-1 rounded-full border border-zinc-200 bg-transparent px-4 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-zinc-700 dark:text-zinc-100 dark:focus:ring-blue-950"
+          className="rounded-2xl border border-zinc-200 bg-transparent px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-zinc-700 dark:focus:ring-blue-950"
         />
         <button
           type="button"

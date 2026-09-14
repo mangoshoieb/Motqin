@@ -155,7 +155,11 @@ declare global {
     // exposes it, so the profile page's region field has somewhere to live.
     createdAt:string;
     region?: string;
-    phoneNumberConfirmed:boolean
+    phoneNumber?: string | null;
+    phoneNumberConfirmed:boolean;
+    roles?: string[];
+    // Absolute URL of the profile photo, null until one is uploaded.
+    photoUrl?: string | null;
   }
 }
 

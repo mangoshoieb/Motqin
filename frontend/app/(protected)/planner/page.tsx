@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PencilRuler, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ import { StudyPlanDuration, studyPlansService } from "@/app/services/motqin";
 import { applyStudyPlansToDay, currentWeekDates, dateOnly, formatPlannerDate } from "@/app/lib/study-plan";
 import { cn } from "@/app/lib/utils";
 import { PlannerViewSwitch } from "@/components/Planner/PlannerViewSwitch";
-import GoalsSection from "@/components/Planner/GoalsSection";
+import AiPlanningSection from "@/components/Planner/AiPlanningSection";
 import NextWeekBoard from "@/components/Planner/NextWeekBoard";
 
 type PlanningTab = "ai" | "manual";
@@ -22,8 +22,11 @@ const planningTabs: { value: PlanningTab; label: string; icon: typeof Sparkles }
 
 const Planner = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const [planningTab, setPlanningTab] = useState<PlanningTab>("ai");
+  const [planningTab, setPlanningTab] = useState<PlanningTab>(
+    searchParams.get("tab") === "manual" ? "manual" : "ai",
+  );
 
   // The top board is always the current week; next week lives in the
   // manual-planning tab below.
@@ -137,7 +140,7 @@ const Planner = () => {
           </div>
 
           {planningTab === "ai" ? (
-            <GoalsSection onPlanned={() => setPlanningTab("manual")} />
+            <AiPlanningSection onPlanned={() => setPlanningTab("manual")} />
           ) : (
             <NextWeekBoard />
           )}

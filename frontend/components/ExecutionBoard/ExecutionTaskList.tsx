@@ -7,6 +7,7 @@ interface ExecutionTaskListProps {
   title: string;
   tasks: ExecutionTask[];
   sessionsByTaskId: Map<string, ExecutionSession[]>;
+  breakMinutes?: number; // pomodoroBreakMinutes from the user's preferences
   onToggleComplete: (id: string) => void;
   onAddSession?: (task: ExecutionTask) => void;
   onToggleSession?: (sessionId: string) => void;
@@ -27,6 +28,7 @@ export const ExecutionTaskList = ({
   title,
   tasks,
   sessionsByTaskId,
+  breakMinutes,
   onToggleComplete,
   onAddSession,
   onToggleSession,
@@ -55,6 +57,7 @@ export const ExecutionTaskList = ({
               key={task.id}
               task={task}
               sessions={sessionsByTaskId.get(task.id) ?? []}
+              breakMinutes={breakMinutes}
               onToggleComplete={onToggleComplete}
               onAddSession={onAddSession}
               onToggleSession={onToggleSession}
