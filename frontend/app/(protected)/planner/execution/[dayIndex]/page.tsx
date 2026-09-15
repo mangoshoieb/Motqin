@@ -9,7 +9,7 @@ import { useExecutionBoard, ExecutionBoardData } from "@/app/hooks/useExecutionB
 import { useBreakMinutes } from "@/app/hooks/useBreakMinutes";
 import { weekData } from "@/app/data/days";
 import { addPostponedTask } from "@/app/data/postponedTasksStore";
-import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
+import { BreakTimer, ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 import { ExecutionBoardHeader } from "@/components/ExecutionBoard/ExecutionBoardHeader";
 import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList";
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
@@ -46,6 +46,9 @@ const ExecutionBoardPage = () => {
   }, []);
   const [editingTask, setEditingTask] = useState<ExecutionTask | null>(null);
   const [sessionPendingDelete, setSessionPendingDelete] = useState<ExecutionSession | null>(null);
+  // Only one break runs at a time; it counts up and turns into "overrun"
+  // once it passes the preference's break length.
+  const [breakTimer, setBreakTimer] = useState<BreakTimer | null>(null);
 
   // Priority is a focus slot, not a score: 1 = the one task to do first
   // (three stars), 2 = next (two stars), 3 = then (one star). Anything else
@@ -139,6 +142,9 @@ const ExecutionBoardPage = () => {
   // is ever running, so there is at most one to tick.
   useEffect(() => {
     const interval = setInterval(() => {
+      // The break clock, if one is running.
+      setBreakTimer((prev) => (prev ? { ...prev, elapsedSeconds: prev.elapsedSeconds + 1 } : prev));
+
       // Overtime counters run independently of the (single) active session.
       if (sessionsRef.current.some((s) => s.overtimeRunning)) {
         setSessions((prev) =>
@@ -354,6 +360,25 @@ const ExecutionBoardPage = () => {
         s.id === sessionId ? { ...s, overtimeRunning: false, overtimeSeconds: 0 } : s,
       ),
     );
+
+  // Start a break after `sessionId`, optionally with time already on the
+  // clock. A running session is paused first — you can't do both.
+  const startBreak = (sessionId: string, initialSeconds = 0) => {
+    const running = sessionsRef.current.find((s) => s.status === "active");
+    if (running) void pauseSession(running.id);
+    setBreakTimer({ afterSessionId: sessionId, elapsedSeconds: initialSeconds });
+  };
+
+  const stopBreak = () => setBreakTimer(null);
+
+  // Spend the bonus as rest instead of saving it: the break clock starts
+  // from where the bonus left off (3:20 of bonus → break already at 3:20).
+  const spendOvertimeAsBreak = (sessionId: string) => {
+    const target = sessionsRef.current.find((s) => s.id === sessionId);
+    if (!target?.overtimeRunning) return;
+    dismissOvertime(sessionId);
+    startBreak(sessionId, target.overtimeSeconds ?? 0);
+  };
 
   const toggleSession = (sessionId: string) => {
     const target = sessions.find((s) => s.id === sessionId);
@@ -610,6 +635,10 @@ const ExecutionBoardPage = () => {
           onEndSession={(sessionId) => void finishSession(sessionId)}
           onSaveOvertime={(sessionId) => void saveOvertime(sessionId)}
           onDismissOvertime={dismissOvertime}
+          onSpendOvertimeAsBreak={spendOvertimeAsBreak}
+          breakTimer={breakTimer}
+          onStartBreak={startBreak}
+          onStopBreak={stopBreak}
           onUpdateSession={updateSession}
           onDeleteSession={(sessionId) =>
             setSessionPendingDelete(sessions.find((s) => s.id === sessionId) ?? null)

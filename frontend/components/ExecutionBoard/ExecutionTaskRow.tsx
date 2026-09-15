@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, CheckSquare, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
+import { BreakTimer, ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 
 interface ExecutionTaskRowProps {
   task: ExecutionTask;
@@ -16,6 +16,11 @@ interface ExecutionTaskRowProps {
   // overtime counter shown after the clock ran out — credit it or drop it
   onSaveOvertime?: (sessionId: string) => void;
   onDismissOvertime?: (sessionId: string) => void;
+  onSpendOvertimeAsBreak?: (sessionId: string) => void; // bonus → rest instead of saving it
+  // The board-wide break clock and its controls.
+  breakTimer?: BreakTimer | null;
+  onStartBreak?: (sessionId: string) => void;
+  onStopBreak?: () => void;
   // title / duration edits from the expanded card, saved per field on blur
   onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => void;
   onDeleteSession?: (sessionId: string) => void;
@@ -34,6 +39,68 @@ const formatClock = (totalSeconds: number) => {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
 
+// Break clock: counts toward the preference's break length, then the
+// overrun is shown negative so the wasted minutes are obvious.
+function BreakBar({
+  elapsedSeconds,
+  breakMinutes,
+  onStop,
+}: {
+  elapsedSeconds: number;
+  breakMinutes: number;
+  onStop?: () => void;
+}) {
+  const total = breakMinutes * 60;
+  const over = Math.max(0, elapsedSeconds - total);
+  const overrun = over > 0;
+
+  return (
+    <div
+      onClick={(event) => event.stopPropagation()}
+      className={cn(
+        "flex items-center gap-2 rounded-xl border px-3 py-1.5",
+        overrun
+          ? "border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30"
+          : "border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30",
+      )}
+    >
+      <Coffee
+        size={14}
+        className={cn("shrink-0", overrun ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400")}
+      />
+      <span
+        className={cn(
+          "min-w-0 flex-1 truncate text-xs",
+          overrun ? "text-red-800 dark:text-red-200" : "text-emerald-800 dark:text-emerald-200",
+        )}
+      >
+        {overrun ? "انتهت الاستراحة — وقت ضائع:" : "استراحة"}
+      </span>
+      <span
+        className={cn(
+          "shrink-0 rounded-lg px-2 py-0.5 text-xs font-bold tabular-nums",
+          overrun
+            ? "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300"
+            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
+        )}
+      >
+        {overrun ? `-${formatClock(over)}` : `${formatClock(elapsedSeconds)} / ${formatClock(total)}`}
+      </span>
+      <button
+        type="button"
+        onClick={onStop}
+        className={cn(
+          "flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold text-white",
+          overrun ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700",
+        )}
+      >
+        <Check size={12} />
+        إنهاء الاستراحة
+      </button>
+    </div>
+  );
+}
+
 const sessionInputClass =
   "mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-900 outline-none focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
 
@@ -47,6 +114,10 @@ export const ExecutionTaskRow = ({
   onEndSession,
   onSaveOvertime,
   onDismissOvertime,
+  onSpendOvertimeAsBreak,
+  breakTimer,
+  onStartBreak,
+  onStopBreak,
   onUpdateSession,
   onDeleteSession,
   onStartRevision,
@@ -183,6 +254,15 @@ export const ExecutionTaskRow = ({
                   <span className="h-px flex-1 bg-amber-200 dark:bg-amber-900/60" />
                   <Coffee size={12} className="shrink-0" />
                   <span className="shrink-0">استراحة {breakMinutes} دقيقة</span>
+                  {breakTimer?.afterSessionId !== sessions[index - 1].id && (
+                    <button
+                      type="button"
+                      onClick={() => onStartBreak?.(sessions[index - 1].id)}
+                      className="shrink-0 rounded-md border border-amber-300 px-1.5 py-0.5 text-[10px] font-semibold hover:bg-amber-100 dark:border-amber-800 dark:hover:bg-amber-950/40"
+                    >
+                      ابدأ الاستراحة
+                    </button>
+                  )}
                   <span className="h-px flex-1 bg-amber-200 dark:bg-amber-900/60" />
                 </div>
               )}
@@ -204,7 +284,25 @@ export const ExecutionTaskRow = ({
                   className="flex cursor-pointer items-center gap-2 px-3 py-1.5"
                 >
                   {session.status === "completed" ? (
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">مكتمل</span>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">مكتمل</span>
+                      {/* Manual break after this session (covers the last one,
+                          which has no divider below it). */}
+                      {breakMinutes != null && breakMinutes > 0 && !session.overtimeRunning &&
+                        breakTimer?.afterSessionId !== session.id && (
+                          <button
+                            type="button"
+                            title="بدء استراحة بعد هذه الجلسة"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onStartBreak?.(session.id);
+                            }}
+                            className="flex size-6 items-center justify-center rounded-full text-amber-500 transition hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                          >
+                            <Coffee size={13} />
+                          </button>
+                        )}
+                    </span>
                   ) : (
                     <button
                       type="button"
@@ -298,6 +396,17 @@ export const ExecutionTaskRow = ({
                       <Save size={12} />
                       حفظ
                     </button>
+                    {breakMinutes != null && breakMinutes > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onSpendOvertimeAsBreak?.(session.id)}
+                        title="احتساب الوقت الإضافي كاستراحة"
+                        className="flex shrink-0 items-center gap-1 rounded-md border border-amber-400 px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-950/40"
+                      >
+                        <Coffee size={12} />
+                        استراحة
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => onDismissOvertime?.(session.id)}
@@ -372,6 +481,15 @@ export const ExecutionTaskRow = ({
                   </div>
                 )}
               </div>
+
+              {/* The break that follows this session, once started. */}
+              {breakTimer?.afterSessionId === session.id && breakMinutes != null && breakMinutes > 0 && (
+                <BreakBar
+                  elapsedSeconds={breakTimer.elapsedSeconds}
+                  breakMinutes={breakMinutes}
+                  onStop={onStopBreak}
+                />
+              )}
               </div>
             );
           })}

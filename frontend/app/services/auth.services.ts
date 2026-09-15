@@ -68,6 +68,14 @@ export const authService = {
     return data;
   },
 
+  // PUT /users/{id} — UserUpdateDto: name (required), role, gradeLevel.
+  async updateProfile(
+    id: string,
+    payload: { name: string; role?: string | null; gradeLevel?: number },
+  ): Promise<void> {
+    await axiosInstance.put(API_ROUTES.USERS.UPDATE(id), payload);
+  },
+
   // POST /users/upload-photo — multipart with a single `Photo` part. The
   // backend stores the file and sets the user's photoUrl; GET /users/me
   // returns the new URL afterwards.

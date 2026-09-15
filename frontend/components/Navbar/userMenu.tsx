@@ -16,6 +16,9 @@ import {
 import { useRef, useState } from "react";
 import ThemeSubMenu from "../Navbar/ThemeMenu";
 import { useLogout } from "@/app/hooks/useLogout";
+import { useAuth } from "@/app/(public)/context/auth.context";
+import { shortName } from "@/app/lib/user";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 type UserMenuProps = {
   isOpen: boolean;
@@ -62,6 +65,14 @@ const menuItems = [
 ];
 
 export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
+  const { user } = useAuth();
+  const displayName = shortName(user?.fullName);
+  // Phone-registered users get a synthetic "@motqin.internal" email — show
+  // the phone number for them instead.
+  const contact =
+    user?.email && !user.email.endsWith("@motqin.internal")
+      ? user.email
+      : user?.phoneNumber || user?.email || "";
   const [activeSubMenu, setActiveSubMenu] = useState<"theme" | null>(null);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -88,9 +99,14 @@ export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
       onMouseLeave={handleMouseLeave}
     >
       {/* Header */}
-      <div className="border-b border-zinc-200 px-4 py-3 sm:px-5 sm:py-4 dark:border-zinc-800">
-        <h3 className="font-semibold text-lg">Mono</h3>
-        <p className="text-sm text-zinc-500">mono@example.com</p>
+      <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-3 sm:px-5 sm:py-4 dark:border-zinc-800">
+        <UserAvatar name={displayName} photoUrl={user?.photoUrl} size={44} />
+        <div className="min-w-0">
+          <h3 className="truncate font-semibold text-lg">{displayName}</h3>
+          {contact && (
+            <p dir="ltr" className="truncate text-right text-sm text-zinc-500">{contact}</p>
+          )}
+        </div>
       </div>
 
       {/* Menu */}

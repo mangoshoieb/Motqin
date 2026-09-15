@@ -1,7 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { shortName } from "@/app/lib/user";
 import UserMenu from "./userMenu";
 import { SessionBreadcrumb } from "./SessionBreadcrumb";
 import { Suspense, useState } from "react";
@@ -31,7 +32,8 @@ const Nav = () => {
   ];
   // Temporary user object until auth is connected
   const { user, isLoading } = useAuth();
-const firstName = user?.fullName?.trim().split(/\s+/)[0];
+  // First two words of the full name, e.g. "Amgad Mahmoud".
+  const displayName = shortName(user?.fullName);
   return (
     <nav className="w-full border-b border-zinc-200 bg-[var(--background)] transition-colors duration-300 dark:border-zinc-800">
       <div className="mx-auto h-16 max-w-7xl flex items-center px-3">
@@ -43,15 +45,9 @@ const firstName = user?.fullName?.trim().split(/\s+/)[0];
                 onClick={() => setIsUserMenuOpen((prev) => !prev)}
                 className="flex items-center gap-3 rounded-full px-2 py-1 transition hover:bg-zinc-200 dark:hover:bg-zinc-800"
               >
-                <Image
-                  src={'/my-notion-face-portrait.png'}
-                  alt={'profile'}
-                  width={40}
-                  height={40}
-                  className="rounded-full"
-                />
+                <UserAvatar name={displayName} photoUrl={user?.photoUrl} size={40} />
 
-                <span className="font-medium">{firstName}</span>
+                <span className="font-medium">{displayName}</span>
 
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

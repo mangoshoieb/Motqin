@@ -18,6 +18,9 @@ export interface QuoteComment {
   createdAt: string;
   userId?: string;
   userName?: string;
+  // Not sent yet — picked up automatically once the backend adds them.
+  userFullName?: string | null;
+  userPhotoUrl?: string | null;
   isDeletedByAdmin?: boolean;
   replies?: QuoteComment[];
 }

@@ -6,6 +6,12 @@ import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Skeleton from "@/components/ui/Skeleton";
 import { useUploadProfilePhoto } from "@/app/hooks/useUploadProfilePhoto";
+import { useUpdateProfile } from "@/app/hooks/useUpdateProfile";
+import {
+  educationalStageLabel,
+  GRADE_LEVEL_OPTIONS,
+  gradeLevelLabel,
+} from "@/app/constants/user.constants";
 import RegionSelect from "@/components/RegionSelect";
 import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 import GoalsManager from "@/components/Profile/GoalsManager";
@@ -49,7 +55,9 @@ export default function ProfilePage() {
     name: "",
     bio: "",
     region: "",
+    gradeLevel: 0,
   });
+  const { mutate: updateProfile, isPending: isSavingProfile } = useUpdateProfile();
 
   // Sync the editable form with the real user data once /users/me resolves.
   useEffect(() => {
@@ -58,6 +66,7 @@ export default function ProfilePage() {
         ...prev,
         name: user.fullName ?? "",
         region: user.region ?? "",
+        gradeLevel: user.gradeLevel ?? 0,
       }));
     }
   }, [user]);
@@ -82,13 +91,34 @@ export default function ProfilePage() {
       name: user?.fullName ?? "",
       bio: "",
       region: user?.region ?? "",
+      gradeLevel: user?.gradeLevel ?? 0,
     });
   };
 
+  // PUT /users/{id}. Only name and grade are editable server-side; region
+  // and bio have no backend field yet, so they stay local.
   const handleSave = () => {
-    // TODO: Wire up to a real "update profile" endpoint once the backend
-    // exposes one (GET /users/me currently only returns data, no PATCH yet).
-    setIsEditing(false);
+    if (!user) return;
+    const name = form.name.trim();
+    if (!name) {
+      toast.error("الاسم مطلوب.");
+      return;
+    }
+    updateProfile(
+      {
+        id: user.id,
+        name,
+        role: user.role ?? undefined,
+        gradeLevel: form.gradeLevel || user.gradeLevel,
+      },
+      {
+        onSuccess: () => {
+          toast.success("تم حفظ التغييرات");
+          setIsEditing(false);
+        },
+        onError: () => toast.error("تعذر حفظ التغييرات، حاول مرة أخرى."),
+      },
+    );
   };
 
   return (
@@ -179,9 +209,10 @@ export default function ProfilePage() {
 
                 <button
                   onClick={handleSave}
-                  className="rounded-xl bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700"
+                  disabled={isSavingProfile}
+                  className="rounded-xl bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  حفظ
+                  {isSavingProfile ? "جاري الحفظ..." : "حفظ"}
                 </button>
               </div>
             )}
@@ -299,16 +330,30 @@ export default function ProfilePage() {
               <label className="mb-2 block font-medium">المرحلة التعليمية</label>
 
               <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {user?.educationalStage}
+                {educationalStageLabel(user?.educationalStage)}
               </div>
             </div>
 
             <div>
               <label className="mb-2 block font-medium">الصف الدراسي</label>
 
-              <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {user?.gradeLevel}
-              </div>
+              {isEditing ? (
+                <select
+                  value={form.gradeLevel}
+                  onChange={(e) => setForm((prev) => ({ ...prev, gradeLevel: Number(e.target.value) }))}
+                  className="w-full rounded-xl border border-zinc-400 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900"
+                >
+                  {GRADE_LEVEL_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                  {gradeLevelLabel(user?.gradeLevel)}
+                </div>
+              )}
             </div>
 
             {user?.role && (

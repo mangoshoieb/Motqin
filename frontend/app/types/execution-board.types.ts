@@ -49,6 +49,13 @@ export interface ExecutionSession {
   overtimeSeconds?: number;
 }
 
+// The one break that can be running on the board: which session it follows
+// and how long it has been going. Past `breakMinutes` it's overrun time.
+export interface BreakTimer {
+  afterSessionId: string;
+  elapsedSeconds: number;
+}
+
 export interface DayOutputs {
   tasksCompleted: number;
   totalTasks: number;

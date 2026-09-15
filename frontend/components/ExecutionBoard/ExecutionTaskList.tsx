@@ -1,6 +1,6 @@
 "use client";
 
-import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
+import { BreakTimer, ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 import { ExecutionTaskRow } from "./ExecutionTaskRow";
 
 interface ExecutionTaskListProps {
@@ -14,6 +14,10 @@ interface ExecutionTaskListProps {
   onEndSession?: (sessionId: string) => void;
   onSaveOvertime?: (sessionId: string) => void;
   onDismissOvertime?: (sessionId: string) => void;
+  onSpendOvertimeAsBreak?: (sessionId: string) => void;
+  breakTimer?: BreakTimer | null;
+  onStartBreak?: (sessionId: string) => void;
+  onStopBreak?: () => void;
   onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => void;
   onDeleteSession?: (sessionId: string) => void;
   onStartRevision?: (task: ExecutionTask) => void;
@@ -35,6 +39,10 @@ export const ExecutionTaskList = ({
   onEndSession,
   onSaveOvertime,
   onDismissOvertime,
+  onSpendOvertimeAsBreak,
+  breakTimer,
+  onStartBreak,
+  onStopBreak,
   onUpdateSession,
   onDeleteSession,
   onStartRevision,
@@ -64,6 +72,10 @@ export const ExecutionTaskList = ({
               onEndSession={onEndSession}
               onSaveOvertime={onSaveOvertime}
               onDismissOvertime={onDismissOvertime}
+              onSpendOvertimeAsBreak={onSpendOvertimeAsBreak}
+              breakTimer={breakTimer}
+              onStartBreak={onStartBreak}
+              onStopBreak={onStopBreak}
               onUpdateSession={onUpdateSession}
               onDeleteSession={onDeleteSession}
               onStartRevision={onStartRevision}

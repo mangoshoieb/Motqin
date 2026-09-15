@@ -11,26 +11,9 @@ import {
 } from "@/app/hooks/useQuoteComment";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { buildThread, countAll, flattenReplies } from "@/app/lib/quote-comments";
+import { shortName } from "@/app/lib/user";
+import UserAvatar from "@/components/ui/UserAvatar";
 import ReportCommentDialog from "./ReportCommentDialog";
-
-const AVATAR_COLORS = [
-  "bg-blue-500",
-  "bg-violet-500",
-  "bg-rose-500",
-  "bg-amber-500",
-  "bg-emerald-500",
-  "bg-teal-500",
-];
-
-function avatarColorFor(seed: string) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-}
-
-function initialsFor(name: string) {
-  return name.trim().charAt(0).toUpperCase() || "؟";
-}
 
 function timeAgo(isoDate: string) {
   const diffMs = Date.now() - new Date(isoDate).getTime();
@@ -242,7 +225,12 @@ function CommentItem({
   const { mutate: deleteComment, isPending: isDeleting } = useDeleteQuoteComment();
 
   const isOwnComment = !!user && comment.userId === user.id;
-  const displayName = comment.userName || "مستخدم";
+  // Own comments use the profile (full name + photo). Other users' come
+  // from the comment DTO; the backend currently sends userName only.
+  const displayName = isOwnComment
+    ? shortName(user.fullName, shortName(comment.userName))
+    : shortName(comment.userFullName ?? comment.userName);
+  const photoUrl = isOwnComment ? user.photoUrl : comment.userPhotoUrl;
   // Deep threads are flattened for display; the data stays truly nested.
   const replies = isReply ? [] : flattenReplies(comment);
   const removedByAdmin = Boolean(comment.isDeletedByAdmin);
@@ -261,13 +249,7 @@ function CommentItem({
 
   return (
     <div className="flex items-start gap-3">
-      <span
-        className={`flex shrink-0 items-center justify-center rounded-full font-bold text-white ${
-          isReply ? "size-7 text-xs" : "size-9 text-sm"
-        } ${avatarColorFor(displayName)}`}
-      >
-        {initialsFor(displayName)}
-      </span>
+      <UserAvatar name={displayName} photoUrl={photoUrl} size={isReply ? 28 : 36} />
 
       <div className="min-w-0 flex-1">
         <div className="rounded-2xl bg-zinc-100 px-4 py-2.5 dark:bg-zinc-800/70">
