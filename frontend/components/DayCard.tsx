@@ -51,8 +51,10 @@ interface DayCardProps {
   // drop targets.
   isPast?: boolean;
   onTaskComplete?: (taskId: string, completed: boolean) => Promise<void>;
-  // A task from another day was dropped on this one.
-  onTaskDrop?: (taskId: string) => void;
+  // A task was dropped on this day. `beforeTaskId` is set when it landed on
+  // one of the day's task rows (take that row's place — works within the
+  // same day too); without it the task was dropped on the column itself.
+  onTaskDrop?: (taskId: string, beforeTaskId?: string) => void;
 
   onClick?: () => void;
   // Shown only for today and future days — the backend rejects tasks on
@@ -78,6 +80,9 @@ export default function DayCard({
 }: DayCardProps) {
   const [open, setOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  // The task row currently hovered by a drag — it shows where the dragged
+  // task will slot in.
+  const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
   const canDrop = Boolean(onTaskDrop) && !isPast;
   const [selectedMood, setSelectedMood] = useState(moodOptions[1]);
 
@@ -126,9 +131,12 @@ export default function DayCard({
       onDragLeave={() => setDragOver(false)}
       onDrop={(e) => {
         setDragOver(false);
+        setDragOverTaskId(null);
         if (!canDrop) return;
         const taskId = e.dataTransfer.getData("text/task-id");
         const fromDate = e.dataTransfer.getData("text/task-date");
+        // Dropping on the column of the day it came from changes nothing;
+        // reordering within a day happens by dropping on a task row.
         if (!taskId || fromDate === date) return;
         e.preventDefault();
         onTaskDrop?.(taskId);
@@ -249,7 +257,33 @@ export default function DayCard({
                   e.dataTransfer.setData("text/task-date", date);
                   e.dataTransfer.effectAllowed = "move";
                 }}
-                className="flex cursor-grab items-start gap-2 rounded-md active:cursor-grabbing"
+                onDragOver={(e) => {
+                  if (!canDrop || !e.dataTransfer.types.includes("text/task-id")) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragOverTaskId(task.id);
+                }}
+                onDragLeave={() =>
+                  setDragOverTaskId((current) => (current === task.id ? null : current))
+                }
+                onDrop={(e) => {
+                  setDragOverTaskId(null);
+                  if (!canDrop) return;
+                  const draggedId = e.dataTransfer.getData("text/task-id");
+                  if (!draggedId || draggedId === task.id) return;
+                  // Handled here as "take this row's place"; don't let the
+                  // column treat it as a plain drop on the day.
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDragOver(false);
+                  onTaskDrop?.(draggedId, task.id);
+                }}
+                className={cn(
+                  "flex cursor-grab items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 shadow-sm transition-all hover:border-zinc-300 hover:shadow-md active:cursor-grabbing dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:border-zinc-600",
+                  task.completed && "bg-zinc-50 shadow-none dark:bg-zinc-900",
+                  dragOverTaskId === task.id &&
+                    "border-blue-400 bg-blue-50 shadow-md ring-2 ring-blue-300 dark:border-blue-500 dark:bg-blue-950/40 dark:ring-blue-700",
+                )}
               >
                 <button
                   onClick={(e) => {
@@ -258,9 +292,9 @@ export default function DayCard({
                   }}
                 >
                   {task.completed ? (
-                    <CheckSquare size={20} className="text-blue-600 dark:text-blue-400 mt-1" />
+                    <CheckSquare size={20} className="text-blue-600 dark:text-blue-400" />
                   ) : (
-                    <Square size={20} className="text-zinc-400 dark:text-zinc-600 mt-1" />
+                    <Square size={20} className="text-zinc-400 dark:text-zinc-600" />
                   )}
                 </button>
 
@@ -276,7 +310,7 @@ export default function DayCard({
 
                 {starsFor(task.priorityValue) > 0 && (
                   <span
-                    className="mt-1.5 flex shrink-0 gap-px"
+                    className="flex shrink-0 gap-px"
                     title={`الأولوية ${task.priorityValue}`}
                     aria-label={`الأولوية ${starsFor(task.priorityValue)} من 3`}
                   >

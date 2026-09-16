@@ -15,7 +15,13 @@ import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
 import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
 import { studyPlansService, studySessionsService } from "@/app/services/motqin";
-import { currentWeekDates, studySessionToExecutionSession } from "@/app/lib/study-plan";
+import {
+  currentWeekDates,
+  nextFreePriority as nextFreePrioritySlot,
+  priorityForPosition,
+  sortByPriority as sortTasksByPriority,
+  studySessionToExecutionSession,
+} from "@/app/lib/study-plan";
 import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
 import { API_ROUTES } from "@/app/constants/planner.constants";
 
@@ -50,20 +56,12 @@ const ExecutionBoardPage = () => {
   // once it passes the preference's break length.
   const [breakTimer, setBreakTimer] = useState<BreakTimer | null>(null);
 
-  // Priority is a focus slot, not a score: 1 = the one task to do first
-  // (three stars), 2 = next (two stars), 3 = then (one star). Anything else
-  // (0 / unset) is an extra task with no stars, listed after the three.
-  const priorityRank = (task: ExecutionTask) =>
-    task.priority && task.priority >= 1 && task.priority <= 3 ? task.priority : Number.MAX_SAFE_INTEGER;
+  // Priority slots (1 = ★★★, 2 = ★★, 3 = ★, else no stars) — the same
+  // helpers drive the week board so both views order tasks identically.
   const sortByPriority = (items: ExecutionTask[]) =>
-    [...items].sort((a, b) => priorityRank(a) - priorityRank(b));
-
-  // Lowest free slot among 1..3 for a task being added, or 0 when all
-  // three are taken.
-  const nextFreePriority = (items: ExecutionTask[]) => {
-    const taken = new Set(items.map((task) => task.priority));
-    return [1, 2, 3].find((slot) => !taken.has(slot)) ?? 0;
-  };
+    sortTasksByPriority(items, (task) => task.priority);
+  const nextFreePriority = (items: ExecutionTask[]) =>
+    nextFreePrioritySlot(items.map((task) => task.priority));
 
   // Seed local state once the (mock, for now) data resolves. Adjusting
   // state during render instead of in an effect, per React's rules on
@@ -521,7 +519,7 @@ const ExecutionBoardPage = () => {
       // the rest lose their stars.
       const prioritized = next.map((task, index) => ({
         ...task,
-        priority: index < 3 ? index + 1 : 0,
+        priority: priorityForPosition(index),
       }));
       void Promise.all(
         prioritized

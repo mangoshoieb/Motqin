@@ -70,13 +70,16 @@ const emptyBusyTimes: BusyTimesByDay = {
   saturday: [],
 };
 
+// Sleep time and daily hours start *empty* on purpose (0 / "" render as a
+// blank input): a first-time user has to pick their own values rather than
+// save whatever we guessed. The settings page validates them before saving.
 export const DEFAULT_PLANNER_PREFERENCES: PlannerPreferences = {
-  startSleepTime: "23:00",
-  endSleepTime: "07:00",
+  startSleepTime: "",
+  endSleepTime: "",
   pomodoroWorkingMinutes: 90,
   pomodoroBreakMinutes: 5,
-  minWorkHours: 1,
-  maxWorkHours: 3,
+  minWorkHours: 0,
+  maxWorkHours: 0,
   planFailureDecision: 1,
   // busyTimes: emptyBusyTimes,
 };

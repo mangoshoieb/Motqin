@@ -24,6 +24,26 @@ const priorityFor = (priority: number): Task["priority"] => {
   return "low";
 };
 
+// Priority is a focus slot, not a score: 1 = the one task to do first
+// (three stars), 2 = next (two stars), 3 = then (one star). Anything else
+// (0 / unset) is an extra task with no stars, listed after the three.
+export const priorityRank = (priority?: number) =>
+  priority && priority >= 1 && priority <= 3 ? priority : Number.MAX_SAFE_INTEGER;
+
+export const sortByPriority = <T>(items: T[], priorityOf: (item: T) => number | undefined): T[] =>
+  [...items].sort((a, b) => priorityRank(priorityOf(a)) - priorityRank(priorityOf(b)));
+
+// Lowest free slot among 1..3 for a task joining a day, or 0 when all
+// three are taken.
+export const nextFreePriority = (taken: (number | undefined)[]) => {
+  const used = new Set(taken);
+  return [1, 2, 3].find((slot) => !used.has(slot)) ?? 0;
+};
+
+// Position is priority: the first three rows take slots 1, 2, 3 and the
+// rest lose their stars.
+export const priorityForPosition = (index: number) => (index < 3 ? index + 1 : 0);
+
 export const studyPlanToPlannerTask = (item: StudyPlanItem): Task => ({
   id: String(item.id),
   title: item.title,
@@ -116,7 +136,7 @@ export const formatPlannerDate = (date: string) => {
 };
 
 export const applyStudyPlansToDay = (day: PlannerDay, items: StudyPlanItem[]): PlannerDay => {
-  const tasks = items.map(studyPlanToPlannerTask);
+  const tasks = sortByPriority(items.map(studyPlanToPlannerTask), (task) => task.priorityValue);
   return {
     ...day,
     date: formatPlannerDate(day.date),

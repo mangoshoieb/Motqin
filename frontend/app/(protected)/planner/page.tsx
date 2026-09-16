@@ -7,7 +7,15 @@ import { toast } from "sonner";
 import DayCard from "@/components/DayCard";
 import { weekData } from "@/app/data/days";
 import { StudyPlanDuration, studyPlansService } from "@/app/services/motqin";
-import { applyStudyPlansToDay, currentWeekDates, dateOnly, formatPlannerDate } from "@/app/lib/study-plan";
+import {
+  applyStudyPlansToDay,
+  currentWeekDates,
+  dateOnly,
+  formatPlannerDate,
+  nextFreePriority,
+  priorityForPosition,
+  sortByPriority,
+} from "@/app/lib/study-plan";
 import { cn } from "@/app/lib/utils";
 import { PlannerViewSwitch } from "@/components/Planner/PlannerViewSwitch";
 import AiPlanningSection from "@/components/Planner/AiPlanningSection";
@@ -32,8 +40,9 @@ const Planner = () => {
   // manual-planning tab below.
   const dates = currentWeekDates(0);
   const todayDate = dateOnly(new Date());
+  const weekQueryKey = ["study-plans", "week", 0, dates[0], dates[6]];
   const { data: studyPlans, isLoading } = useQuery({
-    queryKey: ["study-plans", "week", 0, dates[0], dates[6]],
+    queryKey: weekQueryKey,
     queryFn: () =>
       studyPlansService.filter({
         duration: StudyPlanDuration.Week,
@@ -52,16 +61,78 @@ const Planner = () => {
     };
   });
 
-  // Drag a task from one day column onto another: PUT the new date. The
-  // backend refuses past dates, and DayCard already blocks dropping there.
-  const moveTask = async (taskId: string, date: string) => {
+  // Drag a task onto a day column, or onto one of its task rows. Priority
+  // follows the same rules as the execution board:
+  //  - dropped on a row: the task takes that row's place and the day is
+  //    renumbered by position (first three rows are ★★★ / ★★ / ★, the rest
+  //    lose their stars) — same as reordering there;
+  //  - dropped on the column: the task takes the day's first free slot —
+  //    same as adding a task there.
+  // Everything goes through PUT /study-plan/{id} with { date, priority }.
+  // The backend refuses past dates, and DayCard already blocks dropping there.
+  const moveTask = async (taskId: string, targetDate: string, beforeTaskId?: string) => {
+    const items = studyPlans?.items ?? [];
+    const moved = items.find((item) => String(item.id) === taskId);
+    if (!moved) return;
+
+    const dayItems = sortByPriority(
+      items.filter((item) => item.date === targetDate),
+      (item) => item.priority,
+    );
+    const priorities = new Map<number, number>();
+
+    if (beforeTaskId) {
+      const from = dayItems.findIndex((item) => item.id === moved.id);
+      const to = dayItems.findIndex((item) => String(item.id) === beforeTaskId);
+      if (to < 0) return;
+      const ordered = [...dayItems];
+      if (from >= 0) ordered.splice(from, 1);
+      ordered.splice(to, 0, moved);
+      ordered.forEach((item, index) => {
+        const priority = priorityForPosition(index);
+        if (priority !== item.priority) priorities.set(item.id, priority);
+      });
+    } else {
+      const priority = nextFreePriority(
+        dayItems.filter((item) => item.id !== moved.id).map((item) => item.priority),
+      );
+      if (priority !== moved.priority) priorities.set(moved.id, priority);
+    }
+
+    const dateChanged = moved.date !== targetDate;
+    if (!dateChanged && priorities.size === 0) return;
+
+    // Show the new order right away; the refetch below confirms it (or
+    // puts things back if the server disagreed).
+    queryClient.setQueryData<typeof studyPlans>(weekQueryKey, (current) =>
+      current && {
+        ...current,
+        items: current.items.map((item) => ({
+          ...item,
+          date: item.id === moved.id ? targetDate : item.date,
+          priority: priorities.get(item.id) ?? item.priority,
+        })),
+      },
+    );
+
+    const updates = [...priorities].map(([id, priority]) =>
+      studyPlansService.update(id, {
+        priority,
+        ...(id === moved.id && dateChanged ? { date: targetDate } : {}),
+      }),
+    );
+    if (dateChanged && !priorities.has(moved.id)) {
+      updates.push(studyPlansService.update(moved.id, { date: targetDate }));
+    }
+
     try {
-      await studyPlansService.update(Number(taskId), { date });
+      await Promise.all(updates);
+      if (dateChanged) toast.success(`تم نقل المهمة إلى ${formatPlannerDate(targetDate)}`);
+    } catch {
+      toast.error(dateChanged ? "تعذر نقل المهمة إلى هذا اليوم" : "تعذر حفظ ترتيب الأولويات");
+    } finally {
       await queryClient.invalidateQueries({ queryKey: ["study-plans"] });
       queryClient.invalidateQueries({ queryKey: ["execution-board"] });
-      toast.success(`تم نقل المهمة إلى ${formatPlannerDate(date)}`);
-    } catch {
-      toast.error("تعذر نقل المهمة إلى هذا اليوم");
     }
   };
 
@@ -100,7 +171,7 @@ const Planner = () => {
                 {...day}
                 onClick={() => router.push(`/planner/execution/${day.index}?week=0`)}
                 onTaskComplete={updateTaskCompletion}
-                onTaskDrop={(taskId) => void moveTask(taskId, dates[day.index - 1])}
+                onTaskDrop={(taskId, beforeTaskId) => void moveTask(taskId, dates[day.index - 1], beforeTaskId)}
                 // Adding happens on the day's execution board: land there
                 // with the dialog already open.
                 onAddTask={
