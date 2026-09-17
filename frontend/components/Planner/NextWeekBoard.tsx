@@ -25,6 +25,7 @@ const inputClass =
 // Add-task form shown inside an expanded day card. Same fields as the
 // execution board's AddTaskDialog, but the date is fixed to the card's day.
 // ---------------------------------------------------------------------------
+// hi there 
 function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }) {
   const queryClient = useQueryClient();
   const [source, setSource] = useState<"systematic" | "regular">("regular");
