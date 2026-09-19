@@ -95,23 +95,26 @@ export const API_ROUTES = {
     UPDATE: (id: string) => `/users/${id}`,
     GOAL: (id: string | number) => `/users/goals/${id}`,
   },
+  // Everything under the UserPreferences controller now lives beneath
+  // /user-preferences/planner (see Swagger); the basic sleep/hours/pomodoro
+  // preferences are the "basic" resource.
   USER_PREFERENCES: {
-    GET: "/user-preferences",
-    UPDATE: "/user-preferences",
-    DELETE: "/user-preferences",
-    POST: "/user-preferences",
+    GET: "/user-preferences/planner/basic",
+    UPDATE: "/user-preferences/planner/basic",
+    DELETE: "/user-preferences/planner/basic",
+    POST: "/user-preferences/planner/basic",
   },
   COURSE_SCHEDULES: {
-    GET_ALL: "/user-preferences/courses-schedules",
-    POST: "/user-preferences/course-schedule",
-    UPDATE: (id: string | number) => `/user-preferences/courses-schedule/${id}`,
-    DELETE: (id: string | number) => `/user-preferences/courses-schedule/${id}`,
+    GET_ALL: "/user-preferences/planner/courses-schedules",
+    POST: "/user-preferences/planner/course-schedule",
+    UPDATE: (id: string | number) => `/user-preferences/planner/courses-schedule/${id}`,
+    DELETE: (id: string | number) => `/user-preferences/planner/courses-schedule/${id}`,
   },
   BUSY_TIMES: {
-    GET_REPEATED: "/user-preferences/busytime/repeated",
-    POST: "/user-preferences/busytime",
-    UPDATE: (id: string | number) => `/user-preferences/busytime/${id}`,
-    DELETE: (id: string | number) => `/user-preferences/busytime/${id}`,
+    GET_REPEATED: "/user-preferences/planner/busytime/repeated",
+    POST: "/user-preferences/planner/busytime",
+    UPDATE: (id: string | number) => `/user-preferences/planner/busytime/${id}`,
+    DELETE: (id: string | number) => `/user-preferences/planner/busytime/${id}`,
   },
   STUDY_PLANS: {
     CREATE: "/study-plan/create",

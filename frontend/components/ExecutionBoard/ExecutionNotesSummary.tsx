@@ -1,6 +1,7 @@
 "use client";
 
 import { ExecutionTask } from "@/app/types/execution-board.types";
+import { RichTextContent, isRichTextEmpty } from "@/components/ui/RichTextEditor";
 
 interface ExecutionNotesSummaryProps {
   tasks: ExecutionTask[]; // combined daily + revision — filtered to those with a note
@@ -10,7 +11,7 @@ interface ExecutionNotesSummaryProps {
 // (if any) tasks have a note — notes are entered per task (see
 // ExecutionTaskRow's toggle), but read back here as one consolidated list.
 export const ExecutionNotesSummary = ({ tasks }: ExecutionNotesSummaryProps) => {
-  const notedTasks = tasks.filter((t) => t.notes && t.notes.trim().length > 0);
+  const notedTasks = tasks.filter((t) => !isRichTextEmpty(t.notes));
 
   return (
     <section className="flex flex-col gap-3">
@@ -26,7 +27,7 @@ export const ExecutionNotesSummary = ({ tasks }: ExecutionNotesSummaryProps) => 
               className="rounded-2xl bg-white border border-zinc-200 p-4 dark:bg-zinc-900 dark:border-zinc-800"
             >
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">{task.title}</p>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap">{task.notes}</p>
+              <RichTextContent value={task.notes ?? ""} className="text-zinc-600 dark:text-zinc-400" />
             </div>
           ))}
         </div>

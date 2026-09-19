@@ -35,8 +35,8 @@ const ExecutionBoardPage = () => {
   const weekOffset = Number.isFinite(parsedWeek) ? Math.max(0, Math.min(1, parsedWeek)) : 0;
 
   const { data, isLoading } = useExecutionBoard(dayIndex, weekOffset);
-  // Break between sessions, from the user's saved planner preferences.
-  const { breakMinutes } = useBreakMinutes();
+  // Session and break lengths, from the user's saved planner preferences.
+  const { sessionMinutes, breakMinutes } = useBreakMinutes();
 
   const [tasks, setTasks] = useState<ExecutionTask[]>([]);
   const [sessions, setSessions] = useState<ExecutionSession[]>([]);
@@ -283,18 +283,19 @@ const ExecutionBoardPage = () => {
     }
   };
 
-  // Adds the session and leaves it idle: the user opens the card to name it
-  // and set its duration, then presses play to actually start it.
+  // Adds the session and leaves it idle: the user opens the card to rename
+  // it or set its duration, then presses play to actually start it. It's
+  // named after its task and lasts the preferred session length
+  // (pomodoroWorkingMinutes), so the list reads well without editing.
   const addSessionForTask = async (task: ExecutionTask) => {
-    const sessionNumber = sessions.filter((s) => s.taskId === task.id).length + 1;
-    const description = `جلسة ${sessionNumber}`;
+    const description = task.title;
 
     try {
       const created = await studySessionsService.create({
         studyPlanId: Number(task.id),
         date: data?.day.date ?? currentWeekDates(weekOffset)[dayIndex - 1],
         description,
-        durationInMinutes: task.estimatedMinutes,
+        durationInMinutes: sessionMinutes,
         goalCategoryId: task.goalCategoryId,
       });
 
@@ -303,7 +304,7 @@ const ExecutionBoardPage = () => {
         ...prev,
         {
           ...session,
-          sessionDurationMinutes: session.sessionDurationMinutes || task.estimatedMinutes,
+          sessionDurationMinutes: session.sessionDurationMinutes || sessionMinutes,
           actualMinutes: 0,
           elapsedSeconds: 0,
           status: "idle",
@@ -630,7 +631,6 @@ const ExecutionBoardPage = () => {
           onToggleComplete={toggleTaskComplete}
           onAddSession={addSessionForTask}
           onToggleSession={toggleSession}
-          onEndSession={(sessionId) => void finishSession(sessionId)}
           onSaveOvertime={(sessionId) => void saveOvertime(sessionId)}
           onDismissOvertime={dismissOvertime}
           onSpendOvertimeAsBreak={spendOvertimeAsBreak}

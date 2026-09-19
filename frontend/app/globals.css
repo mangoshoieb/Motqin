@@ -327,3 +327,63 @@
 
 
 
+
+/* =========================
+   RICH-TEXT NOTES (Tiptap)
+   Lists and checkboxes inside notes — Tailwind's preflight resets them.
+========================= */
+.rich-text p {
+  margin: 0;
+}
+.rich-text p + p,
+.rich-text p + ul,
+.rich-text p + ol,
+.rich-text ul + p,
+.rich-text ol + p {
+  margin-top: 0.35rem;
+}
+.rich-text ul,
+.rich-text ol {
+  padding-inline-start: 1.5rem;
+}
+.rich-text ul {
+  list-style: disc;
+}
+.rich-text ol {
+  list-style: decimal;
+}
+.rich-text li + li {
+  margin-top: 0.15rem;
+}
+.rich-text ul[data-type="taskList"] {
+  list-style: none;
+  padding-inline-start: 0;
+}
+.rich-text ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.rich-text ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+}
+.rich-text ul[data-type="taskList"] li > label input[type="checkbox"] {
+  accent-color: var(--color-blue-600);
+  cursor: pointer;
+}
+.rich-text ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.rich-text ul[data-type="taskList"] li[data-checked="true"] > div {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.rich-text p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: right;
+  color: var(--color-zinc-400);
+  pointer-events: none;
+  height: 0;
+}

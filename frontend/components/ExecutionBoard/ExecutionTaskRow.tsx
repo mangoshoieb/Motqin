@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, CheckSquare, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { formatMinutes } from "@/app/lib/duration";
+import { RichTextContent, RichTextEditor, isRichTextEmpty } from "@/components/ui/RichTextEditor";
 import { BreakTimer, ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 
 interface ExecutionTaskRowProps {
@@ -13,7 +14,6 @@ interface ExecutionTaskRowProps {
   onToggleComplete: (id: string) => void;
   onAddSession?: (task: ExecutionTask) => void; // starts a new session for this task
   onToggleSession?: (sessionId: string) => void; // play/pause an existing session
-  onEndSession?: (sessionId: string) => void; // finish it before its time is up
   // overtime counter shown after the clock ran out — credit it or drop it
   onSaveOvertime?: (sessionId: string) => void;
   onDismissOvertime?: (sessionId: string) => void;
@@ -112,7 +112,6 @@ export const ExecutionTaskRow = ({
   onToggleComplete,
   onAddSession,
   onToggleSession,
-  onEndSession,
   onSaveOvertime,
   onDismissOvertime,
   onSpendOvertimeAsBreak,
@@ -363,20 +362,6 @@ export const ExecutionTaskRow = ({
                     {formatClock(elapsedSeconds)} / {formatClock(session.sessionDurationMinutes * 60)}
                   </span>
 
-                  {session.status !== "completed" && session.status !== "idle" && (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onEndSession?.(session.id);
-                      }}
-                      title="إنهاء الجلسة"
-                      className="shrink-0 text-zinc-400 transition hover:text-emerald-600 dark:hover:text-emerald-400"
-                    >
-                      <Check size={15} />
-                    </button>
-                  )}
-
                   <button
                     type="button"
                     onClick={(event) => {
@@ -488,23 +473,18 @@ export const ExecutionTaskRow = ({
                     </label>
                     </div>
 
-                    <label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
                       ملاحظات الجلسة
-                      <textarea
-                        rows={2}
+                      <RichTextEditor
                         value={notesDraft}
-                        onChange={(event) => setNotesDraft(event.target.value)}
+                        onChange={setNotesDraft}
                         onBlur={() => onUpdateSession?.(session.id, { notes: notesDraft })}
-                        onKeyDown={(event) => {
-                          if (event.key === "Escape") {
-                            setNotesDraft(session.notes ?? "");
-                            event.currentTarget.blur();
-                          }
-                        }}
+                        onEscape={() => setNotesDraft(session.notes ?? "")}
                         placeholder="أضف ملاحظة عن هذه الجلسة..."
-                        className={cn(sessionInputClass, "resize-y")}
+                        className="mt-1"
+                        minHeightClass="min-h-14"
                       />
-                    </label>
+                    </div>
                   </div>
                 )}
               </div>
@@ -539,13 +519,12 @@ export const ExecutionTaskRow = ({
 
         {noteEditing ? (
           <div className="flex flex-col gap-3">
-            <textarea
+            <RichTextEditor
               value={noteDraft}
-              onChange={(event) => setNoteDraft(event.target.value)}
+              onChange={setNoteDraft}
               placeholder="أضف ملاحظة..."
-              rows={5}
               autoFocus
-              className="min-h-22 w-full resize-y rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm outline-none transition focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:focus:border-blue-500"
+              minHeightClass="min-h-22"
             />
             <div className="flex justify-end gap-2">
               <button
@@ -561,7 +540,7 @@ export const ExecutionTaskRow = ({
               <button
                 type="button"
                 onClick={() => {
-                  onNotesChange(task.id, noteDraft.trim());
+                  onNotesChange(task.id, isRichTextEmpty(noteDraft) ? "" : noteDraft);
                   setNoteEditing(false);
                 }}
                 className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
@@ -570,14 +549,21 @@ export const ExecutionTaskRow = ({
               </button>
             </div>
           </div>
-        ) : task.notes ? (
-          <button
-            type="button"
+        ) : !isRichTextEmpty(task.notes) ? (
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => setNoteEditing(true)}
-            className="flex flex-1 whitespace-pre-wrap rounded-lg bg-zinc-50 p-3 text-right text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setNoteEditing(true);
+              }
+            }}
+            className="flex flex-1 cursor-text flex-col rounded-lg bg-zinc-50 p-3 text-right text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
           >
-            {task.notes}
-          </button>
+            <RichTextContent value={task.notes ?? ""} />
+          </div>
         ) : (
           <button
             type="button"

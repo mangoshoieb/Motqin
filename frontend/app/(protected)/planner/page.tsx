@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { PencilRuler, Sparkles } from "lucide-react";
+import { CalendarDays, PencilRuler, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import DayCard from "@/components/DayCard";
 import { weekData } from "@/app/data/days";
@@ -12,6 +12,7 @@ import {
   currentWeekDates,
   dateOnly,
   formatPlannerDate,
+  nextFreePriority,
   priorityForPosition,
   sortByPriority,
 } from "@/app/lib/study-plan";
@@ -19,11 +20,17 @@ import { cn } from "@/app/lib/utils";
 import { PlannerViewSwitch } from "@/components/Planner/PlannerViewSwitch";
 import AiPlanningSection from "@/components/Planner/AiPlanningSection";
 import NextWeekBoard from "@/components/Planner/NextWeekBoard";
+import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
+import { ExecutionTask } from "@/app/types/execution-board.types";
 import { useWorkHourLimits } from "@/app/hooks/useUserPreferences";
 
 type PlanningTab = "ai" | "manual";
 
-const planningTabs: { value: PlanningTab; label: string; icon: typeof Sparkles }[] = [
+const planningTabs: {
+  value: PlanningTab;
+  label: string;
+  icon: typeof Sparkles;
+}[] = [
   { value: "ai", label: "التخطيط بالذكاء الاصطناعي", icon: Sparkles },
   { value: "manual", label: "التخطيط اليدوي", icon: PencilRuler },
 ];
@@ -35,6 +42,8 @@ const Planner = () => {
   const [planningTab, setPlanningTab] = useState<PlanningTab>(
     searchParams.get("tab") === "manual" ? "manual" : "ai",
   );
+  // The day whose "إضافة مهمة" opened the dialog (null = closed).
+  const [addTaskDate, setAddTaskDate] = useState<string | null>(null);
 
   // The top board is always the current week; next week lives in the
   // manual-planning tab below.
@@ -59,7 +68,10 @@ const Planner = () => {
     const date = dates[index];
     const items = studyPlans?.items.filter((item) => item.date === date) ?? [];
     return {
-      ...applyStudyPlansToDay({ ...day, date, isToday: date === todayDate }, items),
+      ...applyStudyPlansToDay(
+        { ...day, date, isToday: date === todayDate },
+        items,
+      ),
       isFuture: date > todayDate,
       isPast: date < todayDate,
     };
@@ -72,7 +84,11 @@ const Planner = () => {
   // board: the first three rows are ★★★ / ★★ / ★, the rest lose their stars.
   // Everything goes through PUT /study-plan/{id} with { date, priority }.
   // The backend refuses past dates, and DayCard already blocks dropping there.
-  const moveTask = async (taskId: string, targetDate: string, beforeTaskId?: string) => {
+  const moveTask = async (
+    taskId: string,
+    targetDate: string,
+    beforeTaskId?: string,
+  ) => {
     const items = studyPlans?.items ?? [];
     const moved = items.find((item) => String(item.id) === taskId);
     if (!moved) return;
@@ -82,7 +98,9 @@ const Planner = () => {
       items.filter((item) => item.date === targetDate && item.id !== moved.id),
       (item) => item.priority,
     );
-    const to = beforeTaskId ? ordered.findIndex((item) => String(item.id) === beforeTaskId) : -1;
+    const to = beforeTaskId
+      ? ordered.findIndex((item) => String(item.id) === beforeTaskId)
+      : -1;
     ordered.splice(to < 0 ? ordered.length : to, 0, moved);
 
     const priorities = new Map<number, number>();
@@ -96,15 +114,17 @@ const Planner = () => {
 
     // Show the new order right away; the refetch below confirms it (or
     // puts things back if the server disagreed).
-    queryClient.setQueryData<typeof studyPlans>(weekQueryKey, (current) =>
-      current && {
-        ...current,
-        items: current.items.map((item) => ({
-          ...item,
-          date: item.id === moved.id ? targetDate : item.date,
-          priority: priorities.get(item.id) ?? item.priority,
-        })),
-      },
+    queryClient.setQueryData<typeof studyPlans>(
+      weekQueryKey,
+      (current) =>
+        current && {
+          ...current,
+          items: current.items.map((item) => ({
+            ...item,
+            date: item.id === moved.id ? targetDate : item.date,
+            priority: priorities.get(item.id) ?? item.priority,
+          })),
+        },
     );
 
     const updates = [...priorities].map(([id, priority]) =>
@@ -119,13 +139,33 @@ const Planner = () => {
 
     try {
       await Promise.all(updates);
-      if (dateChanged) toast.success(`تم نقل المهمة إلى ${formatPlannerDate(targetDate)}`);
+      if (dateChanged)
+        toast.success(`تم نقل المهمة إلى ${formatPlannerDate(targetDate)}`);
     } catch {
-      toast.error(dateChanged ? "تعذر نقل المهمة إلى هذا اليوم" : "تعذر حفظ ترتيب الأولويات");
+      toast.error(
+        dateChanged
+          ? "تعذر نقل المهمة إلى هذا اليوم"
+          : "تعذر حفظ ترتيب الأولويات",
+      );
     } finally {
       await queryClient.invalidateQueries({ queryKey: ["study-plans"] });
       queryClient.invalidateQueries({ queryKey: ["execution-board"] });
     }
+  };
+
+  // A task added from the board takes the day's first free focus slot,
+  // exactly as one added on the execution board does; the dialog has
+  // already created it and refreshed the list.
+  const onTaskAdded = (task: ExecutionTask) => {
+    if (!addTaskDate) return;
+    const dayItems =
+      studyPlans?.items.filter((item) => item.date === addTaskDate) ?? [];
+    const priority = nextFreePriority(dayItems.map((item) => item.priority));
+    if (priority === 0) return;
+    void studyPlansService
+      .update(Number(task.id), { priority })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
+      .catch(() => toast.error("تعذر حفظ أولوية المهمة"));
   };
 
   // The checkbox is a toggle on the server too — DayCard handles the
@@ -161,16 +201,19 @@ const Planner = () => {
             <div key={day.index} className="flex-1 overflow-hidden">
               <DayCard
                 {...day}
-                onClick={() => router.push(`/planner/execution/${day.index}?week=0`)}
+                onClick={() =>
+                  router.push(`/planner/execution/${day.index}?week=0`)
+                }
                 hourLimits={hourLimits}
                 onTaskComplete={updateTaskCompletion}
-                onTaskDrop={(taskId, beforeTaskId) => void moveTask(taskId, dates[day.index - 1], beforeTaskId)}
-                // Adding happens on the day's execution board: land there
-                // with the dialog already open.
+                onTaskDrop={(taskId, beforeTaskId) =>
+                  void moveTask(taskId, dates[day.index - 1], beforeTaskId)
+                }
+                // Opens the add-task dialog right here, for that day.
                 onAddTask={
                   day.isPast
                     ? undefined
-                    : () => router.push(`/planner/execution/${day.index}?week=0&addTask=1`)
+                    : () => setAddTaskDate(dates[day.index - 1])
                 }
               />
             </div>
@@ -178,18 +221,32 @@ const Planner = () => {
         </div>
 
         {isLoading && (
-          <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">جاري تحميل مهام الأسبوع...</p>
+          <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
+            جاري تحميل مهام الأسبوع...
+          </p>
         )}
 
+        {addTaskDate && (
+          <AddTaskDialog
+            date={addTaskDate}
+            onCreated={onTaskAdded}
+            onClose={() => setAddTaskDate(null)}
+          />
+        )}
 
         {/* Planning next week: AI-generated from goals, or built by hand day by day. */}
         <section className="mt-10">
-          <div className="mb-4 flex items-baseline gap-4">
+          <div className="mb-4 flex items-baseline gap-2">
+            <CalendarDays
+              className="text-blue-600 dark:text-blue-400"
+              size={22}
+            />
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              التخطيط للأسبوع المقبل
+              التخطيط للأسبوع القادم
             </h2>
             <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              {formatPlannerDate(nextWeekDates[0])} - {formatPlannerDate(nextWeekDates[6])}
+              {formatPlannerDate(nextWeekDates[0])} -{" "}
+              {formatPlannerDate(nextWeekDates[6])}
             </span>
           </div>
 

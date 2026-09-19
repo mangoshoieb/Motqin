@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, CalendarDays, Clock, Plus, X } from "lucide-react";
+import { BookOpen, Clock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { weekData } from "@/app/data/days";
 import { useGetLessons } from "@/app/hooks/useGetLessons";
 import { useGetSubjects } from "@/app/hooks/useGetSubjects";
 import { cn } from "@/app/lib/utils";
-import { currentWeekDates, formatPlannerDate } from "@/app/lib/study-plan";
+import { currentWeekDates, formatPlannerDate, studyPlanToExecutionTask } from "@/app/lib/study-plan";
 import {
   CreateStudyPlanPayload,
   StudyPlanDuration,
@@ -17,6 +17,8 @@ import {
   studyPlansService,
 } from "@/app/services/motqin";
 import { GoalPicker } from "@/components/Planner/GoalPicker";
+import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
+import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
 
 const inputClass =
   "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
@@ -199,6 +201,9 @@ function NextWeekDayCard({
   items,
   expanded,
   onToggle,
+  onEdit,
+  onDelete,
+  onDropTask,
 }: {
   index: number;
   dayName: string;
@@ -206,8 +211,13 @@ function NextWeekDayCard({
   items: StudyPlanItem[];
   expanded: boolean;
   onToggle: () => void;
+  onEdit: (item: StudyPlanItem) => void;
+  onDelete: (item: StudyPlanItem) => void;
+  // A task dragged from another day was dropped here.
+  onDropTask: (taskId: string) => void;
 }) {
   const [showForm, setShowForm] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const totalMinutes = items.reduce((sum, item) => sum + item.durationInMinutes, 0);
 
   const collapse = () => {
@@ -225,10 +235,31 @@ function NextWeekDayCard({
     <div
       dir="rtl"
       onClick={expanded ? undefined : onToggle}
+      // Next week has no order to keep, so a drop just moves the task to
+      // this date — no gap, no priorities; the column lights up instead.
+      onDragOver={(e) => {
+        if (!e.dataTransfer.types.includes("text/next-week-task")) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setDragOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+        setDragOver(false);
+      }}
+      onDrop={(e) => {
+        setDragOver(false);
+        const taskId = e.dataTransfer.getData("text/next-week-task");
+        const fromDate = e.dataTransfer.getData("text/next-week-date");
+        if (!taskId || fromDate === date) return;
+        e.preventDefault();
+        onDropTask(taskId);
+      }}
       className={cn(
         "flex h-full min-w-0 flex-col overflow-hidden bg-white transition-all duration-300 dark:bg-zinc-900",
         expanded ? "flex-[3] shadow-inner" : "flex-1 cursor-pointer hover:bg-blue-50/40 dark:hover:bg-zinc-800/60",
         index !== 7 && "border-l border-zinc-200 dark:border-zinc-800",
+        dragOver && "bg-blue-50 ring-2 ring-inset ring-blue-400 dark:bg-blue-950/30",
       )}
     >
       {/* Header — always toggles */}
@@ -271,12 +302,43 @@ function NextWeekDayCard({
               <li
                 key={item.id}
                 title={item.title}
-                className="flex items-center justify-between gap-2 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-sm text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300"
+                draggable
+                onDragStart={(e) => {
+                  e.stopPropagation();
+                  e.dataTransfer.setData("text/next-week-task", String(item.id));
+                  e.dataTransfer.setData("text/next-week-date", date);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                className="group flex cursor-grab items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:shadow-md active:cursor-grabbing dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300 dark:hover:border-zinc-600"
               >
                 <span className="min-w-0 flex-1 truncate">{item.title}</span>
                 {expanded && (
                   <span className="shrink-0 text-xs text-zinc-400">{item.durationInMinutes} د</span>
                 )}
+                <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+                  <button
+                    type="button"
+                    title="تعديل المهمة"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(item);
+                    }}
+                    className="flex size-6 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-blue-600 dark:hover:bg-zinc-700"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    title="حذف المهمة"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(item);
+                    }}
+                    className="flex size-6 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </span>
               </li>
             ))}
           </ul>
@@ -347,10 +409,14 @@ function NextWeekDayCard({
 // ---------------------------------------------------------------------------
 export default function NextWeekBoard() {
   const dates = currentWeekDates(1);
+  const queryClient = useQueryClient();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [editing, setEditing] = useState<StudyPlanItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<StudyPlanItem | null>(null);
 
+  const queryKey = ["study-plans", "week", 1, dates[0], dates[6]];
   const { data, isLoading } = useQuery({
-    queryKey: ["study-plans", "week", 1, dates[0], dates[6]],
+    queryKey,
     queryFn: () =>
       studyPlansService.filter({
         duration: StudyPlanDuration.NextWeek,
@@ -359,17 +425,55 @@ export default function NextWeekBoard() {
       }),
   });
 
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+
+  const deleteMutation = useMutation({
+    mutationFn: (item: StudyPlanItem) => studyPlansService.remove(item.id),
+    onSuccess: () => {
+      toast.success("تم حذف المهمة");
+      refresh();
+    },
+    onError: () => toast.error("تعذر حذف المهمة"),
+    onSettled: () => setPendingDelete(null),
+  });
+
+  // Dragging a task onto another day: PUT the new date, shown right away
+  // and confirmed (or reverted) by the refetch. Nothing else changes —
+  // next week's tasks have no priority order yet.
+  const moveTask = async (taskId: string, targetDate: string) => {
+    const moved = data?.items.find((item) => String(item.id) === taskId);
+    if (!moved || moved.date === targetDate) return;
+    queryClient.setQueryData<typeof data>(
+      queryKey,
+      (current) =>
+        current && {
+          ...current,
+          items: current.items.map((item) =>
+            item.id === moved.id ? { ...item, date: targetDate } : item,
+          ),
+        },
+    );
+    try {
+      await studyPlansService.update(moved.id, { date: targetDate });
+      toast.success(`تم نقل المهمة إلى ${formatPlannerDate(targetDate)}`);
+    } catch {
+      toast.error("تعذر نقل المهمة إلى هذا اليوم");
+    } finally {
+      refresh();
+    }
+  };
+
   return (
     <div dir="rtl" className="mt-6 space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
         <div className="flex items-center gap-2">
-          <CalendarDays className="text-blue-600 dark:text-blue-400" size={20} />
+          {/* <CalendarDays className="text-blue-600 dark:text-blue-400" size={20} />
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">الأسبوع القادم</h2>
           <span className="text-sm text-zinc-500 dark:text-zinc-400">
             {formatPlannerDate(dates[0])} - {formatPlannerDate(dates[6])}
-          </span>
+          </span> */}
         </div>
-        <p className="text-xs text-zinc-400">اضغط على أي يوم لإضافة مهام له</p>
+        <p className="text-xs text-zinc-400">اضغط على أي يوم لإضافة مهام له، واسحب المهمة لنقلها إلى يوم آخر</p>
       </div>
 
       <div className="flex h-[52vh] overflow-hidden rounded-xl border border-zinc-200 shadow-sm dark:border-zinc-800">
@@ -386,6 +490,9 @@ export default function NextWeekBoard() {
               onToggle={() =>
                 setExpandedIndex((prev) => (prev === day.index ? null : day.index))
               }
+              onEdit={setEditing}
+              onDelete={setPendingDelete}
+              onDropTask={(taskId) => void moveTask(taskId, date)}
             />
           );
         })}
@@ -393,6 +500,27 @@ export default function NextWeekBoard() {
 
       {isLoading && (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">جاري تحميل مهام الأسبوع القادم...</p>
+      )}
+
+      {/* Same dialog as the execution board, in edit mode; it saves and
+          refreshes the study plans itself. */}
+      {editing && (
+        <AddTaskDialog
+          date={editing.date}
+          task={studyPlanToExecutionTask(editing)}
+          onCreated={() => undefined}
+          onClose={() => setEditing(null)}
+        />
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="حذف المهمة"
+          description={`سيتم حذف «${pendingDelete.title}» من خطة الأسبوع القادم.`}
+          confirmLabel={deleteMutation.isPending ? "جاري الحذف..." : "حذف"}
+          onConfirm={() => deleteMutation.mutate(pendingDelete)}
+          onClose={() => setPendingDelete(null)}
+        />
       )}
     </div>
   );
