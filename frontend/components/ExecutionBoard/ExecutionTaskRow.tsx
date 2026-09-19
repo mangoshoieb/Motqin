@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, CheckSquare, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee } from "lucide-react";
 import { cn } from "@/app/lib/utils";
+import { formatMinutes } from "@/app/lib/duration";
 import { BreakTimer, ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 
 interface ExecutionTaskRowProps {
@@ -130,6 +131,18 @@ export const ExecutionTaskRow = ({
   const [noteEditing, setNoteEditing] = useState(false);
   const [noteDraft, setNoteDraft] = useState(task.notes ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
+  // The options menu folds away 1.5s after the cursor leaves it (coming
+  // back in time cancels that), and right after any of its actions.
+  const menuCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelMenuClose = () => {
+    if (menuCloseTimer.current) clearTimeout(menuCloseTimer.current);
+    menuCloseTimer.current = null;
+  };
+  const scheduleMenuClose = () => {
+    cancelMenuClose();
+    menuCloseTimer.current = setTimeout(() => setMenuOpen(false), 1500);
+  };
+  useEffect(() => cancelMenuClose, []);
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [titleDraft, setTitleDraft] = useState("");
   const [durationDraft, setDurationDraft] = useState("");
@@ -137,6 +150,13 @@ export const ExecutionTaskRow = ({
   // Backend priority 1/2/3 = focus slot; 1 is the most urgent and shows the
   // most stars. Anything else is an extra task with no stars.
   const stars = task.priority && task.priority >= 1 && task.priority <= 3 ? 4 - task.priority : 0;
+  // What the task will take: the sum of its sessions once it has any (they
+  // are what actually gets scheduled), otherwise the estimate it was
+  // created with.
+  const totalMinutes =
+    sessions.length > 0
+      ? sessions.reduce((sum, session) => sum + session.sessionDurationMinutes, 0)
+      : task.estimatedMinutes;
 
   // Opening a card seeds the drafts from whatever the session currently holds.
   const openSession = (session: ExecutionSession) => {
@@ -202,7 +222,7 @@ export const ExecutionTaskRow = ({
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
             {task.subjectName ? `${task.subjectName} · ` : ""}
-            {task.estimatedMinutes} دقيقة
+            {formatMinutes(totalMinutes)}
             {task.kind === "revision" && task.repetitionNumber != null
               ? ` · التكرار #${task.repetitionNumber}`
               : ""}
@@ -210,7 +230,7 @@ export const ExecutionTaskRow = ({
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <div className="relative">
+          <div className="relative" onMouseEnter={cancelMenuClose} onMouseLeave={() => menuOpen && scheduleMenuClose()}>
             <button type="button" title="خيارات المهمة" onClick={() => setMenuOpen((open) => !open)} className="flex size-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"><MoreVertical size={17} /></button>
             {menuOpen && (
               <div className="absolute left-0 top-9 z-20 min-w-36 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
@@ -235,12 +255,12 @@ export const ExecutionTaskRow = ({
 
       {task.kind === "daily" && (
         <div className="flex flex-col gap-2 pr-9">
-          {sessions.length > 0 && breakMinutes != null && breakMinutes > 0 && (
+          {/* {sessions.length > 0 && breakMinutes != null && breakMinutes > 0 && (
             <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
               <Coffee size={13} className="shrink-0 text-amber-500" />
               استراحة بين الجلسات: {breakMinutes} دقيقة
             </div>
-          )}
+          )} */}
           {sessions.map((session, index) => {
             const expanded = expandedSessionId === session.id;
             const elapsedSeconds = session.elapsedSeconds ?? session.actualMinutes * 60;
@@ -248,8 +268,15 @@ export const ExecutionTaskRow = ({
             return (
               <div key={session.id} className="flex flex-col gap-2">
               {/* Break marker between one session and the next, from
-                  pomodoroBreakMinutes in the user's preferences. */}
-              {index > 0 && breakMinutes != null && breakMinutes > 0 && (
+                  pomodoroBreakMinutes in the user's preferences. It only
+                  appears once the previous session's work is over (or its
+                  break is already running) — there's nothing to rest from
+                  before that. */}
+              {index > 0 &&
+                breakMinutes != null &&
+                breakMinutes > 0 &&
+                (sessions[index - 1].status === "completed" ||
+                  breakTimer?.afterSessionId === sessions[index - 1].id) && (
                 <div className="flex items-center gap-2 px-1 text-[11px] text-amber-700 dark:text-amber-300">
                   <span className="h-px flex-1 bg-amber-200 dark:bg-amber-900/60" />
                   <Coffee size={12} className="shrink-0" />

@@ -12,7 +12,6 @@ import {
   currentWeekDates,
   dateOnly,
   formatPlannerDate,
-  nextFreePriority,
   priorityForPosition,
   sortByPriority,
 } from "@/app/lib/study-plan";
@@ -20,6 +19,7 @@ import { cn } from "@/app/lib/utils";
 import { PlannerViewSwitch } from "@/components/Planner/PlannerViewSwitch";
 import AiPlanningSection from "@/components/Planner/AiPlanningSection";
 import NextWeekBoard from "@/components/Planner/NextWeekBoard";
+import { useWorkHourLimits } from "@/app/hooks/useUserPreferences";
 
 type PlanningTab = "ai" | "manual";
 
@@ -39,7 +39,11 @@ const Planner = () => {
   // The top board is always the current week; next week lives in the
   // manual-planning tab below.
   const dates = currentWeekDates(0);
+  const nextWeekDates = currentWeekDates(1);
   const todayDate = dateOnly(new Date());
+  // Daily min/max study hours from the planner preferences — colours the
+  // hours badge on each day card.
+  const { limits: hourLimits } = useWorkHourLimits();
   const weekQueryKey = ["study-plans", "week", 0, dates[0], dates[6]];
   const { data: studyPlans, isLoading } = useQuery({
     queryKey: weekQueryKey,
@@ -61,13 +65,11 @@ const Planner = () => {
     };
   });
 
-  // Drag a task onto a day column, or onto one of its task rows. Priority
-  // follows the same rules as the execution board:
-  //  - dropped on a row: the task takes that row's place and the day is
-  //    renumbered by position (first three rows are ★★★ / ★★ / ★, the rest
-  //    lose their stars) — same as reordering there;
-  //  - dropped on the column: the task takes the day's first free slot —
-  //    same as adding a task there.
+  // Drag a task into a day (the same one or another). While dragging, the
+  // card shows a gap where the task will land; on drop it is inserted right
+  // there — before `beforeTaskId`, or last when that's undefined — and the
+  // day is renumbered by position exactly like reordering on the execution
+  // board: the first three rows are ★★★ / ★★ / ★, the rest lose their stars.
   // Everything goes through PUT /study-plan/{id} with { date, priority }.
   // The backend refuses past dates, and DayCard already blocks dropping there.
   const moveTask = async (taskId: string, targetDate: string, beforeTaskId?: string) => {
@@ -75,29 +77,19 @@ const Planner = () => {
     const moved = items.find((item) => String(item.id) === taskId);
     if (!moved) return;
 
-    const dayItems = sortByPriority(
-      items.filter((item) => item.date === targetDate),
+    // The day's order without the moved task, then the task slotted in.
+    const ordered = sortByPriority(
+      items.filter((item) => item.date === targetDate && item.id !== moved.id),
       (item) => item.priority,
     );
-    const priorities = new Map<number, number>();
+    const to = beforeTaskId ? ordered.findIndex((item) => String(item.id) === beforeTaskId) : -1;
+    ordered.splice(to < 0 ? ordered.length : to, 0, moved);
 
-    if (beforeTaskId) {
-      const from = dayItems.findIndex((item) => item.id === moved.id);
-      const to = dayItems.findIndex((item) => String(item.id) === beforeTaskId);
-      if (to < 0) return;
-      const ordered = [...dayItems];
-      if (from >= 0) ordered.splice(from, 1);
-      ordered.splice(to, 0, moved);
-      ordered.forEach((item, index) => {
-        const priority = priorityForPosition(index);
-        if (priority !== item.priority) priorities.set(item.id, priority);
-      });
-    } else {
-      const priority = nextFreePriority(
-        dayItems.filter((item) => item.id !== moved.id).map((item) => item.priority),
-      );
-      if (priority !== moved.priority) priorities.set(moved.id, priority);
-    }
+    const priorities = new Map<number, number>();
+    ordered.forEach((item, index) => {
+      const priority = priorityForPosition(index);
+      if (priority !== item.priority) priorities.set(item.id, priority);
+    });
 
     const dateChanged = moved.date !== targetDate;
     if (!dateChanged && priorities.size === 0) return;
@@ -170,6 +162,7 @@ const Planner = () => {
               <DayCard
                 {...day}
                 onClick={() => router.push(`/planner/execution/${day.index}?week=0`)}
+                hourLimits={hourLimits}
                 onTaskComplete={updateTaskCompletion}
                 onTaskDrop={(taskId, beforeTaskId) => void moveTask(taskId, dates[day.index - 1], beforeTaskId)}
                 // Adding happens on the day's execution board: land there
@@ -191,6 +184,15 @@ const Planner = () => {
 
         {/* Planning next week: AI-generated from goals, or built by hand day by day. */}
         <section className="mt-10">
+          <div className="mb-4 flex items-baseline gap-4">
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              التخطيط للأسبوع المقبل
+            </h2>
+            <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              {formatPlannerDate(nextWeekDates[0])} - {formatPlannerDate(nextWeekDates[6])}
+            </span>
+          </div>
+
           <div className="inline-flex items-center gap-1.5 rounded-2xl bg-zinc-200/70 p-1.5 dark:bg-zinc-900">
             {planningTabs.map(({ value, label, icon: Icon }) => (
               <button

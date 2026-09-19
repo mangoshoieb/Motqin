@@ -21,8 +21,9 @@ interface AiPlanningSectionProps {
 export default function AiPlanningSection({ onPlanned }: AiPlanningSectionProps) {
   const router = useRouter();
   const { hasPreferences, isLoading } = usePlannerPreferences();
-  // Asked on every visit (optional, one click to skip) — it's the reminder
-  // to tell the planner about next week before listing goals.
+  // Asked on every visit (optional — adding nothing and continuing is fine)
+  // — it's the reminder to tell the planner about next week before listing
+  // goals.
   const [busyStepDone, setBusyStepDone] = useState(false);
 
   if (isLoading) {
@@ -73,8 +74,7 @@ export default function AiPlanningSection({ onPlanned }: AiPlanningSectionProps)
   }
 
   if (!busyStepDone) {
-    const finish = () => setBusyStepDone(true);
-    return <NextWeekBusyTimesStep onContinue={finish} onSkip={finish} />;
+    return <NextWeekBusyTimesStep onContinue={() => setBusyStepDone(true)} />;
   }
 
   return <GoalsSection onPlanned={onPlanned} />;

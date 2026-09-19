@@ -135,6 +135,35 @@ export const formatPlannerDate = (date: string) => {
   return `${String(value.getDate()).padStart(2, "0")}/${String(value.getMonth() + 1).padStart(2, "0")}`;
 };
 
+export const completedSessionHours = (items: StudyPlanItem[]) => {
+  const minutes = items.reduce(
+    (sum, item) =>
+      sum +
+      item.studySessions
+        .filter((session) => session.status === StudySessionStatus.Completed)
+        .reduce((total, session) => total + session.durationInMinutes, 0),
+    0,
+  );
+  return Math.round(minutes / 6) / 10;
+};
+
+// How a day's studied hours compare with the user's daily limits (planner
+// preferences). `future` for days that haven't come yet; `unknown` when
+// the limits aren't available.
+export type HoursStatus = "future" | "below" | "within" | "above" | "unknown";
+
+export const hoursStatusFor = (
+  hours: number,
+  limits: { min: number; max: number } | null | undefined,
+  isFuture: boolean,
+): HoursStatus => {
+  if (isFuture) return "future";
+  if (!limits || limits.max <= 0) return "unknown";
+  if (hours < limits.min) return "below";
+  if (hours > limits.max) return "above";
+  return "within";
+};
+
 export const applyStudyPlansToDay = (day: PlannerDay, items: StudyPlanItem[]): PlannerDay => {
   const tasks = sortByPriority(items.map(studyPlanToPlannerTask), (task) => task.priorityValue);
   return {
@@ -143,7 +172,9 @@ export const applyStudyPlansToDay = (day: PlannerDay, items: StudyPlanItem[]): P
     tasks,
     completedTasks: tasks.filter((task) => task.completed).length,
     totalTasks: tasks.length,
-    workingHours: Math.round(tasks.reduce((sum, task) => sum + task.estimatedTimeMinutes, 0) / 60),
+    // Hours actually studied: the day's completed focus sessions, to one
+    // decimal — not the tasks' planned estimates.
+    workingHours: completedSessionHours(items),
     focusSessions: items.reduce((sum, item) => sum + item.studySessions.length, 0),
   };
 };

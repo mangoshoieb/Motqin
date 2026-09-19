@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, CalendarClock, Clock, Plus, SkipForward, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarClock, Clock, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { weekData } from "@/app/data/days";
@@ -33,18 +33,17 @@ const emptyDraft: Draft = {
 
 interface NextWeekBusyTimesStepProps {
   onContinue: () => void;
-  onSkip: () => void;
 }
 
 /**
  * One-off busy times for next week only (a doctor's appointment, a trip…) —
  * distinct from the repeating ones in the planner preferences. Optional:
- * the user can skip straight to the goals.
+ * adding nothing and continuing is fine.
  *
  * There's no endpoint to list non-repeating busy times, so what was added
  * in this session is kept locally for display and removal.
  */
-export default function NextWeekBusyTimesStep({ onContinue, onSkip }: NextWeekBusyTimesStepProps) {
+export default function NextWeekBusyTimesStep({ onContinue }: NextWeekBusyTimesStepProps) {
   const dates = currentWeekDates(1);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [added, setAdded] = useState<(BusyTime & { dayIndex: number })[]>([]);
@@ -144,7 +143,29 @@ export default function NextWeekBusyTimesStep({ onContinue, onSkip }: NextWeekBu
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto_auto_auto] lg:items-end">
+      {/* How the time is given — sits above the fields it switches. */}
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">طريقة تحديد الوقت</span>
+        <div className="flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 text-xs dark:border-zinc-700 dark:bg-zinc-800">
+          {(["range", "duration"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setDraft({ ...draft, mode })}
+              className={cn(
+                "rounded-md px-3 py-1.5 font-semibold transition",
+                draft.mode === mode
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200",
+              )}
+            >
+              {mode === "range" ? "من – إلى" : "مدة فقط"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-end">
         <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">
           العنوان
           <input
@@ -154,26 +175,6 @@ export default function NextWeekBusyTimesStep({ onContinue, onSkip }: NextWeekBu
             className={inputClass}
           />
         </label>
-
-        <div className="flex items-end">
-          <div className="flex rounded-lg border border-zinc-200 p-0.5 text-xs dark:border-zinc-700">
-            {(["range", "duration"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setDraft({ ...draft, mode })}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 font-semibold transition",
-                  draft.mode === mode
-                    ? "bg-blue-600 text-white"
-                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200",
-                )}
-              >
-                {mode === "range" ? "من – إلى" : "مدة فقط"}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {draft.mode === "range" ? (
           <>
@@ -251,14 +252,6 @@ export default function NextWeekBusyTimesStep({ onContinue, onSkip }: NextWeekBu
       )}
 
       <div className="mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100 pt-5 dark:border-zinc-800">
-        <button
-          type="button"
-          onClick={onSkip}
-          className="flex items-center gap-1.5 rounded-xl border border-zinc-200 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          <SkipForward size={15} />
-          تخطي
-        </button>
         <button
           type="button"
           onClick={onContinue}
