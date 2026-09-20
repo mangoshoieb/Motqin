@@ -42,6 +42,9 @@ export interface ExecutionSession {
   // day totals are summed from; this is what the running timer ticks.
   elapsedSeconds?: number;
   notes?: string; // free-form note for this session, stored as StudySession.notes
+  // Position within the task (StudySession.orderInPlan); sessions are
+  // listed in this order. Missing on a session the backend didn't number.
+  orderInPlan?: number;
   status: "idle" | "active" | "paused" | "completed";
   // Set when the timer ran out but the user kept going: seconds worked past
   // the planned duration, ticking until they save (PUT /add-time) or dismiss.

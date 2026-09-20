@@ -83,6 +83,9 @@ export interface StudySessionDto {
   startTime: string;
   endTime: string;
   status: number;
+  // 1-based position of the session within its study plan — the order
+  // the execution board lists a task's sessions in.
+  orderInPlan?: number;
   notes: string[];
 }
 

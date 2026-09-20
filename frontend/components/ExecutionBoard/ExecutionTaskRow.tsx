@@ -170,6 +170,14 @@ export const ExecutionTaskRow = ({
     else openSession(session);
   };
 
+  // The break is offered once, after the most recently completed session
+  // (the one the student just finished) — not after every finished one.
+  const lastCompletedId = [...sessions].reverse().find((s) => s.status === "completed")?.id;
+  const offersBreak = (session: ExecutionSession) =>
+    breakMinutes != null &&
+    breakMinutes > 0 &&
+    (session.id === lastCompletedId || breakTimer?.afterSessionId === session.id);
+
   return (
     <div
       draggable
@@ -267,15 +275,10 @@ export const ExecutionTaskRow = ({
             return (
               <div key={session.id} className="flex flex-col gap-2">
               {/* Break marker between one session and the next, from
-                  pomodoroBreakMinutes in the user's preferences. It only
-                  appears once the previous session's work is over (or its
-                  break is already running) — there's nothing to rest from
-                  before that. */}
-              {index > 0 &&
-                breakMinutes != null &&
-                breakMinutes > 0 &&
-                (sessions[index - 1].status === "completed" ||
-                  breakTimer?.afterSessionId === sessions[index - 1].id) && (
+                  pomodoroBreakMinutes in the user's preferences. Only after
+                  the last completed session (or one whose break is already
+                  running) — there's nothing to rest from before that. */}
+              {index > 0 && offersBreak(sessions[index - 1]) && (
                 <div className="flex items-center gap-2 px-1 text-[11px] text-amber-700 dark:text-amber-300">
                   <span className="h-px flex-1 bg-amber-200 dark:bg-amber-900/60" />
                   <Coffee size={12} className="shrink-0" />
@@ -314,7 +317,7 @@ export const ExecutionTaskRow = ({
                       <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">مكتمل</span>
                       {/* Manual break after this session (covers the last one,
                           which has no divider below it). */}
-                      {breakMinutes != null && breakMinutes > 0 && !session.overtimeRunning &&
+                      {offersBreak(session) && !session.overtimeRunning &&
                         breakTimer?.afterSessionId !== session.id && (
                           <button
                             type="button"

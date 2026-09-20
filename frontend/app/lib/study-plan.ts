@@ -102,9 +102,19 @@ export const studySessionToExecutionSession = (
     actualMinutes: Math.floor(elapsedSeconds / 60),
     elapsedSeconds,
     notes: session.notes?.join("\n") ?? "",
+    orderInPlan: session.orderInPlan ?? undefined,
     status,
   };
 };
+
+// A task's sessions in display order: by orderInPlan, with any unnumbered
+// ones after the numbered ones, and the id as a stable tie-break.
+export const sortSessionsByOrder = (sessions: ExecutionSession[]): ExecutionSession[] =>
+  [...sessions].sort((a, b) => {
+    const orderA = a.orderInPlan ?? Number.MAX_SAFE_INTEGER;
+    const orderB = b.orderInPlan ?? Number.MAX_SAFE_INTEGER;
+    return orderA !== orderB ? orderA - orderB : Number(a.id) - Number(b.id);
+  });
 
 export const studyPlanSessions = (items: StudyPlanItem[]): ExecutionSession[] =>
   items.flatMap((item) =>

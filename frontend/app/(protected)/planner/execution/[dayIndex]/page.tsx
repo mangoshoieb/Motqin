@@ -20,6 +20,7 @@ import {
   nextFreePriority as nextFreePrioritySlot,
   priorityForPosition,
   sortByPriority as sortTasksByPriority,
+  sortSessionsByOrder,
   studySessionToExecutionSession,
 } from "@/app/lib/study-plan";
 import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
@@ -32,7 +33,9 @@ const ExecutionBoardPage = () => {
   const queryClient = useQueryClient();
   const dayIndex = Number(params.dayIndex);
   const parsedWeek = Number(searchParams.get("week") ?? "0");
-  const weekOffset = Number.isFinite(parsedWeek) ? Math.max(0, Math.min(1, parsedWeek)) : 0;
+  // Any earlier week (the planner board pages back through them), this
+  // week, or next week — never further ahead than that.
+  const weekOffset = Number.isFinite(parsedWeek) ? Math.min(1, Math.trunc(parsedWeek)) : 0;
 
   const { data, isLoading } = useExecutionBoard(dayIndex, weekOffset);
   // Session and break lengths, from the user's saved planner preferences.
@@ -70,8 +73,42 @@ const ExecutionBoardPage = () => {
   if (data && data !== initializedFor) {
     setInitializedFor(data);
     setTasks(sortByPriority([...data.detail.dailyTasks, ...data.detail.revisionTasks]));
-    setSessions(data.detail.sessions);
+    // A refetch (e.g. after a pause) replaces the list, but the overtime
+    // counter is local-only — carry it over for sessions that are still there.
+    setSessions((previous) =>
+      data.detail.sessions.map((session) => {
+        const local = previous.find((s) => s.id === session.id);
+        return local?.overtimeRunning
+          ? { ...session, overtimeRunning: true, overtimeSeconds: local.overtimeSeconds }
+          : session;
+      }),
+    );
   }
+
+  // Pulls the day's tasks and sessions back from the server (the pause
+  // endpoint splits a session in two, so the list changes underneath us),
+  // then marks the task complete once every one of its sessions is — unless
+  // the server already did.
+  const refetchBoard = async (taskId?: string) => {
+    const boardKey = ["execution-board", dayIndex, weekOffset];
+    await queryClient.refetchQueries({ queryKey: boardKey });
+    const fresh = queryClient.getQueryData<ExecutionBoardData | null>(boardKey);
+    if (!fresh || !taskId) return;
+
+    const task = fresh.detail.dailyTasks.find((t) => t.id === taskId);
+    const taskSessions = fresh.detail.sessions.filter((s) => s.taskId === taskId);
+    const allDone = taskSessions.length > 0 && taskSessions.every((s) => s.status === "completed");
+    if (!task || task.completed || !allDone) return;
+
+    try {
+      await studyPlansService.toggleStatus(Number(taskId));
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t)));
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      toast.success("اكتملت المهمة");
+    } catch {
+      toast.error("تعذر حفظ حالة المهمة");
+    }
+  };
 
   // The ticker below runs off an interval that is set up once, so it reads
   // the sessions through a ref instead of a stale closure.
@@ -182,6 +219,7 @@ const ExecutionBoardPage = () => {
     return () => clearInterval(interval);
   }, [finishSession]);
 
+  // Each task's sessions, in orderInPlan order (see sortSessionsByOrder).
   const sessionsByTaskId = useMemo(() => {
     const map = new Map<string, ExecutionSession[]>();
     for (const s of sessions) {
@@ -189,6 +227,7 @@ const ExecutionBoardPage = () => {
       list.push(s);
       map.set(s.taskId, list);
     }
+    for (const [taskId, list] of map) map.set(taskId, sortSessionsByOrder(list));
     return map;
   }, [sessions]);
 
@@ -246,6 +285,10 @@ const ExecutionBoardPage = () => {
         });
         const paused = await studySessionsService.pause(Number(running.id));
         console.log("[SESSION PAUSE] (auto, before start) response ←", paused);
+        await refetchBoard(running.taskId);
+        // The refetch re-seeded the list; put the one we're starting back to
+        // active so the ticker picks it up.
+        setSessionStatus(sessionId, "active");
       }
       console.log("[SESSION START] request →", {
         method: "PUT",
@@ -277,6 +320,9 @@ const ExecutionBoardPage = () => {
       const paused = await studySessionsService.pause(Number(sessionId));
       console.log("[SESSION PAUSE] response ←", paused);
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      // The server closed the worked part and opened a new session for the
+      // remaining time — show that, and complete the task if nothing is left.
+      await refetchBoard(pausing?.taskId);
     } catch {
       setSessionStatus(sessionId, "active");
       toast.error("تعذر إيقاف الجلسة مؤقتًا");
@@ -304,6 +350,10 @@ const ExecutionBoardPage = () => {
         ...prev,
         {
           ...session,
+          // The backend numbers it; if the response didn't say, it goes last.
+          orderInPlan:
+            session.orderInPlan ??
+            Math.max(0, ...prev.filter((s) => s.taskId === task.id).map((s) => s.orderInPlan ?? 0)) + 1,
           sessionDurationMinutes: session.sessionDurationMinutes || sessionMinutes,
           actualMinutes: 0,
           elapsedSeconds: 0,
