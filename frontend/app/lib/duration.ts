@@ -1,5 +1,5 @@
-// Arabic duration label from minutes: "45 دقيقة", "ساعة", "ساعتان و30 دقيقة",
-// "3 ساعات و5 دقائق" — with the dual/plural forms the numbers call for.
+// Arabic duration label from minutes: "45 دقيقة", "ساعة", "ساعتان و 30 دقيقة",
+// "3 ساعات و 5 دقائق" — with the dual/plural forms the numbers call for.
 const hoursLabel = (hours: number) => {
   if (hours === 1) return "ساعة";
   if (hours === 2) return "ساعتان";
@@ -20,5 +20,5 @@ export const formatMinutes = (totalMinutes: number) => {
   const rest = minutes % 60;
   if (hours === 0) return rest === 0 ? "0 دقيقة" : minutesLabel(rest);
   if (rest === 0) return hoursLabel(hours);
-  return `${hoursLabel(hours)} و${minutesLabel(rest)}`;
+  return `${hoursLabel(hours)} و ${minutesLabel(rest)}`;
 };

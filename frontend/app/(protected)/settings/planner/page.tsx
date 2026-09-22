@@ -41,7 +41,7 @@ const TOUR_STEPS: TourStep[] = [
     target: "lessons",
     title: "ثالثًا: جدول دروسك",
     description:
-      "أضف محاضراتك تحت كل يوم حتى لا تتعارض مع مهامك. تُحفظ كل محاضرة فور إضافتها، ولا تنسَ حفظ التفضيلات بالأعلى بعد الانتهاء.",
+      "أضف دروسك تحت كل يوم حتى لا تتعارض مع مهامك. تُحفظ كل درس فور إضافتها، ولا تنسَ حفظ التفضيلات بالأعلى بعد الانتهاء.",
   },
 ];
 
@@ -79,7 +79,7 @@ const BUSY_TABS: { value: BusyTab; label: string; description: string; icon: typ
   {
     value: "courses",
     label: "جدول الدروس",
-    description: "أضف محاضراتك تحت كل يوم من أيام الأسبوع.",
+    description: "أضف دروسك تحت كل يوم من أيام الأسبوع.",
     icon: GraduationCap,
   },
   {
@@ -243,7 +243,9 @@ const PlannerSettingsPage = () => {
       <button
         type="button"
         onClick={saveAndReturn}
-        disabled={isSaving}
+        // Nothing to save until a field differs from what's stored.
+        disabled={isSaving || !isDirty}
+        title={isDirty ? undefined : "لا توجد تغييرات لحفظها"}
         className="self-start  rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSaving ? "جاري الحفظ..." : "حفظ التفضيلات"}

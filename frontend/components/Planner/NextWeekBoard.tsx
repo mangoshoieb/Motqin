@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Clock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -9,7 +9,10 @@ import { weekData } from "@/app/data/days";
 import { useGetLessons } from "@/app/hooks/useGetLessons";
 import { useGetSubjects } from "@/app/hooks/useGetSubjects";
 import { cn } from "@/app/lib/utils";
-import { currentWeekDates, formatPlannerDate, studyPlanToExecutionTask } from "@/app/lib/study-plan";
+import {
+  currentWeekDates,
+  formatPlannerDate,
+} from "@/app/lib/study-plan";
 import {
   CreateStudyPlanPayload,
   StudyPlanDuration,
@@ -17,36 +20,61 @@ import {
   studyPlansService,
 } from "@/app/services/motqin";
 import { GoalPicker } from "@/components/Planner/GoalPicker";
-import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
+import { DurationFields } from "@/components/ui/DurationFields";
+import { useBoardDrag } from "@/app/hooks/useBoardDrag";
+import { BoardDragGhost } from "@/components/Planner/BoardDragGhost";
+import type { BoardDrag, DropResolution } from "@/components/DayCard";
 import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
 
 const inputClass =
   "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
 
 // ---------------------------------------------------------------------------
-// Add-task form shown inside an expanded day card. Same fields as the
-// execution board's AddTaskDialog, but the date is fixed to the card's day.
+// Task form shown inside an expanded day card: adds a task for the card's
+// day, or — given `item` — edits that task in place (title, goal, duration;
+// the lesson link can't change, same as the execution board's dialog).
 // ---------------------------------------------------------------------------
-// hi there 
-function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }) {
+function NextWeekTaskForm({
+  date,
+  item,
+  onDone,
+}: {
+  date: string;
+  item?: StudyPlanItem;
+  onDone: () => void;
+}) {
   const queryClient = useQueryClient();
+  const isEditing = Boolean(item);
   const [source, setSource] = useState<"systematic" | "regular">("regular");
   const [subjectId, setSubjectId] = useState("");
   const [lessonId, setLessonId] = useState("");
-  const [title, setTitle] = useState("");
-  const [goalCategoryId, setGoalCategoryId] = useState<number | null>(null);
-  const [duration, setDuration] = useState("60");
+  const [title, setTitle] = useState(item?.title ?? "");
+  const [goalCategoryId, setGoalCategoryId] = useState<number | null>(item?.goalCategoryId ?? null);
+  const [duration, setDuration] = useState(String(item?.durationInMinutes ?? 60));
 
   const { data: subjects } = useGetSubjects();
-  const { data: lessonsData, isFetching: lessonsLoading } = useGetLessons(subjectId);
-  const selectedLesson = lessonsData?.lessons?.find((lesson) => String(lesson.lessonId) === lessonId);
-  const resolvedTitle = source === "systematic" ? selectedLesson?.title ?? "" : title.trim();
+  const { data: lessonsData, isFetching: lessonsLoading } =
+    useGetLessons(subjectId);
+  const selectedLesson = lessonsData?.lessons?.find(
+    (lesson) => String(lesson.lessonId) === lessonId,
+  );
+  const resolvedTitle =
+    source === "systematic" && !isEditing ? (selectedLesson?.title ?? "") : title.trim();
 
   const mutation = useMutation({
     mutationFn: async () => {
       if (!resolvedTitle) throw new Error("title-required");
-      if (source === "systematic" && (!subjectId || !lessonId)) throw new Error("lesson-required");
-      if (!duration || Number(duration) <= 0) throw new Error("duration-required");
+      if (!duration || Number(duration) <= 0)
+        throw new Error("duration-required");
+      if (item) {
+        return studyPlansService.update(item.id, {
+          title: resolvedTitle,
+          goalCategoryId,
+          durationInMinutes: Number(duration),
+        });
+      }
+      if (source === "systematic" && (!subjectId || !lessonId))
+        throw new Error("lesson-required");
 
       const payload: CreateStudyPlanPayload = {
         date,
@@ -62,7 +90,7 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
-      toast.success("تمت إضافة المهمة");
+      toast.success(isEditing ? "تم تحديث المهمة" : "تمت إضافة المهمة");
       onDone();
     },
     onError: (error) =>
@@ -79,7 +107,7 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
 
   return (
     <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
-      <div className="flex gap-1.5 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
+      {!isEditing && <div className="flex gap-1.5 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
         {(["systematic", "regular"] as const).map((value) => (
           <button
             key={value}
@@ -95,9 +123,9 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
             {value === "systematic" ? "مهمة مرتبطة بمواد الدراسة" : "مهمة أخرى"}
           </button>
         ))}
-      </div>
+      </div>}
 
-      {source === "systematic" ? (
+      {source === "systematic" && !isEditing ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
             المادة
@@ -125,7 +153,9 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
               disabled={!subjectId || lessonsLoading}
               className={cn(inputClass, "mt-1")}
             >
-              <option value="">{lessonsLoading ? "جاري التحميل..." : "اختر الدرس"}</option>
+              <option value="">
+                {lessonsLoading ? "جاري التحميل..." : "اختر الدرس"}
+              </option>
               {lessonsData?.lessons?.map((lesson) => (
                 <option key={lesson.lessonId} value={lesson.lessonId}>
                   {lesson.title}
@@ -147,8 +177,9 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-          فئة الهدف <span className="font-normal text-zinc-400">(اختياري)</span>
+        <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 ">
+          فئة الهدف
+          <span className="font-normal text-zinc-400 ">(اختياري)</span>
           <div className="mt-1">
             <GoalPicker
               value={goalCategoryId}
@@ -157,16 +188,13 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
             />
           </div>
         </div>
-        <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-          المدة بالدقائق
-          <input
-            type="number"
-            min={1}
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            className={cn(inputClass, "mt-1")}
-          />
-        </label>
+        <DurationFields
+          minutes={Number(duration)}
+          onChange={(total) => setDuration(String(total))}
+          label="المدة"
+          labelClassName="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex gap-2 items-center"
+          inputClassName={inputClass}
+        />
       </div>
 
       <div className="flex justify-end gap-2">
@@ -183,7 +211,7 @@ function NextWeekTaskForm({ date, onDone }: { date: string; onDone: () => void }
           disabled={mutation.isPending}
           className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
-          {mutation.isPending ? "جاري الحفظ..." : "إضافة المهمة"}
+          {mutation.isPending ? "جاري الحفظ..." : isEditing ? "حفظ التعديل" : "إضافة المهمة"}
         </button>
       </div>
     </div>
@@ -203,7 +231,11 @@ function NextWeekDayCard({
   onToggle,
   onEdit,
   onDelete,
-  onDropTask,
+  editing,
+  onEditDone,
+  boardDrag,
+  onTaskPointerDown,
+  registerDropResolver,
 }: {
   index: number;
   dayName: string;
@@ -213,17 +245,36 @@ function NextWeekDayCard({
   onToggle: () => void;
   onEdit: (item: StudyPlanItem) => void;
   onDelete: (item: StudyPlanItem) => void;
-  // A task dragged from another day was dropped here.
-  onDropTask: (taskId: string) => void;
+  // The task of this day being edited in the expanded form, if any.
+  editing: StudyPlanItem | null;
+  onEditDone: () => void;
+  // Drag and drop runs on pointer events owned by the board (useBoardDrag)
+  // — the card reports presses on its rows, tells the board it accepts
+  // drops, and lights up while it's the target.
+  boardDrag: BoardDrag | null;
+  onTaskPointerDown: (taskId: string, event: React.PointerEvent) => void;
+  registerDropResolver: (dayIndex: number, resolve: ((clientY: number) => DropResolution) | null) => void;
 }) {
   const [showForm, setShowForm] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const totalMinutes = items.reduce((sum, item) => sum + item.durationInMinutes, 0);
+  // Next week keeps no order, so any height in the column is the same
+  // drop: registering a resolver is what marks the day as a target.
+  useEffect(() => {
+    registerDropResolver(index, () => ({ index: 0 }));
+    return () => registerDropResolver(index, null);
+  }, [registerDropResolver, index]);
+  const dragOver = Boolean(boardDrag?.active) && boardDrag?.targetDayIndex === index;
+  const liftedId = boardDrag?.active ? boardDrag.taskId : null;
+  const totalMinutes = items.reduce(
+    (sum, item) => sum + item.durationInMinutes,
+    0,
+  );
 
   const collapse = () => {
     setShowForm(false);
+    onEditDone();
     onToggle();
   };
+  const formOpen = showForm || editing !== null;
 
   // From the collapsed card: expand straight into the add-task form.
   const openForm = () => {
@@ -234,32 +285,16 @@ function NextWeekDayCard({
   return (
     <div
       dir="rtl"
+      data-day-index={index}
       onClick={expanded ? undefined : onToggle}
-      // Next week has no order to keep, so a drop just moves the task to
-      // this date — no gap, no priorities; the column lights up instead.
-      onDragOver={(e) => {
-        if (!e.dataTransfer.types.includes("text/next-week-task")) return;
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        setDragOver(true);
-      }}
-      onDragLeave={(e) => {
-        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-        setDragOver(false);
-      }}
-      onDrop={(e) => {
-        setDragOver(false);
-        const taskId = e.dataTransfer.getData("text/next-week-task");
-        const fromDate = e.dataTransfer.getData("text/next-week-date");
-        if (!taskId || fromDate === date) return;
-        e.preventDefault();
-        onDropTask(taskId);
-      }}
       className={cn(
         "flex h-full min-w-0 flex-col overflow-hidden bg-white transition-all duration-300 dark:bg-zinc-900",
-        expanded ? "flex-[3] shadow-inner" : "flex-1 cursor-pointer hover:bg-blue-50/40 dark:hover:bg-zinc-800/60",
+        expanded
+          ? "flex-[3] shadow-inner"
+          : "flex-1 cursor-pointer hover:bg-blue-50/40 dark:hover:bg-zinc-800/60",
         index !== 7 && "border-l border-zinc-200 dark:border-zinc-800",
-        dragOver && "bg-blue-50 ring-2 ring-inset ring-blue-400 dark:bg-blue-950/30",
+        dragOver &&
+          "bg-blue-50 ring-2 ring-inset ring-blue-400 dark:bg-blue-950/30",
       )}
     >
       {/* Header — always toggles */}
@@ -276,7 +311,9 @@ function NextWeekDayCard({
         )}
       >
         <div>
-          <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">{dayName}</h3>
+          <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+            {dayName}
+          </h3>
           <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
             {formatPlannerDate(date)}
           </span>
@@ -295,27 +332,30 @@ function NextWeekDayCard({
       {/* Body */}
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
         {items.length === 0 ? (
-          <p className="py-3 text-center text-xs text-zinc-400">لا توجد مهام بعد</p>
+          <p className="py-3 text-center text-xs text-zinc-400">
+            لا توجد مهام بعد
+          </p>
         ) : (
           <ul className="space-y-1.5">
             {items.map((item) => (
               <li
                 key={item.id}
                 title={item.title}
-                draggable
-                onDragStart={(e) => {
-                  e.stopPropagation();
-                  e.dataTransfer.setData("text/next-week-task", String(item.id));
-                  e.dataTransfer.setData("text/next-week-date", date);
-                  e.dataTransfer.effectAllowed = "move";
-                }}
-                className="group flex cursor-grab items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:shadow-md active:cursor-grabbing dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300 dark:hover:border-zinc-600"
+                onPointerDown={(e) => onTaskPointerDown(String(item.id), e)}
+                style={{ touchAction: "none" }}
+                className={cn(
+                  "flex cursor-grab select-none items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:shadow-md active:cursor-grabbing dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300 dark:hover:border-zinc-600",
+                  liftedId === String(item.id) && "opacity-40",
+                  editing?.id === item.id && "border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-950/30",
+                )}
               >
                 <span className="min-w-0 flex-1 truncate">{item.title}</span>
                 {expanded && (
-                  <span className="shrink-0 text-xs text-zinc-400">{item.durationInMinutes} د</span>
+                  <span className="shrink-0 text-xs text-zinc-400">
+                    {item.durationInMinutes} د
+                  </span>
                 )}
-                <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+                <span className="flex shrink-0 items-center gap-0.5">
                   <button
                     type="button"
                     title="تعديل المهمة"
@@ -361,18 +401,23 @@ function NextWeekDayCard({
 
         {expanded && (
           <div className="mt-auto border-t border-zinc-100 pt-3 dark:border-zinc-800">
-            {showForm ? (
+            {formOpen ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-sm font-bold text-zinc-800 dark:text-zinc-100">
-                    <BookOpen size={16} className="text-blue-600" />
-                    إضافة مهمة
+                    {editing ? (
+                      <Pencil size={16} className="text-blue-600" />
+                    ) : (
+                      <BookOpen size={16} className="text-blue-600" />
+                    )}
+                    {editing ? `تعديل: ${editing.title}` : "إضافة مهمة"}
                   </span>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowForm(false);
+                      onEditDone();
                     }}
                     title="إغلاق"
                     className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
@@ -380,7 +425,16 @@ function NextWeekDayCard({
                     <X size={16} />
                   </button>
                 </div>
-                <NextWeekTaskForm date={date} onDone={() => setShowForm(false)} />
+                {/* Keyed so switching between tasks (or to "add") resets the fields. */}
+                <NextWeekTaskForm
+                  key={editing ? `edit-${editing.id}` : "add"}
+                  date={date}
+                  item={editing ?? undefined}
+                  onDone={() => {
+                    setShowForm(false);
+                    onEditDone();
+                  }}
+                />
               </div>
             ) : (
               <button
@@ -412,7 +466,9 @@ export default function NextWeekBoard() {
   const queryClient = useQueryClient();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [editing, setEditing] = useState<StudyPlanItem | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<StudyPlanItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<StudyPlanItem | null>(
+    null,
+  );
 
   const queryKey = ["study-plans", "week", 1, dates[0], dates[6]];
   const { data, isLoading } = useQuery({
@@ -425,7 +481,8 @@ export default function NextWeekBoard() {
       }),
   });
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: ["study-plans"] });
 
   const deleteMutation = useMutation({
     mutationFn: (item: StudyPlanItem) => studyPlansService.remove(item.id),
@@ -435,6 +492,18 @@ export default function NextWeekBoard() {
     },
     onError: () => toast.error("تعذر حذف المهمة"),
     onSettled: () => setPendingDelete(null),
+  });
+
+  // Pointer-based drag between days (the same hook as the week board);
+  // a drop hands the target day's date to moveTask.
+  const {
+    drag: boardDrag,
+    onTaskPointerDown,
+    registerDropResolver,
+    shouldSuppressClick,
+  } = useBoardDrag({
+    tasks: (data?.items ?? []).map((item) => ({ id: String(item.id), title: item.title })),
+    onDrop: (taskId, dayIndex) => void moveTask(taskId, dates[dayIndex - 1]),
   });
 
   // Dragging a task onto another day: PUT the new date, shown right away
@@ -473,7 +542,9 @@ export default function NextWeekBoard() {
             {formatPlannerDate(dates[0])} - {formatPlannerDate(dates[6])}
           </span> */}
         </div>
-        <p className="text-xs text-zinc-400">اضغط على أي يوم لإضافة مهام له، واسحب المهمة لنقلها إلى يوم آخر</p>
+        <p className="text-xs text-zinc-400">
+          اضغط على أي يوم لإضافة مهام له، واسحب المهمة لنقلها إلى يوم آخر
+        </p>
       </div>
 
       <div className="flex h-[52vh] overflow-hidden rounded-xl border border-zinc-200 shadow-sm dark:border-zinc-800">
@@ -487,30 +558,34 @@ export default function NextWeekBoard() {
               date={date}
               items={data?.items.filter((item) => item.date === date) ?? []}
               expanded={expandedIndex === day.index}
-              onToggle={() =>
-                setExpandedIndex((prev) => (prev === day.index ? null : day.index))
-              }
-              onEdit={setEditing}
+              onToggle={() => {
+                // The click that ends a drag must not open/close the day.
+                if (shouldSuppressClick()) return;
+                setExpandedIndex((prev) =>
+                  prev === day.index ? null : day.index,
+                );
+              }}
+              onEdit={(item) => {
+                setEditing(item);
+                setExpandedIndex(day.index);
+              }}
               onDelete={setPendingDelete}
-              onDropTask={(taskId) => void moveTask(taskId, date)}
+              editing={editing?.date === date ? editing : null}
+              onEditDone={() => setEditing(null)}
+              boardDrag={boardDrag}
+              onTaskPointerDown={onTaskPointerDown}
+              registerDropResolver={registerDropResolver}
             />
           );
         })}
       </div>
 
-      {isLoading && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">جاري تحميل مهام الأسبوع القادم...</p>
-      )}
+      <BoardDragGhost drag={boardDrag} />
 
-      {/* Same dialog as the execution board, in edit mode; it saves and
-          refreshes the study plans itself. */}
-      {editing && (
-        <AddTaskDialog
-          date={editing.date}
-          task={studyPlanToExecutionTask(editing)}
-          onCreated={() => undefined}
-          onClose={() => setEditing(null)}
-        />
+      {isLoading && (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          جاري تحميل مهام الأسبوع القادم...
+        </p>
       )}
 
       {pendingDelete && (

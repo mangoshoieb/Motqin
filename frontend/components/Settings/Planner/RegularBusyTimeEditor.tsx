@@ -22,9 +22,17 @@ interface Draft {
   endTime: string;
   durationInMinutes: string;
   isRepeated: boolean;
+  // Repeated: the span of dates it repeats over. One-off: `date` is the
+  // single day it happens on.
   startDate: string;
   endDate: string;
+  date: string;
 }
+
+const todayIso = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+};
 
 const emptyDraft: Draft = {
   title: "",
@@ -35,9 +43,18 @@ const emptyDraft: Draft = {
   isRepeated: false,
   startDate: "",
   endDate: "",
+  date: todayIso(),
 };
 
 const formatDate = (value?: string) => (value ? value.slice(0, 10) : "");
+
+const dayLabel = (value?: string) => {
+  if (!value) return "";
+  const date = new Date(`${formatDate(value)}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? formatDate(value)
+    : date.toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" });
+};
 
 export const RegularBusyTimeEditor = () => {
   const queryClient = useQueryClient();
@@ -67,6 +84,10 @@ export const RegularBusyTimeEditor = () => {
     if (draft.isRepeated) {
       payload.startDate = draft.startDate;
       payload.endDate = draft.endDate;
+    } else {
+      // A one-off happens on exactly one day.
+      payload.startDate = draft.date;
+      payload.endDate = draft.date;
     }
 
     return payload;
@@ -87,6 +108,9 @@ export const RegularBusyTimeEditor = () => {
       if (draft.isRepeated && draft.startDate > draft.endDate) {
         throw new Error("invalid-date-range");
       }
+      if (!draft.isRepeated && !draft.date) {
+        throw new Error("date-required");
+      }
 
       const payload = buildPayload();
       return editingId === null
@@ -106,6 +130,7 @@ export const RegularBusyTimeEditor = () => {
         "invalid-duration": "المدة يجب أن تكون أكبر من صفر.",
         "dates-required": "يرجى تحديد تاريخ البداية والنهاية للتكرار.",
         "invalid-date-range": "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.",
+        "date-required": "يرجى اختيار اليوم.",
       };
       toast.error(messages[error.message] ?? "حدث خطأ أثناء حفظ الوقت المشغول.");
     },
@@ -131,6 +156,7 @@ export const RegularBusyTimeEditor = () => {
       isRepeated: item.isRepeated,
       startDate: formatDate(item.startDate),
       endDate: formatDate(item.endDate),
+      date: formatDate(item.startDate) || todayIso(),
     });
   };
 
@@ -174,6 +200,21 @@ export const RegularBusyTimeEditor = () => {
           هذا الوقت متكرر
         </label>
 
+        {!draft.isRepeated && (
+          <label className="flex flex-col gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+            اليوم
+            <input
+              type="date"
+              value={draft.date}
+              onChange={(event) => setDraft({ ...draft, date: event.target.value })}
+              className={inputClass}
+            />
+            {draft.date && (
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">{dayLabel(draft.date)}</span>
+            )}
+          </label>
+        )}
+
         {draft.isRepeated && (
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">يبدأ التكرار<input type="date" value={draft.startDate} onChange={(event) => setDraft({ ...draft, startDate: event.target.value })} className={inputClass} /></label>
@@ -191,7 +232,7 @@ export const RegularBusyTimeEditor = () => {
         <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">الأوقات المضافة</h3>
         {isPending && <p className="text-sm text-zinc-500">جاري التحميل...</p>}
         {!isPending && items.length === 0 && <p className="text-sm text-zinc-500 dark:text-zinc-400">لم تتم إضافة أوقات بعد.</p>}
-        {items.map((item) => <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700"><span className="truncate text-zinc-700 dark:text-zinc-300">{item.title} - {item.durationInMinutes !== undefined ? `${item.durationInMinutes} دقيقة` : `${item.startTime?.slice(0, 5)} إلى ${item.endTime?.slice(0, 5)}`}{item.isRepeated ? " - متكرر" : ""}</span><span className="flex gap-2"><button type="button" title="تعديل" onClick={() => editBusyTime(item)} className="text-zinc-500 hover:text-blue-600"><Pencil size={16} /></button><button type="button" title="حذف" onClick={() => deleteMutation.mutate(item.id)} className="text-zinc-500 hover:text-red-600"><Trash2 size={16} /></button></span></div>)}
+        {items.map((item) => <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700"><span className="truncate text-zinc-700 dark:text-zinc-300">{item.title} - {item.durationInMinutes !== undefined ? `${item.durationInMinutes} دقيقة` : `${item.startTime?.slice(0, 5)} إلى ${item.endTime?.slice(0, 5)}`}{item.isRepeated ? " - متكرر" : item.startDate ? ` - ${dayLabel(item.startDate)}` : ""}</span><span className="flex gap-2"><button type="button" title="تعديل" onClick={() => editBusyTime(item)} className="text-zinc-500 hover:text-blue-600"><Pencil size={16} /></button><button type="button" title="حذف" onClick={() => deleteMutation.mutate(item.id)} className="text-zinc-500 hover:text-red-600"><Trash2 size={16} /></button></span></div>)}
       </div>
     </div>
   );

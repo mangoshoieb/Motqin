@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
@@ -98,6 +98,16 @@ export function RichTextEditor({
     },
   });
 
+  // Which toolbar buttons are "on" for the current selection. Read through
+  // useEditorState so it updates on every transaction — including toggling
+  // bold on an empty selection, which only sets a stored mark and wouldn't
+  // otherwise re-render until the first character is typed.
+  const activeStates = useEditorState({
+    editor,
+    selector: ({ editor: current }) =>
+      current ? toolbar.map(({ isActive }) => isActive(current)) : toolbar.map(() => false),
+  });
+
   // Keep the surface in sync when the caller resets the value (e.g. Escape
   // restores the saved note) without clobbering what's being typed.
   useEffect(() => {
@@ -118,7 +128,7 @@ export function RichTextEditor({
         // Keep the editor's selection while pressing a toolbar button.
         onMouseDown={(event) => event.preventDefault()}
       >
-        {toolbar.map(({ icon: Icon, title, isActive, run }) => (
+        {toolbar.map(({ icon: Icon, title, run }, position) => (
           <button
             key={title}
             type="button"
@@ -128,7 +138,7 @@ export function RichTextEditor({
             onClick={() => editor && run(editor)}
             className={cn(
               "flex size-7 items-center justify-center rounded-md text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100",
-              editor && isActive(editor) && "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+              activeStates?.[position] && "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
             )}
           >
             <Icon size={15} />

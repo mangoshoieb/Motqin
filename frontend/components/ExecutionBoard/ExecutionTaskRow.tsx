@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, CheckSquare, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee } from "lucide-react";
+import { Check, CheckSquare, GripVertical, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { formatMinutes } from "@/app/lib/duration";
 import { RichTextContent, RichTextEditor, isRichTextEmpty } from "@/components/ui/RichTextEditor";
@@ -30,7 +30,11 @@ interface ExecutionTaskRowProps {
   onNotesChange: (id: string, notes: string) => void;
   onEdit?: (task: ExecutionTask) => void;
   onDelete?: (task: ExecutionTask) => void;
-  onDropTask?: (draggedId: string, targetId: string) => void;
+  // Pointer handlers the list puts on the grip to run its own drag (no
+  // native HTML5 drag — see ExecutionTaskList), and whether this row is
+  // the one being dragged right now.
+  dragHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
+  isDragging?: boolean;
 }
 
 // mm:ss — the session clock runs in real time, so seconds are what move.
@@ -125,7 +129,8 @@ export const ExecutionTaskRow = ({
   onNotesChange,
   onEdit,
   onDelete,
-  onDropTask,
+  dragHandleProps,
+  isDragging = false,
 }: ExecutionTaskRowProps) => {
   const [noteEditing, setNoteEditing] = useState(false);
   const [noteDraft, setNoteDraft] = useState(task.notes ?? "");
@@ -170,6 +175,30 @@ export const ExecutionTaskRow = ({
     else openSession(session);
   };
 
+  // Title + duration are committed explicitly (the save button), unlike
+  // the notes, which save themselves when the editor loses focus.
+  const detailsChanged = (session: ExecutionSession) =>
+    titleDraft.trim() !== session.title || Number(durationDraft) !== session.sessionDurationMinutes;
+
+  const revertDetails = (session: ExecutionSession) => {
+    setTitleDraft(session.title);
+    setDurationDraft(String(session.sessionDurationMinutes));
+  };
+
+  const saveDetails = (session: ExecutionSession) => {
+    if (!detailsChanged(session)) return;
+    const title = titleDraft.trim();
+    const durationMinutes = Number(durationDraft);
+    if (!title || !Number.isFinite(durationMinutes) || durationMinutes < 1) {
+      revertDetails(session);
+      return;
+    }
+    onUpdateSession?.(session.id, {
+      ...(title !== session.title ? { title } : {}),
+      ...(durationMinutes !== session.sessionDurationMinutes ? { durationMinutes } : {}),
+    });
+  };
+
   // The break is offered once, after the most recently completed session
   // (the one the student just finished) — not after every finished one.
   const lastCompletedId = [...sessions].reverse().find((s) => s.status === "completed")?.id;
@@ -180,18 +209,30 @@ export const ExecutionTaskRow = ({
 
   return (
     <div
-      draggable
-      onDragStart={(event) => event.dataTransfer.setData("text/task-id", task.id)}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        event.preventDefault();
-        const draggedId = event.dataTransfer.getData("text/task-id");
-        if (draggedId && draggedId !== task.id) onDropTask?.(draggedId, task.id);
-      }}
-      className="grid cursor-grab grid-cols-1 overflow-hidden bg-transparent p-0 active:cursor-grabbing lg:grid-cols-[1.1fr_0.9fr]"
+      className={cn(
+        "grid grid-cols-1 overflow-hidden bg-transparent p-0 lg:grid-cols-[1.1fr_0.9fr]",
+        isDragging && "cursor-grabbing",
+      )}
     >
       <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-white p-5 dark:bg-zinc-900">
       <div className="flex items-center gap-3">
+        {/* The only place a drag starts — a fixed-size grip at the card's
+            edge, Jira-style — so text fields and buttons elsewhere on the
+            card never fight the drag. */}
+        {dragHandleProps && (
+          <span
+            {...dragHandleProps}
+            title="اسحب لإعادة الترتيب"
+            aria-label="اسحب لإعادة ترتيب المهمة"
+            style={{ touchAction: "none" }}
+            className={cn(
+              "flex size-8 shrink-0 select-none items-center justify-center rounded-md text-zinc-300 transition hover:bg-zinc-100 hover:text-zinc-500 dark:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
+              isDragging ? "cursor-grabbing" : "cursor-grab",
+            )}
+          >
+            <GripVertical size={18} className="pointer-events-none" />
+          </span>
+        )}
         <button type="button" onClick={() => onToggleComplete(task.id)} className="shrink-0">
           {task.completed ? (
             <CheckSquare size={22} className="text-emerald-500" />
@@ -397,7 +438,7 @@ export const ExecutionTaskRow = ({
                   >
                     <TimerReset size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
                     <span className="min-w-0 flex-1 truncate text-xs text-amber-800 dark:text-amber-200">
-                      انتهى وقت الجلسة — ما زلت تعمل؟ الوقت الإضافي:
+                      انتهى وقت الجلسة — ما زلت تعمل؟ :
                     </span>
                     <span className="shrink-0 text-xs font-bold tabular-nums text-amber-800 dark:text-amber-200">
                       +{formatClock(session.overtimeSeconds ?? 0)}
@@ -410,6 +451,7 @@ export const ExecutionTaskRow = ({
                     >
                       <Save size={12} />
                       حفظ
+                        {/* إضافةإلى وقت الجلسة */}
                     </button>
                     {breakMinutes != null && breakMinutes > 0 && (
                       <button
@@ -420,6 +462,7 @@ export const ExecutionTaskRow = ({
                       >
                         <Coffee size={12} />
                         استراحة
+                        {/* إضافةإلى وقت الاستراحة */}
                       </button>
                     )}
                     <button
@@ -435,19 +478,18 @@ export const ExecutionTaskRow = ({
 
                 {expanded && (
                   <div className="flex flex-col gap-3 border-t border-zinc-200 px-3 py-3 dark:border-zinc-700">
-                    <div className="flex flex-col gap-3 sm:flex-row">
+                    {/* Title and duration are saved together with the
+                        button that appears once either changed (Enter also
+                        saves, Escape reverts). Notes save on their own. */}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <label className="flex-1 text-[11px] text-zinc-500 dark:text-zinc-400">
                       عنوان الجلسة
                       <input
                         value={titleDraft}
                         onChange={(event) => setTitleDraft(event.target.value)}
-                        onBlur={() => onUpdateSession?.(session.id, { title: titleDraft })}
                         onKeyDown={(event) => {
-                          if (event.key === "Enter") event.currentTarget.blur();
-                          if (event.key === "Escape") {
-                            setTitleDraft(session.title);
-                            event.currentTarget.blur();
-                          }
+                          if (event.key === "Enter") saveDetails(session);
+                          if (event.key === "Escape") revertDetails(session);
                         }}
                         placeholder="مثال: مراجعة الفصل الأول"
                         className={sessionInputClass}
@@ -461,19 +503,33 @@ export const ExecutionTaskRow = ({
                         min={1}
                         value={durationDraft}
                         onChange={(event) => setDurationDraft(event.target.value)}
-                        onBlur={() =>
-                          onUpdateSession?.(session.id, { durationMinutes: Number(durationDraft) })
-                        }
                         onKeyDown={(event) => {
-                          if (event.key === "Enter") event.currentTarget.blur();
-                          if (event.key === "Escape") {
-                            setDurationDraft(String(session.sessionDurationMinutes));
-                            event.currentTarget.blur();
-                          }
+                          if (event.key === "Enter") saveDetails(session);
+                          if (event.key === "Escape") revertDetails(session);
                         }}
                         className={sessionInputClass}
                       />
                     </label>
+
+                    {detailsChanged(session) && (
+                      <div className="flex gap-1.5 sm:pb-0.5">
+                        <button
+                          type="button"
+                          onClick={() => revertDetails(session)}
+                          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        >
+                          إلغاء
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => saveDetails(session)}
+                          className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+                        >
+                          <Save size={13} />
+                          حفظ
+                        </button>
+                      </div>
+                    )}
                     </div>
 
                     <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -548,6 +604,7 @@ export const ExecutionTaskRow = ({
                 }}
                 className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
               >
+
                 حفظ
               </button>
             </div>

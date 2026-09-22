@@ -14,7 +14,7 @@ import { ExecutionBoardHeader } from "@/components/ExecutionBoard/ExecutionBoard
 import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList";
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
 import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
-import { studyPlansService, studySessionsService } from "@/app/services/motqin";
+import { StudyPlanDuration, studyPlansService, studySessionsService } from "@/app/services/motqin";
 import {
   currentWeekDates,
   nextFreePriority as nextFreePrioritySlot,
@@ -24,6 +24,8 @@ import {
   studySessionToExecutionSession,
 } from "@/app/lib/study-plan";
 import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
+import { primeSessionAlerts } from "@/app/lib/session-alerts";
+import { elapsedSecondsOf, useSessionTimerStore } from "@/app/lib/session-timer.store";
 import { API_ROUTES } from "@/app/constants/planner.constants";
 
 const ExecutionBoardPage = () => {
@@ -116,65 +118,39 @@ const ExecutionBoardPage = () => {
   useEffect(() => {
     sessionsRef.current = sessions;
   }, [sessions]);
+  const tasksRef = useRef<ExecutionTask[]>([]);
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   const setSessionStatus = (sessionId: string, status: ExecutionSession["status"]) =>
     setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, status } : s)));
 
-  // Guards the window between the timer running out and /end coming back,
-  // so a session is only ever ended once.
-  const endingRef = useRef<Set<string>>(new Set());
+  // The clock ran out (GlobalSessionTimer noticed, rang, and sent /end):
+  // show the session as completed here and start its overtime counter,
+  // which keeps running until the student saves or dismisses it.
+  const markSessionTimedOut = useCallback((sessionId: string) => {
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId
+          ? {
+              ...s,
+              status: "completed",
+              elapsedSeconds: s.sessionDurationMinutes * 60,
+              actualMinutes: s.sessionDurationMinutes,
+              overtimeRunning: true,
+              overtimeSeconds: 0,
+            }
+          : s,
+      ),
+    );
+    clearSessionClock(sessionId);
+  }, []);
 
-  // `timedOut` marks a session the clock finished (as opposed to the user
-  // ending it early): those keep counting overtime until the user saves it.
-  const finishSession = useCallback(
-    async (sessionId: string, timedOut = false) => {
-      if (endingRef.current.has(sessionId)) return;
-      endingRef.current.add(sessionId);
-
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === sessionId
-            ? {
-                ...s,
-                status: "completed",
-                ...(timedOut ? { overtimeRunning: true, overtimeSeconds: 0 } : {}),
-              }
-            : s,
-        ),
-      );
-      clearSessionClock(sessionId);
-
-      try {
-        console.log("[SESSION END] request →", {
-          method: "PUT",
-          url: API_ROUTES.STUDY_SESSIONS.END(Number(sessionId)),
-          body: null,
-          timedOut,
-        });
-        const ended = await studySessionsService.end(Number(sessionId));
-        console.log("[SESSION END] response ←", ended);
-        queryClient.invalidateQueries({ queryKey: ["study-plans"] });
-      } catch {
-        // Back to paused rather than active: leaving it running would make
-        // the ticker retry /end every second.
-        setSessions((prev) =>
-          prev.map((s) =>
-            s.id === sessionId
-              ? { ...s, status: "paused", overtimeRunning: false, overtimeSeconds: 0 }
-              : s,
-          ),
-        );
-        toast.error("تعذر إنهاء الجلسة");
-      } finally {
-        endingRef.current.delete(sessionId);
-      }
-    },
-    [queryClient],
-  );
-
-  // Ticks the running session in real time — a session of 25 minutes takes 25
-  // minutes — and ends it on the server once its time is up. Only one session
-  // is ever running, so there is at most one to tick.
+  // Once a second: the break clock, overtime counters, and the running
+  // session's elapsed time — which is read from the app-wide timer store
+  // (GlobalSessionTimer keeps it going on every page, so the row here just
+  // mirrors it).
   useEffect(() => {
     const interval = setInterval(() => {
       // The break clock, if one is running.
@@ -192,32 +168,44 @@ const ExecutionBoardPage = () => {
       const active = sessionsRef.current.find((s) => s.status === "active");
       if (!active) return;
 
-      const totalSeconds = active.sessionDurationMinutes * 60;
-      const elapsed = (active.elapsedSeconds ?? active.actualMinutes * 60) + 1;
-
-      if (elapsed < totalSeconds) {
-        saveSessionClock(active.id, elapsed, true);
-        setSessions((prev) =>
-          prev.map((s) =>
-            s.id === active.id
-              ? { ...s, elapsedSeconds: elapsed, actualMinutes: Math.floor(elapsed / 60) }
-              : s,
-          ),
-        );
+      const clock = useSessionTimerStore.getState();
+      if (clock.session?.sessionId !== active.id) {
+        // The server says it's running but nothing here is timing it (a
+        // reload on another device, a cleared store): adopt it, from
+        // wherever its clock was, so it keeps going.
+        if (!clock.session) {
+          clock.start(
+            {
+              sessionId: active.id,
+              taskId: active.taskId,
+              title: active.title,
+              taskTitle: tasksRef.current.find((t) => t.id === active.taskId)?.title,
+              durationSeconds: active.sessionDurationMinutes * 60,
+              dayIndex,
+              weekOffset,
+            },
+            active.elapsedSeconds ?? active.actualMinutes * 60,
+          );
+        }
         return;
       }
 
+      if (clock.status === "finished") {
+        markSessionTimedOut(active.id);
+        return;
+      }
+
+      const elapsed = elapsedSecondsOf(clock);
       setSessions((prev) =>
         prev.map((s) =>
-          s.id === active.id
-            ? { ...s, elapsedSeconds: totalSeconds, actualMinutes: s.sessionDurationMinutes }
+          s.id === active.id && s.elapsedSeconds !== elapsed
+            ? { ...s, elapsedSeconds: elapsed, actualMinutes: Math.floor(elapsed / 60) }
             : s,
         ),
       );
-      void finishSession(active.id, true);
     }, 1000);
     return () => clearInterval(interval);
-  }, [finishSession]);
+  }, [markSessionTimedOut, dayIndex, weekOffset]);
 
   // Each task's sessions, in orderInPlan order (see sortSessionsByOrder).
   const sessionsByTaskId = useMemo(() => {
@@ -273,8 +261,25 @@ const ExecutionBoardPage = () => {
     if (running) setSessionStatus(running.id, "paused");
 
     const starting = sessionsRef.current.find((s) => s.id === sessionId);
-    saveSessionClock(sessionId, starting?.elapsedSeconds ?? (starting?.actualMinutes ?? 0) * 60, true);
+    const startingElapsed = starting?.elapsedSeconds ?? (starting?.actualMinutes ?? 0) * 60;
+    saveSessionClock(sessionId, startingElapsed, true);
     if (running) saveSessionClock(running.id, running.elapsedSeconds ?? running.actualMinutes * 60, false);
+
+    // From here on the app-wide clock (GlobalSessionTimer) times it.
+    if (starting) {
+      useSessionTimerStore.getState().start(
+        {
+          sessionId,
+          taskId: starting.taskId,
+          title: starting.title,
+          taskTitle: tasks.find((t) => t.id === starting.taskId)?.title,
+          durationSeconds: starting.sessionDurationMinutes * 60,
+          dayIndex,
+          weekOffset,
+        },
+        startingElapsed,
+      );
+    }
 
     try {
       if (running) {
@@ -302,6 +307,7 @@ const ExecutionBoardPage = () => {
     } catch {
       setSessionStatus(sessionId, previous);
       if (running) setSessionStatus(running.id, "active");
+      useSessionTimerStore.getState().clear();
       toast.error("تعذر بدء الجلسة");
     }
   };
@@ -310,6 +316,8 @@ const ExecutionBoardPage = () => {
     setSessionStatus(sessionId, "paused");
     const pausing = sessionsRef.current.find((s) => s.id === sessionId);
     if (pausing) saveSessionClock(sessionId, pausing.elapsedSeconds ?? pausing.actualMinutes * 60, false);
+    const clock = useSessionTimerStore.getState();
+    if (clock.session?.sessionId === sessionId) clock.clear();
 
     try {
       console.log("[SESSION PAUSE] request →", {
@@ -433,8 +441,13 @@ const ExecutionBoardPage = () => {
     const target = sessions.find((s) => s.id === sessionId);
     if (!target || target.status === "completed") return;
 
+    // Sound and notifications can only be enabled from a user gesture, so
+    // this click is where they get unlocked.
+    if (target.status !== "active") primeSessionAlerts();
     void (target.status === "active" ? pauseSession(sessionId) : startSession(sessionId));
   };
+
+
 
   // Each field in the expanded card saves on blur, so only what actually
   // changed goes in the PUT.
@@ -535,12 +548,38 @@ const ExecutionBoardPage = () => {
     const targetDayIndex = dayIndex + 1;
     const targetDate = currentWeekDates(weekOffset)[targetDayIndex - 1];
 
-    void studyPlansService.update(Number(task.id), { date: targetDate }).then(() => {
-      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
-      queryClient.invalidateQueries({ queryKey: ["execution-board", targetDayIndex] });
-      setTasks((prev) => prev.filter((t) => t.id !== task.id));
+    // Tomorrow may already have tasks in the focus slots — the moved task
+    // takes the first free one there (or none), the way adding a task
+    // does, instead of carrying today's slot along and duplicating stars.
+    const movedWithFreeSlot = async () => {
+      const tomorrow = await studyPlansService.filter({
+        duration: StudyPlanDuration.CustomRange,
+        startDate: targetDate,
+        endDate: targetDate,
+      });
+      const priority = nextFreePrioritySlot(
+        tomorrow.items.filter((item) => item.date === targetDate).map((item) => item.priority),
+      );
+      return studyPlansService.update(Number(task.id), { date: targetDate, priority });
+    };
+
+    void movedWithFreeSlot().then(async () => {
+      // Today closes the gap the task left: the remaining tasks move up by
+      // position, exactly as reordering would number them.
+      const remaining = sortByPriority(tasks.filter((t) => t.id !== task.id)).map((t, index) => ({
+        ...t,
+        priority: priorityForPosition(index),
+      }));
+      setTasks(remaining);
       setSessions((prev) => prev.filter((s) => s.taskId !== task.id));
       toast.success("تم إرسال المهمة إلى الغد");
+      await Promise.all(
+        remaining
+          .filter((t) => t.priority !== tasks.find((item) => item.id === t.id)?.priority)
+          .map((t) => studyPlansService.update(Number(t.id), { priority: t.priority })),
+      ).catch(() => toast.error("تعذر إعادة ترتيب أولويات اليوم"));
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["execution-board", targetDayIndex] });
     }).catch(() => {
       // Keep the task visible when the server rejects the move.
       addPostponedTask(targetDayIndex, { ...task, completed: false });

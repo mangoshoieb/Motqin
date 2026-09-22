@@ -23,6 +23,8 @@ import NextWeekBoard from "@/components/Planner/NextWeekBoard";
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
 import { ExecutionTask } from "@/app/types/execution-board.types";
 import { useWorkHourLimits } from "@/app/hooks/useUserPreferences";
+import { useBoardDrag } from "@/app/hooks/useBoardDrag";
+import { BoardDragGhost } from "@/components/Planner/BoardDragGhost";
 
 type PlanningTab = "ai" | "manual";
 
@@ -44,6 +46,7 @@ const Planner = () => {
   );
   // The day whose "إضافة مهمة" opened the dialog (null = closed).
   const [addTaskDate, setAddTaskDate] = useState<string | null>(null);
+
 
   // The top board shows the current week by default and can page back
   // through earlier weeks (weekOffset ≤ 0); next week lives in the
@@ -124,6 +127,17 @@ const Planner = () => {
     });
 
     const dateChanged = moved.date !== targetDate;
+    // The day the task left closes the gap: its remaining tasks move up so
+    // the freed slot (e.g. ★★★) goes to the next one in line.
+    if (dateChanged) {
+      sortByPriority(
+        items.filter((item) => item.date === moved.date && item.id !== moved.id),
+        (item) => item.priority,
+      ).forEach((item, index) => {
+        const priority = priorityForPosition(index);
+        if (priority !== item.priority) priorities.set(item.id, priority);
+      });
+    }
     if (!dateChanged && priorities.size === 0) return;
 
     // Show the new order right away; the refetch below confirms it (or
@@ -181,6 +195,22 @@ const Planner = () => {
       .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
       .catch(() => toast.error("تعذر حفظ أولوية المهمة"));
   };
+
+  // Drag and drop on the board (pointer-based, see useBoardDrag): a drop
+  // lands the task in the target day at the gap it was showing.
+  const {
+    drag: boardDrag,
+    onTaskPointerDown,
+    registerDropResolver,
+    shouldSuppressClick,
+  } = useBoardDrag({
+    tasks: (studyPlans?.items ?? []).map((item) => ({
+      id: String(item.id),
+      title: item.title,
+      priorityValue: item.priority,
+    })),
+    onDrop: (taskId, dayIndex, beforeTaskId) => void moveTask(taskId, dates[dayIndex - 1], beforeTaskId),
+  });
 
   // The checkbox is a toggle on the server too — DayCard handles the
   // optimistic flip and reverts if this throws.
@@ -258,14 +288,16 @@ const Planner = () => {
             <div key={day.index} className="flex-1 overflow-hidden">
               <DayCard
                 {...day}
-                onClick={() =>
-                  router.push(`/planner/execution/${day.index}?week=${weekOffset}`)
-                }
+                onClick={() => {
+                  if (shouldSuppressClick()) return;
+                  router.push(`/planner/execution/${day.index}?week=${weekOffset}`);
+                }}
                 hourLimits={hourLimits}
                 onTaskComplete={updateTaskCompletion}
-                onTaskDrop={(taskId, beforeTaskId) =>
-                  void moveTask(taskId, dates[day.index - 1], beforeTaskId)
-                }
+                droppable
+                boardDrag={boardDrag}
+                onTaskPointerDown={onTaskPointerDown}
+                registerDropResolver={registerDropResolver}
                 // Opens the add-task dialog right here, for that day.
                 onAddTask={
                   day.isPast
@@ -282,6 +314,8 @@ const Planner = () => {
             جاري تحميل مهام الأسبوع...
           </p>
         )}
+
+        <BoardDragGhost drag={boardDrag} />
 
         {addTaskDate && (
           <AddTaskDialog

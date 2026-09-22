@@ -168,7 +168,7 @@ export const CourseScheduleEditor = () => {
         : courseSchedulesService.update(id, payload);
     },
     onSuccess: (_, { id }) => {
-      toast.success(id === null ? "تمت إضافة المحاضرة" : "تم تحديث المحاضرة");
+      toast.success(id === null ? "تمت إضافة الدرس" : "تم تحديث الدرس");
       closeForms();
       refresh();
     },
@@ -178,17 +178,17 @@ export const CourseScheduleEditor = () => {
           ? "وقت النهاية يجب أن يكون بعد وقت البداية."
           : error.message === "subject-required"
             ? "يرجى اختيار المادة."
-            : "حدث خطأ أثناء حفظ المحاضرة.",
+            : "حدث خطأ أثناء حفظ الدرس.",
       ),
   });
 
   const deleteMutation = useMutation({
     mutationFn: courseSchedulesService.remove,
     onSuccess: () => {
-      toast.success("تم حذف المحاضرة");
+      toast.success("تم حذف الدرس");
       refresh();
     },
-    onError: () => toast.error("حدث خطأ أثناء حذف المحاضرة."),
+    onError: () => toast.error("حدث خطأ أثناء حذف الدرس."),
   });
 
   const openAdd = (day: WeekDay) => {
@@ -241,7 +241,7 @@ export const CourseScheduleEditor = () => {
               <h3 className="flex items-center gap-2 text-sm font-bold text-zinc-800 dark:text-zinc-200">
                 {label}
                 <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-                  {lectures.length === 0 ? "لا محاضرات" : `${lectures.length} محاضرة`}
+                  {lectures.length === 0 ? "لا محاضرات" : `${lectures.length} درس`}
                 </span>
               </h3>
               {!isAdding && (
@@ -251,7 +251,7 @@ export const CourseScheduleEditor = () => {
                   className="flex items-center gap-1 rounded-lg border border-dashed border-blue-300 px-2.5 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40"
                 >
                   <Plus size={14} />
-                  إضافة محاضرة
+                  إضافة درس
                 </button>
               )}
             </div>

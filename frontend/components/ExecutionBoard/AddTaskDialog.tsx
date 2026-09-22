@@ -15,6 +15,7 @@ import { cn } from "@/app/lib/utils";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 import { studySessionToExecutionSession } from "@/app/lib/study-plan";
 import { GoalPicker } from "@/components/Planner/GoalPicker";
+import { DurationFields } from "@/components/ui/DurationFields";
 
 const inputClass =
   "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
@@ -121,8 +122,14 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
         )}
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="text-sm text-zinc-700 dark:text-zinc-300">فئة الهدف <span className="text-xs text-zinc-400">(اختياري)</span><div className="mt-1"><GoalPicker value={goalCategoryId} onChange={(id) => setGoalCategoryId(id)} className="rounded-lg border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800" /></div></div>
-          <label className="text-sm text-zinc-700 dark:text-zinc-300">المدة بالدقائق<input type="number" min={1} value={duration} onChange={(event) => setDuration(event.target.value)} className={inputClass} /></label>
+          <div className="text-sm text-zinc-700 dark:text-zinc-300">فئة الهدف <span className="text-xs text-zinc-400 block mt-1">(اختياري)</span><div className="mt-1"><GoalPicker value={goalCategoryId} onChange={(id) => setGoalCategoryId(id)} className="rounded-lg border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800" /></div></div>
+          <DurationFields
+            minutes={Number(duration)}
+            onChange={(total) => setDuration(String(total))}
+            label="المدة"
+            labelClassName="text-sm text-zinc-700 dark:text-zinc-300"
+            inputClassName={inputClass}
+          />
         </div>
 
         <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-700">إلغاء</button><button type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">{mutation.isPending ? "جاري الحفظ..." : isEditing ? "حفظ التعديل" : "إضافة المهمة"}</button></div>

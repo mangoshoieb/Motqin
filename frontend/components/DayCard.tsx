@@ -64,6 +64,23 @@ const hoursBadge: Record<HoursStatus, { className: string; title: string }> = {
 // Height of one task row — the gap that opens for a dragged task.
 const TASK_ROW_HEIGHT = 36;
 
+// The board-wide drag (see the planner page): which task is in the air,
+// and — when this card is under the pointer — where it would land.
+export interface BoardDrag {
+  taskId: string;
+  active: boolean; // past the movement threshold, i.e. really dragging
+  targetDayIndex: number | null;
+  dropIndex: number | null;
+}
+
+// What a card tells the board when asked "where would a drop at this
+// height land?": the gap position and the task it lands before (undefined
+// = last).
+export interface DropResolution {
+  index: number;
+  beforeTaskId?: string;
+}
+
 interface DayCardProps {
   index: number;
   dayName: string;
@@ -85,10 +102,15 @@ interface DayCardProps {
   // drop targets.
   isPast?: boolean;
   onTaskComplete?: (taskId: string, completed: boolean) => Promise<void>;
-  // A task was dropped on this day at the gap the card was showing: insert
-  // it before `beforeTaskId`, or last when that's undefined. Works for a
-  // task from another day and for reordering within this one.
-  onTaskDrop?: (taskId: string, beforeTaskId?: string) => void;
+  // Drag and drop is driven by pointer events owned by the board (native
+  // HTML5 drag proved unreliable): a press on a task row reports here, the
+  // board tracks the pointer, asks the card under it where the task would
+  // land (registerDropResolver) and tells every card the current state.
+  // `droppable` says whether this day accepts tasks (past days don't).
+  droppable?: boolean;
+  boardDrag?: BoardDrag | null;
+  onTaskPointerDown?: (taskId: string, event: React.PointerEvent) => void;
+  registerDropResolver?: (dayIndex: number, resolve: ((clientY: number) => DropResolution) | null) => void;
 
   onClick?: () => void;
   // Shown only for today and future days — the backend rejects tasks on
@@ -109,38 +131,24 @@ export default function DayCard({
   isFuture = false,
   isPast = false,
   onTaskComplete,
-  onTaskDrop,
+  droppable = false,
+  boardDrag = null,
+  onTaskPointerDown,
+  registerDropResolver,
   onClick,
   onAddTask,
 }: DayCardProps) {
   const [open, setOpen] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const canDrop = Boolean(onTaskDrop) && !isPast;
+  const canDrop = droppable && !isPast;
 
-  // Sortable-style drag feedback. `draggingId` is the row picked up from
-  // THIS card (it leaves the list while in the air); `dropIndex` is where
-  // in the remaining rows a dragged task — from here or another day —
-  // would land, shown as a gap the other rows slide away from.
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  // Sortable-style drag feedback, all derived from the board's drag state:
+  // the row picked up from THIS card leaves the list while in the air, and
+  // when this card is the target a gap opens where the task would land.
+  const draggingId = boardDrag?.active ? boardDrag.taskId : null;
+  const isTarget = Boolean(boardDrag?.active) && boardDrag?.targetDayIndex === index && canDrop;
+  const dropIndex = isTarget ? boardDrag?.dropIndex ?? null : null;
+  const dragOver = isTarget;
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
-
-  // A drag that ends anywhere (dropped elsewhere, cancelled with Escape)
-  // must close this card's gap and bring its picked-up row back — the
-  // row's own dragend/dragleave aren't guaranteed to fire then.
-  useEffect(() => {
-    const reset = () => {
-      setDraggingId(null);
-      setDropIndex(null);
-      setDragOver(false);
-    };
-    window.addEventListener("dragend", reset);
-    window.addEventListener("drop", reset);
-    return () => {
-      window.removeEventListener("dragend", reset);
-      window.removeEventListener("drop", reset);
-    };
-  }, []);
 
   const hoursStatus = hoursStatusFor(workingHours, hourLimits, isFuture);
   const [selectedMood, setSelectedMood] = useState(moodOptions[1]);
@@ -191,14 +199,29 @@ export default function DayCard({
   // Where a task at this pointer height would slot in: before the first
   // visible row whose middle is below the pointer, else after them all.
   const dropIndexAt = (clientY: number) => {
-    const index = visibleTasks.findIndex((task) => {
+    const at = visibleTasks.findIndex((task) => {
       const row = rowRefs.current.get(task.id);
       if (!row) return false;
       const box = row.getBoundingClientRect();
       return clientY < box.top + box.height / 2;
     });
-    return index < 0 ? visibleTasks.length : index;
+    return at < 0 ? visibleTasks.length : at;
   };
+
+  // Answer the board's "where would a drop here land?" with the current
+  // list — registered once, reading the latest closure through a ref.
+  const resolveRef = useRef<(clientY: number) => DropResolution>(() => ({ index: 0 }));
+  useEffect(() => {
+    resolveRef.current = (clientY) => {
+      const at = dropIndexAt(clientY);
+      return { index: at, beforeTaskId: remaining[at]?.id };
+    };
+  });
+  useEffect(() => {
+    if (!registerDropResolver || !canDrop) return;
+    registerDropResolver(index, (clientY) => resolveRef.current(clientY));
+    return () => registerDropResolver(index, null);
+  }, [registerDropResolver, canDrop, index]);
 
   // The gap the dragged task will drop into — sized like a row, so the
   // rows around it slide exactly one slot.
@@ -218,31 +241,7 @@ export default function DayCard({
   return (
     <div
       onClick={onClick}
-      onDragOver={(e) => {
-        if (!canDrop || !e.dataTransfer.types.includes("text/task-id")) return;
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        setDragOver(true);
-        const next = dropIndexAt(e.clientY);
-        setDropIndex((current) => (current === next ? current : next));
-      }}
-      onDragLeave={(e) => {
-        // Moving between this card's own children also fires dragleave.
-        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-        setDragOver(false);
-        setDropIndex(null);
-      }}
-      onDrop={(e) => {
-        const at = dropIndex;
-        setDragOver(false);
-        setDropIndex(null);
-        if (!canDrop) return;
-        const taskId = e.dataTransfer.getData("text/task-id");
-        if (!taskId) return;
-        e.preventDefault();
-        const index = at ?? dropIndexAt(e.clientY);
-        onTaskDrop?.(taskId, remaining[index]?.id);
-      }}
+      data-day-index={index}
       dir="rtl"
       className={cn(
         "flex flex-col overflow-hidden h-full cursor-pointer bg-white transition-all duration-200 hover:shadow-lg dark:bg-zinc-900",
@@ -386,19 +385,10 @@ export default function DayCard({
                     {/* Native HTML5 drag lives on a plain div: motion.div
                         reserves onDragStart/onDragEnd for its own gestures. */}
                     <div
-                      draggable
-                      onDragStart={(e) => {
-                        e.stopPropagation();
-                        e.dataTransfer.setData("text/task-id", task.id);
-                        e.dataTransfer.setData("text/task-date", date);
-                        e.dataTransfer.effectAllowed = "move";
-                        // Let the browser snapshot the drag image before the
-                        // row leaves the list.
-                        setTimeout(() => setDraggingId(task.id), 0);
-                      }}
-                      onDragEnd={() => setDraggingId(null)}
+                      onPointerDown={(e) => onTaskPointerDown?.(task.id, e)}
+                      style={{ touchAction: "none" }}
                       className={cn(
-                        "flex cursor-grab items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 shadow-sm transition-[border-color,box-shadow] hover:border-zinc-300 hover:shadow-md active:cursor-grabbing dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:border-zinc-600",
+                        "flex cursor-grab select-none items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 shadow-sm transition-[border-color,box-shadow] hover:border-zinc-300 hover:shadow-md active:cursor-grabbing dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:border-zinc-600",
                         task.completed && "bg-zinc-50 shadow-none dark:bg-zinc-900",
                       )}
                     >
