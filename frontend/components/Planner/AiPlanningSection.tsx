@@ -2,29 +2,31 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Rocket, Settings2, Sparkles } from "lucide-react";
 
 import { usePlannerPreferences } from "@/app/hooks/usePlannerPreferences";
 import Skeleton from "@/components/ui/Skeleton";
+import AiPlanningIntro from "@/components/Planner/AiPlanningIntro";
 import GoalsSection from "@/components/Planner/GoalsSection";
 import NextWeekBusyTimesStep from "@/components/Planner/NextWeekBusyTimesStep";
+import PlannerStepper, { PlannerStep } from "@/components/Planner/PlannerStepper";
 
 interface AiPlanningSectionProps {
   onPlanned?: () => void;
 }
 
+const SETTINGS_RETURN = `/settings/planner?return=${encodeURIComponent("/planner?tab=ai")}`;
+
 /**
- * The "plan with AI" tab:
- *   no preferences yet  → intro card that sends the user to set them up
- *   preferences exist   → optional next-week busy-times step → goals form
+ * The "plan with AI" tab. The intro card always opens the flow — only its
+ * button changes: it sends a user without preferences off to set them up, and
+ * one who already has them straight on to the next stage.
+ *
+ *   intro → busy times (next week only) → goals
  */
 export default function AiPlanningSection({ onPlanned }: AiPlanningSectionProps) {
   const router = useRouter();
   const { hasPreferences, isLoading } = usePlannerPreferences();
-  // Asked on every visit (optional — adding nothing and continuing is fine)
-  // — it's the reminder to tell the planner about next week before listing
-  // goals.
-  const [busyStepDone, setBusyStepDone] = useState(false);
+  const [stage, setStage] = useState<"intro" | "busy" | "goals">("intro");
 
   if (isLoading) {
     return (
@@ -36,46 +38,35 @@ export default function AiPlanningSection({ onPlanned }: AiPlanningSectionProps)
     );
   }
 
-  if (!hasPreferences) {
-    return (
-      <div
-        dir="rtl"
-        className="mt-6 overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-blue-100 p-8 text-center shadow-md shadow-indigo-500/10 dark:border-indigo-900/50 dark:from-indigo-950/30 dark:via-zinc-900 dark:to-blue-950/40 md:p-12"
-      >
-        <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 text-white shadow-lg shadow-indigo-500/30">
-          <Sparkles size={30} />
-        </span>
+  // Stage 1 counts as done the moment the preferences exist, so a returning
+  // user lands on the intro already pointed at stage 2.
+  const currentStep: PlannerStep =
+    stage === "goals" ? 3 : stage === "busy" ? 2 : hasPreferences ? 2 : 1;
+  const completed: PlannerStep[] = [
+    ...(hasPreferences ? ([1] as PlannerStep[]) : []),
+    ...(stage === "goals" ? ([2] as PlannerStep[]) : []),
+  ];
 
-        <h2 className="mt-6 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-          خطّط أسبوعك بالذكاء الاصطناعي
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-zinc-600 dark:text-zinc-300">
-          نعتمد على أهم الدراسات في التخطيط بناءً على تفضيلاتك ومهامك خلال الأسبوع، لذلك
-          يجب إدخال التفضيلات أولًا للحصول على تخطيط أفضل.
-        </p>
+  // Stage 1 lives on the settings page; stage 2 is a step in this flow.
+  const goToStep = (step: PlannerStep) => {
+    if (step === 1) router.push(SETTINGS_RETURN);
+    else if (step === 2) setStage("busy");
+  };
 
-        <button
-          type="button"
-          onClick={() =>
-            router.push(`/settings/planner?return=${encodeURIComponent("/planner?tab=ai")}`)
-          }
-          className="mx-auto mt-8 flex items-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
-        >
-          <Rocket size={20} />
-          ابدأ الرحلة
-        </button>
+  return (
+    <>
+      <PlannerStepper current={currentStep} completed={completed} onStepClick={goToStep} />
 
-        <p className="mt-4 flex items-center justify-center gap-1 text-xs text-zinc-400">
-          <Settings2 size={12} />
-          وقت النوم، ساعات الدراسة، مدة الجلسة، وأوقاتك المشغولة
-        </p>
-      </div>
-    );
-  }
-
-  if (!busyStepDone) {
-    return <NextWeekBusyTimesStep onContinue={() => setBusyStepDone(true)} />;
-  }
-
-  return <GoalsSection onPlanned={onPlanned} />;
+      {stage === "busy" ? (
+        <NextWeekBusyTimesStep onContinue={() => setStage("goals")} />
+      ) : stage === "goals" ? (
+        <GoalsSection onPlanned={onPlanned} onBack={() => setStage("busy")} />
+      ) : (
+        <AiPlanningIntro
+          hasPreferences={hasPreferences}
+          onStart={() => (hasPreferences ? setStage("busy") : router.push(SETTINGS_RETURN))}
+        />
+      )}
+    </>
+  );
 }

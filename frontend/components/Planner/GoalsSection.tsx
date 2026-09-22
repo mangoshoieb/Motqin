@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  ArrowRight,
   BookOpen,
+  CalendarClock,
   Minus,
   Plus,
   RefreshCw,
@@ -136,9 +138,11 @@ interface GoalsSectionProps {
   // Called once the AI has planned next week — the page switches to the
   // manual board so the generated tasks are visible right away.
   onPlanned?: () => void;
+  // Back to the busy-times stage, to add an appointment that was forgotten.
+  onBack?: () => void;
 }
 
-export default function GoalsSection({ onPlanned }: GoalsSectionProps) {
+export default function GoalsSection({ onPlanned, onBack }: GoalsSectionProps) {
   const queryClient = useQueryClient();
   const [source, setSource] = useState<GoalSource>("systematic");
 
@@ -248,13 +252,25 @@ export default function GoalsSection({ onPlanned }: GoalsSectionProps) {
   return (
     <div
       dir="rtl"
-      className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
+      className="mt-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
     >
-      <div className="mb-1 flex items-center gap-2">
+      <div className="mb-1 flex flex-wrap items-center gap-2">
         <Target className="text-blue-600 dark:text-blue-400" size={22} />
         <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
           أهداف الأسبوع القادم
         </h2>
+
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="ms-auto flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-800 dark:hover:bg-blue-950/40 dark:hover:text-blue-300"
+          >
+            <ArrowRight size={14} />
+            <CalendarClock size={14} />
+            العودة إلى الأوقات المشغولة
+          </button>
+        )}
       </div>
       <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">
         أضف هنا الأهداف التي تريد تحقيقها في الأسبوع القادم، وسيقوم الذكاء

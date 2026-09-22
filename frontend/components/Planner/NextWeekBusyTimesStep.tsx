@@ -104,7 +104,7 @@ export default function NextWeekBusyTimesStep({ onContinue }: NextWeekBusyTimesS
   return (
     <div
       dir="rtl"
-      className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
+      className="mt-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
     >
       <div className="mb-1 flex items-center gap-2">
         <CalendarClock className="text-blue-600 dark:text-blue-400" size={22} />
