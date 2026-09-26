@@ -230,7 +230,11 @@ function CommentItem({
   const displayName = isOwnComment
     ? shortName(user.fullName, shortName(comment.userName))
     : shortName(comment.userFullName ?? comment.userName);
-  const photoUrl = isOwnComment ? user.photoUrl : comment.userPhotoUrl;
+  // The comment carries the commenter's photo as profilePictureUrl; own
+  // comments prefer the live profile, which updates the moment it changes.
+  const photoUrl = isOwnComment
+    ? user.photoUrl ?? comment.profilePictureUrl
+    : comment.profilePictureUrl ?? comment.userPhotoUrl;
   // Deep threads are flattened for display; the data stays truly nested.
   const replies = isReply ? [] : flattenReplies(comment);
   const removedByAdmin = Boolean(comment.isDeletedByAdmin);

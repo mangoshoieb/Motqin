@@ -14,6 +14,7 @@ import { ExecutionBoardHeader } from "@/components/ExecutionBoard/ExecutionBoard
 import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList";
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
 import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
+import { AddCompletedSessionDialog } from "@/components/ExecutionBoard/AddCompletedSessionDialog";
 import { StudyPlanDuration, studyPlansService, studySessionsService } from "@/app/services/motqin";
 import {
   currentWeekDates,
@@ -25,6 +26,7 @@ import {
 } from "@/app/lib/study-plan";
 import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
 import { primeSessionAlerts } from "@/app/lib/session-alerts";
+import { toastApiError } from "@/app/lib/api-error";
 import { elapsedSecondsOf, useSessionTimerStore } from "@/app/lib/session-timer.store";
 import { API_ROUTES } from "@/app/constants/planner.constants";
 
@@ -57,6 +59,8 @@ const ExecutionBoardPage = () => {
   }, []);
   const [editingTask, setEditingTask] = useState<ExecutionTask | null>(null);
   const [sessionPendingDelete, setSessionPendingDelete] = useState<ExecutionSession | null>(null);
+  // The task whose "add a finished session" dialog is open (null = closed).
+  const [completedSessionTask, setCompletedSessionTask] = useState<ExecutionTask | null>(null);
   // Only one break runs at a time; it counts up and turns into "overrun"
   // once it passes the preference's break length.
   const [breakTimer, setBreakTimer] = useState<BreakTimer | null>(null);
@@ -126,6 +130,26 @@ const ExecutionBoardPage = () => {
   const setSessionStatus = (sessionId: string, status: ExecutionSession["status"]) =>
     setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, status } : s)));
 
+  // Non-zero while a start/pause round-trip is in flight. The rows and the
+  // app-wide clock are allowed to disagree until it settles, so the
+  // reconciliation below must keep its hands off.
+  const sessionRequests = useRef(0);
+
+  // What the app-wide clock needs to know about a session to run it. Reads
+  // the tasks through their ref, so it stays stable for the ticker below.
+  const runningSessionFor = useCallback(
+    (session: ExecutionSession) => ({
+      sessionId: session.id,
+      taskId: session.taskId,
+      title: session.title,
+      taskTitle: tasksRef.current.find((t) => t.id === session.taskId)?.title,
+      durationSeconds: session.sessionDurationMinutes * 60,
+      dayIndex,
+      weekOffset,
+    }),
+    [dayIndex, weekOffset],
+  );
+
   // The clock ran out (GlobalSessionTimer noticed, rang, and sent /end):
   // show the session as completed here and start its overtime counter,
   // which keeps running until the student saves or dismisses it.
@@ -146,6 +170,30 @@ const ExecutionBoardPage = () => {
     );
     clearSessionClock(sessionId);
   }, []);
+
+  // The clock is persisted, so it outlives the page — and it can outlive the
+  // session it was timing too: paused from another device, split in two by a
+  // pause, or ended. Whenever the server's own view of this day says that
+  // session isn't running, the clock goes; otherwise the floating box counts
+  // down against rows that sit at 00:00 with a play button.
+  useEffect(() => {
+    // Nothing to compare against until the day's own data is in: on the
+    // first render `sessions` is empty simply because it hasn't loaded.
+    if (isLoading || !data || sessionRequests.current > 0) return;
+
+    const clock = useSessionTimerStore.getState();
+    const running = clock.session;
+    if (!running || clock.status === "finished") return;
+    // Only this board's own day — the clock may be timing another day.
+    if (running.dayIndex !== dayIndex || running.weekOffset !== weekOffset) return;
+    if (sessions.some((s) => s.id === running.sessionId && s.status === "active")) return;
+
+    console.warn("[SESSION CLOCK] dropping a clock the server isn't running", running.sessionId);
+    // The stored record stays: it holds the seconds this session actually
+    // worked, and it is what a later restore reads instead of falling back
+    // to guessing from the server's startTime.
+    clock.clear();
+  }, [sessions, data, isLoading, dayIndex, weekOffset]);
 
   // Once a second: the break clock, overtime counters, and the running
   // session's elapsed time — which is read from the app-wide timer store
@@ -174,18 +222,9 @@ const ExecutionBoardPage = () => {
         // reload on another device, a cleared store): adopt it, from
         // wherever its clock was, so it keeps going.
         if (!clock.session) {
-          clock.start(
-            {
-              sessionId: active.id,
-              taskId: active.taskId,
-              title: active.title,
-              taskTitle: tasksRef.current.find((t) => t.id === active.taskId)?.title,
-              durationSeconds: active.sessionDurationMinutes * 60,
-              dayIndex,
-              weekOffset,
-            },
-            active.elapsedSeconds ?? active.actualMinutes * 60,
-          );
+          // Reads only refs and the route's day, so the interval's closure
+          // holding an older copy of this helper is harmless.
+          clock.start(runningSessionFor(active), active.elapsedSeconds ?? active.actualMinutes * 60);
         }
         return;
       }
@@ -205,7 +244,7 @@ const ExecutionBoardPage = () => {
       );
     }, 1000);
     return () => clearInterval(interval);
-  }, [markSessionTimedOut, dayIndex, weekOffset]);
+  }, [markSessionTimedOut, runningSessionFor, dayIndex, weekOffset]);
 
   // Each task's sessions, in orderInPlan order (see sortSessionsByOrder).
   const sessionsByTaskId = useMemo(() => {
@@ -267,20 +306,10 @@ const ExecutionBoardPage = () => {
 
     // From here on the app-wide clock (GlobalSessionTimer) times it.
     if (starting) {
-      useSessionTimerStore.getState().start(
-        {
-          sessionId,
-          taskId: starting.taskId,
-          title: starting.title,
-          taskTitle: tasks.find((t) => t.id === starting.taskId)?.title,
-          durationSeconds: starting.sessionDurationMinutes * 60,
-          dayIndex,
-          weekOffset,
-        },
-        startingElapsed,
-      );
+      useSessionTimerStore.getState().start(runningSessionFor(starting), startingElapsed);
     }
 
+    sessionRequests.current += 1;
     try {
       if (running) {
         console.log("[SESSION PAUSE] (auto, before start) request →", {
@@ -304,21 +333,28 @@ const ExecutionBoardPage = () => {
       const started = await studySessionsService.start(Number(sessionId));
       console.log("[SESSION START] response ←", started);
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
-    } catch {
+    } catch (error) {
       setSessionStatus(sessionId, previous);
       if (running) setSessionStatus(running.id, "active");
       useSessionTimerStore.getState().clear();
-      toast.error("تعذر بدء الجلسة");
+      toastApiError("تعذر بدء الجلسة", error);
+    } finally {
+      sessionRequests.current -= 1;
     }
   };
 
   const pauseSession = async (sessionId: string) => {
-    setSessionStatus(sessionId, "paused");
     const pausing = sessionsRef.current.find((s) => s.id === sessionId);
-    if (pausing) saveSessionClock(sessionId, pausing.elapsedSeconds ?? pausing.actualMinutes * 60, false);
-    const clock = useSessionTimerStore.getState();
-    if (clock.session?.sessionId === sessionId) clock.clear();
+    const elapsed = pausing?.elapsedSeconds ?? (pausing?.actualMinutes ?? 0) * 60;
+    // Whether this session is the one on the app-wide clock decides what
+    // has to be put back if the server refuses the pause.
+    const onGlobalClock = useSessionTimerStore.getState().session?.sessionId === sessionId;
 
+    setSessionStatus(sessionId, "paused");
+    if (pausing) saveSessionClock(sessionId, elapsed, false);
+    if (onGlobalClock) useSessionTimerStore.getState().clear();
+
+    sessionRequests.current += 1;
     try {
       console.log("[SESSION PAUSE] request →", {
         method: "PUT",
@@ -331,9 +367,36 @@ const ExecutionBoardPage = () => {
       // The server closed the worked part and opened a new session for the
       // remaining time — show that, and complete the task if nothing is left.
       await refetchBoard(pausing?.taskId);
-    } catch {
+    } catch (error) {
+      toastApiError("تعذر إيقاف الجلسة مؤقتًا", error);
+
+      // The request failed, but that doesn't mean the session is still
+      // running — it may already have been paused or ended server-side, in
+      // which case reverting to "active" is what makes it look unstoppable.
+      // Ask the server and follow whatever it says.
+      const fresh = await queryClient
+        .refetchQueries({ queryKey: ["execution-board", dayIndex, weekOffset] })
+        .then(() =>
+          queryClient.getQueryData<ExecutionBoardData | null>([
+            "execution-board",
+            dayIndex,
+            weekOffset,
+          ]),
+        )
+        .catch(() => null);
+      const serverSession = fresh?.detail.sessions.find((s) => s.id === sessionId);
+      if (serverSession && serverSession.status !== "active") return;
+
+      // Still running there, so put the whole UI back that way — row, stored
+      // clock and floating box together. Leaving the clock cleared here is
+      // what made the box vanish while the row kept ticking.
       setSessionStatus(sessionId, "active");
-      toast.error("تعذر إيقاف الجلسة مؤقتًا");
+      saveSessionClock(sessionId, elapsed, true);
+      if (onGlobalClock && pausing) {
+        useSessionTimerStore.getState().start(runningSessionFor(pausing), elapsed);
+      }
+    } finally {
+      sessionRequests.current -= 1;
     }
   };
 
@@ -426,7 +489,37 @@ const ExecutionBoardPage = () => {
     setBreakTimer({ afterSessionId: sessionId, elapsedSeconds: initialSeconds });
   };
 
-  const stopBreak = () => setBreakTimer(null);
+  // Finishing a break records it against the session it followed — the
+  // backend keeps that on the session itself (isBreakCompleted). The
+  // endpoint is a toggle, so a break already on the record is left alone
+  // rather than being flipped back off.
+  const stopBreak = async () => {
+    const finishing = breakTimer;
+    setBreakTimer(null);
+    if (!finishing) return;
+
+    const session = sessionsRef.current.find((s) => s.id === finishing.afterSessionId);
+    if (!session || session.breakCompleted) return;
+
+    setSessions((prev) =>
+      prev.map((s) => (s.id === session.id ? { ...s, breakCompleted: true } : s)),
+    );
+
+    try {
+      const updated = await studySessionsService.toggleBreak(Number(session.id));
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === session.id ? { ...s, breakCompleted: updated?.isBreakCompleted ?? true } : s,
+        ),
+      );
+      queryClient.invalidateQueries({ queryKey: ["execution-board"] });
+    } catch (error) {
+      setSessions((prev) =>
+        prev.map((s) => (s.id === session.id ? { ...s, breakCompleted: false } : s)),
+      );
+      toastApiError("تعذر تسجيل الاستراحة", error);
+    }
+  };
 
   // Spend the bonus as rest instead of saving it: the break clock starts
   // from where the bonus left off (3:20 of bonus → break already at 3:20).
@@ -719,13 +812,14 @@ const ExecutionBoardPage = () => {
           breakMinutes={breakMinutes}
           onToggleComplete={toggleTaskComplete}
           onAddSession={addSessionForTask}
+          onAddCompletedSession={setCompletedSessionTask}
           onToggleSession={toggleSession}
           onSaveOvertime={(sessionId) => void saveOvertime(sessionId)}
           onDismissOvertime={dismissOvertime}
           onSpendOvertimeAsBreak={spendOvertimeAsBreak}
           breakTimer={breakTimer}
           onStartBreak={startBreak}
-          onStopBreak={stopBreak}
+          onStopBreak={() => void stopBreak()}
           onUpdateSession={updateSession}
           onDeleteSession={(sessionId) =>
             setSessionPendingDelete(sessions.find((s) => s.id === sessionId) ?? null)
@@ -745,6 +839,16 @@ const ExecutionBoardPage = () => {
             confirmLabel="حذف"
             onConfirm={() => deleteSession(sessionPendingDelete.id)}
             onClose={() => setSessionPendingDelete(null)}
+          />
+        )}
+
+        {completedSessionTask && (
+          <AddCompletedSessionDialog
+            task={completedSessionTask}
+            boardDate={data.day.date}
+            defaultMinutes={sessionMinutes}
+            onCreated={() => void refetchBoard(completedSessionTask.id)}
+            onClose={() => setCompletedSessionTask(null)}
           />
         )}
 

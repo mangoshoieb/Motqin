@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, CheckSquare, GripVertical, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee } from "lucide-react";
+import { Check, CheckCircle2, CheckSquare, GripVertical, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { formatMinutes } from "@/app/lib/duration";
 import { RichTextContent, RichTextEditor, isRichTextEmpty } from "@/components/ui/RichTextEditor";
@@ -13,6 +13,8 @@ interface ExecutionTaskRowProps {
   breakMinutes?: number; // break shown between sessions, from user preferences
   onToggleComplete: (id: string) => void;
   onAddSession?: (task: ExecutionTask) => void; // starts a new session for this task
+  // Logs study done outside the app (status ManuallyCompleted).
+  onAddCompletedSession?: (task: ExecutionTask) => void;
   onToggleSession?: (sessionId: string) => void; // play/pause an existing session
   // overtime counter shown after the clock ran out — credit it or drop it
   onSaveOvertime?: (sessionId: string) => void;
@@ -115,6 +117,7 @@ export const ExecutionTaskRow = ({
   breakMinutes,
   onToggleComplete,
   onAddSession,
+  onAddCompletedSession,
   onToggleSession,
   onSaveOvertime,
   onDismissOvertime,
@@ -355,7 +358,26 @@ export const ExecutionTaskRow = ({
                 >
                   {session.status === "completed" ? (
                     <span className="flex shrink-0 items-center gap-1.5">
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">مكتمل</span>
+                      <span
+                        title={session.manuallyCompleted ? "جلسة سُجّلت يدويًا بعد إتمامها" : undefined}
+                        className={cn(
+                          "text-xs font-semibold",
+                          session.manuallyCompleted
+                            ? "rounded-md bg-emerald-50 px-1.5 py-0.5 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                            : "text-emerald-600 dark:text-emerald-400",
+                        )}
+                      >
+                        {session.manuallyCompleted ? "مكتمل (يدويًا)" : "مكتمل"}
+                      </span>
+                      {/* The break after this session is on the record. */}
+                      {session.breakCompleted && (
+                        <span
+                          title="تم تسجيل الاستراحة بعد هذه الجلسة"
+                          className="flex size-5 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
+                        >
+                          <Coffee size={11} />
+                        </span>
+                      )}
                       {/* Manual break after this session (covers the last one,
                           which has no divider below it). */}
                       {offersBreak(session) && !session.overtimeRunning &&
@@ -391,7 +413,17 @@ export const ExecutionTaskRow = ({
                     </button>
                   )}
 
+                  {/* Which session of the task this is — they're listed in
+                      orderInPlan order, so the position is the number. */}
+                  <span
+                    aria-hidden
+                    className="flex size-5 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-[10px] font-bold tabular-nums text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                  >
+                    {index + 1}
+                  </span>
+
                   <span className="min-w-0 flex-1 truncate text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                    <span className="sr-only">{`الجلسة ${index + 1}: `}</span>
                     {session.title}
                   </span>
 
@@ -560,13 +592,25 @@ export const ExecutionTaskRow = ({
             );
           })}
 
-          <button
-            type="button"
-            onClick={() => onAddSession?.(task)}
-            className="self-start text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
-          >
-            + إضافة جلسة
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onAddSession?.(task)}
+              className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+            >
+              + إضافة جلسة
+            </button>
+            {/* For work already done — no timer to sit through. */}
+            <button
+              type="button"
+              title="سجّل وقتًا ذاكرته خارج التطبيق"
+              onClick={() => onAddCompletedSession?.(task)}
+              className="flex items-center gap-1 text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+            >
+              <CheckCircle2 size={13} />
+              إضافة جلسة منتهية
+            </button>
+          </div>
         </div>
       )}
       </div>
@@ -633,7 +677,7 @@ export const ExecutionTaskRow = ({
             }}
             className="flex flex-1 items-center justify-center px-3 py-8 text-sm text-zinc-400 transition hover:text-blue-600 dark:hover:text-blue-400"
           >
-            لا يوجد ملاحظات أضف ملاحظة
+            لا يوجد ملاحظات أضف ملاحظة<span className="text-xl mr-1">+</span>
           </button>
         )}
       </div>

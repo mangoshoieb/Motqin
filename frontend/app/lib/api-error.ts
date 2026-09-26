@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios";
+import { toast } from "sonner";
 
 // Shape we've seen the .NET backend send back on errors. Not every field is
 // present on every error — we just take the first one that has a string in
@@ -82,4 +83,25 @@ export function getApiErrorMessage(error: unknown): string {
 
 export function getApiErrorStatus(error: unknown): number | undefined {
   return axios.isAxiosError(error) ? error.response?.status : undefined;
+}
+
+/**
+ * Reports a failed API action: the toast carries our label plus whatever the
+ * backend actually said, and the console keeps the full response. Without
+ * this a generic "تعذر ..." hides the one thing that explains the failure.
+ */
+export function toastApiError(label: string, error: unknown): void {
+  const status = getApiErrorStatus(error);
+  const message = getApiErrorMessage(error);
+
+  console.error(label, {
+    status,
+    message,
+    response: axios.isAxiosError(error) ? error.response?.data : error,
+    url: axios.isAxiosError(error) ? error.config?.url : undefined,
+  });
+
+  toast.error(label, {
+    description: status ? `${message} (${status})` : message,
+  });
 }

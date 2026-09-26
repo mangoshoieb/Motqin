@@ -62,13 +62,15 @@ export interface CreatedStudyPlan extends CreateStudyPlanPayload {
 
 // The `status` carried by a study session. Completed is 2 (confirmed by the
 // backend); the rest mirror the study-plan numbering, with 3 = paused as
-// observed from /pause responses.
+// observed from /pause responses. 4 is a session the user logged after the
+// fact (POST /manually-completed-session): finished work, but never run on
+// the app's clock, so it can't be started, paused or ended.
 export const StudySessionStatus = {
   Upcoming: 0,
   InProgress: 1,
   Completed: 2,
   Paused: 3,
-  Missed: 4,
+  ManuallyCompleted: 4,
 } as const;
 export type StudySessionStatus = (typeof StudySessionStatus)[keyof typeof StudySessionStatus];
 
@@ -86,6 +88,9 @@ export interface StudySessionDto {
   // 1-based position of the session within its study plan — the order
   // the execution board lists a task's sessions in.
   orderInPlan?: number;
+  // Whether the break that follows this session has been taken
+  // (PUT /{id}/toggle-break flips it).
+  isBreakCompleted?: boolean;
   notes: string[];
 }
 
@@ -94,6 +99,17 @@ export interface CreateStudySessionPayload {
   date: string;
   description?: string;
   durationInMinutes?: number;
+  goalCategoryId?: number;
+}
+
+// A session the user studied outside the app and wants on the record. It is
+// stored as ManuallyCompleted and, per the endpoint's own docs, consumes the
+// plan's remaining time — there's no date, only when it was finished.
+export interface CreateCompletedSessionPayload {
+  studyPlanId?: number;
+  durationInMinutes: number;
+  completedAt?: string;
+  description?: string;
   goalCategoryId?: number;
 }
 
@@ -230,7 +246,32 @@ export const userGoalsService = {
   },
 };
 
+// GET /validate-courses-schedule — which of the user's curriculum subjects
+// still have no lesson times on their weekly schedule.
+export interface CoursesScheduleValidation {
+  isComplete: boolean;
+  totalSubjects: number;
+  scheduledSubjectsCount: number;
+  missingSubjects: unknown[];
+}
+
 export const courseSchedulesService = {
+  // A user with no subjects at all comes back as complete (nothing is
+  // missing), which is what the endpoint reports too.
+  async validate(): Promise<CoursesScheduleValidation> {
+    const { data } = await axiosInstance.get<
+      CoursesScheduleValidation | ApiEnvelope<CoursesScheduleValidation>
+    >(API_ROUTES.COURSE_SCHEDULES.VALIDATE);
+
+    const result = unwrap(data);
+    return {
+      isComplete: result?.isComplete ?? false,
+      totalSubjects: result?.totalSubjects ?? 0,
+      scheduledSubjectsCount: result?.scheduledSubjectsCount ?? 0,
+      missingSubjects: result?.missingSubjects ?? [],
+    };
+  },
+
   async getAll(): Promise<CourseSchedule[]> {
     const { data } = await axiosInstance.get<
       CourseSchedule[] | ApiEnvelope<CourseSchedule[]>
@@ -353,6 +394,16 @@ export const studySessionsService = {
     return unwrap(data);
   },
 
+  // One session on its own — used to check whether the session a restored
+  // clock is timing is actually still running on the server.
+  async getById(id: number): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.get<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.GET_BY_ID(id));
+
+    return unwrap(data);
+  },
+
   async update(
     id: number,
     payload: UpdateStudySessionPayload,
@@ -390,6 +441,22 @@ export const studySessionsService = {
     const { data } = await axiosInstance.put<
       StudySessionDto | ApiEnvelope<StudySessionDto>
     >(API_ROUTES.STUDY_SESSIONS.PAUSE(id));
+
+    return unwrap(data);
+  },
+
+  // Records work the user did outside the app. Swagger documents no
+  // response body, so callers refetch the board.
+  async createCompleted(payload: CreateCompletedSessionPayload): Promise<void> {
+    await axiosInstance.post(API_ROUTES.STUDY_SESSIONS.MANUALLY_COMPLETED, payload);
+  },
+
+  // Flips the session's isBreakCompleted — the break that follows it was
+  // taken. A toggle, so callers check the current value before sending.
+  async toggleBreak(id: number): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.put<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.TOGGLE_BREAK(id));
 
     return unwrap(data);
   },

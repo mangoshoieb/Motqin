@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { usePlannerPreferences } from "@/app/hooks/usePlannerPreferences";
+import { useCoursesScheduleValidation } from "@/app/hooks/useCoursesSchedule";
 import Skeleton from "@/components/ui/Skeleton";
 import AiPlanningIntro from "@/components/Planner/AiPlanningIntro";
 import GoalsSection from "@/components/Planner/GoalsSection";
@@ -14,7 +15,8 @@ interface AiPlanningSectionProps {
   onPlanned?: () => void;
 }
 
-const SETTINGS_RETURN = `/settings/planner?return=${encodeURIComponent("/planner?tab=ai")}`;
+const settingsHref = (tab?: "courses") =>
+  `/settings/planner?${tab ? `tab=${tab}&` : ""}return=${encodeURIComponent("/planner?tab=ai")}`;
 
 /**
  * The "plan with AI" tab. The intro card always opens the flow — only its
@@ -26,9 +28,13 @@ const SETTINGS_RETURN = `/settings/planner?return=${encodeURIComponent("/planner
 export default function AiPlanningSection({ onPlanned }: AiPlanningSectionProps) {
   const router = useRouter();
   const { hasPreferences, isLoading } = usePlannerPreferences();
+  // The planner also needs to know when the user's lessons are, or it has
+  // no idea which hours of the week are already taken.
+  const { isComplete: coursesScheduled, missingCount, isLoading: coursesLoading } =
+    useCoursesScheduleValidation();
   const [stage, setStage] = useState<"intro" | "busy" | "goals">("intro");
 
-  if (isLoading) {
+  if (isLoading || coursesLoading) {
     return (
       <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <Skeleton className="h-6 w-56" />
@@ -38,18 +44,22 @@ export default function AiPlanningSection({ onPlanned }: AiPlanningSectionProps)
     );
   }
 
-  // Stage 1 counts as done the moment the preferences exist, so a returning
-  // user lands on the intro already pointed at stage 2.
+  // Stage 1 is the whole of the settings page: the basic preferences *and*
+  // the weekly lesson times. Either one missing sends the user back there.
+  const setupDone = hasPreferences && coursesScheduled;
   const currentStep: PlannerStep =
-    stage === "goals" ? 3 : stage === "busy" ? 2 : hasPreferences ? 2 : 1;
+    stage === "goals" ? 3 : stage === "busy" ? 2 : setupDone ? 2 : 1;
   const completed: PlannerStep[] = [
-    ...(hasPreferences ? ([1] as PlannerStep[]) : []),
+    ...(setupDone ? ([1] as PlannerStep[]) : []),
     ...(stage === "goals" ? ([2] as PlannerStep[]) : []),
   ];
 
+  // Straight to the lessons tab when that's the part still missing.
+  const setupHref = settingsHref(hasPreferences && !coursesScheduled ? "courses" : undefined);
+
   // Stage 1 lives on the settings page; stage 2 is a step in this flow.
   const goToStep = (step: PlannerStep) => {
-    if (step === 1) router.push(SETTINGS_RETURN);
+    if (step === 1) router.push(setupHref);
     else if (step === 2) setStage("busy");
   };
 
@@ -64,7 +74,9 @@ export default function AiPlanningSection({ onPlanned }: AiPlanningSectionProps)
       ) : (
         <AiPlanningIntro
           hasPreferences={hasPreferences}
-          onStart={() => (hasPreferences ? setStage("busy") : router.push(SETTINGS_RETURN))}
+          coursesScheduled={coursesScheduled}
+          missingCoursesCount={missingCount}
+          onStart={() => (setupDone ? setStage("busy") : router.push(setupHref))}
         />
       )}
     </>

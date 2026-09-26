@@ -48,10 +48,25 @@ export const restoreSessionClock = (sessionId: string, serverRunning: boolean): 
   }
 };
 
+/**
+ * The backend sends timestamps with no timezone at all —
+ * "2026-09-26T17:20:58.3478948" — and they are UTC. `new Date()` reads a
+ * string like that as *local* time, so on a UTC+3 machine a session that
+ * started a minute ago parses as three hours old. Anything derived from it
+ * (how far a session has run, whether its time is up) is then wrong by the
+ * whole offset, so every server timestamp goes through here.
+ */
+export const parseServerDate = (value?: string | null): number | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const hasZone = /(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(trimmed);
+  const time = Date.parse(hasZone ? trimmed : `${trimmed}Z`);
+  return Number.isNaN(time) ? null : time;
+};
+
 /** Fallback when nothing is stored locally: seconds since the server's startTime. */
 export const elapsedSinceStart = (startTime?: string | null): number | null => {
-  if (!startTime) return null;
-  const started = new Date(startTime).getTime();
-  if (Number.isNaN(started)) return null;
+  const started = parseServerDate(startTime);
+  if (started === null) return null;
   return Math.max(0, Math.floor((Date.now() - started) / 1000));
 };

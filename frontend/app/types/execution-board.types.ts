@@ -46,6 +46,12 @@ export interface ExecutionSession {
   // listed in this order. Missing on a session the backend didn't number.
   orderInPlan?: number;
   status: "idle" | "active" | "paused" | "completed";
+  // Logged after the fact rather than run on the clock (status 4,
+  // ManuallyCompleted) — counts as done, but was never started or paused.
+  manuallyCompleted?: boolean;
+  // Whether the break after this session has been taken (the server's
+  // isBreakCompleted, flipped by PUT /{id}/toggle-break).
+  breakCompleted?: boolean;
   // Set when the timer ran out but the user kept going: seconds worked past
   // the planned duration, ticking until they save (PUT /add-time) or dismiss.
   overtimeRunning?: boolean;

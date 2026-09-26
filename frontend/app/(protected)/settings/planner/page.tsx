@@ -107,7 +107,11 @@ const PlannerSettingsPage = () => {
   } = usePlannerPreferences();
 
   const [draft, setDraft] = useState<PlannerPreferences | null>(null);
-  const [busyTab, setBusyTab] = useState<BusyTab>("courses");
+  // "?tab=other" picks the tab to land on; the AI planner links here with
+  // "courses" when that's the part the user still has to fill in.
+  const [busyTab, setBusyTab] = useState<BusyTab>(
+    searchParams.get("tab") === "other" ? "other" : "courses",
+  );
 
   // Walk a first-time user through the required fields once the form is
   // on screen. Users who already saved preferences know the page.

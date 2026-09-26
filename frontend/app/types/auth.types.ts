@@ -130,7 +130,7 @@ declare global {
   export interface CompleteProfileRequest {
     phoneNumber: string;
     name: string;
-    region: string;
+    region: number;
   }
 
   export interface CompleteProfileResponse {
@@ -146,15 +146,16 @@ declare global {
     fullName: string;
     email: string;
     emailConfirmed:boolean;
-    country: string;
+    country: string | number;
     role: string | null;
     gradeLevel: number;
     educationalStage: number;
     isProfileComplete:boolean;
-    // Not yet returned by GET /users/me — kept optional until the backend
-    // exposes it, so the profile page's region field has somewhere to live.
     createdAt:string;
-    region?: string;
+    // Country and region come back as the enum *name* ("Egypt", "Cairo")
+    // rather than the integer the API takes, so both are read through the
+    // lookup lists (see findLookupItem) before being shown or sent back.
+    region?: string | number | null;
     phoneNumber?: string | null;
     phoneNumberConfirmed:boolean;
     roles?: string[];

@@ -2,12 +2,15 @@
 
 import {
   BrainCircuit,
+  GraduationCap,
   PencilLine,
   Rocket,
   Settings2,
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
+
+import { cn } from "@/app/lib/utils";
 
 // The three selling points, each on its own line with its own icon.
 const highlights: { icon: typeof BrainCircuit; text: string }[] = [
@@ -19,6 +22,10 @@ const highlights: { icon: typeof BrainCircuit; text: string }[] = [
 interface AiPlanningIntroProps {
   /** Decides the call to action: start the journey, or carry on with it. */
   hasPreferences: boolean;
+  /** Whether every subject's lesson times are on the weekly schedule. */
+  coursesScheduled?: boolean;
+  /** How many subjects are still missing theirs, for the hint below. */
+  missingCoursesCount?: number;
   onStart: () => void;
 }
 
@@ -26,7 +33,23 @@ interface AiPlanningIntroProps {
  * The card that opens the AI planning flow — shown on every visit, with the
  * button pointing at whatever the user still has to do.
  */
-export default function AiPlanningIntro({ hasPreferences, onStart }: AiPlanningIntroProps) {
+export default function AiPlanningIntro({
+  hasPreferences,
+  coursesScheduled = true,
+  missingCoursesCount = 0,
+  onStart,
+}: AiPlanningIntroProps) {
+  // The preferences are saved but the lessons aren't — the one case the
+  // hint below is a thing left to do rather than a description.
+  const needsCourses = hasPreferences && !coursesScheduled;
+  const hint = !hasPreferences
+    ? "وقت النوم، ساعات الدراسة، مدة الجلسة، وأوقاتك المشغولة"
+    : needsCourses
+      ? missingCoursesCount > 0
+        ? `بقي أن تضيف مواعيد الدروس لـ ${missingCoursesCount} من موادك`
+        : "بقي أن تضيف مواعيد دروسك الأسبوعية"
+      : "تفضيلاتك جاهزة — تابع بإضافة أوقاتك المشغولة ثم أهدافك";
+
   return (
     <div
       dir="rtl"
@@ -63,11 +86,14 @@ export default function AiPlanningIntro({ hasPreferences, onStart }: AiPlanningI
         {hasPreferences ? "أكمل الرحلة" : "ابدأ الرحلة"}
       </button>
 
-      <p className="mt-4 flex items-center justify-center gap-1 text-xs text-zinc-400">
-        <Settings2 size={12} />
-        {hasPreferences
-          ? "تفضيلاتك جاهزة — تابع بإضافة أوقاتك المشغولة ثم أهدافك"
-          : "وقت النوم، ساعات الدراسة، مدة الجلسة، وأوقاتك المشغولة"}
+      <p
+        className={cn(
+          "mt-4 flex items-center justify-center gap-1 text-xs",
+          needsCourses ? "text-amber-600 dark:text-amber-400" : "text-zinc-400",
+        )}
+      >
+        {needsCourses ? <GraduationCap size={13} /> : <Settings2 size={12} />}
+        {hint}
       </p>
     </div>
   );

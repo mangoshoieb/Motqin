@@ -64,6 +64,13 @@ export const API_ROUTES = {
     LOGOUT: "/auth/logout",
   },
 
+  // Reference lists for the enums the API stores (country, governorate).
+  // Open endpoints — no token needed.
+  LOOKUPS: {
+    COUNTRIES: "/lookups/countries",
+    EGYPTIAN_GOVERNORATES: "/lookups/egyptian-governorates",
+  },
+
   SUBJECTS: {
     GET_ALL: "/subjects",
   },
@@ -106,6 +113,9 @@ export const API_ROUTES = {
   },
   COURSE_SCHEDULES: {
     GET_ALL: "/user-preferences/planner/courses-schedules",
+    // Which curriculum subjects still have no schedule — the AI planner
+    // needs every one of them before it can lay out a week.
+    VALIDATE: "/user-preferences/planner/validate-courses-schedule",
     POST: "/user-preferences/planner/course-schedule",
     UPDATE: (id: string | number) => `/user-preferences/planner/courses-schedule/${id}`,
     DELETE: (id: string | number) => `/user-preferences/planner/courses-schedule/${id}`,
@@ -128,11 +138,14 @@ export const API_ROUTES = {
   },
   STUDY_SESSIONS: {
     CREATE: "/study-session/create",
+    MANUALLY_COMPLETED: "/study-session/manually-completed-session",
+    GET_BY_ID: (id: string | number) => `/study-session/${id}`,
     UPDATE: (id: string | number) => `/study-session/${id}`,
     DELETE: (id: string | number) => `/study-session/${id}`,
     START: (id: string | number) => `/study-session/${id}/start`,
     END: (id: string | number) => `/study-session/${id}/end`,
     PAUSE: (id: string | number) => `/study-session/${id}/pause`,
     ADD_TIME: (id: string | number) => `/study-session/${id}/add-time`,
+    TOGGLE_BREAK: (id: string | number) => `/study-session/${id}/toggle-break`,
   },
 };

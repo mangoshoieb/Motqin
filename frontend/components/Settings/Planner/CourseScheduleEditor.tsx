@@ -145,7 +145,12 @@ export const CourseScheduleEditor = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["course-schedules"] });
+  // The AI planner gates on whether every subject has its lessons scheduled,
+  // so that answer is stale the moment one is added or removed.
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["course-schedules"] });
+    queryClient.invalidateQueries({ queryKey: ["courses-schedule-validation"] });
+  };
 
   const closeForms = () => {
     setAddingDay(null);

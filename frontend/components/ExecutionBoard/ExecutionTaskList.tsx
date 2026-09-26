@@ -22,6 +22,8 @@ interface ExecutionTaskListProps {
   breakMinutes?: number; // pomodoroBreakMinutes from the user's preferences
   onToggleComplete: (id: string) => void;
   onAddSession?: (task: ExecutionTask) => void;
+  // Logs study done outside the app (status ManuallyCompleted).
+  onAddCompletedSession?: (task: ExecutionTask) => void;
   onToggleSession?: (sessionId: string) => void;
   onSaveOvertime?: (sessionId: string) => void;
   onDismissOvertime?: (sessionId: string) => void;
@@ -46,6 +48,7 @@ export const ExecutionTaskList = ({
   breakMinutes,
   onToggleComplete,
   onAddSession,
+  onAddCompletedSession,
   onToggleSession,
   onSaveOvertime,
   onDismissOvertime,
@@ -164,6 +167,7 @@ export const ExecutionTaskList = ({
               breakMinutes={breakMinutes}
               onToggleComplete={onToggleComplete}
               onAddSession={onAddSession}
+              onAddCompletedSession={onAddCompletedSession}
               onToggleSession={onToggleSession}
               onSaveOvertime={onSaveOvertime}
               onDismissOvertime={onDismissOvertime}

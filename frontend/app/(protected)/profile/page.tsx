@@ -14,6 +14,8 @@ import {
 } from "@/app/constants/user.constants";
 import RegionSelect from "@/components/RegionSelect";
 import { useCurrentUser } from "@/app/hooks/useCurrentUser";
+import { useCountries, useEgyptianGovernorates } from "@/app/hooks/useLookups";
+import { findLookupItem } from "@/app/types/lookup.types";
 import GoalsManager from "@/components/Profile/GoalsManager";
 
 const PROFILE_IMAGE = "/my-notion-face-portrait.png";
@@ -51,25 +53,39 @@ export default function ProfilePage() {
 
   const photoSrc = photoPreview ?? user?.photoUrl ?? PROFILE_IMAGE;
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    bio: string;
+    // The governorate as the API numbers it; null until one is chosen.
+    region: number | null;
+    gradeLevel: number;
+  }>({
     name: "",
     bio: "",
-    region: "",
+    region: null,
     gradeLevel: 0,
   });
   const { mutate: updateProfile, isPending: isSavingProfile } = useUpdateProfile();
 
+  // Both come back as the enum name ("Egypt", "Cairo"); the lookups turn
+  // that into the Arabic label to show and the integer the API works in.
+  const { data: countries } = useCountries();
+  const { data: governorates } = useEgyptianGovernorates();
+  const countryLabel = findLookupItem(countries, user?.country)?.nameAr;
+  const regionValue = findLookupItem(governorates, user?.region)?.value ?? null;
+
   // Sync the editable form with the real user data once /users/me resolves.
+  // regionValue is in here too: the governorate list may land after the user.
   useEffect(() => {
     if (user) {
       setForm((prev) => ({
         ...prev,
         name: user.fullName ?? "",
-        region: user.region ?? "",
+        region: regionValue,
         gradeLevel: user.gradeLevel ?? 0,
       }));
     }
-  }, [user]);
+  }, [user, regionValue]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -80,7 +96,7 @@ export default function ProfilePage() {
     }));
   };
 
-  const handleRegionChange = (value: string) => {
+  const handleRegionChange = (value: number) => {
     setForm((prev) => ({ ...prev, region: value }));
   };
 
@@ -90,7 +106,7 @@ export default function ProfilePage() {
     setForm({
       name: user?.fullName ?? "",
       bio: "",
-      region: user?.region ?? "",
+      region: regionValue,
       gradeLevel: user?.gradeLevel ?? 0,
     });
   };
@@ -322,7 +338,7 @@ export default function ProfilePage() {
               <label className="mb-2 block font-medium">الدولة</label>
 
               <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {user?.country}
+                {countryLabel ?? <span className="text-zinc-400">—</span>}
               </div>
             </div>
 

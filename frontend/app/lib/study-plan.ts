@@ -69,6 +69,9 @@ export const studyPlanToExecutionTask = (item: StudyPlanItem): ExecutionTask => 
 
 const sessionStatus = (status: number): ExecutionSession["status"] => {
   if (status === StudySessionStatus.Completed) return "completed";
+  // Logged after the fact — done as far as the board is concerned, and the
+  // `manuallyCompleted` flag below is what tells the two apart.
+  if (status === StudySessionStatus.ManuallyCompleted) return "completed";
   if (status === StudySessionStatus.InProgress) return "active";
   if (status === StudySessionStatus.Paused) return "paused";
   return "idle";
@@ -104,6 +107,8 @@ export const studySessionToExecutionSession = (
     notes: session.notes?.join("\n") ?? "",
     orderInPlan: session.orderInPlan ?? undefined,
     status,
+    manuallyCompleted: session.status === StudySessionStatus.ManuallyCompleted,
+    breakCompleted: session.isBreakCompleted ?? false,
   };
 };
 

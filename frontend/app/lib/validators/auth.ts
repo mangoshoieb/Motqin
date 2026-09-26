@@ -28,7 +28,10 @@ export const completeProfileSchema = z.object({
     .min(3, "الاسم يجب أن يحتوي على 3 أحرف على الأقل")
     .max(50),
 
+  // EgyptianGovernorate on the API: the integer from
+  // GET /lookups/egyptian-governorates, never the Arabic label.
   region: z
-    .string()
+    .number({ error: "يرجى اختيار المحافظة" })
+    .int()
     .min(1, "يرجى اختيار المحافظة"),
 });

@@ -18,6 +18,8 @@ export interface QuoteComment {
   createdAt: string;
   userId?: string;
   userName?: string;
+  // What the backend actually sends for the commenter's photo.
+  profilePictureUrl?: string | null;
   // Not sent yet — picked up automatically once the backend adds them.
   userFullName?: string | null;
   userPhotoUrl?: string | null;
