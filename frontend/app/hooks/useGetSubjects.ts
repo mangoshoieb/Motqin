@@ -6,6 +6,6 @@ import { subjectsService } from "../services/motqin";
 export function useGetSubjects() {
   return useQuery({
     queryKey: ["subjects"],
-    queryFn: subjectsService.getAllSubjects,
+    queryFn: subjectsService.getForUser,
   });
 }

@@ -72,7 +72,10 @@ export const API_ROUTES = {
   },
 
   SUBJECTS: {
+    // The whole catalogue; the app asks for the user's own curriculum
+    // instead — their country, educational stage and grade level.
     GET_ALL: "/subjects",
+    FOR_USER: "/subjects/for-user",
   },
 
   LESSONS: {

@@ -12,23 +12,49 @@ interface QuizCardProps {
   form: SessionItemForm;
   answer: string;
   onAnswerChange: (value: string) => void;
-  // §1/§6.2 — a Filler card reviews an already-finished question; answering
+  // Enter in the fill-in-the-blank field submits, as on mobile.
+  onSubmit?: () => void;
+  // §1/§6.3 — a Filler card reviews an already-finished question; answering
   // it never changes score or un-finishes the question.
   isReview?: boolean;
 }
+
+// Renders a fill-in-the-blank prompt with each run of underscores drawn as
+// a visual blank, so it reads as a sentence to complete (mobile _FibPrompt).
+const FibPrompt = ({ text }: { text: string }) => {
+  const parts = text.split(/_{2,}/);
+  if (parts.length < 2) return <>{text}</>;
+
+  return (
+    <>
+      {parts.map((part, i) => (
+        <span key={i}>
+          {part}
+          {i < parts.length - 1 && (
+            <span className="inline-block w-18 mx-1 align-baseline border-b-2 border-blue-600 dark:border-blue-400" />
+          )}
+        </span>
+      ))}
+    </>
+  );
+};
 
 const typeLabels: Record<string, string> = {
   MultipleChoiceQuestion: "اختيار من متعدد",
   FillInTheBlankQuestion: "أكمل الفراغ",
 };
 
-export const QuizCard = ({ question, form, answer, onAnswerChange, isReview = false }: QuizCardProps) => {
+export const QuizCard = ({
+  question,
+  form,
+  answer,
+  onAnswerChange,
+  onSubmit,
+  isReview = false,
+}: QuizCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const options = (form.answerOptions ?? "")
-    .split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
+  const options = (form.answerOptions ?? []).map((o) => o.trim()).filter(Boolean);
 
   const hasInfo = Boolean(question.description || question.imageUrl || question.audioUrl);
 
@@ -74,7 +100,11 @@ export const QuizCard = ({ question, form, answer, onAnswerChange, isReview = fa
           </div>
 
           <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
-            {form.questionText}
+            {form.questionType === "FillInTheBlankQuestion" ? (
+              <FibPrompt text={form.questionText} />
+            ) : (
+              form.questionText
+            )}
           </p>
 
           <div className="flex-1 flex flex-col gap-3">
@@ -99,6 +129,10 @@ export const QuizCard = ({ question, form, answer, onAnswerChange, isReview = fa
                 type="text"
                 value={answer}
                 onChange={(e) => onAnswerChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && answer.trim()) onSubmit?.();
+                }}
+                autoFocus
                 placeholder="اكتب إجابتك هنا"
                 className="w-full rounded-xl border border-zinc-200 bg-white p-3 text-sm text-zinc-900 outline-none transition focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-blue-500"
               />

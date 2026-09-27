@@ -1,11 +1,23 @@
-// Conforms to Session Algorithm Spec v3.0 — §9 conformance tests, ported as
-// automated tests. Every implementation MUST reproduce these traces exactly.
+// Conforms to Session Algorithm Spec v3 + flowchart v2 (the mobile app's
+// quiz_system SessionEngine) — conformance traces, ported as automated
+// tests. Every implementation MUST reproduce these traces exactly.
 import { describe, expect, it } from "vitest";
-import { apply, endSession, getBlockProgress, init } from "./session-algorithm";
+import {
+  SNAPSHOT_VERSION,
+  apply,
+  checkAnswer,
+  endSession,
+  getBlockProgress,
+  getLessonProgress,
+  init,
+  restore,
+  toSnapshot,
+} from "./session-algorithm";
 
-function makeItem(questionId: number): SessionItemPayload {
+function makeItem(questionId: number, displayOrder: number): SessionItemPayload {
   return {
     questionId,
+    displayOrder,
     title: `title-${questionId}`,
     description: "",
     imageUrl: null,
@@ -13,306 +25,405 @@ function makeItem(questionId: number): SessionItemPayload {
     mcq: {
       questionType: "MultipleChoiceQuestion",
       questionText: `mcq-${questionId}`,
-      answerOptions: "a,b",
+      answerOptions: ["a", "b"],
       correctAnswer: "a",
       correctText: null,
-      caseSensitive: null,
     },
     fib: {
       questionType: "FillInTheBlankQuestion",
       questionText: `fib-${questionId}`,
       answerOptions: null,
       correctAnswer: null,
-      correctText: "a",
-      caseSensitive: false,
+      correctText: ["a"],
     },
   };
 }
+
+// Items with ids 101, 102, ... at displayOrder 1, 2, ...
+const makeItems = (count: number) => Array.from({ length: count }, (_, i) => makeItem(101 + i, i + 1));
 
 const correct = { type: "ANSWER" as const, correct: true, userAnswer: "a" };
 const wrong = { type: "ANSWER" as const, correct: false, userAnswer: "wrong" };
 const CONTINUE = { type: "CONTINUE" as const };
 
-describe("§9.1 — chunked intro (INTRO_CHUNK = BATCH_SIZE), re-teach, filler, block advance", () => {
-  it("reproduces the scripted 16-turn trace exactly", () => {
-    // BATCH_SIZE=2, GRADUATE=2, GAP=1, INTRO_CHUNK=2. A,B,C,D at order 0-3
-    // (ids 101-104). Blocks: block 0 = {A,B}, block 1 = {C,D}. INTRO_CHUNK
-    // equals BATCH_SIZE here, so each block is introduced in one chunk.
-    const [A, B, C, D] = [101, 102, 103, 104].map(makeItem);
-    let state = init([A, B, C, D], { BATCH_SIZE: 2, GRADUATE: 2, GAP: 1, INTRO_CHUNK: 2 });
+const stats = (s: Partial<SessionStats>): SessionStats => ({
+  testCards: 0,
+  fillerCards: 0,
+  correct: 0,
+  wrong: 0,
+  testCorrect: 0,
+  ...s,
+});
 
-    // Turn 1 — Info(A): block opens, pendingIntro 2 -> 1
+const formOf = (state: SessionState) => {
+  if (state.currentCard.type !== "test" && state.currentCard.type !== "filler") {
+    throw new Error(`expected a test/filler card, got ${state.currentCard.type}`);
+  }
+  return state.currentCard.form.questionType;
+};
+
+describe("trace 1 — pairs unlock, re-teach, one block", () => {
+  it("reproduces the scripted 14-turn trace exactly", () => {
+    // BATCH_SIZE=4, GRADUATE=2, GAP=1. A,B,C,D at displayOrder 1-4. One
+    // block; A,B are pair 0, C,D pair 1 (unlocks once A and B reach 1).
+    const [A, B, C, D] = makeItems(4);
+    let state = init([A, B, C, D], { BATCH_SIZE: 4, GRADUATE: 2, GAP: 1 });
+
+    // Turn 1 — Info(A)
     expect(state.currentCard).toEqual({ type: "info", item: A });
     state = apply(state, CONTINUE);
 
-    // Turn 2 — Info(B): pendingIntro 1 -> 0
+    // Turn 2 — Info(B). C is next in line but pair 1 is still locked.
     expect(state.turn).toBe(2);
     expect(state.currentCard).toEqual({ type: "info", item: B });
     state = apply(state, CONTINUE);
 
-    // Turn 3 — Test(A): both never tested, order breaks the tie
+    // Turn 3 — Test(A): 3-1=2 > GAP; B (3-2=1) is not
     expect(state.turn).toBe(3);
     expect(state.currentCard).toMatchObject({ type: "test", item: A });
-    state = apply(state, correct);
+    expect(formOf(state)).toBe("MultipleChoiceQuestion");
+    state = apply(state, correct); // A = 1
 
-    // Turn 4 — Test(B): A is inside the gap, B has never been tested
+    // Turn 4 — Test(B): pair 1 still locked, B at 0
     expect(state.turn).toBe(4);
     expect(state.currentCard).toMatchObject({ type: "test", item: B });
-    state = apply(state, correct);
+    state = apply(state, correct); // B = 1
 
-    // Turn 5 — Test(A): 5-3=2 > GAP -> A score 2 -> finished
+    // Turn 5 — Info(C): A and B both at 1 -> pair 1 unlocks
     expect(state.turn).toBe(5);
-    expect(state.currentCard).toMatchObject({ type: "test", item: A });
-    state = apply(state, correct);
-
-    // Turn 6 — Test(B), Wrong -> B score 0, flagged for re-teach
-    expect(state.turn).toBe(6);
-    expect(state.currentCard).toMatchObject({ type: "test", item: B });
-    state = apply(state, wrong);
-
-    // Turn 7 — Info(B): flag cleared; B's lastShown stays 6 (info doesn't touch it)
-    expect(state.turn).toBe(7);
-    expect(state.currentCard).toEqual({ type: "info", item: B });
-    state = apply(state, CONTINUE);
-
-    // Turn 8 — Test(B): 8-6=2 > GAP (measured from turn 6, NOT 7 — the
-    // v3.0 difference from v2.1, where this turn was a filler instead).
-    expect(state.turn).toBe(8);
-    expect(state.currentCard).toMatchObject({ type: "test", item: B });
-    state = apply(state, correct);
-
-    // Turn 9 — Filler(A): B is inside the gap, nothing waiting in block 0 -> 4b(ii)
-    expect(state.turn).toBe(9);
-    expect(state.currentCard).toMatchObject({ type: "filler", item: A });
-    state = apply(state, correct);
-
-    // Turn 10 — Test(B): 10-8=2 > GAP -> B score 2 -> finished
-    expect(state.turn).toBe(10);
-    expect(state.currentCard).toMatchObject({ type: "test", item: B });
-    state = apply(state, correct);
-
-    // Turn 11 — Info(C): block 0 all finished -> block 1 opens
-    expect(state.turn).toBe(11);
-    expect(state.currentBlock).toBe(1);
     expect(state.currentCard).toEqual({ type: "info", item: C });
     state = apply(state, CONTINUE);
 
-    // Turn 12 — Info(D)
-    expect(state.turn).toBe(12);
+    // Turn 6 — Info(D)
+    expect(state.turn).toBe(6);
     expect(state.currentCard).toEqual({ type: "info", item: D });
     state = apply(state, CONTINUE);
 
-    // Turn 13 — Test(C)
+    // Turn 7 — Test(C): lowest score among A, B, C (D is inside the gap)
+    expect(state.turn).toBe(7);
+    expect(state.currentCard).toMatchObject({ type: "test", item: C });
+    state = apply(state, correct); // C = 1
+
+    // Turn 8 — Test(D), Wrong -> stays 0, flagged for re-teach
+    expect(state.turn).toBe(8);
+    expect(state.currentCard).toMatchObject({ type: "test", item: D });
+    state = apply(state, wrong);
+
+    // Turn 9 — Info(D): re-teach
+    expect(state.turn).toBe(9);
+    expect(state.currentCard).toEqual({ type: "info", item: D });
+    state = apply(state, CONTINUE);
+
+    // Turn 10 — Test(A): A, B, C tie at 1, A shown longest ago -> finished
+    expect(state.turn).toBe(10);
+    expect(state.currentCard).toMatchObject({ type: "test", item: A });
+    state = apply(state, correct);
+
+    // Turn 11 — Test(D): 11-9=2 > GAP, lowest score
+    expect(state.turn).toBe(11);
+    expect(state.currentCard).toMatchObject({ type: "test", item: D });
+    state = apply(state, correct); // D = 1
+
+    // Turn 12 — Test(B) -> finished
+    expect(state.turn).toBe(12);
+    expect(state.currentCard).toMatchObject({ type: "test", item: B });
+    state = apply(state, correct);
+
+    // Turn 13 — Test(C) -> finished
     expect(state.turn).toBe(13);
     expect(state.currentCard).toMatchObject({ type: "test", item: C });
     state = apply(state, correct);
 
-    // Turn 14 — Test(D)
+    // Turn 14 — Test(D) -> finished
     expect(state.turn).toBe(14);
     expect(state.currentCard).toMatchObject({ type: "test", item: D });
     state = apply(state, correct);
+
+    // The only block is done -> the final summary. Summaries use no turn.
+    const total = stats({ testCards: 9, correct: 8, wrong: 1, testCorrect: 8 });
+    expect(state.turn).toBe(14);
+    expect(state.currentCard).toEqual({
+      type: "summary",
+      isLastBlock: true,
+      blockNumber: 1,
+      totalBlocks: 1,
+      blockQuestionCount: 4,
+      blockDoneCount: 4,
+      blockStats: total,
+      stats: total,
+    });
+  });
+});
+
+describe("trace 2 — block summary, fillers, wrong filler re-teaches", () => {
+  // BATCH_SIZE=2, GRADUATE=2, GAP=2. A,B,C at displayOrder 1-3.
+  // Blocks: block 0 = {A,B}, block 1 = {C}.
+  const config: SessionConfig = { BATCH_SIZE: 2, GRADUATE: 2, GAP: 2 };
+  const script = [
+    CONTINUE, // Info(A)
+    CONTINUE, // Info(B)
+    correct, // Test(A)
+    correct, // Test(B)
+    correct, // Test(A)
+    wrong, // Filler(A)
+    CONTINUE, // Info(A) re-teach
+    correct, // Test(B)
+    CONTINUE, // block 1 summary
+    CONTINUE, // Info(C)
+    correct, // Filler(A)
+    correct, // Filler(A)
+    correct, // Test(C)
+    correct, // Filler(A)
+    correct, // Filler(A)
+    correct, // Test(C)
+  ];
+
+  it("reproduces the scripted 15-turn trace exactly", () => {
+    const [A, B, C] = makeItems(3);
+    let state = init([A, B, C], config);
+
+    // Turns 1-2 — Info(A), Info(B)
+    expect(state.currentCard).toEqual({ type: "info", item: A });
+    state = apply(state, CONTINUE);
+    expect(state.currentCard).toEqual({ type: "info", item: B });
+    state = apply(state, CONTINUE);
+
+    // Turn 3 — Test(A): neither clears GAP=2, nothing finished -> 4b(iii)
+    // re-tests the one shown longest ago
+    expect(state.turn).toBe(3);
+    expect(state.currentCard).toMatchObject({ type: "test", item: A });
+    state = apply(state, correct);
+
+    // Turn 4 — Test(B), same reason
+    expect(state.turn).toBe(4);
+    expect(state.currentCard).toMatchObject({ type: "test", item: B });
+    state = apply(state, correct);
+
+    // Turn 5 — Test(A) -> finished
+    expect(state.turn).toBe(5);
+    expect(state.currentCard).toMatchObject({ type: "test", item: A });
+    state = apply(state, correct);
+
+    // Turn 6 — Filler(A): B inside the gap -> 4b(i). Always an MCQ, even
+    // though A's score would make a test card a fill-in-the-blank.
+    expect(state.turn).toBe(6);
+    expect(state.currentCard).toMatchObject({ type: "filler", item: A });
+    expect(formOf(state)).toBe("MultipleChoiceQuestion");
+    state = apply(state, wrong);
+
+    // Turn 7 — Info(A): a wrong review re-teaches too
+    expect(state.turn).toBe(7);
+    expect(state.currentCard).toEqual({ type: "info", item: A });
+    state = apply(state, CONTINUE);
+
+    // Turn 8 — Test(B): 8-4=4 > GAP -> finished
+    expect(state.turn).toBe(8);
+    expect(state.currentCard).toMatchObject({ type: "test", item: B });
+    state = apply(state, correct);
+
+    // Block 0 done -> its summary, not the next block's first card. A's
+    // wrong review didn't touch its score or done.
+    expect(state.turn).toBe(8);
+    expect(state.questions[0]).toMatchObject({ done: true, score: 2 });
+    const block1Stats = stats({ testCards: 4, fillerCards: 1, correct: 4, wrong: 1, testCorrect: 4 });
+    expect(state.currentCard).toEqual({
+      type: "summary",
+      isLastBlock: false,
+      blockNumber: 1,
+      totalBlocks: 2,
+      blockQuestionCount: 2,
+      blockDoneCount: 2,
+      blockStats: block1Stats,
+      stats: block1Stats,
+    });
+    state = apply(state, CONTINUE);
+
+    // Turn 9 — Info(C): block 1 opens
+    expect(state.turn).toBe(9);
+    expect(state.currentBlock).toBe(1);
+    expect(state.currentCard).toEqual({ type: "info", item: C });
+    state = apply(state, CONTINUE);
+
+    // Turns 10-11 — Filler(A): C inside the gap, block 1 has nothing
+    // finished -> 4b(ii) reviews the start of the lesson
+    for (const T of [10, 11]) {
+      expect(state.turn).toBe(T);
+      expect(state.currentCard).toMatchObject({ type: "filler", item: A });
+      state = apply(state, correct);
+    }
+
+    // Turn 12 — Test(C): 12-9=3 > GAP
+    expect(state.turn).toBe(12);
+    expect(state.currentCard).toMatchObject({ type: "test", item: C });
+    state = apply(state, correct);
+
+    // Turns 13-14 — Filler(A)
+    for (const T of [13, 14]) {
+      expect(state.turn).toBe(T);
+      expect(state.currentCard).toMatchObject({ type: "filler", item: A });
+      state = apply(state, correct);
+    }
 
     // Turn 15 — Test(C) -> finished
     expect(state.turn).toBe(15);
     expect(state.currentCard).toMatchObject({ type: "test", item: C });
     state = apply(state, correct);
 
-    // Turn 16 — Test(D) -> finished
-    expect(state.turn).toBe(16);
-    expect(state.currentCard).toMatchObject({ type: "test", item: D });
-    state = apply(state, correct);
-
-    // Summary — 5 info cards, 10 test cards, 1 filler; 10 correct, 1 wrong.
-    // testCorrect is 9, not 10: the only wrong answer was a test card
-    // (turn 6), and the one correct filler (turn 9) doesn't count toward it.
-    expect(state.turn).toBe(16);
+    // Last block done -> the final summary, block counters reset for it
+    expect(state.turn).toBe(15);
     expect(state.currentCard).toEqual({
       type: "summary",
-      stats: { testCards: 10, fillerCards: 1, correct: 10, wrong: 1, testCorrect: 9 },
+      isLastBlock: true,
+      blockNumber: 2,
+      totalBlocks: 2,
+      blockQuestionCount: 1,
+      blockDoneCount: 1,
+      blockStats: stats({ testCards: 2, fillerCards: 4, correct: 6, testCorrect: 2 }),
+      stats: stats({ testCards: 6, fillerCards: 5, correct: 10, wrong: 1, testCorrect: 6 }),
     });
+  });
+
+  it("resumes on the exact card it was saved on and continues identically", () => {
+    const payload = makeItems(3);
+
+    // Uninterrupted run.
+    let straight = init(payload, config);
+    for (const event of script) straight = apply(straight, event);
+    expect(straight.currentCard).toMatchObject({ type: "summary", isLastBlock: true });
+
+    // Same run, saved and restored (through JSON, as localStorage would)
+    // before every single step — the block summary included.
+    let resumed = init(payload, config);
+    for (const event of script) {
+      const saved = JSON.parse(JSON.stringify(toSnapshot(resumed)));
+      const restored = restore(payload, config, saved);
+      expect(restored).not.toBeNull();
+      expect(restored!.currentCard).toEqual(resumed.currentCard);
+      resumed = apply(restored!, event);
+    }
+
+    expect(resumed).toEqual(straight);
+    // Nothing is left to resume once the final summary is reached.
+    expect(toSnapshot(resumed)).toBeNull();
   });
 });
 
-describe("§9.2 — chunked introduction fires 4b(i) instead of a filler", () => {
-  it("reproduces the scripted 12-turn trace exactly", () => {
-    // BATCH_SIZE=4, GRADUATE=2, GAP=2, INTRO_CHUNK=2. A,B,C,D at order 0-3
-    // (ids 401-404); one single block {A,B,C,D}. All answers correct.
-    const [A, B, C, D] = [401, 402, 403, 404].map(makeItem);
-    let state = init([A, B, C, D], { BATCH_SIZE: 4, GRADUATE: 2, GAP: 2, INTRO_CHUNK: 2 });
+describe("§3 pairs", () => {
+  it("opens pair 2 only once pair 0 reaches 2 and pair 1 reaches 1", () => {
+    // BATCH_SIZE=6: A,B pair 0; C,D pair 1; E,F pair 2.
+    const items = makeItems(6);
+    const [A, B, C, D, E] = items;
+    let state = init(items, { BATCH_SIZE: 6, GRADUATE: 3, GAP: 0 });
 
-    // Turn 1 — Info(A): block opens, pendingIntro 2 -> 1
-    expect(state.currentCard).toEqual({ type: "info", item: A });
-    state = apply(state, CONTINUE);
+    const introduced: number[] = [];
+    while (state.currentCard.type !== "summary") {
+      const card = state.currentCard;
+      if (card.type === "info" && !introduced.includes(card.item.questionId)) {
+        introduced.push(card.item.questionId);
 
-    // Turn 2 — Info(B): pendingIntro 1 -> 0. C and D stay hidden.
-    expect(state.turn).toBe(2);
-    expect(state.currentCard).toEqual({ type: "info", item: B });
-    state = apply(state, CONTINUE);
+        const score = (item: SessionItemPayload) =>
+          state.questions[state.payload.indexOf(item)].score;
+        if (card.item === C) {
+          expect([A, B].map(score).every((s) => s >= 1)).toBe(true);
+        }
+        if (card.item === E) {
+          expect([A, B].map(score).every((s) => s >= 2)).toBe(true);
+          expect([C, D].map(score).every((s) => s >= 1)).toBe(true);
+        }
+      }
+      state = apply(state, card.type === "info" ? CONTINUE : correct);
+    }
 
-    // Turn 3 — Test(A)
-    expect(state.turn).toBe(3);
-    expect(state.currentCard).toMatchObject({ type: "test", item: A });
-    state = apply(state, correct);
-
-    // Turn 4 — Test(B)
-    expect(state.turn).toBe(4);
-    expect(state.currentCard).toMatchObject({ type: "test", item: B });
-    state = apply(state, correct);
-
-    // Turn 5 — Info(C): neither A (5-3=2) nor B (5-4=1) clears GAP=2 ->
-    // 4b(i) brings in the next chunk instead of a filler. This is the
-    // whole point of v3.0.
-    expect(state.turn).toBe(5);
-    expect(state.currentCard).toEqual({ type: "info", item: C });
-    state = apply(state, CONTINUE);
-
-    // Turn 6 — Info(D): pendingIntro 1 -> 0
-    expect(state.turn).toBe(6);
-    expect(state.currentCard).toEqual({ type: "info", item: D });
-    state = apply(state, CONTINUE);
-
-    // Turn 7 — Test(C): C and D tie at score 0 (lowest); C wins on order.
-    // C was introduced two turns ago and is tested immediately because
-    // "never tested" (-1) always clears the gap — proof info cards must
-    // not touch lastShown.
-    expect(state.turn).toBe(7);
-    expect(state.currentCard).toMatchObject({ type: "test", item: C });
-    state = apply(state, correct);
-
-    // Turn 8 — Test(D)
-    expect(state.turn).toBe(8);
-    expect(state.currentCard).toMatchObject({ type: "test", item: D });
-    state = apply(state, correct);
-
-    // Turn 9 — Test(A): all four tie on score 1; A was tested longest ago -> finished
-    expect(state.turn).toBe(9);
-    expect(state.currentCard).toMatchObject({ type: "test", item: A });
-    state = apply(state, correct);
-
-    // Turn 10 — Test(B) -> finished
-    expect(state.turn).toBe(10);
-    expect(state.currentCard).toMatchObject({ type: "test", item: B });
-    state = apply(state, correct);
-
-    // Turn 11 — Test(C) -> finished
-    expect(state.turn).toBe(11);
-    expect(state.currentCard).toMatchObject({ type: "test", item: C });
-    state = apply(state, correct);
-
-    // Turn 12 — Test(D) -> finished, block done
-    expect(state.turn).toBe(12);
-    expect(state.currentCard).toMatchObject({ type: "test", item: D });
-    state = apply(state, correct);
-
-    // Summary — 4 info cards, 8 test cards, 0 fillers, all correct
-    expect(state.turn).toBe(12);
-    expect(state.currentCard).toEqual({
-      type: "summary",
-      stats: { testCards: 8, fillerCards: 0, correct: 8, wrong: 0, testCorrect: 8 },
-    });
+    // Everyone got introduced, in displayOrder.
+    expect(introduced).toEqual([101, 102, 103, 104, 105, 106]);
   });
-});
 
-describe("§9.3 — the two deep fallbacks (4b(iii) and 4b(iv))", () => {
-  it("reproduces the scripted 7-turn trace exactly", () => {
-    // BATCH_SIZE=1, GRADUATE=2, GAP=1, INTRO_CHUNK=2. A,B at order 0,1 (ids
-    // 201,301). Each question is its own block: block 0 = {A}, block 1 =
-    // {B}. The intro chunk is cut short to a single card in each block.
-    const A = makeItem(201);
-    const B = makeItem(301);
-    let state = init([A, B], { BATCH_SIZE: 1, GRADUATE: 2, GAP: 1, INTRO_CHUNK: 2 });
-
-    // Turn 1 — Info(A): pendingIntro 2 -> 1
+  it("places questions by displayOrder, whatever order they arrive in", () => {
+    const [A, B] = makeItems(2);
+    const state = init([B, A], { BATCH_SIZE: 6, GRADUATE: 3, GAP: 2 });
     expect(state.currentCard).toEqual({ type: "info", item: A });
+  });
+
+  it("steps over a block that a gap in displayOrder left empty", () => {
+    // BATCH_SIZE=2: block 0 = {1,2}, blocks 1-2 empty, block 3 = {7,8}.
+    const items = [makeItem(1, 1), makeItem(2, 2), makeItem(7, 7), makeItem(8, 8)];
+    let state = init(items, { BATCH_SIZE: 2, GRADUATE: 1, GAP: 0 });
+
+    while (state.currentCard.type !== "summary") {
+      state = apply(state, state.currentCard.type === "info" ? CONTINUE : correct);
+    }
+    expect(state.currentCard).toMatchObject({ isLastBlock: false, blockNumber: 1, totalBlocks: 4 });
+
     state = apply(state, CONTINUE);
-
-    // Turn 2 — Test(A): step 3b finds nothing waiting -> pendingIntro = 0.
-    // A never tested, so it's eligible despite pendingIntro having been
-    // mid-chunk a moment ago.
-    expect(state.turn).toBe(2);
-    expect(state.currentCard).toMatchObject({ type: "test", item: A });
-    state = apply(state, correct);
-
-    // Turn 3 — Test(A) again: 3-2=1 doesn't clear the gap; nothing waiting,
-    // nothing finished -> 4b(iv) re-tests anyway. A finishes; block advances.
-    expect(state.turn).toBe(3);
-    expect(state.currentCard).toMatchObject({ type: "test", item: A });
-    state = apply(state, correct);
-    expect(state.currentBlock).toBe(1);
-
-    // Turn 4 — Info(B)
-    expect(state.turn).toBe(4);
-    expect(state.currentCard).toEqual({ type: "info", item: B });
-    state = apply(state, CONTINUE);
-
-    // Turn 5 — Test(B): never tested -> eligible immediately
-    expect(state.turn).toBe(5);
-    expect(state.currentCard).toMatchObject({ type: "test", item: B });
-    state = apply(state, correct);
-
-    // Turn 6 — Filler(A): 6-5=1 doesn't clear the gap; block 1 has nothing
-    // waiting and nothing finished of its own -> 4b(iii) borrows A from the
-    // start of the lesson.
-    expect(state.turn).toBe(6);
-    expect(state.currentCard).toMatchObject({ type: "filler", item: A });
-    state = apply(state, correct);
-
-    // Turn 7 — Test(B): 7-5=2 > GAP -> B score 2 -> finished
-    expect(state.turn).toBe(7);
-    expect(state.currentCard).toMatchObject({ type: "test", item: B });
-    state = apply(state, correct);
-
-    // Summary — 2 info cards, 4 test cards, 1 filler, all correct
-    expect(state.turn).toBe(7);
-    expect(state.currentCard).toEqual({
-      type: "summary",
-      // 5 correct answers overall, but only 4 of them on test cards.
-      stats: { testCards: 4, fillerCards: 1, correct: 5, wrong: 0, testCorrect: 4 },
-    });
+    expect(state.currentCard).toEqual({ type: "info", item: items[2] });
+    expect(getBlockProgress(state).blockNumber).toBe(4);
   });
 });
 
 describe("edge cases (§8)", () => {
-  it("initializes an empty payload directly to a zero-stat SummaryCard", () => {
-    const state = init([], { BATCH_SIZE: 6, GRADUATE: 3, GAP: 2, INTRO_CHUNK: 2 });
+  it("initializes an empty payload directly to a zero-stat final SummaryCard", () => {
+    const state = init([], { BATCH_SIZE: 6, GRADUATE: 3, GAP: 2 });
     expect(state.turn).toBe(0);
     expect(state.currentCard).toEqual({
       type: "summary",
-      stats: { testCards: 0, fillerCards: 0, correct: 0, wrong: 0, testCorrect: 0 },
+      isLastBlock: true,
+      blockNumber: 0,
+      totalBlocks: 0,
+      blockQuestionCount: 0,
+      blockDoneCount: 0,
+      blockStats: stats({}),
+      stats: stats({}),
     });
   });
 
-  it("endSession jumps straight to the summary with whatever stats exist so far", () => {
-    const A = makeItem(1);
-    const B = makeItem(2);
-    let state = init([A, B], { BATCH_SIZE: 6, GRADUATE: 3, GAP: 2, INTRO_CHUNK: 2 });
+  it("endSession jumps straight to the final summary with whatever stats exist so far", () => {
+    const [A, B] = makeItems(2);
+    let state = init([A, B], { BATCH_SIZE: 6, GRADUATE: 3, GAP: 2 });
     state = apply(state, CONTINUE); // Info(A) -> Info(B)
-    state = apply(state, CONTINUE); // Info(B) -> Test(A)
+    state = apply(state, CONTINUE); // Info(B) -> Test(A) (4b(iii))
     state = apply(state, correct); // Test(A) correct
 
     const ended = endSession(state);
-    expect(ended.currentCard.type).toBe("summary");
-    if (ended.currentCard.type === "summary") {
-      expect(ended.currentCard.stats).toEqual({
-        testCards: 1,
-        fillerCards: 0,
-        correct: 1,
-        wrong: 0,
-        testCorrect: 1,
-      });
-    }
+    expect(ended.currentCard).toMatchObject({
+      type: "summary",
+      isLastBlock: true,
+      stats: stats({ testCards: 1, correct: 1, testCorrect: 1 }),
+    });
+    expect(toSnapshot(ended)).toBeNull();
+  });
+
+  it("CONTINUE is refused on the final summary", () => {
+    const state = endSession(init(makeItems(1), { BATCH_SIZE: 6, GRADUATE: 3, GAP: 2 }));
+    expect(() => apply(state, CONTINUE)).toThrow();
+  });
+});
+
+describe("§8 restore", () => {
+  const config: SessionConfig = { BATCH_SIZE: 2, GRADUATE: 2, GAP: 1 };
+
+  it("starts fresh when the lesson's questions changed since saving", () => {
+    const payload = makeItems(2);
+    const snapshot = toSnapshot(apply(init(payload, config), CONTINUE))!;
+
+    expect(restore([makeItem(102, 1), makeItem(101, 2)], config, snapshot)).toBeNull();
+    expect(restore([...payload, makeItem(103, 3)], config, snapshot)).toBeNull();
+  });
+
+  it("starts fresh when the session was saved by another algorithm version", () => {
+    const payload = makeItems(2);
+    const snapshot = toSnapshot(init(payload, config))!;
+
+    expect(restore(payload, config, { ...snapshot, version: SNAPSHOT_VERSION - 1 })).toBeNull();
   });
 });
 
 describe("getBlockProgress", () => {
   it("lists every question in the current block with its waiting/studying/done status", () => {
-    const [A, B, C] = [1, 2, 3].map(makeItem);
-    let state = init([A, B, C], { BATCH_SIZE: 3, GRADUATE: 2, GAP: 2, INTRO_CHUNK: 1 });
+    // BATCH_SIZE=3: A,B pair 0, C pair 1.
+    const [A, B, C] = makeItems(3);
+    let state = init([A, B, C], { BATCH_SIZE: 3, GRADUATE: 2, GAP: 2 });
 
-    // At Info(A): seen flips true the moment a question's info card is
-    // produced (§5 step 3b marks it seen and shows the card together), so
-    // A already reads "studying", not "waiting" — only B/C, never
-    // introduced yet, are "waiting".
+    // At Info(A): seen flips true the moment its info card is produced.
     expect(getBlockProgress(state)).toEqual({
       blockNumber: 1,
       totalBlocks: 1,
@@ -323,47 +434,51 @@ describe("getBlockProgress", () => {
       ],
     });
 
-    state = apply(state, CONTINUE); // Info(A) -> Test(A)
-    expect(state.currentCard).toMatchObject({ type: "test", item: A });
-    // Answer A correct once (score 1 of GRADUATE=2, still studying) to
-    // exercise the "studying" status distinctly from "waiting" and "done".
-    state = apply(state, correct);
+    state = apply(state, CONTINUE); // -> Info(B)
+    state = apply(state, CONTINUE); // -> Test(A): C's pair is locked
 
-    const progress = getBlockProgress(state);
-    expect(progress.items.find((it) => it.item.questionId === A.questionId)?.status).toBe("studying");
+    expect(state.currentCard).toMatchObject({ type: "test", item: A });
+    expect(getBlockProgress(state).items.map((it) => it.status)).toEqual([
+      "studying",
+      "studying",
+      "waiting",
+    ]);
   });
 
-  it("moves on to the next block once the current one finishes", () => {
-    const [A, B] = [1, 2].map(makeItem);
-    let state = init([A, B], { BATCH_SIZE: 1, GRADUATE: 1, GAP: 1, INTRO_CHUNK: 1 });
+  it("moves on to the next block after its summary", () => {
+    const [A, B] = makeItems(2);
+    let state = init([A, B], { BATCH_SIZE: 1, GRADUATE: 1, GAP: 1 });
 
-    state = apply(state, CONTINUE); // Info(A) -> Test(A)
-    state = apply(state, correct); // A finishes, block advances to 1 -> Info(B)
+    state = apply(state, CONTINUE); // Info(A) -> Test(A) (4b(iii))
+    state = apply(state, correct); // A finishes -> block 1 summary
+    expect(getBlockProgress(state).blockNumber).toBe(1);
 
+    state = apply(state, CONTINUE); // -> Info(B)
     const progress = getBlockProgress(state);
     expect(progress.blockNumber).toBe(2);
     expect(progress.totalBlocks).toBe(2);
-    // B's own info card is showing, so it's already "studying" too.
     expect(progress.items).toEqual([{ index: 1, item: B, status: "studying", isCurrent: true }]);
   });
 });
 
-describe("§6.3 — the form escalates with the score", () => {
+describe("getLessonProgress", () => {
+  it("counts finished questions across the whole lesson", () => {
+    let state = init(makeItems(2), { BATCH_SIZE: 1, GRADUATE: 1, GAP: 1 });
+    expect(getLessonProgress(state)).toEqual({ done: 0, total: 2 });
+
+    state = apply(state, CONTINUE); // -> Test(A)
+    state = apply(state, correct); // A finished
+    expect(getLessonProgress(state)).toEqual({ done: 1, total: 2 });
+  });
+});
+
+describe("§6.1 — the form escalates with the score", () => {
   // One question, alone in its block, so every test card is about it and the
   // GAP rule can never divert to something else.
-  const soloConfig: SessionConfig = { BATCH_SIZE: 1, GRADUATE: 3, GAP: 0, INTRO_CHUNK: 1 };
-
-  const formOf = (state: SessionState) => {
-    if (state.currentCard.type !== "test" && state.currentCard.type !== "filler") {
-      throw new Error(`expected a test/filler card, got ${state.currentCard.type}`);
-    }
-    return state.currentCard.form.questionType;
-  };
+  const soloConfig: SessionConfig = { BATCH_SIZE: 1, GRADUATE: 3, GAP: 0 };
 
   it("shows MCQ at score 0 and 1, then fill-in-the-blank at score 2", () => {
-    const A = makeItem(201);
-    let state = init([A], soloConfig);
-
+    let state = init(makeItems(1), soloConfig);
     state = apply(state, CONTINUE); // past Info(A)
 
     expect(formOf(state)).toBe("MultipleChoiceQuestion"); // score 0
@@ -372,16 +487,15 @@ describe("§6.3 — the form escalates with the score", () => {
     expect(formOf(state)).toBe("MultipleChoiceQuestion"); // score 1
     state = apply(state, correct);
 
-    // score 2 — the graduation gate
-    expect(formOf(state)).toBe("FillInTheBlankQuestion");
+    expect(formOf(state)).toBe("FillInTheBlankQuestion"); // score 2
     state = apply(state, correct);
 
-    // score 3 -> done -> nothing left in the lesson
-    expect(state.currentCard.type).toBe("summary");
+    // score 3 -> done -> the lesson's only block is finished
+    expect(state.currentCard).toMatchObject({ type: "summary", isLastBlock: true });
   });
 
   it("drops to score 1 on a wrong fill-in-the-blank, so the next test is MCQ again", () => {
-    const A = makeItem(202);
+    const [A] = makeItems(1);
     let state = init([A], soloConfig);
 
     state = apply(state, CONTINUE);
@@ -391,20 +505,17 @@ describe("§6.3 — the form escalates with the score", () => {
     expect(formOf(state)).toBe("FillInTheBlankQuestion");
     state = apply(state, wrong); // 2 - 1 = 1, and flagged for re-teach
 
-    // A wrong answer always re-teaches first.
     expect(state.currentCard).toEqual({ type: "info", item: A });
     state = apply(state, CONTINUE);
 
-    // Back at score 1, so multiple choice — it has to climb to 2 again
-    // before earning another attempt at the gate.
     expect(formOf(state)).toBe("MultipleChoiceQuestion");
     state = apply(state, correct); // score 2
 
     expect(formOf(state)).toBe("FillInTheBlankQuestion");
   });
 
-  it("falls back to the only form a question has", () => {
-    const mcqOnly: SessionItemPayload = { ...makeItem(203), fib: null };
+  it("stays MCQ for a question with no fill-in-the-blank card", () => {
+    const mcqOnly: SessionItemPayload = { ...makeItem(203, 1), fib: null };
     let state = init([mcqOnly], soloConfig);
 
     state = apply(state, CONTINUE);
@@ -413,25 +524,21 @@ describe("§6.3 — the form escalates with the score", () => {
 
     expect(formOf(state)).toBe("MultipleChoiceQuestion");
   });
+});
 
-  it("reviews finished questions as MCQ, not as the graduation gate", () => {
-    // Two questions: A graduates, then B's GAP crunch pulls A back as filler.
-    const [A, B] = [204, 205].map(makeItem);
-    let state = init([A, B], { BATCH_SIZE: 2, GRADUATE: 3, GAP: 5, INTRO_CHUNK: 2 });
+describe("§6.2 — checkAnswer", () => {
+  const [A] = makeItems(1);
 
-    state = apply(state, CONTINUE); // Info(A)
-    state = apply(state, CONTINUE); // Info(B)
+  it("matches an MCQ after trimming and collapsing spaces", () => {
+    const mcq = { ...A.mcq!, correctAnswer: "القاهرة  مصر" };
+    expect(checkAnswer(mcq, "  القاهرة مصر ")).toBe(true);
+    expect(checkAnswer(mcq, "الجيزة")).toBe(false);
+  });
 
-    // Drive A to done. GAP is wide, but 4b(iv) re-tests anyway while nothing
-    // is finished yet, and A always wins the lowest-score tie-break.
-    while (!state.questions[0].done) {
-      state = apply(state, correct);
-    }
-
-    // B is still inside the wide GAP, so 4b(ii) reaches for finished A as a
-    // filler. A sits at GRADUATE (3), not GRADUATE - 1, so it comes back as
-    // the lighter MCQ rather than the graduation gate.
-    expect(state.currentCard).toMatchObject({ type: "filler", item: A });
-    expect(formOf(state)).toBe("MultipleChoiceQuestion");
+  it("accepts any listed wording of a blank, without case folding", () => {
+    const fib = { ...A.fib!, correctText: ["Photosynthesis", "التمثيل الضوئي"] };
+    expect(checkAnswer(fib, "التمثيل   الضوئي")).toBe(true);
+    expect(checkAnswer(fib, " Photosynthesis ")).toBe(true);
+    expect(checkAnswer(fib, "photosynthesis")).toBe(false);
   });
 });

@@ -1,10 +1,13 @@
 export {};
 declare global {
+  // SubjectReadDto, as GET /subjects/for-user returns it. `country` is on
+  // that DTO but not on the plain /subjects rows, hence optional.
   interface Subject {
     subjectID: number;
     name: string;
     educationalStage: number;
     gradeLevel: number;
+    country?: number;
   }
 
   type getSubjectsResponse = Subject[];

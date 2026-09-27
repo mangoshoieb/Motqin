@@ -202,10 +202,16 @@ const unwrap = <T>(response: T | ApiEnvelope<T>): T =>
     : response;
 
 export const subjectsService = {
-async getAllSubjects(): Promise<getSubjectsResponse> {
-    const { data } = await axiosInstance.get(API_ROUTES.SUBJECTS.GET_ALL);
+  // GET /subjects/for-user rather than the full catalogue: only the subjects
+  // in the signed-in user's curriculum (their country, stage and grade),
+  // which is what every picker in the app is actually offering.
+  async getForUser(): Promise<getSubjectsResponse> {
+    const { data } = await axiosInstance.get<
+      getSubjectsResponse | ApiEnvelope<getSubjectsResponse>
+    >(API_ROUTES.SUBJECTS.FOR_USER);
 
-    return data;
+    const subjects = unwrap(data);
+    return Array.isArray(subjects) ? subjects : [];
   },
 }
 

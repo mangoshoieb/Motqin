@@ -9,6 +9,7 @@ import { PresentationCard } from "@/components/PresentationCard";
 import { FeedbackBanner } from "@/components/FeedbackBanner";
 import { SessionSummary } from "@/components/SessionSummary";
 import { BlockProgressSidebar } from "@/components/BlockProgressSidebar";
+import { LessonProgressBar } from "@/components/LessonProgressBar";
 
 const QuizPageContent = () => {
   const params = useParams();
@@ -27,18 +28,20 @@ const QuizPageContent = () => {
   // graduation rule.
   const category = searchParams.get("category") ?? undefined;
 
-  const { isLoading, error, currentCard, blockProgress, feedback, continueCard, submitAnswer, endSession } =
-    useLessonSession(lessonId, { category, subjectId });
+  const {
+    isLoading,
+    error,
+    currentCard,
+    cardKey,
+    blockProgress,
+    lessonProgress,
+    feedback,
+    continueCard,
+    submitAnswer,
+    endSession,
+  } = useLessonSession(lessonId, { category, subjectId });
 
   const [answer, setAnswer] = useState("");
-
-  if (isLoading || !currentCard) {
-    return (
-      <div dir="rtl" className="p-10 text-zinc-500 dark:text-zinc-400">
-        جاري تحميل الاختبار...
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -48,15 +51,42 @@ const QuizPageContent = () => {
     );
   }
 
+  if (isLoading || !currentCard) {
+    return (
+      <div dir="rtl" className="p-10 text-zinc-500 dark:text-zinc-400">
+        جاري تحميل الاختبار...
+      </div>
+    );
+  }
+
   if (currentCard.type === "summary") {
     return (
       <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 flex flex-col items-center px-6 py-12">
-        <SessionSummary stats={currentCard.stats} backHref={lessonHref} />
+        {/* A block summary is mid-session, so the escape hatch stays. */}
+        {!currentCard.isLastBlock && (
+          <div className="w-full max-w-xl flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={endSession}
+              className="text-sm text-zinc-500 cursor-pointer hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 transition"
+            >
+              إنهاء الجلسة
+            </button>
+          </div>
+        )}
+
+        <SessionSummary
+          key={cardKey}
+          summary={currentCard}
+          backHref={lessonHref}
+          onContinue={continueCard}
+        />
       </div>
     );
   }
 
   const handleSubmit = () => {
+    if (!answer.trim()) return;
     submitAnswer(answer);
     setAnswer("");
   };
@@ -71,7 +101,9 @@ const QuizPageContent = () => {
         )}
 
         <div className="flex-1 w-full flex flex-col items-center">
-          <div className="w-full max-w-2xl flex justify-end mb-4">
+          <div className="w-full max-w-2xl flex items-center gap-4 mb-4">
+            {lessonProgress && <LessonProgressBar progress={lessonProgress} />}
+
             <button
               type="button"
               onClick={endSession}
@@ -85,10 +117,12 @@ const QuizPageContent = () => {
 
           {(currentCard.type === "test" || currentCard.type === "filler") && (
             <QuizCard
+              key={cardKey}
               question={currentCard.item}
               form={currentCard.form}
               answer={answer}
               onAnswerChange={setAnswer}
+              onSubmit={handleSubmit}
               isReview={currentCard.type === "filler"}
             />
           )}
@@ -106,7 +140,7 @@ const QuizPageContent = () => {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={!answer}
+                disabled={!answer.trim()}
                 className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition disabled:opacity-40"
               >
                 إرسال الإجابة

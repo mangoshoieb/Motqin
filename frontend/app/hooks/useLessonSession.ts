@@ -4,7 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { questionService } from "../services/question.service";
 import { sessionReportingService } from "../services/session-reporting.service";
-import { apply, checkAnswer, endSession, getBlockProgress, init } from "../lib/session-algorithm";
+import {
+  apply,
+  checkAnswer,
+  endSession,
+  getBlockProgress,
+  getLessonProgress,
+  init,
+  restore,
+  toSnapshot,
+} from "../lib/session-algorithm";
+import { sessionStorageService } from "../lib/session-storage";
 import { DEFAULT_SESSION_CONFIG } from "../constants/session.constants";
 
 const FEEDBACK_FLASH_MS = 1500;
@@ -21,13 +31,9 @@ const toSessionItem = (info: LessonInformation): SessionItemPayload | null => {
     ? {
         questionType: "MultipleChoiceQuestion",
         questionText: info.mcqCard.text ?? "",
-        // Comma-joined because QuizCard splits on commas. An option that
-        // itself contains a comma would split wrongly — worth moving to
-        // string[] at some point.
-        answerOptions: (info.mcqCard.options ?? []).join(","),
+        answerOptions: info.mcqCard.options ?? [],
         correctAnswer: info.mcqCard.correctAnswer ?? null,
         correctText: null,
-        caseSensitive: null,
       }
     : null;
 
@@ -37,11 +43,8 @@ const toSessionItem = (info: LessonInformation): SessionItemPayload | null => {
         questionText: info.fibCard.text ?? "",
         answerOptions: null,
         correctAnswer: null,
-        // The backend allows several accepted spellings; checkAnswer compares
-        // one, so we take the first until it supports a list.
-        correctText: info.fibCard.correctText?.[0] ?? null,
-        // No caseSensitive field in the Information model — default to lenient.
-        caseSensitive: false,
+        // Every accepted wording — checkAnswer takes a match on any of them.
+        correctText: info.fibCard.correctText ?? [],
       }
     : null;
 
@@ -50,6 +53,7 @@ const toSessionItem = (info: LessonInformation): SessionItemPayload | null => {
 
   return {
     questionId: info.informationID,
+    displayOrder: info.displayOrder,
     title: info.title ?? info.infoCard?.title ?? null,
     description: info.infoCard?.explanation ?? "",
     imageUrl: info.infoCard?.imageUrl ?? null,
@@ -60,9 +64,9 @@ const toSessionItem = (info: LessonInformation): SessionItemPayload | null => {
 };
 
 // Drives the block/score-based flow (see app/lib/session-algorithm.ts, spec
-// v2.1) for one lesson: fetches the question list, keeps the SessionState
-// in React state, and reports to the backend exactly once, when the whole
-// lesson's Summary is reached.
+// v3) for one lesson: fetches the question list, keeps the SessionState in
+// React state (saved to localStorage for pause/resume), and reports to the
+// backend exactly once, when the final Summary is reached.
 export const useLessonSession = (
   lessonId: string,
   filters?: { category?: string; subjectId?: string | number }
@@ -96,11 +100,30 @@ export const useLessonSession = (
   // e.g. filters changed) once the query resolves. Adjusting state during
   // render instead of in an effect, per React's rules on deriving state
   // from props.
+  //
+  // §8 — a session this browser left unfinished for the same lesson and
+  // category resumes on the card it was on; anything else starts fresh.
   const [initializedFor, setInitializedFor] = useState<LessonInformation[] | undefined>(undefined);
   if (questions && questions !== initializedFor && payload) {
     setInitializedFor(questions);
-    setState(init(payload, DEFAULT_SESSION_CONFIG));
+    const saved = sessionStorageService.load(lessonId, filters?.category);
+    const resumed = saved ? restore(payload, DEFAULT_SESSION_CONFIG, saved) : null;
+    setState(resumed ?? init(payload, DEFAULT_SESSION_CONFIG));
   }
+
+  // Keep the saved session in step with every card (block summaries
+  // included), and drop it once the final Summary is reached (finished or
+  // ended early) — mirroring the mobile app, which saves on every step and
+  // clears on the last summary.
+  useEffect(() => {
+    if (!state) return;
+    const snapshot = toSnapshot(state);
+    if (snapshot) {
+      sessionStorageService.save(lessonId, filters?.category, snapshot);
+    } else {
+      sessionStorageService.clear();
+    }
+  }, [state, lessonId, filters?.category]);
 
   // Non-blocking "correct/wrong" flash — a UI-only overlay, not a real card
   // in the algorithm, so re-teach/next-block transitions stay immediate.
@@ -116,9 +139,9 @@ export const useLessonSession = (
   // ── Backend session tracking (POST /spaced-repetition/start + /end) ────
   //
   // start fires once, as soon as we know the lesson has questions to show;
-  // end fires once, when the Summary card is reached (naturally or via the
-  // "End session" button). The sessionId handed back by start is the only
-  // link between the two.
+  // end fires once, when the final Summary card is reached (naturally or
+  // via the "End session" button) — never on a block's summary. The
+  // sessionId handed back by start is the only link between the two.
   //
   // The guards are refs rather than state: they must flip synchronously,
   // before a second effect run can read them, which is what stops React
@@ -156,7 +179,7 @@ export const useLessonSession = (
   }, [state, numericSubjectId, numericLessonId, filters?.category]);
 
   useEffect(() => {
-    if (!state || state.currentCard.type !== "summary") return;
+    if (!state || state.currentCard.type !== "summary" || !state.currentCard.isLastBlock) return;
     if (reportedRef.current) return;
 
     // start may still be in flight (a very short session), or may have
@@ -199,7 +222,11 @@ export const useLessonSession = (
     isLoading,
     error,
     currentCard: state?.currentCard ?? null,
+    // Changes with every card shown — even the same question twice in a row
+    // — so the page can remount the card and drop its local UI state.
+    cardKey: state ? `${state.currentCard.type}-${state.turn}-${state.currentBlock}` : null,
     blockProgress: state ? getBlockProgress(state) : null,
+    lessonProgress: state ? getLessonProgress(state) : null,
     feedback,
     continueCard,
     submitAnswer,

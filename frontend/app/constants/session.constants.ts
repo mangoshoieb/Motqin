@@ -4,5 +4,4 @@ export const DEFAULT_SESSION_CONFIG: SessionConfig = {
   BATCH_SIZE: 6,
   GRADUATE: 3,
   GAP: 2,
-  INTRO_CHUNK: 2,
 };

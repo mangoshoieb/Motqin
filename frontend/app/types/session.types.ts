@@ -10,10 +10,11 @@ declare global {
   interface SessionItemForm {
     questionType: SessionQuestionType;
     questionText: string;
-    answerOptions: string | null; // MCQ only, comma-joined
+    answerOptions: string[] | null; // MCQ only
     correctAnswer: string | null; // MCQ only
-    correctText: string | null; // FIB only
-    caseSensitive: boolean | null; // FIB only
+    // FIB only — every accepted wording of the blank; matching any one of
+    // them is correct (§6.2).
+    correctText: string[] | null;
   }
 
   // The shared, form-independent part of a question: what identifies it and
@@ -21,6 +22,10 @@ declare global {
   // useLessonSession's toSessionItem.
   interface SessionItemPayload {
     questionId: number;
+    // The backend's displayOrder (1-based). It fixes the question's block
+    // and its pair within the block (§3), so it is kept as-is rather than
+    // replaced by the question's position in the payload.
+    displayOrder: number;
 
     title: string | null;
     description: string;
@@ -38,17 +43,20 @@ declare global {
     BATCH_SIZE: number; // block size
     GRADUATE: number; // correct answers (net score) to finish a question
     GAP: number; // other cards required before the same question can be tested again
-    INTRO_CHUNK: number; // how many new questions are introduced at a time
   }
 
   // §5 per-question state.
   interface QuestionState {
-    order: number; // fixed position in the payload array; also fixes its block
+    // Position in the payload array (which is sorted by displayOrder). Only
+    // an index into payload/questions — blocks and pairs come from the
+    // item's displayOrder.
+    order: number;
     seen: boolean; // has its info card been shown yet
-    done: boolean; // finished/graduated — once true, stays true (§6.2)
+    done: boolean; // finished/graduated — once true, stays true (§6.3)
     score: number; // 0..GRADUATE, correct +1 / wrong -1 (floor 0)
-    // Turn its test or filler card last appeared; -1 = never tested. Info
-    // cards do NOT update this (v3.0 change) — only test/filler do.
+    // Turn ANY of its cards last appeared — info, re-teach, test or filler;
+    // -1 = never shown. Because info cards count, a freshly introduced
+    // question has to wait out GAP before its first test.
     lastShown: number;
   }
 
@@ -66,8 +74,9 @@ declare global {
     form: SessionItemForm;
   }
 
-  // §1/§6.2 — reviews an already-finished question. Answering it is recorded
-  // for stats but never changes score or un-finishes the question.
+  // §1/§6.3 — reviews an already-finished question, always as an MCQ.
+  // Answering it never changes score or un-finishes the question, but a
+  // wrong answer still re-teaches it.
   interface FillerCard {
     type: "filler";
     item: SessionItemPayload;
@@ -87,35 +96,69 @@ declare global {
     testCorrect: number;
   }
 
-  // The end screen — shown once every question in the lesson is finished,
-  // or early via endSession() (§8's "End session" escape hatch).
+  // Shown whenever a block is finished (flowchart v2). Unless it is the last
+  // block, CONTINUE moves on to the next block. The last block's summary —
+  // or an early endSession() (§8's "End session" escape hatch) — ends the
+  // session.
   interface SummaryCard {
     type: "summary";
-    stats: SessionStats;
+    isLastBlock: boolean;
+    blockNumber: number; // 1-based; 0 for an empty lesson
+    totalBlocks: number;
+    blockQuestionCount: number;
+    blockDoneCount: number;
+    blockStats: SessionStats; // this block only
+    stats: SessionStats; // the whole session
   }
 
   type SessionCard = InfoCard | TestCard | FillerCard | SummaryCard;
 
   interface SessionState {
     config: SessionConfig;
-    payload: SessionItemPayload[]; // the whole lesson, fixed order (order = index)
+    payload: SessionItemPayload[]; // the whole lesson, sorted by displayOrder (order = index)
     questions: QuestionState[]; // parallel to payload
 
-    turn: number; // cards shown so far; first card is turn 1; summary doesn't count
+    turn: number; // cards shown so far; first card is turn 1; summaries don't count
     currentBlock: number;
     reteach: number | null; // order of the question flagged after a wrong answer
-    // How many info cards of the current introduction chunk are still owed.
-    // Set to INTRO_CHUNK when a chunk opens, decremented per info card
-    // shown, forced back to 0 when the block advances or runs out of
-    // waiting questions early.
-    pendingIntro: number;
 
     currentCard: SessionCard;
     stats: SessionStats;
+    blockStats: SessionStats; // reset every time the next block starts
+  }
+
+  // §8 — plain-data copy of a running session, for pause/resume on the same
+  // browser. Only per-question progress is stored, never question content:
+  // it is re-applied to a freshly fetched payload, and `questionIds` is how
+  // restore() tells whether that payload is still the same lesson in the
+  // same order.
+  interface SessionSnapshot {
+    // Bumped whenever the algorithm changes shape, so a session saved by an
+    // older version starts fresh instead of resuming into the wrong state.
+    version: number;
+    questionIds: number[]; // payload order at the time of saving
+    turn: number;
+    currentBlock: number;
+    reteach: number | null;
+    questions: Omit<QuestionState, "order">[]; // parallel to questionIds
+    stats: SessionStats;
+    blockStats: SessionStats;
+    // The card on screen when it was saved, so resuming lands on that exact
+    // card instead of skipping past it. A block summary is saved too (the
+    // student may leave before continuing); the last one never is —
+    // reaching it clears the saved session.
+    current: { type: "info" | "test" | "filler"; order: number } | { type: "summary" };
+  }
+
+  // Whole-lesson progress for the bar above the card: finished questions
+  // out of every question in the lesson.
+  interface LessonProgress {
+    done: number;
+    total: number;
   }
 
   type SessionEvent =
-    | { type: "CONTINUE" } // advance past an InfoCard
+    | { type: "CONTINUE" } // advance past an InfoCard, or a block's SummaryCard
     | { type: "ANSWER"; correct: boolean; userAnswer: string }; // submit on a Test or Filler card
 
   // For the sidebar: every question in the current block (§5's
