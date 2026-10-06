@@ -74,6 +74,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/data-deletion" className="hover:text-[var(--assistant-text)] transition">
+                  حذف الحساب والبيانات
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="hover:text-[var(--assistant-text)] transition">
                   تواصل معنا
                 </Link>
