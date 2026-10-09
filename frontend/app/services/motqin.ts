@@ -201,17 +201,48 @@ const unwrap = <T>(response: T | ApiEnvelope<T>): T =>
     ? (response as ApiEnvelope<T>).data
     : response;
 
+// Country, stage and grade of a student's own subject come from their
+// profile, so the name is all the create/update endpoints take.
+export interface CustomSubjectPayload {
+  name: string;
+}
+
 export const subjectsService = {
-  // GET /subjects/for-user rather than the full catalogue: only the subjects
-  // in the signed-in user's curriculum (their country, stage and grade),
-  // which is what every picker in the app is actually offering.
+  // Not the full catalogue: the signed-in user's curriculum subjects (their
+  // country, stage and grade) plus the ones they created, each flagged with
+  // isMine — what every picker in the app is actually offering.
   async getForUser(): Promise<getSubjectsResponse> {
     const { data } = await axiosInstance.get<
       getSubjectsResponse | ApiEnvelope<getSubjectsResponse>
-    >(API_ROUTES.SUBJECTS.FOR_USER);
+    >(API_ROUTES.SUBJECTS.USER_SUBJECTS);
 
     const subjects = unwrap(data);
     return Array.isArray(subjects) ? subjects : [];
+  },
+
+  async createCustom(payload: CustomSubjectPayload): Promise<Subject> {
+    const { data } = await axiosInstance.post<Subject | ApiEnvelope<Subject>>(
+      API_ROUTES.SUBJECTS.CUSTOMIZED,
+      payload,
+    );
+
+    return unwrap(data);
+  },
+
+  async updateCustom(id: number, payload: CustomSubjectPayload): Promise<Subject> {
+    const { data } = await axiosInstance.put<Subject | ApiEnvelope<Subject>>(
+      API_ROUTES.SUBJECTS.CUSTOMIZED_BY_ID(id),
+      payload,
+    );
+
+    return unwrap(data);
+  },
+
+  // Soft delete on the backend — the subject (and the student's lessons
+  // under it) disappear from the list, but plans and sessions pointing at
+  // them keep working.
+  async removeCustom(id: number): Promise<void> {
+    await axiosInstance.delete(API_ROUTES.SUBJECTS.CUSTOMIZED_BY_ID(id));
   },
 }
 

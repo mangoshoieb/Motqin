@@ -1,13 +1,18 @@
 export {};
 declare global {
-  // SubjectReadDto, as GET /subjects/for-user returns it. `country` is on
-  // that DTO but not on the plain /subjects rows, hence optional.
+  // SubjectReadDto, as GET /subjects/customized-user-subjects returns it.
+  // `country` is on that DTO but not on the plain /subjects rows, hence
+  // optional. `isMine` splits the list in two: true = a subject the student
+  // created (they can rename or delete it), false = a curriculum subject
+  // owned by the system (read-only).
   interface Subject {
     subjectID: number;
     name: string;
     educationalStage: number;
     gradeLevel: number;
     country?: number;
+    examDate?: string | null;
+    isMine?: boolean;
   }
 
   type getSubjectsResponse = Subject[];
@@ -29,9 +34,18 @@ declare global {
     lessons?: Lesson[]; 
   }
 
+// LessonReadDto, as GET /lessons/customized-user-lessons returns it. Same
+// split as Subject: isMine = true is a lesson the student added (they can
+// edit or delete it), false is a system lesson (read-only).
 interface Lesson {
   lessonId:number;
   title:string;
+  subjectID?: number;
+  difficulty?: number;
+  // Minutes.
+  estimatedDuration?: number | null;
+  notes?: string[] | null;
+  isMine?: boolean;
 }
 
   // ---------------------------------------------------------------------
@@ -109,35 +123,28 @@ interface Lesson {
     caseSensitive: boolean | null;
   }
 
-  // Request body for POST /api/questions/user/mcq — matches MultipleChoiceQuestionDto.
-  interface AddMcqQuestionInput {
+  // Request body for POST /api/questions/add-user-question (multipart). One
+  // information row: its title, the description shown when the student
+  // expands it on the questions page, and the detailed explanation the quiz
+  // session uses — plus its MCQ card and an optional fill-in-the-blank card.
+  interface AddUserQuestionInput {
     lessonID: number;
     questionCategory: string;
-    questionText: string;
-    difficultyLevel?: string | null;
-    answerOptions: string;
+    displayOrder?: number;
+    title?: string;
+    description: string;
+    explanation: string;
+    image?: File | null;
+    audio?: File | null;
+    mcqText: string;
+    // At least two.
+    answerOptions: string[];
+    // One of answerOptions, verbatim.
     correctAnswer: string;
-  }
-
-  // Request body for POST /api/questions/user/fill — matches FillInTheBlankQuestionDto.
-  interface AddFillQuestionInput {
-    lessonID: number;
-    questionCategory: string;
-    questionText: string;
-    difficultyLevel?: string | null;
-    correctText: string;
-    caseSensitive: boolean;
-  }
-
-  // Response shape from the user/mcq and user/fill endpoints — different from
-  // Question/QuestionReadDto (this is the UserAddedQuestion entity).
-  interface UserAddedQuestion {
-    id: number;
-    lessonID: number;
-    displayOrder: number;
-    priority: number;
-    questionCategory: string;
-    questionText: string;
-    difficultyLevel: string | null;
+    // The next three go together, and only when the student also adds a
+    // fill-in-the-blank card. correctText lists every accepted wording.
+    fibText?: string;
+    correctText?: string[];
+    caseSensitive?: boolean;
   }
 }

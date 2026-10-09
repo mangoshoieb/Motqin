@@ -72,21 +72,29 @@ export const API_ROUTES = {
   },
 
   SUBJECTS: {
-    // The whole catalogue; the app asks for the user's own curriculum
-    // instead — their country, educational stage and grade level.
+    // The whole catalogue; the app asks for the user's own subjects
+    // instead — their curriculum plus the ones they added themselves.
     GET_ALL: "/subjects",
-    FOR_USER: "/subjects/for-user",
+    USER_SUBJECTS: "/subjects/customized-user-subjects",
+    CUSTOMIZED: "/subjects/customized-subject",
+    CUSTOMIZED_BY_ID: (id: string | number) => `/subjects/customized-subject/${id}`,
   },
 
   LESSONS: {
+    // A subject's system lessons only; the app asks for the user's view
+    // instead — the system lessons plus the ones they added themselves.
     GET_ALL: "/lessons",
+    USER_LESSONS: "/lessons/customized-user-lessons",
+    CUSTOMIZED: "/lessons/customized-lesson",
+    CUSTOMIZED_BY_ID: (id: string | number) => `/lessons/customized-lesson/${id}`,
   },
 
   QUESTIONS: {
     BY_LESSON: "/questions/by-lesson",
     BY_CATEGORY_AND_LESSON: "/questions/by-category-and-lesson",
-    ADD_MCQ: "/questions/user/mcq",
-    ADD_FILL: "/questions/user/fill",
+    // multipart/form-data: an information row with its MCQ card, and an
+    // optional fill-in-the-blank card.
+    ADD_USER_QUESTION: "/questions/add-user-question",
     START: (questionId: string | number) => `/questions/${questionId}/start`,
     END: (questionId: string | number) => `/questions/${questionId}/end`,
   },
@@ -138,6 +146,12 @@ export const API_ROUTES = {
   },
   AI: {
     PLAN_WITH_AI: "/ai/plan-with-ai",
+  },
+
+  // multipart/form-data with a single `file` part — the lesson material the
+  // AI generates questions from.
+  UPLOADS: {
+    POST: "/uploads",
   },
   STUDY_SESSIONS: {
     CREATE: "/study-session/create",

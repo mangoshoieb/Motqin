@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { cn } from "@/app/lib/utils";
 import { AnimatedArrow } from "./AnimatedArrow";
 import { CircleChevronRight, ChevronDown } from "lucide-react";
@@ -15,6 +15,11 @@ interface LessonCardProps {
   href: string;
   className?: string;
   arrowPlay?: boolean;
+  // Small label next to the title (e.g. "My lesson").
+  badge?: ReactNode;
+  // Buttons laid over the card. Kept outside the <Link> so a click on them
+  // doesn't navigate (and so we don't nest buttons inside an <a>).
+  actions?: ReactNode;
 }
 
 const stateStyles: Record<LessonState, string> = {
@@ -30,6 +35,8 @@ export const LessonCard = ({
   href,
   className,
   arrowPlay,
+  badge,
+  actions,
 }: LessonCardProps) => {
   // const [expanded, setExpanded] = useState(false);
 
@@ -43,19 +50,27 @@ export const LessonCard = ({
   // };
 console.log(name)
   return (
+    <div
+      className={cn(
+        "group relative rounded-2xl",
+        "transition-all duration-300",
+        "hover:shadow-xl hover:-translate-y-1"
+      )}
+    >
     <Link
       href={href}
       className={cn(
-        "group relative block rounded-2xl p-6 pb-15",
+        "relative block rounded-2xl p-6 pb-15",
         "bg-white border border-zinc-200",
-        "transition-all duration-300",
-        "hover:shadow-xl hover:-translate-y-1",
         className
       )}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <h2 className="text-xl font-bold text-zinc-900">{name}</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-xl font-bold text-zinc-900">{name}</h2>
+          {badge}
+        </div>
 
         <span
           className={cn(
@@ -107,7 +122,7 @@ console.log(name)
       )} */}
 
       {/* Navigation Button */}
-      <div className="absolute bottom-1 right-6">
+      <div className="absolute bottom-1 end-6">
         <div
           className={cn(
             "flex items-center justify-center",
@@ -118,9 +133,19 @@ console.log(name)
             "group-hover:text-white"
           )}
         >
-          <AnimatedArrow size={30} play={arrowPlay} />
+          {/* The animation points right; mirror it on RTL pages. */}
+          <div className="rtl:-scale-x-100">
+            <AnimatedArrow size={30} play={arrowPlay} />
+          </div>
         </div>
       </div>
     </Link>
+
+      {actions && (
+        <div className="absolute bottom-2 start-6 z-20 flex items-center gap-1">
+          {actions}
+        </div>
+      )}
+    </div>
   );
 };

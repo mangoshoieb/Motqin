@@ -54,21 +54,48 @@ export const questionService = {
     return response.data.data ?? [];
   },
 
-  async addMcqQuestion(input: AddMcqQuestionInput): Promise<UserAddedQuestion> {
-    const response = await axiosInstance.post<ApiEnvelope<UserAddedQuestion>>(
-      API_ROUTES.QUESTIONS.ADD_MCQ,
-      input
-    );
+  // multipart/form-data, field names as the backend binds them. Arrays go
+  // over as the same key repeated (AnswerOptions=a&AnswerOptions=b), which is
+  // how ASP.NET binds a List<string> from a form.
+  async addUserQuestion(input: AddUserQuestionInput): Promise<void> {
+    const form = new FormData();
+    form.append("LessonID", String(input.lessonID));
+    form.append("QuestionCategory", input.questionCategory);
+    if (input.displayOrder !== undefined) form.append("DisplayOrder", String(input.displayOrder));
+    if (input.title) form.append("Title", input.title);
+    form.append("Description", input.description);
+    form.append("Explanation", input.explanation);
+    if (input.image) form.append("Image", input.image);
+    if (input.audio) form.append("Audio", input.audio);
+    form.append("McqText", input.mcqText);
+    input.answerOptions.forEach((option) => form.append("AnswerOptions", option));
+    form.append("CorrectAnswer", input.correctAnswer);
 
-    return response.data.data;
+    if (input.fibText) {
+      form.append("FibText", input.fibText);
+      (input.correctText ?? []).forEach((text) => form.append("CorrectText", text));
+      form.append("CaseSensitive", String(!!input.caseSensitive));
+    }
+
+    // Let the browser set the multipart boundary.
+    await axiosInstance.post(API_ROUTES.QUESTIONS.ADD_USER_QUESTION, form, {
+      headers: { "Content-Type": undefined },
+    });
   },
 
-  async addFillQuestion(input: AddFillQuestionInput): Promise<UserAddedQuestion> {
-    const response = await axiosInstance.post<ApiEnvelope<UserAddedQuestion>>(
-      API_ROUTES.QUESTIONS.ADD_FILL,
-      input
+  // POST /uploads — the lesson material (a PDF or a photo of it) the AI
+  // generates questions from. Swagger documents the response as a bare
+  // object, so callers refetch the questions instead of reading it.
+  async uploadForAiQuestions(file: File): Promise<unknown> {
+    const form = new FormData();
+    form.append("file", file);
+
+    const response = await axiosInstance.post<ApiEnvelope<unknown>>(
+      API_ROUTES.UPLOADS.POST,
+      form,
+      { headers: { "Content-Type": undefined } }
     );
 
-    return response.data.data;
+    return response.data?.data;
   },
 };
