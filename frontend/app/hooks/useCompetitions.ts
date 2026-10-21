@@ -13,6 +13,8 @@ import {
   League,
   MyRankCard,
 } from "@/app/types/competition.types";
+import { LEADERBOARD_SIZE } from "@/app/constants/competition.constants";
+import { competitionService } from "@/app/services/competition.service";
 
 // Mock for now — the backend has the Competition/CompetitionEntry models but
 // no CompetitionsController yet. Each queryFn below is the single seam to
@@ -42,6 +44,34 @@ async function fetchChallenges(): Promise<Challenge[]> {
 async function fetchAchievements(): Promise<Achievement[]> {
   return achievementsMock;
 }
+
+// --- Live endpoints -------------------------------------------------------
+
+export const useMyInvite = () =>
+  useQuery({
+    queryKey: ["competitions", "my-invite"],
+    queryFn: competitionService.getMyInvite,
+  });
+
+export const useStreakLeaders = (n = LEADERBOARD_SIZE) =>
+  useQuery({
+    queryKey: ["competitions", "streak", n],
+    queryFn: () => competitionService.getStreakLeaders(n),
+  });
+
+export const useReferralLeaders = (n = LEADERBOARD_SIZE) =>
+  useQuery({
+    queryKey: ["competitions", "referral", n],
+    queryFn: () => competitionService.getReferralLeaders(n),
+  });
+
+export const useAchievementLeaders = (n = LEADERBOARD_SIZE) =>
+  useQuery({
+    queryKey: ["competitions", "achievement", n],
+    queryFn: () => competitionService.getAchievementLeaders(n),
+  });
+
+// --- Mock-backed ----------------------------------------------------------
 
 export const useMyRankCard = () =>
   useQuery({ queryKey: COMPETITION_KEYS.myCard, queryFn: fetchMyRankCard });

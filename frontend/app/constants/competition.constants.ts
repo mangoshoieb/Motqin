@@ -6,8 +6,21 @@ import {
   PointSource,
 } from "../types/competition.types";
 
-// Expected paths — there is no CompetitionsController on the backend yet, so
-// nothing calls these. Kept here so wiring the real endpoints later is a
+// The live Competition controller: the student's invite, and the three
+// leaderboards (top n, n clamped to 1..100 server-side). Only my-invite needs
+// a token.
+export const COMPETITION_LIVE_ROUTES = {
+  MY_INVITE: "/competition/my-invite",
+  STREAK_TOP: (n: number) => `/competition/streak/${n}`,
+  REFERRAL_TOP: (n: number) => `/competition/referral/${n}`,
+  ACHIEVEMENT_TOP: (n: number) => `/competition/achievement/${n}`,
+};
+
+// How many students each leaderboard tab asks for.
+export const LEADERBOARD_SIZE = 50;
+
+// Expected paths for the parts not built on the backend yet (the league
+// card, challenges, achievements), so nothing calls these. Kept here so wiring the real endpoints later is a
 // matter of pointing the hooks' queryFn at a service that uses them.
 export const COMPETITION_API_ROUTES = {
   MY_CARD: "/competitions/my-card",
@@ -197,6 +210,14 @@ export const formatDays = (days: number) => {
   if (days === 2) return "يومان";
   if (days <= 10) return `${days} أيام`;
   return `${days} يومًا`;
+};
+
+// "صديق واحد" / "صديقان" / "5 أصدقاء" / "12 صديقًا" — Arabic count agreement.
+export const formatFriends = (count: number) => {
+  if (count === 1) return "صديق واحد";
+  if (count === 2) return "صديقان";
+  if (count >= 3 && count <= 10) return `${count} أصدقاء`;
+  return `${count} صديقًا`;
 };
 
 // "3 أيام" / "12 ساعة" / "انتهت" — used for both the weekly reset and the

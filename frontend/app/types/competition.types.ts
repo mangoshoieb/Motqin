@@ -140,3 +140,48 @@ export interface Achievement {
   progress: number; // 0..1, for the locked-state progress bar
   progressLabel: string; // e.g. "72 / 100 ساعة"
 }
+
+// ---------------------------------------------------------------------------
+// Live Competition endpoints (GET /competition/...).
+// ---------------------------------------------------------------------------
+
+// GET /competition/my-invite — the signed-in student's invite code, a link
+// that carries it (the invitee's signup form is filled in for them), and how
+// many people have joined with it.
+export interface MyInvite {
+  invitationCode: string;
+  inviteLink: string;
+  invitedCount: number;
+}
+
+// Fields every leaderboard row shares.
+export interface LeaderboardStudent {
+  rank: number;
+  userId: string;
+  fullName: string;
+  profilePictureUrl: string | null;
+  gradeLevel: number;
+  educationalStage: number;
+}
+
+// GET /competition/streak/{n} — by current login streak.
+export interface StreakLeader extends LeaderboardStudent {
+  currentStreak: number;
+  longestStreak: number;
+  lastLoginDate: string; // YYYY-MM-DD
+}
+
+// GET /competition/referral/{n} — by how many joined with their code.
+export interface ReferralLeader extends LeaderboardStudent {
+  invitedCount: number;
+}
+
+// GET /competition/achievement/{n} — by minutes studied this week.
+export interface AchievementLeader extends LeaderboardStudent {
+  totalMinutes: number;
+  sessionsCount: number;
+  daysStudied: number;
+  longestSessionMinutes: number;
+  weekStart: string;
+  weekEnd: string;
+}

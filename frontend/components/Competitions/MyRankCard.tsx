@@ -22,9 +22,10 @@ interface MyRankCardProps {
   endsAt: string;
 }
 
-// The persistent header of the competitions hub: where the student stands this
-// week, and — more importantly — the one number that would move them up.
-// Deliberately leads with the closable gap rather than the absolute rank.
+// Where the student stands this week, and — more importantly — the one
+// number that would move them up. Deliberately leads with the closable gap
+// rather than the absolute rank. Rendered unframed: CompetitionHero shows it
+// once the student opens their score.
 export const MyRankCard = ({
   card,
   promoteCount,
@@ -57,8 +58,8 @@ export const MyRankCard = ({
         : "واصل التقدم";
 
   return (
-    <section
-      className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-6"
+    <div
+      className="pt-1"
       dir="rtl"
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -222,6 +223,6 @@ export const MyRankCard = ({
           </p>
         </div>
       )}
-    </section>
+    </div>
   );
 };

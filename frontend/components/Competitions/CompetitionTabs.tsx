@@ -5,9 +5,9 @@ import { cn } from "@/app/lib/utils";
 export type CompetitionTab = "league" | "challenges" | "achievements";
 
 const TABS: { value: CompetitionTab; label: string; icon: string }[] = [
-  { value: "league", label: "الدوري", icon: "🏆" },
-  { value: "challenges", label: "التحديات", icon: "⚔️" },
-  { value: "achievements", label: "إنجازاتي", icon: "🏅" },
+  { value: "league", label: "مسابقة الاستمرارية", icon: "🏆" },
+  { value: "challenges", label: "مسابقة المشاركة", icon: "⚔️" },
+  { value: "achievements", label: "مسابقة الإنجاز", icon: "🏅" },
 ];
 
 interface CompetitionTabsProps {
@@ -24,7 +24,7 @@ export const CompetitionTabs = ({
   challengeCount,
 }: CompetitionTabsProps) => (
   <div
-    className="inline-flex w-full items-center gap-1.5 rounded-2xl bg-zinc-200/70 p-1.5 dark:bg-zinc-900 sm:w-auto"
+    className="inline-flex w-full items-stretch gap-2 rounded-3xl bg-zinc-200/70 p-2 dark:bg-zinc-900 sm:w-auto"
     dir="rtl"
   >
     {TABS.map((tab) => (
@@ -33,13 +33,15 @@ export const CompetitionTabs = ({
         type="button"
         onClick={() => onChange(tab.value)}
         className={cn(
-          "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all sm:flex-none sm:px-6",
+          // The longer names stack under their icon on phones so all three
+          // still fit side by side.
+          "flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-xs font-bold leading-tight transition-all sm:flex-none sm:flex-row sm:gap-2.5 sm:px-7 sm:py-4 sm:text-base",
           active === tab.value
             ? "bg-white text-blue-700 shadow-sm dark:bg-zinc-800 dark:text-blue-400"
             : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
         )}
       >
-        <span aria-hidden>{tab.icon}</span>
+        <span aria-hidden className="text-xl leading-none sm:text-lg">{tab.icon}</span>
         {tab.label}
         {tab.value === "challenges" && challengeCount ? (
           <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white">

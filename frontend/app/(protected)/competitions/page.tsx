@@ -2,30 +2,23 @@
 
 import { useState } from "react";
 import Skeleton from "@/components/ui/Skeleton";
-import {
-  useAchievements,
-  useChallenges,
-  useMyLeague,
-  useMyRankCard,
-} from "@/app/hooks/useCompetitions";
+import { useMyLeague, useMyRankCard } from "@/app/hooks/useCompetitions";
 import {
   CompetitionTab,
   CompetitionTabs,
 } from "@/components/Competitions/CompetitionTabs";
-import { MyRankCard } from "@/components/Competitions/MyRankCard";
-import { LeagueBoard } from "@/components/Competitions/LeagueBoard";
-import { ChallengesList } from "@/components/Competitions/ChallengesList";
-import { AchievementsGrid } from "@/components/Competitions/AchievementsGrid";
+import { CompetitionHero } from "@/components/Competitions/CompetitionHero";
+import {
+  AchievementBoard,
+  ReferralBoard,
+  StreakBoard,
+} from "@/components/Competitions/CompetitionBoards";
 
 export default function CompetitionsPage() {
   const [tab, setTab] = useState<CompetitionTab>("league");
 
   const { data: card, isLoading: cardLoading } = useMyRankCard();
-  const { data: league, isLoading: leagueLoading } = useMyLeague();
-  const { data: challenges, isLoading: challengesLoading } = useChallenges();
-  const { data: achievements, isLoading: achievementsLoading } = useAchievements();
-
-  const openChallenges = challenges?.filter((c) => c.status === "open").length;
+  const { data: league } = useMyLeague();
 
   return (
     <main className="min-h-screen w-full bg-zinc-100 dark:bg-zinc-950" dir="rtl">
@@ -39,12 +32,12 @@ export default function CompetitionsPage() {
           </p>
         </header>
 
-        {/* Persistent across all three tabs — the student's standing is the
-            context for everything below it. */}
+        {/* Persistent across all three tabs: the invite, with the student's
+            score folded underneath it. */}
         {cardLoading || !card || !league ? (
           <Skeleton className="h-56 w-full rounded-3xl" />
         ) : (
-          <MyRankCard
+          <CompetitionHero
             card={card}
             promoteCount={league.promoteCount}
             memberCount={league.members.length}
@@ -53,47 +46,14 @@ export default function CompetitionsPage() {
         )}
 
         <div className="my-6">
-          <CompetitionTabs active={tab} onChange={setTab} challengeCount={openChallenges} />
+          <CompetitionTabs active={tab} onChange={setTab} />
         </div>
 
-        {tab === "league" &&
-          (leagueLoading || !league ? (
-            <BoardSkeleton />
-          ) : (
-            <LeagueBoard league={league} />
-          ))}
-
-        {tab === "challenges" &&
-          (challengesLoading || !challenges ? (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-64 w-full rounded-3xl" />
-              ))}
-            </div>
-          ) : (
-            <ChallengesList challenges={challenges} />
-          ))}
-
-        {tab === "achievements" &&
-          (achievementsLoading || !achievements ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-36 w-full rounded-3xl" />
-              ))}
-            </div>
-          ) : (
-            <AchievementsGrid achievements={achievements} />
-          ))}
+        {/* Each tab is one live leaderboard (GET /competition/...). */}
+        {tab === "league" && <StreakBoard />}
+        {tab === "challenges" && <ReferralBoard />}
+        {tab === "achievements" && <AchievementBoard />}
       </div>
     </main>
   );
 }
-
-const BoardSkeleton = () => (
-  <div className="space-y-2">
-    <Skeleton className="h-20 w-full rounded-3xl" />
-    {Array.from({ length: 8 }).map((_, i) => (
-      <Skeleton key={i} className="h-16 w-full rounded-2xl" />
-    ))}
-  </div>
-);
