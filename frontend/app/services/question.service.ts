@@ -1,5 +1,15 @@
 import { API_ROUTES } from "../constants/planner.constants";
+import { QUESTION_API_ROUTES, QUESTION_CATEGORIES } from "../constants/question.constants";
 import axiosInstance from "../lib/axios";
+import { toJpegFile } from "../lib/image";
+import type { AiGeneratedQuestion } from "../lib/question-draft";
+
+export interface GenerateQuestionsFromPdfInput {
+  pdf: File;
+  notes?: string;
+  // QuestionLanguage value from GET /lookups/information-languages.
+  language: number;
+}
 
 interface ApiEnvelope<T> {
   success: boolean;
@@ -8,41 +18,36 @@ interface ApiEnvelope<T> {
 }
 
 export const questionService = {
-  // Current shape: one row per piece of information, each carrying up to three
-  // cards (info / MCQ / fill-in-the-blank). See LessonInformation.
-  async getInformationByLesson(
-    lessonId: string | number
-  ): Promise<LessonInformation[]> {
-    const response = await axiosInstance.get<ApiEnvelope<LessonInformation[]>>(
-      API_ROUTES.QUESTIONS.BY_LESSON,
-      {
-        params: { lessonId },
-      }
-    );
-
-    return response.data.data ?? [];
-  },
-
-  // Same payload, filtered server-side by informationCategory. The category is
-  // Arabic text — axios percent-encodes it into the query string for us.
-  async getInformationByCategoryAndLesson(
+  // One category of a lesson: the system questions plus the ones this
+  // student added. One row per piece of information, each carrying up to
+  // three cards (info / MCQ / fill-in-the-blank) — see LessonInformation.
+  // The category is Arabic text; axios percent-encodes it for us.
+  async getCustomizedInformation(
     lessonId: string | number,
     category: string
   ): Promise<LessonInformation[]> {
-    const response = await axiosInstance.get<ApiEnvelope<LessonInformation[]>>(
-      API_ROUTES.QUESTIONS.BY_CATEGORY_AND_LESSON,
+    const response = await axiosInstance.get<ApiEnvelope<LessonInformation[] | null>>(
+      QUESTION_API_ROUTES.CUSTOMIZED_BY_CATEGORY_AND_LESSON,
       {
         params: { category, lessonId },
       }
     );
 
-    return response.data.data ?? [];
+    return response.data?.data ?? [];
   },
 
-  // LEGACY — kept only for the not-yet-migrated session/quiz flow. This hits
-  // the same endpoint as getInformationByLesson, so it now receives the new
-  // Information payload and will not map cleanly onto `Question`. Migrate
-  // useLessonSession before relying on it again.
+  // The endpoint is per category, so the whole lesson is one call per
+  // category, merged.
+  async getAllCustomizedInformation(lessonId: string | number): Promise<LessonInformation[]> {
+    const perCategory = await Promise.all(
+      QUESTION_CATEGORIES.map((c) => questionService.getCustomizedInformation(lessonId, c.value))
+    );
+    return perCategory.flat();
+  },
+
+  // LEGACY — unused; nothing calls it. /questions/by-lesson now returns the
+  // Information payload, which will not map cleanly onto `Question`, and the
+  // app reads questions through getCustomizedInformation instead.
   async getQuestionsByLesson(lessonId: string | number): Promise<Question[]> {
     const response = await axiosInstance.get<ApiEnvelope<Question[]>>(
       API_ROUTES.QUESTIONS.BY_LESSON,
@@ -65,7 +70,8 @@ export const questionService = {
     if (input.title) form.append("Title", input.title);
     form.append("Description", input.description);
     form.append("Explanation", input.explanation);
-    if (input.image) form.append("Image", input.image);
+    // The backend takes question images as JPEG only.
+    if (input.image) form.append("Image", await toJpegFile(input.image));
     if (input.audio) form.append("Audio", input.audio);
     form.append("McqText", input.mcqText);
     input.answerOptions.forEach((option) => form.append("AnswerOptions", option));
@@ -97,5 +103,25 @@ export const questionService = {
     );
 
     return response.data?.data;
+  },
+
+  // The AI reads the PDF and answers with one question per piece of
+  // information, in the PDF's order. Nothing is saved: the student reviews
+  // them first, then each one goes through addUserQuestion. Takes about a
+  // minute, so there's deliberately no client-side timeout.
+  async generateFromPdf(input: GenerateQuestionsFromPdfInput): Promise<AiGeneratedQuestion[]> {
+    const form = new FormData();
+    form.append("Pdf", input.pdf);
+    if (input.notes?.trim()) form.append("Notes", input.notes.trim());
+    form.append("Language", String(input.language));
+
+    const response = await axiosInstance.post<
+      ApiEnvelope<{ questions?: AiGeneratedQuestion[] | null } | null>
+    >(QUESTION_API_ROUTES.FILL_QUESTIONS_FROM_PDF, form, {
+      headers: { "Content-Type": undefined },
+    });
+
+    const questions = response.data?.data?.questions;
+    return Array.isArray(questions) ? questions : [];
   },
 };

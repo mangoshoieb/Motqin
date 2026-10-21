@@ -6,7 +6,7 @@ import {
 } from "@/app/services/motqin";
 import { ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 import { PlannerDay, Task } from "@/app/types/planner.types";
-import { elapsedSinceStart, restoreSessionClock } from "@/app/lib/session-clock";
+import { elapsedSinceStart, parseServerDate, restoreSessionClock } from "@/app/lib/session-clock";
 
 const completedStatus: number = StudyPlanItemStatus.Completed;
 
@@ -73,7 +73,9 @@ const sessionStatus = (status: number): ExecutionSession["status"] => {
   // `manuallyCompleted` flag below is what tells the two apart.
   if (status === StudySessionStatus.ManuallyCompleted) return "completed";
   if (status === StudySessionStatus.InProgress) return "active";
-  if (status === StudySessionStatus.Paused) return "paused";
+  // Ended by the backend while the app was closed — waits for the user to
+  // confirm it or delete it.
+  if (status === StudySessionStatus.Missed) return "missed";
   return "idle";
 };
 
@@ -82,7 +84,7 @@ const sessionStatus = (status: number): ExecutionSession["status"] => {
 // the server's startTime for a session this browser never saw run.
 const elapsedSecondsFor = (session: StudySessionDto, status: ExecutionSession["status"]) => {
   const total = session.durationInMinutes * 60;
-  if (status === "completed") return total;
+  if (status === "completed" || status === "missed") return total;
   if (status === "idle") return 0;
 
   const stored = restoreSessionClock(String(session.id), status === "active");
@@ -108,7 +110,9 @@ export const studySessionToExecutionSession = (
     orderInPlan: session.orderInPlan ?? undefined,
     status,
     manuallyCompleted: session.status === StudySessionStatus.ManuallyCompleted,
+    endTime: session.endTime ?? undefined,
     breakCompleted: session.isBreakCompleted ?? false,
+    breakStartTime: session.breakStartTime ?? undefined,
   };
 };
 
@@ -121,7 +125,20 @@ export const sortSessionsByOrder = (sessions: ExecutionSession[]): ExecutionSess
     return orderA !== orderB ? orderA - orderB : Number(a.id) - Number(b.id);
   });
 
-export const studyPlanSessions = (items: StudyPlanItem[]): ExecutionSession[] =>
+// The day's most recently finished session (by endTime; a session with none
+// counts as the oldest) — the only one a break may follow. Undefined when
+// nothing is finished yet.
+export const lastCompletedSessionId = (sessions: ExecutionSession[]): string | undefined => {
+  let latest: { id: string; endedAt: number } | undefined;
+  for (const session of sessions) {
+    if (session.status !== "completed") continue;
+    const endedAt = parseServerDate(session.endTime) ?? Number.NEGATIVE_INFINITY;
+    if (!latest || endedAt >= latest.endedAt) latest = { id: session.id, endedAt };
+  }
+  return latest?.id;
+};
+
+export const studyPlanSessions =(items: StudyPlanItem[]): ExecutionSession[] =>
   items.flatMap((item) =>
     item.studySessions.map((session) =>
       studySessionToExecutionSession(session, String(item.id), item.title),

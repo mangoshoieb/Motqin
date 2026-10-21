@@ -60,16 +60,18 @@ export interface CreatedStudyPlan extends CreateStudyPlanPayload {
   studySessions?: StudySessionDto[];
 }
 
-// The `status` carried by a study session. Completed is 2 (confirmed by the
-// backend); the rest mirror the study-plan numbering, with 3 = paused as
-// observed from /pause responses. 4 is a session the user logged after the
-// fact (POST /manually-completed-session): finished work, but never run on
-// the app's clock, so it can't be started, paused or ended.
+// The `status` carried by a study session — the backend's Statuses enum.
+// 3 (Missed) is a session the backend ended because the app was closed or
+// crashed while it ran; the user confirms it (PUT /{id}/confirm-completed)
+// or deletes it. 4 is a session the user logged after the fact
+// (POST /manually-completed-session): finished work, but never run on the
+// app's clock, so it can't be started, paused or ended. There is no paused
+// status: /pause closes the worked part and opens a new session for the rest.
 export const StudySessionStatus = {
   Upcoming: 0,
   InProgress: 1,
   Completed: 2,
-  Paused: 3,
+  Missed: 3,
   ManuallyCompleted: 4,
 } as const;
 export type StudySessionStatus = (typeof StudySessionStatus)[keyof typeof StudySessionStatus];
@@ -88,9 +90,12 @@ export interface StudySessionDto {
   // 1-based position of the session within its study plan — the order
   // the execution board lists a task's sessions in.
   orderInPlan?: number;
-  // Whether the break that follows this session has been taken
-  // (PUT /{id}/toggle-break flips it).
+  // The break that follows this session: started by PUT /{id}/break-start
+  // (breakStartTime), finished by PUT /{id}/break-end (breakEndTime, and
+  // isBreakCompleted turns true).
   isBreakCompleted?: boolean;
+  breakStartTime?: string | null;
+  breakEndTime?: string | null;
   notes: string[];
 }
 
@@ -488,12 +493,31 @@ export const studySessionsService = {
     await axiosInstance.post(API_ROUTES.STUDY_SESSIONS.MANUALLY_COMPLETED, payload);
   },
 
-  // Flips the session's isBreakCompleted — the break that follows it was
-  // taken. A toggle, so callers check the current value before sending.
-  async toggleBreak(id: number): Promise<StudySessionDto> {
+  // Keeps a Missed session (the app was closed while it ran) as finished
+  // work. No body.
+  async confirmCompleted(id: number): Promise<StudySessionDto> {
     const { data } = await axiosInstance.put<
       StudySessionDto | ApiEnvelope<StudySessionDto>
-    >(API_ROUTES.STUDY_SESSIONS.TOGGLE_BREAK(id));
+    >(API_ROUTES.STUDY_SESSIONS.CONFIRM_COMPLETED(id));
+
+    return unwrap(data);
+  },
+
+  // The break that follows a session: /break-start stamps breakStartTime,
+  // /break-end stamps breakEndTime and marks it taken (isBreakCompleted).
+  // Neither takes a body.
+  async breakStart(id: number): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.put<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.BREAK_START(id));
+
+    return unwrap(data);
+  },
+
+  async breakEnd(id: number): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.put<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.BREAK_END(id));
 
     return unwrap(data);
   },

@@ -15,6 +15,14 @@ export function useCountries() {
   });
 }
 
+export function useInformationLanguages() {
+  return useQuery({
+    queryKey: ["lookups", "information-languages"],
+    queryFn: () => lookupsService.informationLanguages(),
+    ...STATIC,
+  });
+}
+
 export function useEgyptianGovernorates() {
   return useQuery({
     queryKey: ["lookups", "egyptian-governorates"],

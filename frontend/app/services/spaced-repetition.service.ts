@@ -23,7 +23,76 @@ const unwrap = <T>(body: ApiEnvelope<T> | T): T => {
   return body as T;
 };
 
+// The `status` query of GET /spaced-repetition/plans/filter. The backend
+// stores nine StudyPlanStatus values (First/Second/Third/Fourth...); the
+// filter groups them into these four so the client never has to.
+export const SpacedRepetitionPlanStatus = {
+  All: 0,
+  Coming: 1,
+  Missed: 2,
+  Completed: 3,
+} as const;
+export type SpacedRepetitionPlanStatus =
+  (typeof SpacedRepetitionPlanStatus)[keyof typeof SpacedRepetitionPlanStatus];
+
+// One past review session a plan was built from (oldest first).
+export interface SpacedRepetitionPreviousSession {
+  id: number;
+  userId: string;
+  subjectId: number;
+  lessonId: number;
+  category: string;
+  repetitionNumber: number;
+  status: number;
+  startTime: string;
+  endTime: string | null;
+  correctAnswersCount: number;
+  totalQuestionsCount: number;
+  finishedQuestionIds: number[];
+}
+
+export interface SpacedRepetitionPlan {
+  id: number;
+  userId: string;
+  subjectId: number;
+  lessonId: number;
+  category: string;
+  repetitionNumber: number;
+  reviewInterval: number;
+  nextReviewDate: string;
+  // One of the nine stored values — group with the filter's `status` instead.
+  status: number;
+  previousSessionsIDs: number[];
+  previousSessions: SpacedRepetitionPreviousSession[];
+}
+
+// `date` alone, or a startDate/endDate range (a range wins over date).
+// All dates are YYYY-MM-DD.
+export interface SpacedRepetitionPlanFilter {
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: SpacedRepetitionPlanStatus;
+}
+
+export interface SpacedRepetitionPlanFilterResponse {
+  items: SpacedRepetitionPlan[];
+  total: number;
+}
+
 export const spacedRepetitionService = {
+  async filterPlans(
+    params: SpacedRepetitionPlanFilter
+  ): Promise<SpacedRepetitionPlanFilterResponse> {
+    const response = await axiosInstance.get<
+      ApiEnvelope<SpacedRepetitionPlanFilterResponse> | SpacedRepetitionPlanFilterResponse
+    >(API_ROUTES.SPACED_REPETITION.PLANS_FILTER, { params });
+
+    const body = unwrap<SpacedRepetitionPlanFilterResponse>(response.data);
+    const items = Array.isArray(body?.items) ? body.items : [];
+    return { items, total: body?.total ?? items.length };
+  },
+
   // Opens a session. The returned id is the handle every later call (end,
   // set-plan) needs, so callers must hold on to it.
   //

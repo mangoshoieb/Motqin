@@ -104,6 +104,8 @@ export const API_ROUTES = {
     END: "/spaced-repetition/end",
     SET_PLAN: (sessionId: string | number) =>
       `/spaced-repetition/set-plan/${sessionId}`,
+    // The caller's plans whose next review falls in the window, soonest first.
+    PLANS_FILTER: "/spaced-repetition/plans/filter",
   },
 
   USERS: {
@@ -163,6 +165,9 @@ export const API_ROUTES = {
     END: (id: string | number) => `/study-session/${id}/end`,
     PAUSE: (id: string | number) => `/study-session/${id}/pause`,
     ADD_TIME: (id: string | number) => `/study-session/${id}/add-time`,
-    TOGGLE_BREAK: (id: string | number) => `/study-session/${id}/toggle-break`,
+    // A session the backend marked Missed (app closed mid-session), kept by the user.
+    CONFIRM_COMPLETED: (id: string | number) => `/study-session/${id}/confirm-completed`,
+    BREAK_START:(id: string | number) => `/study-session/${id}/break-start`,
+    BREAK_END: (id: string | number) => `/study-session/${id}/break-end`,
   },
 };

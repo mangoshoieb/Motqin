@@ -45,13 +45,22 @@ export interface ExecutionSession {
   // Position within the task (StudySession.orderInPlan); sessions are
   // listed in this order. Missing on a session the backend didn't number.
   orderInPlan?: number;
-  status: "idle" | "active" | "paused" | "completed";
+  // "paused" is local only (between a pause and the refetch that follows it);
+  // "missed" is the server's Missed — ended while the app was closed, and
+  // waiting for the user to confirm or delete it.
+  status: "idle" | "active" | "paused" | "completed" | "missed";
   // Logged after the fact rather than run on the clock (status 4,
   // ManuallyCompleted) — counts as done, but was never started or paused.
   manuallyCompleted?: boolean;
+  // When the session finished (the server's endTime) — the most recently
+  // finished session of the day is the only one a break can follow.
+  endTime?: string;
   // Whether the break after this session has been taken (the server's
-  // isBreakCompleted, flipped by PUT /{id}/toggle-break).
+  // isBreakCompleted, set by PUT /{id}/break-end).
   breakCompleted?: boolean;
+  // Set by PUT /{id}/break-start; with breakCompleted still false it means
+  // the break is running, and the clock is restored from it.
+  breakStartTime?: string;
   // Set when the timer ran out but the user kept going: seconds worked past
   // the planned duration, ticking until they save (PUT /add-time) or dismiss.
   overtimeRunning?: boolean;

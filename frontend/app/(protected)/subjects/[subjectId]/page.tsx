@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { FileText, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import {
   useCreateLesson,
   useDeleteLesson,
@@ -14,15 +14,17 @@ import { getApiErrorMessage } from "@/app/lib/api-error";
 import type { CustomLessonPayload } from "@/app/services/lesson.service";
 import { LessonCardClient } from "@/components/LessonCard.client";
 import { LessonFormDialog } from "@/components/LessonFormDialog";
+import { PdfLessonDialog } from "@/components/PdfLessonDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 const iconButtonClass =
   "p-2 rounded-full bg-white/90 border border-zinc-200 text-zinc-500 transition hover:text-zinc-900 hover:bg-zinc-50";
 
 export const SubjectPage = () => {
   const params = useParams()
+  const router = useRouter();
   const subjectId = params.subjectId as string;
   const id = subjectId.split("-")[0];
   // Already ordered system lessons first, then the student's own.
@@ -35,6 +37,7 @@ export const SubjectPage = () => {
   const deleteLesson = useDeleteLesson();
 
   const [isAdding, setIsAdding] = useState(false);
+  const [isAddingFromPdf, setIsAddingFromPdf] = useState(false);
   const [editing, setEditing] = useState<Lesson | null>(null);
   const [deleting, setDeleting] = useState<Lesson | null>(null);
 
@@ -49,6 +52,24 @@ export const SubjectPage = () => {
         onSuccess: () => {
           setIsAdding(false);
           toast.success("تمت إضافة الدرس");
+        },
+        onError: (err) => toast.error(getApiErrorMessage(err)),
+      },
+    );
+
+  // Create the lesson, then open it with the PDF popup waiting (?ai=pdf) —
+  // step 2, the upload, happens on the lesson's own page.
+  const handleCreateFromPdf = (title: string) =>
+    createLesson.mutate(
+      { subjectId: Number(id), title },
+      {
+        onSuccess: (created) => {
+          if (!created?.lessonId) {
+            setIsAddingFromPdf(false);
+            toast.success("تمت إضافة الدرس");
+            return;
+          }
+          router.push(`/subjects/${subjectId}/${created.lessonId}?ai=pdf`);
         },
         onError: (err) => toast.error(getApiErrorMessage(err)),
       },
@@ -82,14 +103,27 @@ export const SubjectPage = () => {
     <div dir="rtl" className="p-10 flex-col gap-10 ">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <h1 className="text-3xl text-blue-950 font-bold">{subject?.name ?? "الدروس"}</h1>
-        <button
-          type="button"
-          onClick={() => setIsAdding(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
-        >
-          <Plus className="size-4" />
-          إضافة درس
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsAdding(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
+          >
+            <Plus className="size-4" />
+            إضافة درس
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsAddingFromPdf(true)}
+            className="group relative inline-flex items-center gap-2 overflow-hidden px-5 py-2.5 rounded-full bg-gradient-to-l from-indigo-600 to-blue-400 text-white font-semibold shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
+          >
+            {/* Light sweep on hover */}
+            <span className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
+            <FileText className="size-4" />
+            إنشاء درس من PDF
+            <Sparkles className="size-3.5 transition-transform group-hover:rotate-12" />
+          </button>
+        </div>
       </div>
 
       {data?.lessons?.length === 0 && (
@@ -142,6 +176,14 @@ export const SubjectPage = () => {
           isPending={createLesson.isPending}
           onSubmit={handleCreate}
           onCancel={() => setIsAdding(false)}
+        />
+      )}
+
+      {isAddingFromPdf && (
+        <PdfLessonDialog
+          isPending={createLesson.isPending}
+          onSubmit={handleCreateFromPdf}
+          onCancel={() => setIsAddingFromPdf(false)}
         />
       )}
 

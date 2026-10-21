@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, CheckCircle2, CheckSquare, GripVertical, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee } from "lucide-react";
+import { Check, CheckCircle2, CheckSquare, GripVertical, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee, StickyNote, AlertTriangle } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { formatMinutes } from "@/app/lib/duration";
 import { RichTextContent, RichTextEditor, isRichTextEmpty } from "@/components/ui/RichTextEditor";
@@ -16,12 +16,17 @@ interface ExecutionTaskRowProps {
   // Logs study done outside the app (status ManuallyCompleted).
   onAddCompletedSession?: (task: ExecutionTask) => void;
   onToggleSession?: (sessionId: string) => void; // play/pause an existing session
+  // Keeps a session the backend marked Missed (app closed while it ran).
+  onConfirmMissedSession?: (sessionId: string) => void;
   // overtime counter shown after the clock ran out — credit it or drop it
   onSaveOvertime?: (sessionId: string) => void;
   onDismissOvertime?: (sessionId: string) => void;
   onSpendOvertimeAsBreak?: (sessionId: string) => void; // bonus → rest instead of saving it
   // The board-wide break clock and its controls.
   breakTimer?: BreakTimer | null;
+  // The day's most recently finished session (across every task) — the only
+  // one a break may follow.
+  breakSessionId?: string;
   onStartBreak?: (sessionId: string) => void;
   onStopBreak?: () => void;
   // title / duration edits from the expanded card, saved per field on blur
@@ -119,10 +124,12 @@ export const ExecutionTaskRow = ({
   onAddSession,
   onAddCompletedSession,
   onToggleSession,
+  onConfirmMissedSession,
   onSaveOvertime,
   onDismissOvertime,
   onSpendOvertimeAsBreak,
   breakTimer,
+  breakSessionId,
   onStartBreak,
   onStopBreak,
   onUpdateSession,
@@ -137,6 +144,19 @@ export const ExecutionTaskRow = ({
 }: ExecutionTaskRowProps) => {
   const [noteEditing, setNoteEditing] = useState(false);
   const [noteDraft, setNoteDraft] = useState(task.notes ?? "");
+  // Notes live behind the options menu now; this is whether they're showing.
+  const [notesOpen, setNotesOpen] = useState(false);
+  const hasNotes = !isRichTextEmpty(task.notes);
+  const openNotes = (editing: boolean) => {
+    setNoteDraft(task.notes ?? "");
+    setNoteEditing(editing);
+    setNotesOpen(true);
+  };
+  const closeNotes = () => {
+    setNoteDraft(task.notes ?? "");
+    setNoteEditing(false);
+    setNotesOpen(false);
+  };
   const [menuOpen, setMenuOpen] = useState(false);
   // The options menu folds away 1.5s after the cursor leaves it (coming
   // back in time cancels that), and right after any of its actions.
@@ -202,22 +222,24 @@ export const ExecutionTaskRow = ({
     });
   };
 
-  // The break is offered once, after the most recently completed session
-  // (the one the student just finished) — not after every finished one.
-  const lastCompletedId = [...sessions].reverse().find((s) => s.status === "completed")?.id;
+  // The break is offered once, after the day's most recently completed
+  // session (the one the student just finished) — not after every finished
+  // one, and not again once its break is taken. While a break runs, only
+  // that one shows.
   const offersBreak = (session: ExecutionSession) =>
     breakMinutes != null &&
     breakMinutes > 0 &&
-    (session.id === lastCompletedId || breakTimer?.afterSessionId === session.id);
+    (breakTimer
+      ? breakTimer.afterSessionId === session.id
+      : session.id === breakSessionId && !session.breakCompleted);
 
   return (
     <div
       className={cn(
-        "grid grid-cols-1 overflow-hidden bg-transparent p-0 lg:grid-cols-[1.1fr_0.9fr]",
+        "flex min-w-0 flex-col gap-3 rounded-lg bg-white p-5 dark:bg-zinc-900",
         isDragging && "cursor-grabbing",
       )}
     >
-      <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-white p-5 dark:bg-zinc-900">
       <div className="flex items-center gap-3">
         {/* The only place a drag starts — a fixed-size grip at the card's
             edge, Jira-style — so text fields and buttons elsewhere on the
@@ -254,6 +276,17 @@ export const ExecutionTaskRow = ({
             >
               {task.title}
             </p>
+            {/* The task has notes, tucked away — one click shows them. */}
+            {hasNotes && !notesOpen && (
+              <button
+                type="button"
+                title="عرض الملاحظات"
+                onClick={() => openNotes(false)}
+                className="flex size-6 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-blue-600 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
+              >
+                <StickyNote size={14} />
+              </button>
+            )}
             {stars > 0 && (
               <div
                 className="flex shrink-0 gap-0.5"
@@ -286,6 +319,7 @@ export const ExecutionTaskRow = ({
             {menuOpen && (
               <div className="absolute left-0 top-9 z-20 min-w-36 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                 <button type="button" onClick={() => { setMenuOpen(false); onEdit?.(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700"><Pencil size={14} /> تعديل المهمة</button>
+                <button type="button" onClick={() => { setMenuOpen(false); openNotes(!hasNotes); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700"><StickyNote size={14} /> {hasNotes ? "الملاحظات" : "إضافة ملاحظة"}</button>
                 {!task.completed && onPostpone && <button type="button" onClick={() => { setMenuOpen(false); onPostpone(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700"><SkipForward size={14} /> إرسال إلى الغد</button>}
                 <button type="button" onClick={() => { setMenuOpen(false); onDelete?.(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"><Trash2 size={14} /> حذف المهمة</button>
               </div>
@@ -303,6 +337,81 @@ export const ExecutionTaskRow = ({
           )}
         </div>
       </div>
+
+      {/* Task notes, opened from the options menu (or the note icon by the
+          title when there are some). */}
+      {notesOpen && (
+        <div className="flex flex-col gap-2 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+              <StickyNote size={13} className="text-zinc-400" />
+              الملاحظات
+            </h3>
+            <button
+              type="button"
+              title="إغلاق الملاحظات"
+              onClick={closeNotes}
+              className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          {noteEditing ? (
+            <div className="flex flex-col gap-2">
+              <RichTextEditor
+                value={noteDraft}
+                onChange={setNoteDraft}
+                placeholder="أضف ملاحظة..."
+                autoFocus
+                minHeightClass="min-h-22"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNoteDraft(task.notes ?? "");
+                    setNoteEditing(false);
+                    // Nothing to show once the draft is dropped.
+                    if (!hasNotes) setNotesOpen(false);
+                  }}
+                  className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const empty = isRichTextEmpty(noteDraft);
+                    onNotesChange(task.id, empty ? "" : noteDraft);
+                    setNoteEditing(false);
+                    if (empty) setNotesOpen(false);
+                  }}
+                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                >
+                  حفظ
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              role="button"
+              tabIndex={0}
+              title="تعديل الملاحظات"
+              onClick={() => openNotes(true)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openNotes(true);
+                }
+              }}
+              className="cursor-text rounded-lg text-right text-sm text-zinc-600 dark:text-zinc-300"
+            >
+              <RichTextContent value={task.notes ?? ""} />
+            </div>
+          )}
+        </div>
+      )}
 
       {task.kind === "daily" && (
         <div className="flex flex-col gap-2 pr-9">
@@ -395,6 +504,13 @@ export const ExecutionTaskRow = ({
                           </button>
                         )}
                     </span>
+                  ) : session.status === "missed" ? (
+                    <span
+                      title="انتهت هذه الجلسة أثناء إغلاق التطبيق"
+                      className="shrink-0 rounded-md bg-red-50 px-1.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                    >
+                      فائتة
+                    </span>
                   ) : (
                     <button
                       type="button"
@@ -463,6 +579,39 @@ export const ExecutionTaskRow = ({
                   </button>
                 </div>
 
+                {/* The backend ended this session as Missed — the app was
+                    closed or crashed while it ran. The student decides
+                    whether it counts. */}
+                {session.status === "missed" && (
+                  <div
+                    onClick={(event) => event.stopPropagation()}
+                    className="flex flex-wrap items-center gap-2 border-t border-red-200 bg-red-50 px-3 py-1.5 dark:border-red-900/50 dark:bg-red-950/30"
+                  >
+                    <AlertTriangle size={14} className="shrink-0 text-red-600 dark:text-red-400" />
+                    <span className="min-w-0 flex-1 text-xs text-red-800 dark:text-red-200">
+                      أُغلق التطبيق أثناء هذه الجلسة — هل أتممتها؟
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onConfirmMissedSession?.(session.id)}
+                      title="احتساب الجلسة كمكتملة"
+                      className="flex shrink-0 items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700"
+                    >
+                      <Check size={12} />
+                      تأكيد الإتمام
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteSession?.(session.id)}
+                      title="حذف الجلسة"
+                      className="flex shrink-0 items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                    >
+                      <Trash2 size={12} />
+                      حذف
+                    </button>
+                  </div>
+                )}
+
                 {session.overtimeRunning && (
                   <div
                     onClick={(event) => event.stopPropagation()}
@@ -485,7 +634,7 @@ export const ExecutionTaskRow = ({
                       حفظ
                         {/* إضافةإلى وقت الجلسة */}
                     </button>
-                    {breakMinutes != null && breakMinutes > 0 && (
+                    {!breakTimer && offersBreak(session) && (
                       <button
                         type="button"
                         onClick={() => onSpendOvertimeAsBreak?.(session.id)}
@@ -613,74 +762,6 @@ export const ExecutionTaskRow = ({
           </div>
         </div>
       )}
-      </div>
-
-      <div className="flex my-3 min-h-30 flex-col rounded-2xl bg-zinc-50 p-5 dark:bg-zinc-800">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">الملاحظات </h3>
-        </div>
-
-        {noteEditing ? (
-          <div className="flex flex-col gap-3">
-            <RichTextEditor
-              value={noteDraft}
-              onChange={setNoteDraft}
-              placeholder="أضف ملاحظة..."
-              autoFocus
-              minHeightClass="min-h-22"
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setNoteDraft(task.notes ?? "");
-                  setNoteEditing(false);
-                }}
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onNotesChange(task.id, isRichTextEmpty(noteDraft) ? "" : noteDraft);
-                  setNoteEditing(false);
-                }}
-                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
-              >
-
-                حفظ
-              </button>
-            </div>
-          </div>
-        ) : !isRichTextEmpty(task.notes) ? (
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setNoteEditing(true)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                setNoteEditing(true);
-              }
-            }}
-            className="flex flex-1 cursor-text flex-col rounded-lg bg-zinc-50 p-3 text-right text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-          >
-            <RichTextContent value={task.notes ?? ""} />
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setNoteDraft("");
-              setNoteEditing(true);
-            }}
-            className="flex flex-1 items-center justify-center px-3 py-8 text-sm text-zinc-400 transition hover:text-blue-600 dark:hover:text-blue-400"
-          >
-            لا يوجد ملاحظات أضف ملاحظة<span className="text-xl mr-1">+</span>
-          </button>
-        )}
-      </div>
     </div>
   );
 };

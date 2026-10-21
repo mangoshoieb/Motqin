@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { questionService } from "../services/question.service";
+import { lessonInformationKey } from "./useGetLessonInformation";
 import { sessionReportingService } from "../services/session-reporting.service";
 import {
   apply,
@@ -76,8 +77,17 @@ export const useLessonSession = (
     isLoading,
     error,
   } = useQuery<LessonInformation[]>({
-    queryKey: ["lesson-information", "by-lesson", lessonId],
-    queryFn: () => questionService.getInformationByLesson(lessonId),
+    // The quiz always runs one category (the lesson page's "ابدأ" link
+    // carries it), which is exactly what the endpoint serves — and the
+    // same cache entry as that tab. Without one, it falls back to the
+    // whole lesson.
+    queryKey: filters?.category
+      ? lessonInformationKey(lessonId, filters.category)
+      : [...lessonInformationKey(lessonId), "all"],
+    queryFn: () =>
+      filters?.category
+        ? questionService.getCustomizedInformation(lessonId, filters.category)
+        : questionService.getAllCustomizedInformation(lessonId),
     enabled: !!lessonId,
   });
 

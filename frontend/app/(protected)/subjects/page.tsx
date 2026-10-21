@@ -6,6 +6,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { SubjectCardClient } from "@/components/SubjectCard.client";
 import { SubjectNameDialog } from "@/components/SubjectNameDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { SpacedRepetitionOverview } from "@/components/SpacedRepetitionOverview";
 import {
   useCreateSubject,
   useDeleteSubject,
@@ -69,6 +70,11 @@ const SubjectsPage = () => {
 
   return (
     <div dir="rtl" className="bg-zinc-100 min-h-screen flex flex-col gap-6 px-10">
+      {/* Spaced-repetition reviews — missed and coming */}
+      <div className="mx-5 px-7 pt-10">
+        <SpacedRepetitionOverview />
+      </div>
+
       {/* Header */}
       <div className="p-10 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl text-blue-950 font-bold">المواد الدراسية</h1>

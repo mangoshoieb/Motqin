@@ -25,10 +25,13 @@ interface ExecutionTaskListProps {
   // Logs study done outside the app (status ManuallyCompleted).
   onAddCompletedSession?: (task: ExecutionTask) => void;
   onToggleSession?: (sessionId: string) => void;
+  onConfirmMissedSession?: (sessionId: string) => void;
   onSaveOvertime?: (sessionId: string) => void;
   onDismissOvertime?: (sessionId: string) => void;
   onSpendOvertimeAsBreak?: (sessionId: string) => void;
   breakTimer?: BreakTimer | null;
+  // The day's most recently finished session — the only one a break may follow.
+  breakSessionId?: string;
   onStartBreak?: (sessionId: string) => void;
   onStopBreak?: () => void;
   onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => void;
@@ -50,10 +53,12 @@ export const ExecutionTaskList = ({
   onAddSession,
   onAddCompletedSession,
   onToggleSession,
+  onConfirmMissedSession,
   onSaveOvertime,
   onDismissOvertime,
   onSpendOvertimeAsBreak,
   breakTimer,
+  breakSessionId,
   onStartBreak,
   onStopBreak,
   onUpdateSession,
@@ -169,10 +174,12 @@ export const ExecutionTaskList = ({
               onAddSession={onAddSession}
               onAddCompletedSession={onAddCompletedSession}
               onToggleSession={onToggleSession}
+              onConfirmMissedSession={onConfirmMissedSession}
               onSaveOvertime={onSaveOvertime}
               onDismissOvertime={onDismissOvertime}
               onSpendOvertimeAsBreak={onSpendOvertimeAsBreak}
               breakTimer={breakTimer}
+              breakSessionId={breakSessionId}
               onStartBreak={onStartBreak}
               onStopBreak={onStopBreak}
               onUpdateSession={onUpdateSession}

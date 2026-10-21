@@ -15,16 +15,18 @@ import { ExecutionTaskList } from "@/components/ExecutionBoard/ExecutionTaskList
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
 import { ConfirmDialog } from "@/components/ExecutionBoard/ConfirmDialog";
 import { AddCompletedSessionDialog } from "@/components/ExecutionBoard/AddCompletedSessionDialog";
+import { SpacedRepetitionColumn } from "@/components/ExecutionBoard/SpacedRepetitionColumn";
 import { StudyPlanDuration, studyPlansService, studySessionsService } from "@/app/services/motqin";
 import {
   currentWeekDates,
+  lastCompletedSessionId,
   nextFreePriority as nextFreePrioritySlot,
   priorityForPosition,
   sortByPriority as sortTasksByPriority,
   sortSessionsByOrder,
   studySessionToExecutionSession,
 } from "@/app/lib/study-plan";
-import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
+import { clearSessionClock, elapsedSinceStart, saveSessionClock } from "@/app/lib/session-clock";
 import { primeSessionAlerts } from "@/app/lib/session-alerts";
 import { toastApiError } from "@/app/lib/api-error";
 import { elapsedSecondsOf, useSessionTimerStore } from "@/app/lib/session-timer.store";
@@ -64,6 +66,10 @@ const ExecutionBoardPage = () => {
   // Only one break runs at a time; it counts up and turns into "overrun"
   // once it passes the preference's break length.
   const [breakTimer, setBreakTimer] = useState<BreakTimer | null>(null);
+  // Non-zero while a break-start/break-end round-trip is in flight, so a
+  // refetch landing meanwhile doesn't restore (or drop) the break clock
+  // from data that predates it.
+  const [breakRequests, setBreakRequests] = useState(0);
 
   // Priority slots (1 = ★★★, 2 = ★★, 3 = ★, else no stars) — the same
   // helpers drive the week board so both views order tasks identically.
@@ -89,6 +95,20 @@ const ExecutionBoardPage = () => {
           : session;
       }),
     );
+    // The break clock follows the server: a break started (break-start) but
+    // not ended (break-end) is still running — after a reload or on another
+    // device — and one the server shows as taken is over.
+    if (breakRequests === 0) {
+      const runningBreak = data.detail.sessions.find((s) => s.breakStartTime && !s.breakCompleted);
+      setBreakTimer((current) => {
+        if (current && !data.detail.sessions.some((s) => s.id === current.afterSessionId && s.breakCompleted)) {
+          return current;
+        }
+        return runningBreak
+          ? { afterSessionId: runningBreak.id, elapsedSeconds: elapsedSinceStart(runningBreak.breakStartTime) ?? 0 }
+          : null;
+      });
+    }
   }
 
   // Pulls the day's tasks and sessions back from the server (the pause
@@ -160,6 +180,8 @@ const ExecutionBoardPage = () => {
           ? {
               ...s,
               status: "completed",
+              // Just finished — the session a break may now follow.
+              endTime: new Date().toISOString(),
               elapsedSeconds: s.sessionDurationMinutes * 60,
               actualMinutes: s.sessionDurationMinutes,
               overtimeRunning: true,
@@ -257,6 +279,9 @@ const ExecutionBoardPage = () => {
     for (const [taskId, list] of map) map.set(taskId, sortSessionsByOrder(list));
     return map;
   }, [sessions]);
+
+  // The one session on the whole board a break may follow.
+  const breakSessionId = useMemo(() => lastCompletedSessionId(sessions), [sessions]);
 
   const toggleTaskComplete = (id: string) => {
     const task = tasks.find((item) => item.id === id);
@@ -482,17 +507,44 @@ const ExecutionBoardPage = () => {
     );
 
   // Start a break after `sessionId`, optionally with time already on the
-  // clock. A running session is paused first — you can't do both.
-  const startBreak = (sessionId: string, initialSeconds = 0) => {
+  // clock. Only the day's most recently finished session can be followed by
+  // a break, only once, and only one break runs at a time. A running session
+  // is paused first — you can't do both.
+  const startBreak = async (sessionId: string, initialSeconds = 0) => {
+    const session = sessionsRef.current.find((s) => s.id === sessionId);
+    if (
+      !session ||
+      session.breakCompleted ||
+      breakTimer ||
+      sessionId !== lastCompletedSessionId(sessionsRef.current)
+    ) {
+      return;
+    }
+
     const running = sessionsRef.current.find((s) => s.status === "active");
     if (running) void pauseSession(running.id);
     setBreakTimer({ afterSessionId: sessionId, elapsedSeconds: initialSeconds });
+
+    setBreakRequests((n) => n + 1);
+    try {
+      const started = await studySessionsService.breakStart(Number(sessionId));
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === sessionId
+            ? { ...s, breakStartTime: started?.breakStartTime ?? new Date().toISOString() }
+            : s,
+        ),
+      );
+    } catch (error) {
+      setBreakTimer((current) => (current?.afterSessionId === sessionId ? null : current));
+      toastApiError("تعذر بدء الاستراحة", error);
+    } finally {
+      setBreakRequests((n) => n - 1);
+    }
   };
 
-  // Finishing a break records it against the session it followed — the
-  // backend keeps that on the session itself (isBreakCompleted). The
-  // endpoint is a toggle, so a break already on the record is left alone
-  // rather than being flipped back off.
+  // Ending the break (break-end) records it on the session it followed —
+  // isBreakCompleted turns true, and that session offers no break again.
   const stopBreak = async () => {
     const finishing = breakTimer;
     setBreakTimer(null);
@@ -505,19 +557,24 @@ const ExecutionBoardPage = () => {
       prev.map((s) => (s.id === session.id ? { ...s, breakCompleted: true } : s)),
     );
 
+    setBreakRequests((n) => n + 1);
     try {
-      const updated = await studySessionsService.toggleBreak(Number(session.id));
+      const ended = await studySessionsService.breakEnd(Number(session.id));
       setSessions((prev) =>
         prev.map((s) =>
-          s.id === session.id ? { ...s, breakCompleted: updated?.isBreakCompleted ?? true } : s,
+          s.id === session.id ? { ...s, breakCompleted: ended?.isBreakCompleted ?? true } : s,
         ),
       );
       queryClient.invalidateQueries({ queryKey: ["execution-board"] });
     } catch (error) {
+      // Still running as far as the server knows — put the clock back.
       setSessions((prev) =>
         prev.map((s) => (s.id === session.id ? { ...s, breakCompleted: false } : s)),
       );
-      toastApiError("تعذر تسجيل الاستراحة", error);
+      setBreakTimer((current) => current ?? finishing);
+      toastApiError("تعذر إنهاء الاستراحة", error);
+    } finally {
+      setBreakRequests((n) => n - 1);
     }
   };
 
@@ -527,12 +584,13 @@ const ExecutionBoardPage = () => {
     const target = sessionsRef.current.find((s) => s.id === sessionId);
     if (!target?.overtimeRunning) return;
     dismissOvertime(sessionId);
-    startBreak(sessionId, target.overtimeSeconds ?? 0);
+    void startBreak(sessionId, target.overtimeSeconds ?? 0);
   };
 
   const toggleSession = (sessionId: string) => {
     const target = sessions.find((s) => s.id === sessionId);
-    if (!target || target.status === "completed") return;
+    // A missed session is confirmed or deleted, never restarted.
+    if (!target || target.status === "completed" || target.status === "missed") return;
 
     // Sound and notifications can only be enabled from a user gesture, so
     // this click is where they get unlocked.
@@ -541,6 +599,32 @@ const ExecutionBoardPage = () => {
   };
 
 
+
+  // The backend ended this session as Missed (the app was closed or crashed
+  // while it ran); the student says they did finish it. It then counts like
+  // any completed session — and may complete the task.
+  const confirmMissedSession = async (sessionId: string) => {
+    const target = sessionsRef.current.find((s) => s.id === sessionId);
+    if (!target || target.status !== "missed") return;
+
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId ? { ...s, status: "completed", endTime: new Date().toISOString() } : s,
+      ),
+    );
+
+    try {
+      await studySessionsService.confirmCompleted(Number(sessionId));
+      toast.success("تم تأكيد الجلسة");
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      await refetchBoard(target.taskId);
+    } catch (error) {
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, status: "missed", endTime: target.endTime } : s)),
+      );
+      toastApiError("تعذر تأكيد الجلسة", error);
+    }
+  };
 
   // Each field in the expanded card saves on blur, so only what actually
   // changed goes in the PUT.
@@ -793,7 +877,11 @@ const ExecutionBoardPage = () => {
           }}
         />
 
-        <div className="flex items-center justify-between gap-4">
+        {/* Two columns: the day's tasks, and its spaced-repetition reviews
+            beside them (stacked on narrow screens). */}
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-3">
+        <div className="flex min-h-10 items-center justify-between gap-4">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">مهام اليوم</h2>
           <button
             type="button"
@@ -814,11 +902,13 @@ const ExecutionBoardPage = () => {
           onAddSession={addSessionForTask}
           onAddCompletedSession={setCompletedSessionTask}
           onToggleSession={toggleSession}
+          onConfirmMissedSession={(sessionId) => void confirmMissedSession(sessionId)}
           onSaveOvertime={(sessionId) => void saveOvertime(sessionId)}
           onDismissOvertime={dismissOvertime}
           onSpendOvertimeAsBreak={spendOvertimeAsBreak}
           breakTimer={breakTimer}
-          onStartBreak={startBreak}
+          breakSessionId={breakSessionId}
+          onStartBreak={(sessionId) => void startBreak(sessionId)}
           onStopBreak={() => void stopBreak()}
           onUpdateSession={updateSession}
           onDeleteSession={(sessionId) =>
@@ -831,6 +921,10 @@ const ExecutionBoardPage = () => {
           onDelete={deleteTask}
           onDropTask={reorderTasks}
         />
+        </div>
+
+        <SpacedRepetitionColumn date={data.day.date} />
+        </div>
 
         {sessionPendingDelete && (
           <ConfirmDialog

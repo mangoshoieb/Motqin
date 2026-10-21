@@ -1,5 +1,6 @@
 import axiosInstance from "@/app/lib/axios";
 import { API_ROUTES } from "@/app/constants/planner.constants";
+import { QUESTION_API_ROUTES } from "@/app/constants/question.constants";
 import { CountryLookupItem, LookupItem } from "@/app/types/lookup.types";
 
 // The lookup endpoints are open (no auth) and return a bare array.
@@ -14,6 +15,14 @@ export const lookupsService = {
   async egyptianGovernorates(): Promise<LookupItem[]> {
     const { data } = await axiosInstance.get<LookupItem[]>(
       API_ROUTES.LOOKUPS.EGYPTIAN_GOVERNORATES,
+    );
+    return Array.isArray(data) ? data : [];
+  },
+
+  // The Language choices for AI question generation (0 = auto).
+  async informationLanguages(): Promise<LookupItem[]> {
+    const { data } = await axiosInstance.get<LookupItem[]>(
+      QUESTION_API_ROUTES.INFORMATION_LANGUAGES,
     );
     return Array.isArray(data) ? data : [];
   },
