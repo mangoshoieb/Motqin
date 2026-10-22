@@ -125,8 +125,16 @@ export const API_ROUTES = {
     DELETE: "/user-preferences/planner/basic",
     POST: "/user-preferences/planner/basic",
   },
+  // Spaced-repetition review gaps: one GET for everything (the student's
+  // default, the system fallback, per-subject overrides), PUT/DELETE on the
+  // collection for the default and on /{subjectId} for one subject.
+  SPACED_REPETITION_INTERVALS: {
+    ALL: "/user-preferences/spaced-repetition/intervals",
+    SUBJECT: (subjectId: string | number) =>
+      `/user-preferences/spaced-repetition/intervals/${subjectId}`,
+  },
   COURSE_SCHEDULES: {
-    GET_ALL: "/user-preferences/planner/courses-schedules",
+    GET_ALL:"/user-preferences/planner/courses-schedules",
     // Which curriculum subjects still have no schedule — the AI planner
     // needs every one of them before it can lay out a week.
     VALIDATE: "/user-preferences/planner/validate-courses-schedule",

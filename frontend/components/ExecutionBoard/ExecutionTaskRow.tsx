@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, CheckCircle2, CheckSquare, GripVertical, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee, StickyNote, AlertTriangle } from "lucide-react";
+import { Check, CheckCircle2, CheckSquare, GripVertical, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee, StickyNote, AlertTriangle, NotebookPen } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { formatMinutes } from "@/app/lib/duration";
 import { RichTextContent, RichTextEditor, isRichTextEmpty } from "@/components/ui/RichTextEditor";
@@ -236,7 +236,7 @@ export const ExecutionTaskRow = ({
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-col gap-3 rounded-lg bg-white p-5 dark:bg-zinc-900",
+        "relative flex min-w-0 flex-col gap-3 rounded-lg bg-white p-5 dark:bg-zinc-900",
         isDragging && "cursor-grabbing",
       )}
     >
@@ -276,17 +276,6 @@ export const ExecutionTaskRow = ({
             >
               {task.title}
             </p>
-            {/* The task has notes, tucked away — one click shows them. */}
-            {hasNotes && !notesOpen && (
-              <button
-                type="button"
-                title="عرض الملاحظات"
-                onClick={() => openNotes(false)}
-                className="flex size-6 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-blue-600 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
-              >
-                <StickyNote size={14} />
-              </button>
-            )}
             {stars > 0 && (
               <div
                 className="flex shrink-0 gap-0.5"
@@ -337,81 +326,6 @@ export const ExecutionTaskRow = ({
           )}
         </div>
       </div>
-
-      {/* Task notes, opened from the options menu (or the note icon by the
-          title when there are some). */}
-      {notesOpen && (
-        <div className="flex flex-col gap-2 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
-              <StickyNote size={13} className="text-zinc-400" />
-              الملاحظات
-            </h3>
-            <button
-              type="button"
-              title="إغلاق الملاحظات"
-              onClick={closeNotes}
-              className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-            >
-              <X size={14} />
-            </button>
-          </div>
-
-          {noteEditing ? (
-            <div className="flex flex-col gap-2">
-              <RichTextEditor
-                value={noteDraft}
-                onChange={setNoteDraft}
-                placeholder="أضف ملاحظة..."
-                autoFocus
-                minHeightClass="min-h-22"
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNoteDraft(task.notes ?? "");
-                    setNoteEditing(false);
-                    // Nothing to show once the draft is dropped.
-                    if (!hasNotes) setNotesOpen(false);
-                  }}
-                  className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const empty = isRichTextEmpty(noteDraft);
-                    onNotesChange(task.id, empty ? "" : noteDraft);
-                    setNoteEditing(false);
-                    if (empty) setNotesOpen(false);
-                  }}
-                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
-                >
-                  حفظ
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div
-              role="button"
-              tabIndex={0}
-              title="تعديل الملاحظات"
-              onClick={() => openNotes(true)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  openNotes(true);
-                }
-              }}
-              className="cursor-text rounded-lg text-right text-sm text-zinc-600 dark:text-zinc-300"
-            >
-              <RichTextContent value={task.notes ?? ""} />
-            </div>
-          )}
-        </div>
-      )}
 
       {task.kind === "daily" && (
         <div className="flex flex-col gap-2 pr-9">
@@ -762,6 +676,104 @@ export const ExecutionTaskRow = ({
           </div>
         </div>
       )}
+
+      {/* Task notes, at the end of the card — opened from the notes button
+          in the bottom-left corner or from the options menu. */}
+      {notesOpen && (
+        <div className="flex flex-col gap-2 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+              <StickyNote size={13} className="text-zinc-400" />
+              الملاحظات
+            </h3>
+            <button
+              type="button"
+              title="إغلاق الملاحظات"
+              onClick={closeNotes}
+              className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          {noteEditing ? (
+            <div className="flex flex-col gap-2">
+              <RichTextEditor
+                value={noteDraft}
+                onChange={setNoteDraft}
+                placeholder="أضف ملاحظة..."
+                autoFocus
+                minHeightClass="min-h-22"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNoteDraft(task.notes ?? "");
+                    setNoteEditing(false);
+                    // Nothing to show once the draft is dropped.
+                    if (!hasNotes) setNotesOpen(false);
+                  }}
+                  className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const empty = isRichTextEmpty(noteDraft);
+                    onNotesChange(task.id, empty ? "" : noteDraft);
+                    setNoteEditing(false);
+                    if (empty) setNotesOpen(false);
+                  }}
+                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                >
+                  حفظ
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              role="button"
+              tabIndex={0}
+              title="تعديل الملاحظات"
+              onClick={() => openNotes(true)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openNotes(true);
+                }
+              }}
+              className="cursor-text rounded-lg text-right text-sm text-zinc-600 dark:text-zinc-300"
+            >
+              <RichTextContent value={task.notes ?? ""} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* The notes button: pinned to the card's bottom-left corner and
+          sticking out past its edge, so it's always one click away (the
+          options menu keeps its own way in). */}
+      <button
+        type="button"
+        title={notesOpen ? "إغلاق الملاحظات" : hasNotes ? "عرض الملاحظات" : "إضافة ملاحظة"}
+        aria-label={notesOpen ? "إغلاق الملاحظات" : hasNotes ? "عرض الملاحظات" : "إضافة ملاحظة"}
+        aria-expanded={notesOpen}
+        onClick={() => (notesOpen ? closeNotes() : openNotes(!hasNotes))}
+        className={cn(
+          "absolute -bottom-4 left-4 z-10 flex size-9 items-center justify-center rounded-full border shadow-md transition hover:-translate-y-0.5 hover:shadow-lg",
+          notesOpen
+            ? "border-blue-600 bg-blue-600 text-white"
+            : "border-zinc-200 bg-white text-blue-600 hover:border-blue-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-blue-400",
+        )}
+      >
+        <NotebookPen size={16} />
+        {/* There are notes behind it. */}
+        {hasNotes && !notesOpen && (
+          <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-amber-400 ring-2 ring-white dark:ring-zinc-900" />
+        )}
+      </button>
     </div>
   );
 };

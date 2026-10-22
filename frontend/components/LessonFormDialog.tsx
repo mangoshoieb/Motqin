@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { DurationFields } from "@/components/ui/DurationFields";
 import type { CustomLessonPayload } from "@/app/services/lesson.service";
 
 // Same bounds the backend puts on CreateCustomizedLessonDto /
@@ -22,8 +21,8 @@ interface LessonFormDialogProps {
   onCancel: () => void;
 }
 
-// Popup to add a lesson of the student's own under a subject, or edit one:
-// a title, an optional estimated duration and optional notes (one per line).
+// Popup to add a lesson of the student's own under a subject, or rename one.
+// Just the title for now — the other lesson fields aren't used yet.
 export const LessonFormDialog = ({
   title,
   submitLabel,
@@ -33,23 +32,24 @@ export const LessonFormDialog = ({
   onCancel,
 }: LessonFormDialogProps) => {
   const [lessonTitle, setLessonTitle] = useState(initialLesson?.title ?? "");
-  const [minutes, setMinutes] = useState(initialLesson?.estimatedDuration ?? 0);
-  const [notes, setNotes] = useState((initialLesson?.notes ?? []).join("\n"));
 
   const trimmed = lessonTitle.trim();
   const tooShort = trimmed.length < MIN_LENGTH;
 
+  // Only the title is asked for. An edit sends the lesson's existing
+  // duration and notes back unchanged so saving a new title can't wipe them.
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (tooShort || isPending) return;
-    onSubmit({
-      title: trimmed,
-      estimatedDuration: minutes > 0 ? minutes : null,
-      notes: notes
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
-    });
+    onSubmit(
+      initialLesson
+        ? {
+            title: trimmed,
+            estimatedDuration: initialLesson.estimatedDuration ?? null,
+            notes: initialLesson.notes ?? [],
+          }
+        : { title: trimmed },
+    );
   };
 
   return (
@@ -82,25 +82,6 @@ export const LessonFormDialog = ({
               يجب أن يتكون العنوان من حرفين على الأقل.
             </span>
           )}
-        </label>
-
-        <DurationFields
-          minutes={minutes}
-          onChange={setMinutes}
-          label="المدة المتوقعة (اختياري)"
-          labelClassName={labelClass}
-          inputClassName={inputClass}
-        />
-
-        <label className={labelClass}>
-          ملاحظات (اختياري، ملاحظة في كل سطر)
-          <textarea
-            dir="auto"
-            rows={3}
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            className={`${inputClass} resize-y`}
-          />
         </label>
 
         <div className="flex items-center gap-3 mt-2">

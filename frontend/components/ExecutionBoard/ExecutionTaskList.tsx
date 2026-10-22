@@ -147,7 +147,8 @@ export const ExecutionTaskList = ({
       {tasks.length === 0 ? (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">لا توجد مهام هنا لهذا اليوم</p>
       ) : (
-        <div className="flex flex-col gap-3">
+        // Room between cards for the notes button sticking out of each.
+        <div className="flex flex-col gap-7 pb-4">
           {tasks.map((task) => (
             <div
               key={task.id}

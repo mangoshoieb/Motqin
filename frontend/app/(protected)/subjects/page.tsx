@@ -14,6 +14,7 @@ import {
   useUpdateSubject,
 } from "@/app/hooks/useGetSubjects";
 import { getApiErrorMessage } from "@/app/lib/api-error";
+import { MotqinPreferencesLink } from "@/components/Settings/Motqin/MotqinPreferencesLink";
 
 const subjectHref = (subject: Subject) =>
   `/subjects/${subject.subjectID}-${subject.name.toLowerCase().replace(/\s+/g, "-")}`;
@@ -78,14 +79,17 @@ const SubjectsPage = () => {
       {/* Header */}
       <div className="p-10 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl text-blue-950 font-bold">المواد الدراسية</h1>
-        <button
-          type="button"
-          onClick={() => setIsAdding(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
-        >
-          <Plus className="size-4" />
-          إضافة مادة
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <MotqinPreferencesLink />
+          <button
+            type="button"
+            onClick={() => setIsAdding(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
+          >
+            <Plus className="size-4" />
+            إضافة مادة
+          </button>
+        </div>
       </div>
 
       {/* Subjects List */}

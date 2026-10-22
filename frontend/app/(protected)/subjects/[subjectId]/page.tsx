@@ -18,6 +18,7 @@ import { PdfLessonDialog } from "@/components/PdfLessonDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 import { useParams, useRouter } from "next/navigation";
+import { MotqinPreferencesLink } from "@/components/Settings/Motqin/MotqinPreferencesLink";
 
 const iconButtonClass =
   "p-2 rounded-full bg-white/90 border border-zinc-200 text-zinc-500 transition hover:text-zinc-900 hover:bg-zinc-50";
@@ -104,6 +105,7 @@ export const SubjectPage = () => {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <h1 className="text-3xl text-blue-950 font-bold">{subject?.name ?? "الدروس"}</h1>
         <div className="flex flex-wrap items-center gap-3">
+          <MotqinPreferencesLink />
           <button
             type="button"
             onClick={() => setIsAdding(true)}

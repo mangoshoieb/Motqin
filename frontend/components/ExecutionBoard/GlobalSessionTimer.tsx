@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { StudySessionStatus, studySessionsService } from "@/app/services/motqin";
 import { toastApiError } from "@/app/lib/api-error";
 import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
@@ -35,32 +36,56 @@ export const GlobalSessionTimer = () => {
   // `now` is only here to recompute once a second.
   const elapsed = session && now ? elapsedSecondsOf(useSessionTimerStore.getState()) : 0;
 
-  // The clock is persisted, so a reload picks it back up — including one
-  // pointing at a session the server has since paused, split or ended, which
-  // would otherwise count down forever on every page. Check each restored
-  // session once; a session started in this page's lifetime is ours already.
-  const validatedRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!session || validatedRef.current === session.sessionId) return;
-    validatedRef.current = session.sessionId;
-    if (Date.now() - useSessionTimerStore.getState().startedAt < 30_000) return;
-
-    void studySessionsService
-      .getById(Number(session.sessionId))
-      .then((dto) => {
-        if (dto.status === StudySessionStatus.InProgress) return;
-        // Something else may have taken the clock while this was in flight.
-        if (useSessionTimerStore.getState().session?.sessionId !== session.sessionId) return;
-        console.warn("[SESSION CLOCK] restored clock is not running on the server", {
-          sessionId: session.sessionId,
-          status: dto.status,
-        });
-        clearSessionClock(session.sessionId);
-        clear();
-      })
+  // The server can stop a session without this tab doing anything — paused
+  // or split from another device, or ended as Missed when it decided the app
+  // was gone. A clock still counting then is a lie, and pausing it can only
+  // fail ("Only in-progress sessions … can be paused"). So the clock follows
+  // the server: drop it, refresh the board, and say what happened.
+  const dropIfStopped = useCallback(
+    async (sessionId: string) => {
+      const dto = await studySessionsService.getById(Number(sessionId)).catch(() => null);
       // Offline or a failed lookup is no reason to throw away a running clock.
-      .catch(() => undefined);
-  }, [session, clear]);
+      if (!dto || dto.status === StudySessionStatus.InProgress) return false;
+      // Something else may have taken the clock while this was in flight.
+      if (useSessionTimerStore.getState().session?.sessionId !== sessionId) return true;
+      console.warn("[SESSION CLOCK] clock is running but the server's session is not", {
+        sessionId,
+        status: dto.status,
+      });
+      clearSessionClock(sessionId);
+      clear();
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["execution-board"] });
+      toast.info(
+        dto.status === StudySessionStatus.Missed
+          ? "توقفت هذه الجلسة على الخادم وأصبحت فائتة — أكّدها أو احذفها من لوحة التنفيذ"
+          : "هذه الجلسة لم تعد جارية على الخادم",
+      );
+      return true;
+    },
+    [clear, queryClient],
+  );
+
+  // Check a clock restored from storage right away (one started in this
+  // page's lifetime is ours already), then every minute while it runs and
+  // whenever the tab comes back into view.
+  const sessionKey = session?.sessionId;
+  useEffect(() => {
+    if (!sessionKey || status !== "active") return;
+    const check = () => {
+      if (useSessionTimerStore.getState().status === "active") void dropIfStopped(sessionKey);
+    };
+    if (Date.now() - useSessionTimerStore.getState().startedAt >= 30_000) check();
+    const interval = window.setInterval(check, 60_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [sessionKey, status, dropIfStopped]);
 
   // Since when this timer has actually been watching the current session,
   // and where its clock stood then. Ending a session is destructive — the
@@ -146,10 +171,13 @@ export const GlobalSessionTimer = () => {
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
       queryClient.invalidateQueries({ queryKey: ["execution-board"] });
     } catch (error) {
-      // The server refused, so it's still running there — put the box back
-      // on the clock rather than leaving it gone with the session alive.
-      saveSessionClock(running.sessionId, current, true);
+      // A refusal doesn't mean it's still running: the server may already
+      // have stopped it (e.g. as Missed). Put the box back on the clock only
+      // if the server says it really is running — restoring it blindly is
+      // what left a dead session ticking with every pause failing.
       useSessionTimerStore.getState().start(running, current);
+      if (await dropIfStopped(running.sessionId)) return;
+      saveSessionClock(running.sessionId, current, true);
       toastApiError("تعذر إيقاف الجلسة مؤقتًا", error);
     }
   };

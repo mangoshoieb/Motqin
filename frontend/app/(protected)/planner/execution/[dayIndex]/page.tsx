@@ -393,8 +393,6 @@ const ExecutionBoardPage = () => {
       // remaining time — show that, and complete the task if nothing is left.
       await refetchBoard(pausing?.taskId);
     } catch (error) {
-      toastApiError("تعذر إيقاف الجلسة مؤقتًا", error);
-
       // The request failed, but that doesn't mean the session is still
       // running — it may already have been paused or ended server-side, in
       // which case reverting to "active" is what makes it look unstoppable.
@@ -410,7 +408,17 @@ const ExecutionBoardPage = () => {
         )
         .catch(() => null);
       const serverSession = fresh?.detail.sessions.find((s) => s.id === sessionId);
-      if (serverSession && serverSession.status !== "active") return;
+      if (serverSession && serverSession.status !== "active") {
+        // Already stopped there — the refetch shows it as it is now, which
+        // is more use than the server's "can't pause" error.
+        toast.info(
+          serverSession.status === "missed"
+            ? "توقفت هذه الجلسة على الخادم وأصبحت فائتة — أكّدها أو احذفها"
+            : "هذه الجلسة لم تعد جارية على الخادم",
+        );
+        return;
+      }
+      toastApiError("تعذر إيقاف الجلسة مؤقتًا", error);
 
       // Still running there, so put the whole UI back that way — row, stored
       // clock and floating box together. Leaving the clock cleared here is
