@@ -6,10 +6,26 @@ import BentoGrid from "@/components/Home/BentoGrid";
 import MagicSection from "@/components/Home/MagicSection";
 import QuoteSection from "@/components/Home/QuoteSection";
 import Image from "next/image";
+import { useEffect } from "react";
 import { useAuth } from "./context/auth.context";
+import { authStorage } from "@/app/lib/auth-storage";
+import { useAuthGate } from "@/app/lib/auth-gate.store";
+
+// Once per visit, so coming back to the home page doesn't re-nag.
+const WELCOME_SHOWN_KEY = "motqin:welcomeShown";
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
+  const openGate = useAuthGate((s) => s.open);
+
+  // First landing with no session at all: sign in, sign up, or try as a
+  // guest. Reads the token directly — the auth context still says "nobody"
+  // during the first render even for signed-in users.
+  useEffect(() => {
+    if (authStorage.getAccessToken() || sessionStorage.getItem(WELCOME_SHOWN_KEY)) return;
+    sessionStorage.setItem(WELCOME_SHOWN_KEY, "1");
+    openGate({ kind: "welcome" });
+  }, [openGate]);
 
   return (
     <main className="home-ambient-bg min-h-screen w-full sm:items-start font-sans">
@@ -40,6 +56,7 @@ export default function Home() {
               title="أبدأ الان"
               className="w-[10vw] text-2xl"
               variant="primary"
+              onClick={() => openGate({ kind: "welcome" })}
               />
             </div>
           </div>

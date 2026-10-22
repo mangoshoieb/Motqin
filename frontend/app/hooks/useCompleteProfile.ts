@@ -1,24 +1,18 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 
 import { authService } from "../services/auth.services";
-import { authStorage } from "../lib/auth-storage";
+import { useAuthSuccess } from "./useAuthSuccess";
 
 export function useCompleteProfile() {
-  const router = useRouter();
+  const completeAuth = useAuthSuccess();
 
   return useMutation({
     mutationFn: authService.completeProfile,
 
     onSuccess: (data) => {
-      authStorage.setTokens(
-        data.token.token,
-        data.token.refreshToken
-      );
-
-      router.replace("/");
+      completeAuth(data.token, data);
     },
 
     onError: (error) => {

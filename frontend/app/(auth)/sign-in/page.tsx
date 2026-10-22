@@ -16,10 +16,15 @@ import GoogleSignIn from "@/components/GoogleSignIn";
 import { useFacebookLogin } from "@/app/hooks/useFacebookLogin";
 import { signInWithFacebook } from "@/app/services/facebook-auth.services";
 import { useLogInPhone } from "@/app/hooks/useLoginPhone";
+import { useGuestLogin } from "@/app/hooks/useGuestLogin";
+import { useAuthKind } from "@/app/hooks/useAuthKind";
 type FormData = z.infer<typeof signInSchema>;
 
 const SignIn = () => {
   const { mutate: logInPhone, isPending: isPhonePending } = useLogInPhone();
+  const { mutate: startGuest, isPending: isGuestPending } = useGuestLogin();
+  // Already a guest? They're here to upgrade, not to start another trial.
+  const isGuest = useAuthKind() === "guest";
 
   const { mutate: facebookLogin, isPending: isFacebookPending } =
     useFacebookLogin();
@@ -128,6 +133,17 @@ const SignIn = () => {
               className="w-full font-semibold"
               disabled={isPhonePending}
             />
+
+            {!isGuest && (
+              <button
+                type="button"
+                onClick={() => startGuest()}
+                disabled={isGuestPending}
+                className="text-sm font-semibold text-blue-600 hover:underline disabled:opacity-50"
+              >
+                جرّب التطبيق بدون حساب
+              </button>
+            )}
           </form>
         </div>
       </section>

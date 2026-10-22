@@ -93,6 +93,9 @@ interface Lesson {
     infoCard: LessonInfoCard | null;
     mcqCard: LessonMcqCard | null;
     fibCard: LessonFibCard | null;
+    // Whether this student has already finished the question (sent by
+    // /questions/customized-by-category-and-lesson).
+    isFinished?: boolean;
   }
 
   // ---------------------------------------------------------------------

@@ -62,6 +62,7 @@ export const API_ROUTES = {
     VERIFY_EMAIL: "/auth/verify-email",
     COMPLETE_PROFILE: "/auth/phone-complete-signup",
     LOGOUT: "/auth/logout",
+    GUEST: "/auth/guest",
   },
 
   // Reference lists for the enums the API stores (country, governorate).

@@ -33,6 +33,10 @@ export function useAutoRefresh() {
 
     schedule();
 
+    // New tokens (login, guest trial, refresh in another tab) mean a new
+    // expiry — guest tokens only last minutes, so this matters for them.
+    const unsubscribe = authStorage.subscribe(schedule);
+
     const onVisible = () => {
       if (document.visibilityState === "visible") schedule();
     };
@@ -40,6 +44,7 @@ export function useAutoRefresh() {
 
     return () => {
       if (timer) clearTimeout(timer);
+      unsubscribe();
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);

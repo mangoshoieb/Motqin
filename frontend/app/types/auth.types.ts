@@ -13,6 +13,31 @@ export interface GoogleLoginResponse {
   token: string;
   refreshToken: string;
   expiresAt: string;
+  guestDataDiscarded?: boolean;
+}
+
+// Free uses a guest has left. Separate counters, 3 each.
+export interface GuestRemaining {
+  studySessions: number;
+  spacedRepetitionSessions: number;
+}
+
+// POST /auth/guest — same token pair as a login, plus the trial counters.
+export interface GuestLoginResponse {
+  token: string;
+  refreshToken: string;
+  expiresAt: string;
+  guest: {
+    isGuest: boolean;
+    remaining: GuestRemaining;
+  };
+}
+
+// Present on the sign-up/login responses when the request carried a guest
+// token. true = that phone/Google/Facebook account already existed, so the
+// user was signed into it and the trial work stayed behind on the guest.
+export interface GuestUpgradeResult {
+  guestDataDiscarded?: boolean;
 }
 
 // google
@@ -75,7 +100,8 @@ declare global {
   }
 
   interface FacebookLoginResponse {
-    
+
+    guestDataDiscarded?: boolean;
     token: string;
     refreshToken: string;
     status: "connected" | "not_authorized" | "unknown";
@@ -120,6 +146,7 @@ declare global {
   interface VerifyPhoneResponse {
     message: string;
     needsSignup: boolean;
+    guestDataDiscarded?: boolean;
     token?: {
       token: string;
       refreshToken: string;
@@ -135,6 +162,7 @@ declare global {
 
   export interface CompleteProfileResponse {
     message: string;
+    guestDataDiscarded?: boolean;
     token: {
       token: string;
       refreshToken: string;

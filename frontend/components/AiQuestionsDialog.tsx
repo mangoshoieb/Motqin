@@ -4,7 +4,7 @@ import { useState, type DragEvent } from "react";
 import { toast } from "sonner";
 import { FileText, Sparkles, UploadCloud, X } from "lucide-react";
 import { useGenerateAiQuestions } from "@/app/hooks/useAddQuestion";
-import { getApiErrorMessage } from "@/app/lib/api-error";
+import { getApiErrorMessage, isAuthGateError } from "@/app/lib/api-error";
 import { cn } from "@/app/lib/utils";
 
 // Lesson material the AI reads: a PDF or a photo of the pages.
@@ -48,7 +48,9 @@ export const AiQuestionsDialog = ({ lessonId, onDone, onCancel }: AiQuestionsDia
         toast.success("تم توليد الأسئلة بنجاح");
         onDone();
       },
-      onError: (error) => toast.error(getApiErrorMessage(error)),
+      // A guest/plan wall: the signup popup takes over, so step aside.
+      onError: (error) =>
+        isAuthGateError(error) ? onCancel() : toast.error(getApiErrorMessage(error)),
     });
   };
 
@@ -131,7 +133,7 @@ export const AiQuestionsDialog = ({ lessonId, onDone, onCancel }: AiQuestionsDia
               <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 اسحب الملف هنا أو اضغط للاختيار
               </span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">PDF أو صورة</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">ركز على المعلومة التي تريدها</span>
               <input
                 type="file"
                 accept={ACCEPT}
@@ -153,7 +155,7 @@ export const AiQuestionsDialog = ({ lessonId, onDone, onCancel }: AiQuestionsDia
               <span className="absolute inset-y-0 -left-1/2 w-1/2 animate-shimmer bg-gradient-to-r from-transparent via-white/40 to-transparent" />
             )}
             <Sparkles className={cn("size-5", generate.isPending && "animate-spin")} />
-            {generate.isPending ? "جاري توليد الأسئلة..." : "توليد الأسئلة"}
+            {generate.isPending ? "جاري توليد الأسئلة..." : "توليد السؤال"}
           </button>
         </div>
       </div>

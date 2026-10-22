@@ -4,6 +4,7 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { authService } from "../services/auth.services";
+import { useAuthKind } from "./useAuthKind";
 
 // Pages you land on specifically because you're not authenticated yet (or
 // are mid-signup). There's no Nav/avatar rendered on any of these, so
@@ -22,7 +23,8 @@ export function useCurrentUser() {
   const isAuthOnlyRoute = AUTH_ONLY_PATHS.some((path) =>
     pathname?.startsWith(path)
   );
-  
+  const authKind = useAuthKind();
+
   return useQuery({
     queryKey: ["current-user"],
     queryFn: authService.getCurrentUser,
@@ -40,10 +42,8 @@ export function useCurrentUser() {
     retryDelay: (attempt) => attempt * 500,
 
     // Don't even try if there's no token, or if we're on a page whose whole
-    // point is that auth state doesn't matter yet.
-    enabled:
-      !isAuthOnlyRoute &&
-      typeof window !== "undefined" &&
-      !!localStorage.getItem("accessToken"),
+    // point is that auth state doesn't matter yet. authKind is reactive, so
+    // starting a guest trial turns this on without a reload.
+    enabled: !isAuthOnlyRoute && authKind !== "none",
   });
 }

@@ -85,12 +85,49 @@ export function getApiErrorStatus(error: unknown): number | undefined {
   return axios.isAxiosError(error) ? error.response?.status : undefined;
 }
 
+// 403 bodies that mean "this needs an account / a plan", not a real error:
+// { success: false, code, message, feature?, remaining? }. The axios
+// interceptor opens the signup/subscribe popup for these, so callers should
+// not also toast them.
+// "subscription_required" is our name for the paid-feature case — confirm
+// the exact code with the backend.
+export const AUTH_GATE_CODES = [
+  "registration_required",
+  "guest_limit_reached",
+  "subscription_required",
+] as const;
+
+export type AuthGateCode = (typeof AUTH_GATE_CODES)[number];
+
+export interface AuthGateErrorBody {
+  code: AuthGateCode;
+  message?: string;
+  feature?: string;
+  remaining?: number;
+}
+
+export function getAuthGateError(error: unknown): AuthGateErrorBody | null {
+  if (!axios.isAxiosError(error) || error.response?.status !== 403) return null;
+
+  const data = error.response.data as Partial<AuthGateErrorBody> | undefined;
+  return data && AUTH_GATE_CODES.includes(data.code as AuthGateCode)
+    ? (data as AuthGateErrorBody)
+    : null;
+}
+
+export function isAuthGateError(error: unknown): boolean {
+  return getAuthGateError(error) !== null;
+}
+
 /**
  * Reports a failed API action: the toast carries our label plus whatever the
  * backend actually said, and the console keeps the full response. Without
  * this a generic "تعذر ..." hides the one thing that explains the failure.
  */
 export function toastApiError(label: string, error: unknown): void {
+  // The signup/subscribe popup is already explaining this one.
+  if (isAuthGateError(error)) return;
+
   const status = getApiErrorStatus(error);
   const message = getApiErrorMessage(error);
 

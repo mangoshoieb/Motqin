@@ -1,26 +1,19 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { authStorage } from "../lib/auth-storage";
 import { authService } from "../services/auth.services";
 import { toast } from "sonner";
+import { useAuthSuccess } from "./useAuthSuccess";
 
 
 export function useFacebookLogin() {
-  const router = useRouter();
+  const completeAuth = useAuthSuccess();
 
   return useMutation({
     mutationFn: authService.facebookLogin,
 
     onSuccess: (data) => {
-      console.log("from hook")
-      authStorage.setTokens(
-        data.token,
-        data.refreshToken,
-      );
-
-      router.replace("/");
+      completeAuth(data, data);
     },
 
     onError: (error) => {

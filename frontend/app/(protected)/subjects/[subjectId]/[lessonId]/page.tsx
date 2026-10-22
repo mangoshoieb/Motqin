@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FileText, ImageIcon, Plus, Sparkles } from "lucide-react";
+import { CheckCircle2, EyeOff, FileText, ImageIcon, Plus, Sparkles } from "lucide-react";
 
 import { useGetAllLessonInformation } from "@/app/hooks/useGetLessonInformation";
 import { useGetLessons } from "@/app/hooks/useGetLessons";
 import { QuestionCard } from "@/components/QuestionCard";
+import { InfoCardDialog } from "@/components/InfoCardDialog";
 import { AddQuestionDialog } from "@/components/AddQuestionDialog";
 import { AiQuestionsDialog } from "@/components/AiQuestionsDialog";
 import { PdfQuestionsDialog } from "@/components/PdfQuestionsDialog";
@@ -41,6 +42,9 @@ const LessonQuestionsPage = () => {
     CATEGORY_TABS[0].value
   );
   const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
+  // List only the questions the student hasn't finished yet.
+  const [hideFinished, setHideFinished] = useState(false);
+  const [openInfo, setOpenInfo] = useState<LessonInformation | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -73,7 +77,9 @@ const LessonQuestionsPage = () => {
   const nextDisplayOrder =
     (information ?? []).reduce((max, item) => Math.max(max, item.displayOrder), 0) + 1;
 
-  const visibleQuestions = useMemo(() => {
+  // The active tab's questions (minus the ones the student ignored) — what
+  // the quiz will run — and, of those, what the list shows.
+  const categoryQuestions = useMemo(() => {
     return (information ?? [])
       .filter(
         (item) =>
@@ -82,6 +88,11 @@ const LessonQuestionsPage = () => {
       )
       .sort((a, b) => a.displayOrder - b.displayOrder);
   }, [information, hiddenIds, activeCategory]);
+
+  const visibleQuestions = hideFinished
+    ? categoryQuestions.filter((item) => !item.isFinished)
+    : categoryQuestions;
+  const finishedCount = categoryQuestions.filter((item) => item.isFinished).length;
 
   if (isLoading) {
     return (
@@ -114,15 +125,16 @@ const LessonQuestionsPage = () => {
           href={`/subjects/${subjectIdSlug}/${lessonId}/quiz?category=${encodeURIComponent(
             activeCategory
           )}`}
-          aria-disabled={visibleQuestions.length === 0}
+          aria-disabled={categoryQuestions.length === 0}
           className={cn(
             "px-6 py-3 rounded-full bg-blue-600 text-white font-semibold transition",
-            visibleQuestions.length === 0
+            categoryQuestions.length === 0
               ? "opacity-50 pointer-events-none"
               : "hover:bg-blue-700 dark:hover:bg-blue-500"
           )}
         >
-          ابدأ
+          {/* Some of this tab is already done — the quiz picks up from there. */}
+          {finishedCount > 0 ? "أكمل" : "ابدأ"}
         </Link>
       </div>
 
@@ -145,14 +157,55 @@ const LessonQuestionsPage = () => {
             </button>
           ))}
         </div>
+
+        {categoryQuestions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+              <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+              أنهيت <span className="tabular-nums">{finishedCount}</span> من{" "}
+              <span className="tabular-nums">{categoryQuestions.length}</span>
+            </span>
+            <button
+              type="button"
+              aria-pressed={hideFinished}
+              onClick={() => setHideFinished((prev) => !prev)}
+              disabled={finishedCount === 0 && !hideFinished}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
+                hideFinished
+                  ? "border-emerald-600 bg-emerald-600 text-white"
+                  : "border-zinc-200 bg-white text-zinc-600 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+              )}
+            >
+              <EyeOff className="size-4" />
+              غير المكتملة فقط
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Questions list */}
       <div className="flex flex-col gap-4">
-        {visibleQuestions.length === 0 && (
+        {categoryQuestions.length === 0 ? (
           <p className="text-zinc-500 dark:text-zinc-400 py-6">
             لا توجد أسئلة مضافة بعد
           </p>
+        ) : (
+          visibleQuestions.length === 0 && (
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/50 px-6 py-8 text-center dark:border-emerald-900 dark:bg-emerald-950/20">
+              <CheckCircle2 className="size-7 text-emerald-600 dark:text-emerald-400" />
+              <p className="font-semibold text-zinc-800 dark:text-zinc-100">
+                أحسنت! أنهيت كل أسئلة هذه الفئة
+              </p>
+              <button
+                type="button"
+                onClick={() => setHideFinished(false)}
+                className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+              >
+                عرض الأسئلة المكتملة
+              </button>
+            </div>
+          )
         )}
 
         {visibleQuestions.map((item) => (
@@ -160,6 +213,7 @@ const LessonQuestionsPage = () => {
             key={item.informationID}
             information={item}
             onHide={hideQuestion}
+            onOpen={setOpenInfo}
           />
         ))}
       </div>
@@ -181,7 +235,7 @@ const LessonQuestionsPage = () => {
           className="group inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 font-semibold transition hover:border-indigo-300 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70"
         >
           <ImageIcon className="size-4" />
-          أسئلة من صورة
+          اضافة سؤال من صورة
           <Sparkles className="size-3.5 transition-transform group-hover:rotate-12" />
         </button>
 
@@ -219,6 +273,8 @@ const LessonQuestionsPage = () => {
           onCancel={() => setIsGenerating(false)}
         />
       )}
+
+      {openInfo && <InfoCardDialog information={openInfo} onClose={() => setOpenInfo(null)} />}
 
       {isGeneratingFromPdf && (
         <PdfQuestionsDialog

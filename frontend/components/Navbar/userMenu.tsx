@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Trophy,
   ShieldOff,
+  CloudUpload,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import ThemeSubMenu from "../Navbar/ThemeMenu";
@@ -19,6 +20,57 @@ import { useLogout } from "@/app/hooks/useLogout";
 import { useAuth } from "@/app/(public)/context/auth.context";
 import { shortName } from "@/app/lib/user";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { GUEST_FREE_USES, useGuestStore } from "@/app/lib/guest.store";
+import { authReturnPath } from "@/app/lib/auth-gate.store";
+import { usePathname } from "next/navigation";
+
+// Trial status + the way out of it, pinned to the top of a guest's menu.
+function GuestUpgradeCard({ onNavigate }: { onNavigate: () => void }) {
+  const remaining = useGuestStore((s) => s.remaining);
+  const pathname = usePathname();
+  const counters = remaining
+    ? [
+        { label: "جلسات مذاكرة", value: remaining.studySessions },
+        { label: "مراجعات متباعدة", value: remaining.spacedRepetitionSessions },
+      ]
+    : [];
+
+  return (
+    <div dir="rtl" className="m-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-4 text-white shadow-lg shadow-blue-600/20">
+      <div className="flex items-center gap-2 font-bold">
+        <CloudUpload size={18} />
+        احفظ تقدّمك
+      </div>
+      <p className="mt-1 text-xs leading-5 text-blue-100">
+        أنت تجرّب متقن كزائر. أنشئ حسابك وكل ما أنجزته ينتقل معك.
+      </p>
+
+      {counters.length > 0 && (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {counters.map((c) => (
+            <div key={c.label} className="rounded-xl bg-white/15 px-2.5 py-2">
+              <div className="text-[11px] text-blue-100">{c.label}</div>
+              <div className="font-bold tabular-nums">
+                {c.value} <span className="text-xs font-normal text-blue-100">/ {GUEST_FREE_USES}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Link
+        href="/sign-up"
+        onClick={() => {
+          authReturnPath.set(pathname);
+          onNavigate();
+        }}
+        className="mt-3 flex h-9 items-center justify-center rounded-xl bg-white text-sm font-bold text-blue-700 transition hover:bg-blue-50"
+      >
+        إنشاء حساب مجاني
+      </Link>
+    </div>
+  );
+}
 
 type UserMenuProps = {
   isOpen: boolean;
@@ -65,12 +117,13 @@ const menuItems = [
 ];
 
 export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const displayName = shortName(user?.fullName);
   // Phone-registered users get a synthetic "@motqin.internal" email — show
-  // the phone number for them instead.
-  const contact =
-    user?.email && !user.email.endsWith("@motqin.internal")
+  // the phone number for them instead. Guests have neither.
+  const contact = isGuest
+    ? "حساب تجريبي"
+    : user?.email && !user.email.endsWith("@motqin.internal")
       ? user.email
       : user?.phoneNumber || user?.email || "";
   const [activeSubMenu, setActiveSubMenu] = useState<"theme" | null>(null);
@@ -108,6 +161,8 @@ export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
           )}
         </div>
       </div>
+
+      {isGuest && <GuestUpgradeCard onNavigate={onClose} />}
 
       {/* Menu */}
       <div className="py-2">

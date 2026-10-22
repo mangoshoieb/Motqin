@@ -2,6 +2,8 @@
 
 import { Suspense, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 
 import { useLessonSession } from "@/app/hooks/useLessonSession";
 import { QuizCard } from "@/components/QuizCard";
@@ -31,6 +33,7 @@ const QuizPageContent = () => {
   const {
     isLoading,
     error,
+    isRepetitionDone,
     currentCard,
     cardKey,
     blockProgress,
@@ -46,7 +49,30 @@ const QuizPageContent = () => {
   if (error) {
     return (
       <div dir="rtl" className="p-10 text-red-600 dark:text-red-400">
-        حدث خطأ أثناء تحميل الاختبار
+        حدث خطأ أثناء تحميل الاسئلة
+      </div>
+    );
+  }
+
+  // The backend has no unfinished questions left in this repetition.
+  if (isRepetitionDone) {
+    return (
+      <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center px-6">
+        <div className="w-full max-w-md flex flex-col items-center gap-3 rounded-3xl bg-white border border-zinc-200 p-8 text-center dark:bg-zinc-900 dark:border-zinc-800">
+          <span className="flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">
+            <CheckCircle2 className="size-7" />
+          </span>
+          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">أحسنت! أنهيت كل الأسئلة</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            لا توجد أسئلة متبقية في هذه الفئة لهذه المراجعة.
+          </p>
+          <Link
+            href={lessonHref}
+            className="mt-2 px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
+          >
+            العودة إلى الدرس
+          </Link>
+        </div>
       </div>
     );
   }
@@ -54,7 +80,7 @@ const QuizPageContent = () => {
   if (isLoading || !currentCard) {
     return (
       <div dir="rtl" className="p-10 text-zinc-500 dark:text-zinc-400">
-        جاري تحميل الاختبار...
+        جاري تحميل الأسئلة...
       </div>
     );
   }

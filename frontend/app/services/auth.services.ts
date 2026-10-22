@@ -1,11 +1,27 @@
 import { API_ROUTES } from "@/app/constants/planner.constants";
 import axiosInstance from "../lib/axios";
-import { GoogleLoginRequest, GoogleLoginResponse } from "../types/auth.types";
+import {
+  GoogleLoginRequest,
+  GoogleLoginResponse,
+  GuestLoginResponse,
+} from "../types/auth.types";
 import { authStorage } from "../lib/auth-storage";
 
 // const refreshToken = authStorage.getRefreshToken();
 
 export const authService = {
+  // Starts (or resumes) a no-account trial. The same X-Device-Id always
+  // gets the same guest back, so reinstalling doesn't reset the trial.
+  async signInAsGuest(): Promise<GuestLoginResponse> {
+    const { data } = await axiosInstance.post<GuestLoginResponse>(
+      API_ROUTES.AUTH.GUEST,
+      {},
+      { headers: { "X-Device-Id": authStorage.getDeviceId() } }
+    );
+
+    return data;
+  },
+
   async googleLogin(body: GoogleLoginRequest): Promise<GoogleLoginResponse> {
     const { data } = await axiosInstance.post<GoogleLoginResponse>(
       API_ROUTES.AUTH.GOOGLE,

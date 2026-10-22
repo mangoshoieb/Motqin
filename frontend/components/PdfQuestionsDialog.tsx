@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { FileText, Sparkles, UploadCloud, X } from "lucide-react";
 import { useGenerateQuestionsFromPdf } from "@/app/hooks/useAddQuestion";
 import { useInformationLanguages } from "@/app/hooks/useLookups";
-import { getApiErrorMessage } from "@/app/lib/api-error";
+import { getApiErrorMessage, isAuthGateError } from "@/app/lib/api-error";
 import { useAiQuestionsReviewStore } from "@/app/lib/ai-questions-review.store";
 import { AUTO_QUESTION_LANGUAGE } from "@/app/constants/question.constants";
 import { cn } from "@/app/lib/utils";
@@ -126,7 +126,9 @@ export const PdfQuestionsDialog = ({
           setIsLeaving(true);
           router.push(reviewHref);
         },
-        onError: (error) => toast.error(getApiErrorMessage(error)),
+        // A guest/plan wall: the signup popup takes over, so step aside.
+        onError: (error) =>
+          isAuthGateError(error) ? onCancel() : toast.error(getApiErrorMessage(error)),
       }
     );
   };

@@ -36,6 +36,22 @@ export const questionService = {
     return response.data?.data ?? [];
   },
 
+  // The batch a quiz session runs on — see SESSION_QUESTIONS. Only the
+  // lesson and category are sent; the backend's defaults cover the rest.
+  async getSessionQuestions(
+    lessonId: string | number,
+    category?: string
+  ): Promise<LessonInformation[]> {
+    const response = await axiosInstance.get<ApiEnvelope<LessonInformation[] | null>>(
+      QUESTION_API_ROUTES.SESSION_QUESTIONS,
+      {
+        params: { lessonId, ...(category && { category }) },
+      }
+    );
+
+    return response.data?.data ?? [];
+  },
+
   // The endpoint is per category, so the whole lesson is one call per
   // category, merged.
   async getAllCustomizedInformation(lessonId: string | number): Promise<LessonInformation[]> {

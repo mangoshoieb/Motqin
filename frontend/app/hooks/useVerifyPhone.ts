@@ -4,13 +4,14 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { authService } from "../services/auth.services";
-import { authStorage } from "../lib/auth-storage";
 import { AxiosError } from "axios";
 import { ApiError } from "next/dist/server/api-utils";
 import { toast } from "sonner";
+import { useAuthSuccess } from "./useAuthSuccess";
 
 export function useVerifyPhone() {
   const router = useRouter();
+  const completeAuth = useAuthSuccess();
   return useMutation({
     mutationFn: authService.verifyPhone,
 
@@ -25,9 +26,7 @@ export function useVerifyPhone() {
         return;
       }
 
-      authStorage.setTokens(data.token.token, data.token.refreshToken);
-
-      router.replace("/");
+      completeAuth(data.token, data);
     },
 
     onError: (error: AxiosError<ApiError>) => {

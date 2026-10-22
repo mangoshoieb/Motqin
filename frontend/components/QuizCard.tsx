@@ -72,7 +72,7 @@ export const QuizCard = ({
             whichever face is taller, instead of a fixed height that made
             questions with more options overflow past the card border. */}
         <div
-          className="col-start-1 row-start-1 flex flex-col rounded-3xl bg-white border border-zinc-200 p-6 max-h-[75vh] overflow-y-auto dark:bg-zinc-900 dark:border-zinc-800"
+          className="col-start-1 row-start-1 flex flex-col rounded-3xl bg-white border border-zinc-200 p-6 max-h-[75vh] overflow-y-auto scrollbar-none dark:bg-zinc-900 dark:border-zinc-800"
           style={{ backfaceVisibility: "hidden" }}
         >
           <div className="flex items-start justify-between gap-3 mb-4">
@@ -142,7 +142,7 @@ export const QuizCard = ({
 
         {/* Back — supporting info: text, image, audio */}
         <div
-          className="col-start-1 row-start-1 flex flex-col rounded-3xl bg-white border border-zinc-200 p-6 max-h-[75vh] overflow-y-auto dark:bg-zinc-900 dark:border-zinc-800"
+          className="col-start-1 row-start-1 flex flex-col rounded-3xl bg-white border border-zinc-200 p-6 max-h-[75vh] overflow-y-auto scrollbar-none dark:bg-zinc-900 dark:border-zinc-800"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
           <div className="flex items-start justify-between gap-3 mb-4">

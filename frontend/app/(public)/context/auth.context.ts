@@ -6,6 +6,8 @@ interface AuthContextType {
   user: CurrentUserResponse | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  // Signed in with a no-account trial session (POST /auth/guest).
+  isGuest: boolean;
   refetch: () => void;
 }
 

@@ -1,7 +1,10 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { toast } from "sonner";
+import { API_ROUTES } from "@/app/constants/planner.constants";
 import { authStorage } from "./auth-storage";
-import { getApiErrorMessage, getApiErrorStatus } from "./api-error";
+import { getApiErrorMessage, getApiErrorStatus, getAuthGateError } from "./api-error";
+import { useAuthGate } from "./auth-gate.store";
+import { useGuestStore } from "./guest.store";
 
 // Catch-all toast for every failed API call — 400/401/403/500/network/etc.
 // Shows whatever message the backend sent back (or a generic Arabic
@@ -30,8 +33,36 @@ const axiosInstance = axios.create({
   },
 });
 
+// Signing up from a guest session upgrades that same account (same userId,
+// trial work intact) — but only if the guest token is still valid when it
+// reaches the backend. These endpoints allow anonymous calls, so an expired
+// token is silently ignored and a second, empty account gets created
+// instead. Guest tokens only live a few minutes, so refresh first.
+const GUEST_UPGRADE_ROUTES: string[] = [
+  API_ROUTES.AUTH.GOOGLE,
+  API_ROUTES.AUTH.FACEBOOK,
+  API_ROUTES.AUTH.COMPLETE_PROFILE,
+];
+
+const ensureFreshGuestToken = async () => {
+  if (!authStorage.isGuest()) return;
+
+  const expiry = authStorage.getAccessTokenExpiry();
+  if (expiry && expiry - Date.now() > 30_000) return;
+
+  try {
+    await refreshTokens();
+  } catch {
+    // refreshTokens() already handles logout on a rejected refresh token.
+  }
+};
+
 axiosInstance.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    if (config.url && GUEST_UPGRADE_ROUTES.includes(config.url)) {
+      await ensureFreshGuestToken();
+    }
+
     const token = authStorage.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -219,10 +250,78 @@ export const refreshTokens = async (): Promise<string> => {
   return refreshPromise;
 };
 
+// ─── Guest trial ───────────────────────────────────────────────────────────
+// Every response to a guest carries X-Guest-* headers; registered users get
+// none. NOTE: the browser only lets us read them if the backend lists them
+// in CORS Access-Control-Expose-Headers — until then these are undefined and
+// the counters stay at what POST /auth/guest returned.
+const SAVE_DATA_REMINDED_KEY = "motqin:saveDataReminded";
+
+const readGuestHeaders = (response: AxiosResponse) => {
+  if (typeof window === "undefined" || response.headers["x-guest"] !== "true") return;
+
+  const studySessions = Number(response.headers["x-guest-remaining-studysessions"]);
+  const spacedRepetitionSessions = Number(
+    response.headers["x-guest-remaining-spacedrepetition"]
+  );
+  if (Number.isFinite(studySessions) && Number.isFinite(spacedRepetitionSessions)) {
+    useGuestStore.getState().setRemaining({ studySessions, spacedRepetitionSessions });
+  }
+
+  const reminder = response.headers["x-guest-reminder"];
+  const openSignup = () => useAuthGate.getState().open({ kind: "save_progress" });
+
+  if (reminder === "last_free_use") {
+    toast.warning("هذه آخر محاولة مجانية لك", {
+      description: "أنشئ حسابك المجاني لتكمل بلا حدود، وكل ما أنجزته يبقى معك.",
+      action: { label: "إنشاء حساب", onClick: openSignup },
+    });
+  } else if (
+    reminder === "save_your_data" &&
+    response.config.method !== "get" &&
+    !sessionStorage.getItem(SAVE_DATA_REMINDED_KEY)
+  ) {
+    // Once per visit — it comes back on every subject/lesson/question write.
+    sessionStorage.setItem(SAVE_DATA_REMINDED_KEY, "1");
+    toast.info("احفظ ما أنجزته", {
+      description: "أنت تستخدم متقن كزائر. أنشئ حساباً حتى لا تضيع بياناتك.",
+      action: { label: "إنشاء حساب", onClick: openSignup },
+    });
+  }
+};
+
+// 403 registration_required / guest_limit_reached / subscription_required
+// open the signup-or-subscribe popup instead of reading as an error.
+const openAuthGateFor = (error: unknown) => {
+  const gateError = getAuthGateError(error);
+  if (!gateError || typeof window === "undefined") return false;
+
+  if (gateError.code === "guest_limit_reached") {
+    const feature = (gateError.feature ?? "").toLowerCase();
+    const { patchRemaining } = useGuestStore.getState();
+    if (feature.includes("spaced")) patchRemaining({ spacedRepetitionSessions: 0 });
+    else if (feature.includes("study")) patchRemaining({ studySessions: 0 });
+  }
+
+  useAuthGate.getState().open({
+    kind: gateError.code,
+    feature: gateError.feature,
+    message: gateError.message,
+  });
+  return true;
+};
+
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    readGuestHeaders(response);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
+
+    if (openAuthGateFor(error)) {
+      return Promise.reject(error);
+    }
 
     // A first-attempt 401 is handled silently (token refresh + retry) —
     // don't toast it, the user should never see it if the refresh succeeds.

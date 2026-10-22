@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { questionService } from "../services/question.service";
-import { lessonInformationKey } from "./useGetLessonInformation";
 import { sessionReportingService } from "../services/session-reporting.service";
 import {
   apply,
@@ -20,9 +19,9 @@ import { DEFAULT_SESSION_CONFIG } from "../constants/session.constants";
 
 const FEEDBACK_FLASH_MS = 1500;
 
-// The backend has no dedicated session-payload endpoint (confirmed against
-// swagger — only /questions/by-lesson and /questions/by-category-and-lesson
-// exist), so we fetch the lesson's Information rows and map them.
+// The session runs on GET /questions/session-questions: the backend picks
+// the batch (the questions not yet finished in the current repetition, in
+// display order) and we map its Information rows.
 //
 // One Information row carries both cards about the same fact, so it maps to
 // ONE payload item holding both forms. The algorithm picks between them per
@@ -77,32 +76,31 @@ export const useLessonSession = (
     isLoading,
     error,
   } = useQuery<LessonInformation[]>({
-    // The quiz always runs one category (the lesson page's "ابدأ" link
-    // carries it), which is exactly what the endpoint serves — and the
-    // same cache entry as that tab. Without one, it falls back to the
-    // whole lesson.
-    queryKey: filters?.category
-      ? lessonInformationKey(lessonId, filters.category)
-      : [...lessonInformationKey(lessonId), "all"],
-    queryFn: () =>
-      filters?.category
-        ? questionService.getCustomizedInformation(lessonId, filters.category)
-        : questionService.getAllCustomizedInformation(lessonId),
+    queryKey: ["session-questions", lessonId, filters?.category ?? null],
+    queryFn: () => questionService.getSessionQuestions(lessonId, filters?.category),
     enabled: !!lessonId,
+    // Fetched once per visit: a refetch mid-session could hand back a
+    // different batch and restart the session under the student. Dropped
+    // on leaving, so the next visit asks for the next batch.
+    staleTime: Infinity,
+    gcTime: 0,
+    refetchOnWindowFocus: false,
   });
 
-  // The category arrives from the query string as Arabic text and must match
-  // informationCategory exactly — no case folding, which does nothing in
-  // Arabic anyway and only hid the mismatch before.
+  // The backend sends one batch — the block this session runs — so its
+  // questions are numbered 1..n in their display order, making them one
+  // block of pairs (§3) rather than scattering across the blocks their
+  // lesson-wide displayOrder would put them in.
+  // The endpoint already filters by category.
   const payload = questions
-    ?.filter(
-      (info) =>
-        !filters?.category ||
-        (info.informationCategory ?? "").trim() === filters.category.trim()
-    )
+    ?.slice()
     .sort((a, b) => a.displayOrder - b.displayOrder)
     .map(toSessionItem)
-    .filter((item): item is SessionItemPayload => item !== null);
+    .filter((item): item is SessionItemPayload => item !== null)
+    .map((item, index) => ({ ...item, displayOrder: index + 1 }));
+
+  // An empty batch means every question of this repetition is finished.
+  const isRepetitionDone = !!payload && payload.length === 0;
 
   const [state, setState] = useState<SessionState | null>(null);
 
@@ -114,7 +112,7 @@ export const useLessonSession = (
   // §8 — a session this browser left unfinished for the same lesson and
   // category resumes on the card it was on; anything else starts fresh.
   const [initializedFor, setInitializedFor] = useState<LessonInformation[] | undefined>(undefined);
-  if (questions && questions !== initializedFor && payload) {
+  if (questions && questions !== initializedFor && payload && payload.length > 0) {
     setInitializedFor(questions);
     const saved = sessionStorageService.load(lessonId, filters?.category);
     const resumed = saved ? restore(payload, DEFAULT_SESSION_CONFIG, saved) : null;
@@ -231,6 +229,7 @@ export const useLessonSession = (
   return {
     isLoading,
     error,
+    isRepetitionDone,
     currentCard: state?.currentCard ?? null,
     // Changes with every card shown — even the same question twice in a row
     // — so the page can remount the card and drop its local UI state.

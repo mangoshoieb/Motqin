@@ -18,6 +18,11 @@ export const QUESTION_API_ROUTES = {
   // A lesson's questions in one category: the system ones plus the ones
   // this student added. Query: category (Arabic, verbatim), lessonId.
   CUSTOMIZED_BY_CATEGORY_AND_LESSON: "/questions/customized-by-category-and-lesson",
+  // What a quiz session starts with: the questions not yet finished in the
+  // current repetition, in display order, one batch (BatchSize, default 6).
+  // Query: LessonId, Category; BatchSize / Gap / Graduate are optional.
+  // An empty list means the repetition is done.
+  SESSION_QUESTIONS: "/questions/session-questions",
   // multipart: Pdf (required), Notes, Language (QuestionLanguage). Answers
   // with the generated questions; nothing is saved server-side.
   FILL_QUESTIONS_FROM_PDF: "/ai/fill-questions-from-pdf",

@@ -31,7 +31,7 @@ const Nav = () => {
     },
   ];
   // Temporary user object until auth is connected
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isGuest } = useAuth();
   // First two words of the full name, e.g. "Amgad Mahmoud".
   const displayName = shortName(user?.fullName);
   return (
@@ -95,7 +95,9 @@ const Nav = () => {
               );
             })}
           </div>
-          {!user ? (
+          {/* Guests keep these too — signing up from a guest session keeps
+              their trial work. */}
+          {!user || isGuest ? (
             <>
               <Link href="/sign-in" className="outline_btn">
                 تسجيل الدخول
