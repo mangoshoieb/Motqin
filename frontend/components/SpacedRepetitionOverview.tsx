@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   BrainCircuit,
   CalendarClock,
   CheckCircle2,
+  ChevronLeft,
+  GanttChart,
   PartyPopper,
   Play,
   RefreshCw,
@@ -15,10 +18,10 @@ import {
 import { cn } from "@/app/lib/utils";
 import Skeleton from "@/components/ui/Skeleton";
 import { QUESTION_CATEGORIES } from "@/app/constants/question.constants";
+import { categoryLabel, dueLabel, formatDay, reviewQuizHref } from "@/app/lib/review-format";
 import {
   useReviewOverview,
   type ComingRange,
-  type MissedRange,
   type ReviewOverviewItem,
 } from "@/app/hooks/useReviewOverview";
 
@@ -47,47 +50,11 @@ const TONE = {
   },
 } as const;
 
-const MISSED_RANGES: { value: MissedRange; label: string }[] = [
-  { value: "all", label: "الكل" },
-  { value: "week", label: "آخر 7 أيام" },
-  { value: "month", label: "آخر 30 يومًا" },
-];
-
+// Missed always covers the last 7 days, so only the coming side has a choice.
 const COMING_RANGES: { value: ComingRange; label: string }[] = [
-  { value: "all", label: "الكل" },
-  { value: "today", label: "اليوم" },
   { value: "week", label: "7 أيام" },
-  { value: "month", label: "30 يومًا" },
+  { value: "today", label: "اليوم" },
 ];
-
-// "يوم / يومين / 3 أيام / 12 يومًا"
-const daysWord = (n: number) =>
-  n === 1 ? "يوم" : n === 2 ? "يومين" : n <= 10 ? `${n} أيام` : `${n} يومًا`;
-
-const dueLabel = (days: number) => {
-  if (days < -1) return `متأخرة ${daysWord(-days)}`;
-  if (days === -1) return "متأخرة منذ أمس";
-  if (days === 0) return "اليوم";
-  if (days === 1) return "غدًا";
-  return `بعد ${daysWord(days)}`;
-};
-
-const dayFormatter = new Intl.DateTimeFormat("ar-EG-u-nu-latn", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-});
-const formatDay = (day: string) => dayFormatter.format(new Date(`${day}T00:00:00`));
-
-const categoryLabel = (value: string) =>
-  QUESTION_CATEGORIES.find((c) => c.value === value)?.label ?? value;
-
-// Same "{id}-{name}" segment the subjects page links with; the quiz page
-// only reads the id before the first dash.
-const subjectSegment = (item: ReviewOverviewItem) =>
-  item.subjectName
-    ? `${item.subjectId}-${item.subjectName.toLowerCase().replace(/\s+/g, "-")}`
-    : String(item.subjectId);
 
 function ReviewTaskCard({ item, tone }: { item: ReviewOverviewItem; tone: Tone }) {
   const router = useRouter();
@@ -127,11 +94,7 @@ function ReviewTaskCard({ item, tone }: { item: ReviewOverviewItem; tone: Tone }
       {canStart && (
         <button
           type="button"
-          onClick={() =>
-            router.push(
-              `/subjects/${subjectSegment(item)}/${item.lessonId}/quiz?category=${encodeURIComponent(item.category)}`
-            )
-          }
+          onClick={() => router.push(reviewQuizHref(item))}
           className={cn(
             "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold text-white transition",
             styles.button
@@ -144,6 +107,18 @@ function ReviewTaskCard({ item, tone }: { item: ReviewOverviewItem; tone: Tone }
     </div>
   );
 }
+
+// Every review, past and coming, on its own page with a date timeline.
+const FullTableLink = () => (
+  <Link
+    href="/spaced-repetition"
+    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-700 transition hover:border-violet-400 hover:bg-violet-50 dark:border-violet-900 dark:bg-zinc-900 dark:text-violet-300 dark:hover:bg-violet-950/40"
+  >
+    <GanttChart className="size-4" />
+    عرض الجدول كامل
+    <ChevronLeft className="size-4" />
+  </Link>
+);
 
 function ReviewColumn<R extends string>({
   tone,
@@ -166,9 +141,9 @@ function ReviewColumn<R extends string>({
   // Before the subject / category filters, for the "x of y" count.
   total: number;
   isLoading: boolean;
-  ranges: { value: R; label: string }[];
-  range: R;
-  onRangeChange: (range: R) => void;
+  ranges?: { value: R; label: string }[];
+  range?: R;
+  onRangeChange?: (range: R) => void;
   empty: ReactNode;
 }) {
   const styles = TONE[tone];
@@ -191,21 +166,23 @@ function ReviewColumn<R extends string>({
             </span>
           )}
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {ranges.map((r) => (
-            <button
-              key={r.value}
-              type="button"
-              onClick={() => onRangeChange(r.value)}
-              className={cn(
-                "rounded-full border px-3 py-1 text-xs font-medium transition",
-                range === r.value ? styles.chipOn : styles.chipOff
-              )}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
+        {ranges && (
+          <div className="flex flex-wrap gap-1.5">
+            {ranges.map((r) => (
+              <button
+                key={r.value}
+                type="button"
+                onClick={() => onRangeChange?.(r.value)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-medium transition",
+                  range === r.value ? styles.chipOn : styles.chipOff
+                )}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* List — scrolls inside the fixed-height panel */}
@@ -229,18 +206,13 @@ function ReviewColumn<R extends string>({
 // right in a warning tone, coming (today onward) on the left in an info
 // tone. With no reviews at all it shrinks to a short note instead.
 export const SpacedRepetitionOverview = () => {
-  const [missedRange, setMissedRange] = useState<MissedRange>("all");
-  const [comingRange, setComingRange] = useState<ComingRange>("all");
+  const [comingRange, setComingRange] = useState<ComingRange>("week");
   const [subjectFilter, setSubjectFilter] = useState<number | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-  const { missed, coming, isLoading, isError, refetch } = useReviewOverview({
-    missedRange,
-    comingRange,
-  });
+  const { missed, coming, isLoading, isError, refetch } = useReviewOverview({ comingRange });
 
-  const isFiltered =
-    missedRange !== "all" || comingRange !== "all" || subjectFilter !== "all" || categoryFilter !== "all";
+  const isFiltered = comingRange !== "week" || subjectFilter !== "all" || categoryFilter !== "all";
 
   const matches = (item: ReviewOverviewItem) =>
     (subjectFilter === "all" || item.subjectId === subjectFilter) &&
@@ -257,20 +229,15 @@ export const SpacedRepetitionOverview = () => {
 
   // Empty-panel wording: "nothing at all", "nothing in this window", or
   // "the subject / category filter hid everything".
-  const missedEmpty =
-    missed.length > 0 ? "لا توجد مراجعات فائتة تطابق التصفية." : "لا توجد مراجعات فائتة في هذه الفترة.";
   const comingEmpty =
     coming.length > 0
       ? "لا توجد مراجعات قادمة تطابق التصفية."
-      : comingRange === "all"
-        ? "لا توجد مراجعات قادمة."
-        : comingRange === "today"
-          ? "لا توجد مراجعات اليوم."
-          : "لا توجد مراجعات قادمة في هذه الفترة.";
+      : comingRange === "today"
+        ? "لا توجد مراجعات اليوم."
+        : "لا توجد مراجعات خلال الأيام السبعة القادمة.";
 
   const resetFilters = () => {
-    setMissedRange("all");
-    setComingRange("all");
+    setComingRange("week");
     setSubjectFilter("all");
     setCategoryFilter("all");
   };
@@ -292,8 +259,8 @@ export const SpacedRepetitionOverview = () => {
     );
   }
 
-  // Nothing scheduled at all (not merely filtered out): a short note
-  // instead of two empty panels.
+  // Nothing this week either way (not merely filtered out): a short note
+  // instead of two empty panels. Older or later reviews are on the full table.
   if (!isLoading && !isFiltered && missed.length === 0 && coming.length === 0) {
     return (
       <div className="flex items-center gap-4 rounded-2xl border border-violet-100 bg-gradient-to-l from-violet-50 to-white p-5 dark:border-violet-900/50 dark:from-violet-950/30 dark:to-zinc-900">
@@ -301,10 +268,13 @@ export const SpacedRepetitionOverview = () => {
           <BrainCircuit className="size-6" />
         </span>
         <div>
-          <p className="font-bold text-zinc-900 dark:text-zinc-100">لا توجد مراجعات متباعدة حاليًا</p>
+          <p className="font-bold text-zinc-900 dark:text-zinc-100">لا توجد مراجعات متباعدة هذا الأسبوع</p>
           <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
-            عندما تُنهي جلسة على أي درس، سنجدول مراجعاته هنا في الأوقات المناسبة لتثبيت المعلومة.
+            لا مراجعات فائتة خلال آخر 7 أيام ولا قادمة خلال الأيام السبعة القادمة. عندما تُنهي جلسة على أي درس، سنجدول مراجعاته هنا.
           </p>
+        </div>
+        <div className="ms-auto">
+          <FullTableLink />
         </div>
       </div>
     );
@@ -312,58 +282,63 @@ export const SpacedRepetitionOverview = () => {
 
   return (
     <section className="flex flex-col gap-4">
-      {/* Title + shared filters */}
+      {/* Title with the shared filters beside it (right in RTL), the full
+          table link on the far side */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-xl font-bold text-blue-950 dark:text-blue-100">
-          <BrainCircuit className="size-6 text-violet-500" />
-          المراجعات المتباعدة
-        </h2>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-blue-950 dark:text-blue-100">
+            <BrainCircuit className="size-6 text-violet-500" />
+            المراجعات المتباعدة
+          </h2>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={subjectFilter}
-            onChange={(event) =>
-              setSubjectFilter(event.target.value === "all" ? "all" : Number(event.target.value))
-            }
-            aria-label="تصفية حسب المادة"
-            className="cursor-pointer rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-sm text-zinc-700 outline-none transition focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-          >
-            <option value="all">كل المواد</option>
-            {subjectOptions.map(([id, name]) => (
-              <option key={id} value={id}>
-                {name}
-              </option>
-            ))}
-          </select>
-
-          <div className="inline-flex items-center gap-1 rounded-full bg-zinc-200/70 p-1 dark:bg-zinc-800">
-            {[{ value: "all", label: "كل الفئات" }, ...QUESTION_CATEGORIES].map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                onClick={() => setCategoryFilter(c.value)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-semibold transition",
-                  categoryFilter === c.value
-                    ? "bg-white text-blue-700 shadow-sm dark:bg-zinc-900 dark:text-blue-400"
-                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
-                )}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-
-          {isFiltered && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={subjectFilter}
+              onChange={(event) =>
+                setSubjectFilter(event.target.value === "all" ? "all" : Number(event.target.value))
+              }
+              aria-label="تصفية حسب المادة"
+              className="cursor-pointer rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-sm text-zinc-700 outline-none transition focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
             >
-              إعادة الضبط
-            </button>
-          )}
+              <option value="all">كل المواد</option>
+              {subjectOptions.map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+
+            <div className="inline-flex items-center gap-1 rounded-full bg-zinc-200/70 p-1 dark:bg-zinc-800">
+              {[{ value: "all", label: "كل الفئات" }, ...QUESTION_CATEGORIES].map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setCategoryFilter(c.value)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-semibold transition",
+                    categoryFilter === c.value
+                      ? "bg-white text-blue-700 shadow-sm dark:bg-zinc-900 dark:text-blue-400"
+                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                  )}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+              >
+                إعادة الضبط
+              </button>
+            )}
+          </div>
         </div>
+
+        <FullTableLink />
       </div>
 
       {/* Two sides: in RTL the first column sits on the right */}
@@ -372,22 +347,19 @@ export const SpacedRepetitionOverview = () => {
           tone="missed"
           icon={<AlertTriangle className="size-5" />}
           title="مراجعات فائتة"
-          subtitle="فات موعدها، ابدأ بها أولًا"
+          subtitle="خلال آخر 7 أيام، ابدأ بها أولًا"
           items={shownMissed}
           total={missed.length}
           isLoading={isLoading}
-          ranges={MISSED_RANGES}
-          range={missedRange}
-          onRangeChange={setMissedRange}
           empty={
-            missed.length === 0 && missedRange === "all" ? (
+            missed.length === 0 ? (
               <>
                 <PartyPopper className="size-6 text-amber-500" />
-                <p className="font-medium text-zinc-700 dark:text-zinc-200">لا توجد مراجعات فائتة</p>
+                <p className="font-medium text-zinc-700 dark:text-zinc-200">لا توجد مراجعات فائتة هذا الأسبوع</p>
                 <p className="text-xs">أنت ملتزم بمواعيدك، استمر!</p>
               </>
             ) : (
-              <p>{missedEmpty}</p>
+              <p>لا توجد مراجعات فائتة تطابق التصفية.</p>
             )
           }
         />
@@ -396,7 +368,7 @@ export const SpacedRepetitionOverview = () => {
           tone="coming"
           icon={<CalendarClock className="size-5" />}
           title="مراجعات قادمة"
-          subtitle="اليوم والأيام القادمة"
+          subtitle="اليوم والأيام السبعة القادمة"
           items={shownComing}
           total={coming.length}
           isLoading={isLoading}

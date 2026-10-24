@@ -3,7 +3,10 @@
 import { Suspense, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
+import { CheckCircle2, RotateCcw } from "lucide-react";
+import { useRestartRepetition } from "@/app/hooks/useRestartRepetition";
+import { getApiErrorMessage } from "@/app/lib/api-error";
 
 import { useLessonSession } from "@/app/hooks/useLessonSession";
 import { QuizCard } from "@/components/QuizCard";
@@ -45,6 +48,7 @@ const QuizPageContent = () => {
   } = useLessonSession(lessonId, { category, subjectId });
 
   const [answer, setAnswer] = useState("");
+  const restart = useRestartRepetition(lessonId);
 
   if (error) {
     return (
@@ -66,12 +70,29 @@ const QuizPageContent = () => {
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             لا توجد أسئلة متبقية في هذه الفئة لهذه المراجعة.
           </p>
-          <Link
-            href={lessonHref}
-            className="mt-2 px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
-          >
-            العودة إلى الدرس
-          </Link>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href={lessonHref}
+              className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
+            >
+              العودة إلى الدرس
+            </Link>
+            {category && (
+              <button
+                type="button"
+                disabled={restart.isPending}
+                onClick={() =>
+                  restart.mutate(category, {
+                    onError: (error) => toast.error(getApiErrorMessage(error)),
+                  })
+                }
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-zinc-200 text-zinc-700 font-medium transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                <RotateCcw className="size-4" />
+                {restart.isPending ? "جاري إعادة الضبط..." : "البدء من جديد"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { ChevronDown, ImageIcon, Music, Plus, X } from "lucide-react";
+import { ChevronDown, ImageIcon, Maximize2, Music, Plus, X } from "lucide-react";
 import { cn } from "@/app/lib/utils";
+import { ImageLightbox } from "@/components/ImageLightbox";
 import { QUESTION_CATEGORIES, type QuestionCategoryValue } from "@/app/constants/question.constants";
 import {
   MIN_OPTIONS,
@@ -64,6 +65,7 @@ const FilePicker = ({
   onChange: (file: File | null) => void;
 }) => {
   const url = useImagePreview(preview ? file : null);
+  const [enlarged, setEnlarged] = useState(false);
 
   return (
     <div className={labelClass}>
@@ -71,12 +73,37 @@ const FilePicker = ({
       {file ? (
         <div className="mt-1 flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
           {url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- a local blob: preview
-            <img src={url} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
+            <button
+              type="button"
+              onClick={() => setEnlarged(true)}
+              aria-label="عرض الصورة بحجم كبير"
+              title="عرض الصورة"
+              className="group relative size-12 shrink-0 overflow-hidden rounded-lg ring-1 ring-zinc-200 dark:ring-zinc-700"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- a local preview */}
+              <img src={url} alt="" className="size-full object-cover transition group-hover:scale-105" />
+              <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition group-hover:opacity-100">
+                <Maximize2 className="size-4" />
+              </span>
+            </button>
           ) : (
             icon
           )}
-          <span className="flex-1 truncate font-normal" dir="auto">{file.name}</span>
+          {url ? (
+            <button
+              type="button"
+              onClick={() => setEnlarged(true)}
+              className="flex-1 truncate text-start font-normal hover:text-blue-600 dark:hover:text-blue-400"
+              dir="auto"
+            >
+              {file.name}
+            </button>
+          ) : (
+            <span className="flex-1 truncate font-normal" dir="auto">{file.name}</span>
+          )}
+          {url && enlarged && (
+            <ImageLightbox src={url} caption={file.name} onClose={() => setEnlarged(false)} />
+          )}
           <label className="cursor-pointer text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400">
             تغيير
             <input

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, CheckCircle2, CheckSquare, GripVertical, ChevronDown, ChevronUp, Square, Play, Pause, X, SkipForward, MoreVertical, Star, Pencil, Trash2, Save, TimerReset, Coffee, StickyNote, AlertTriangle, NotebookPen } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { formatMinutes } from "@/app/lib/duration";
+import { parseServerDate } from "@/app/lib/session-clock";
 import { RichTextContent, RichTextEditor, isRichTextEmpty } from "@/components/ui/RichTextEditor";
 import { BreakTimer, ExecutionSession, ExecutionTask } from "@/app/types/execution-board.types";
 
@@ -49,6 +50,15 @@ const formatClock = (totalSeconds: number) => {
   const mins = Math.floor(totalSeconds / 60);
   const secs = Math.floor(totalSeconds % 60);
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+};
+
+// "2:40 م" — the time a session was finished, in local time (the server
+// sends UTC without a zone). Undefined when there's no usable endTime.
+const completedAtLabel = (endTime?: string) => {
+  const ms = parseServerDate(endTime);
+  return ms === null
+    ? undefined
+    : new Date(ms).toLocaleTimeString("ar-EG-u-nu-latn", { hour: "numeric", minute: "2-digit" });
 };
 
 // Break clock: counts toward the preference's break length, then the
@@ -381,17 +391,8 @@ export const ExecutionTaskRow = ({
                 >
                   {session.status === "completed" ? (
                     <span className="flex shrink-0 items-center gap-1.5">
-                      <span
-                        title={session.manuallyCompleted ? "جلسة سُجّلت يدويًا بعد إتمامها" : undefined}
-                        className={cn(
-                          "text-xs font-semibold",
-                          session.manuallyCompleted
-                            ? "rounded-md bg-emerald-50 px-1.5 py-0.5 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                            : "text-emerald-600 dark:text-emerald-400",
-                        )}
-                      >
-                        {session.manuallyCompleted ? "مكتمل (يدويًا)" : "مكتمل"}
-                      </span>
+                      {/* Done — the "completed at" tag sits by the time. */}
+                      <CheckCircle2 size={16} className="text-emerald-500" aria-hidden />
                       {/* The break after this session is on the record. */}
                       {session.breakCompleted && (
                         <span
@@ -456,6 +457,19 @@ export const ExecutionTaskRow = ({
                     <span className="sr-only">{`الجلسة ${index + 1}: `}</span>
                     {session.title}
                   </span>
+
+                  {/* When it was finished (the server's endTime). */}
+                  {session.status === "completed" && (
+                    <span
+                      title={session.manuallyCompleted ? "جلسة سُجّلت يدويًا بعد إتمامها" : undefined}
+                      className="shrink-0 rounded-lg bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    >
+                      {session.manuallyCompleted ? "مكتمل يدويًا" : "مكتمل"}
+                      {completedAtLabel(session.endTime) && (
+                        <span className="font-normal tabular-nums"> · {completedAtLabel(session.endTime)}</span>
+                      )}
+                    </span>
+                  )}
 
                   <span
                     className={cn(

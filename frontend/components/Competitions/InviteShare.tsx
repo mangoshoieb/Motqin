@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import { Check, Copy, Gift, Link2, Ticket, Users } from "lucide-react";
 import { formatFriends } from "@/app/constants/competition.constants";
 import { FaFacebookF, FaInstagram, FaTiktok, FaWhatsapp } from "react-icons/fa6";
+import type { IconType } from "react-icons";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { useMyInvite } from "@/app/hooks/useCompetitions";
@@ -75,15 +76,17 @@ function CopyField({
       <span className="shrink-0 text-zinc-400" aria-hidden>
         {icon}
       </span>
-      <span className="sr-only">{label}</span>
-      <span
-        dir="ltr"
-        className={cn(
-          "min-w-0 flex-1 truncate text-left text-sm text-zinc-700 dark:text-zinc-200",
-          valueClassName,
-        )}
-      >
-        {value || "…"}
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-[11px] leading-tight text-zinc-400 dark:text-zinc-500">{label}</span>
+        <span
+          dir="ltr"
+          className={cn(
+            "min-w-0 truncate text-left text-sm text-zinc-700 dark:text-zinc-200",
+            valueClassName,
+          )}
+        >
+          {value || "…"}
+        </span>
       </span>
       <button
         type="button"
@@ -104,32 +107,79 @@ function CopyField({
   );
 }
 
-const SOCIALS = [
+const shareMessage = (link: string, code: string) =>
+  `ذاكر بذكاء مع متقن 📚 وانضم للمسابقات واربح جوائز!\nسجّل من الرابط: ${link}${code ? `\nأو استخدم كود الدعوة: ${code}` : ""}`;
+
+// Facebook and WhatsApp take the link in a share URL. Instagram and TikTok
+// have no web share URL, so they go through the phone's share sheet when
+// there is one, and otherwise copy the message and open the site to paste it.
+type ShareTarget = { url?: (link: string, message: string) => string; site?: string };
+
+const SOCIALS: {
+  key: string;
+  label: string;
+  Icon: IconType;
+  className: string;
+  target: ShareTarget;
+}[] = [
   {
     key: "facebook",
     label: "فيسبوك",
     Icon: FaFacebookF,
     className: "bg-[#1877F2] hover:bg-[#166fe0]",
+    target: { url: (link) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}` },
   },
   {
     key: "whatsapp",
     label: "واتساب",
     Icon: FaWhatsapp,
     className: "bg-[#25D366] hover:bg-[#20bd5a]",
+    target: { url: (_, message) => `https://wa.me/?text=${encodeURIComponent(message)}` },
   },
   {
     key: "instagram",
     label: "إنستجرام",
     Icon: FaInstagram,
     className: "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:brightness-110",
+    target: { site: "https://www.instagram.com/" },
   },
   {
     key: "tiktok",
     label: "تيك توك",
     Icon: FaTiktok,
     className: "bg-zinc-900 hover:bg-black dark:bg-zinc-950 dark:ring-1 dark:ring-zinc-700",
+    target: { site: "https://www.tiktok.com/" },
   },
-] as const;
+];
+
+const share = async (target: ShareTarget, label: string, link: string, code: string) => {
+  if (!link) return;
+  const message = shareMessage(link, code);
+
+  if (target.url) {
+    window.open(target.url(link, message), "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "متقن", text: message });
+      return;
+    } catch (error) {
+      // Closing the sheet isn't a failure; anything else falls back to copying.
+      if (error instanceof DOMException && error.name === "AbortError") return;
+    }
+  }
+
+  // Open the tab before awaiting the clipboard, or the browser blocks the popup.
+  window.open(target.site, "_blank", "noopener,noreferrer");
+  try {
+    await navigator.clipboard.writeText(message);
+    toast.success(`تم نسخ رسالة الدعوة، الصقها في ${label}`);
+  } catch {
+    toast.error("تعذر النسخ، انسخ رابط الدعوة يدويًا");
+  }
+};
 
 // The full invite panel: headline, link + code on one line, and the four
 // share targets underneath.
@@ -184,20 +234,21 @@ export const InviteSharePanel = () => {
           value={code}
           icon={<Ticket size={16} />}
           copiedMessage="تم نسخ كود الدعوة"
-          className="sm:w-60"
+          className="sm:w-72"
           valueClassName="font-mono font-bold tracking-widest text-zinc-900 dark:text-zinc-100"
         />
       </div>
 
-      {/* Line 2: share targets (wired up later) */}
+      {/* Line 2: share targets */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {SOCIALS.map(({ key, label, Icon, className }) => (
+        {SOCIALS.map(({ key, label, Icon, className, target }) => (
           <button
             key={key}
             type="button"
-            onClick={() => toast.info(`المشاركة عبر ${label} قريبًا`)}
+            onClick={() => void share(target, label, link, code)}
+            disabled={!link}
             className={cn(
-              "flex items-center justify-center gap-2 rounded-2xl px-3 py-3.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+              "flex items-center justify-center gap-2 rounded-2xl px-3 py-3.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-60",
               className,
             )}
           >

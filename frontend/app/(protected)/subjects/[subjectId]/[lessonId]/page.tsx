@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { CheckCircle2, EyeOff, FileText, ImageIcon, Plus, Sparkles } from "lucide-react";
 
 import { useGetAllLessonInformation } from "@/app/hooks/useGetLessonInformation";
 import { useGetLessons } from "@/app/hooks/useGetLessons";
 import { QuestionCard } from "@/components/QuestionCard";
 import { InfoCardDialog } from "@/components/InfoCardDialog";
+import { StartQuizButton } from "@/components/StartQuizButton";
 import { AddQuestionDialog } from "@/components/AddQuestionDialog";
 import { AiQuestionsDialog } from "@/components/AiQuestionsDialog";
 import { PdfQuestionsDialog } from "@/components/PdfQuestionsDialog";
@@ -118,24 +118,19 @@ const LessonQuestionsPage = () => {
           {lessonTitle ?? "أسئلة الدرس"}
         </h1>
 
-        <Link
+        <StartQuizButton
+          lessonId={lessonId}
+          category={activeCategory}
           // activeCategory is Arabic text — it must be percent-encoded, or it
           // ends up raw in an HTTP header and throws
           // "Cannot convert argument to a ByteString".
-          href={`/subjects/${subjectIdSlug}/${lessonId}/quiz?category=${encodeURIComponent(
+          quizHref={`/subjects/${subjectIdSlug}/${lessonId}/quiz?category=${encodeURIComponent(
             activeCategory
           )}`}
-          aria-disabled={categoryQuestions.length === 0}
-          className={cn(
-            "px-6 py-3 rounded-full bg-blue-600 text-white font-semibold transition",
-            categoryQuestions.length === 0
-              ? "opacity-50 pointer-events-none"
-              : "hover:bg-blue-700 dark:hover:bg-blue-500"
-          )}
-        >
-          {/* Some of this tab is already done — the quiz picks up from there. */}
-          {finishedCount > 0 ? "أكمل" : "ابدأ"}
-        </Link>
+          // Some of this tab is already done — the quiz picks up from there.
+          hasProgress={finishedCount > 0}
+          disabled={categoryQuestions.length === 0}
+        />
       </div>
 
       {/* Category tabs */}

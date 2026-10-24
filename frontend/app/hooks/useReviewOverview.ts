@@ -10,11 +10,12 @@ import {
 } from "../services/spaced-repetition.service";
 import { dateOnly } from "../lib/study-plan";
 
-// How far back the missed side looks, and how far ahead the coming side.
-export type MissedRange = "all" | "week" | "month";
-export type ComingRange = "today" | "week" | "month" | "all";
+// The subjects page only looks a week either way: missed reviews from the
+// last 7 days, coming ones for today or the next 7 days. Anything further
+// is on the full review table.
+export type ComingRange = "today" | "week";
 
-const RANGE_DAYS = { week: 7, month: 30 } as const;
+const WINDOW_DAYS = 7;
 
 // A spaced-repetition plan as the subjects page's review section shows it.
 export interface ReviewOverviewItem {
@@ -54,24 +55,18 @@ const lastScoreOf = (plan: SpacedRepetitionPlan) => {
     : undefined;
 };
 
-// Missed reviews up to today (oldest window first), and coming ones from
-// today on — each side its own request, so each has its own range filter.
-export const useReviewOverview = ({
-  missedRange,
-  comingRange,
-}: {
-  missedRange: MissedRange;
-  comingRange: ComingRange;
-}) => {
+// Missed reviews from the last week (oldest first), and coming ones from
+// today on — each side its own request, so each has its own window.
+export const useReviewOverview = ({ comingRange }: { comingRange: ComingRange }) => {
   const today = dateOnly(new Date());
 
   const missedQuery = useQuery({
-    queryKey: ["spaced-repetition-plans", "missed", missedRange, today],
+    queryKey: ["spaced-repetition-plans", "missed", "week", today],
     queryFn: () =>
       spacedRepetitionService.filterPlans({
         status: SpacedRepetitionPlanStatus.Missed,
+        startDate: addDays(today, -WINDOW_DAYS),
         endDate: today,
-        ...(missedRange !== "all" && { startDate: addDays(today, -RANGE_DAYS[missedRange]) }),
       }),
   });
 
@@ -81,10 +76,7 @@ export const useReviewOverview = ({
       spacedRepetitionService.filterPlans({
         status: SpacedRepetitionPlanStatus.Coming,
         startDate: today,
-        ...(comingRange === "today" && { endDate: today }),
-        ...((comingRange === "week" || comingRange === "month") && {
-          endDate: addDays(today, RANGE_DAYS[comingRange]),
-        }),
+        endDate: comingRange === "today" ? today : addDays(today, WINDOW_DAYS),
       }),
   });
 

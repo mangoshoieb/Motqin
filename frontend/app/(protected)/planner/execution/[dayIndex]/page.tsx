@@ -31,6 +31,7 @@ import { primeSessionAlerts } from "@/app/lib/session-alerts";
 import { toastApiError } from "@/app/lib/api-error";
 import { elapsedSecondsOf, useSessionTimerStore } from "@/app/lib/session-timer.store";
 import { API_ROUTES } from "@/app/constants/planner.constants";
+import { ACTIVE_STUDY_SESSION_KEY, secondsNow, useActiveStudySession } from "@/app/hooks/useActiveStudySession";
 
 const ExecutionBoardPage = () => {
   const params = useParams();
@@ -108,6 +109,27 @@ const ExecutionBoardPage = () => {
           ? { afterSessionId: runningBreak.id, elapsedSeconds: elapsedSinceStart(runningBreak.breakStartTime) ?? 0 }
           : null;
       });
+    }
+  }
+
+  // GET /study-session/active knows about a running break too, with the
+  // server's own count of its seconds — better than this device's clock
+  // against breakStartTime. Applied whenever a new answer arrives, to a
+  // break that follows a session on this board.
+  const { data: active, dataUpdatedAt: activeFetchedAt } = useActiveStudySession();
+  const [breakSyncedAt, setBreakSyncedAt] = useState(0);
+  if (active !== undefined && activeFetchedAt !== breakSyncedAt && sessions.length > 0) {
+    setBreakSyncedAt(activeFetchedAt);
+    const onBreakHere =
+      active?.isOnBreak && breakRequests === 0 && sessions.some((s) => s.id === String(active.session.id));
+    if (onBreakHere) {
+      const afterSessionId = String(active.session.id);
+      const elapsedSeconds = secondsNow(active.breakElapsedSeconds, activeFetchedAt);
+      setBreakTimer((current) =>
+        current?.afterSessionId === afterSessionId && Math.abs(current.elapsedSeconds - elapsedSeconds) <= 3
+          ? current
+          : { afterSessionId, elapsedSeconds },
+      );
     }
   }
 
@@ -536,6 +558,7 @@ const ExecutionBoardPage = () => {
     setBreakRequests((n) => n + 1);
     try {
       const started = await studySessionsService.breakStart(Number(sessionId));
+      queryClient.invalidateQueries({ queryKey: ACTIVE_STUDY_SESSION_KEY });
       setSessions((prev) =>
         prev.map((s) =>
           s.id === sessionId
@@ -568,6 +591,8 @@ const ExecutionBoardPage = () => {
     setBreakRequests((n) => n + 1);
     try {
       const ended = await studySessionsService.breakEnd(Number(session.id));
+      // So a GET /active answer from before the end can't bring the break back.
+      queryClient.invalidateQueries({ queryKey: ACTIVE_STUDY_SESSION_KEY });
       setSessions((prev) =>
         prev.map((s) =>
           s.id === session.id ? { ...s, breakCompleted: ended?.isBreakCompleted ?? true } : s,

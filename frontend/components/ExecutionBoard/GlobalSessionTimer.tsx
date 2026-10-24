@@ -8,6 +8,12 @@ import { toastApiError } from "@/app/lib/api-error";
 import { clearSessionClock, saveSessionClock } from "@/app/lib/session-clock";
 import { notifySessionFinished, startSessionRing } from "@/app/lib/session-alerts";
 import { elapsedSecondsOf, useSessionTimerStore } from "@/app/lib/session-timer.store";
+import {
+  ACTIVE_STUDY_SESSION_KEY,
+  runningSessionFromActive,
+  secondsNow,
+  useActiveStudySession,
+} from "@/app/hooks/useActiveStudySession";
 import { FloatingSessionTimer } from "./FloatingSessionTimer";
 
 /**
@@ -66,39 +72,75 @@ export const GlobalSessionTimer = () => {
     [clear, queryClient],
   );
 
-  // Check a clock restored from storage right away (one started in this
-  // page's lifetime is ours already), then every minute while it runs and
-  // whenever the tab comes back into view.
-  const sessionKey = session?.sessionId;
+  // When this tab last started, stopped or re-timed the clock itself. An
+  // answer from GET /active that's older than that predates the change (a
+  // start or pause still on its way), so it isn't allowed to undo it. Each
+  // change also asks for a fresh answer once the server has caught up.
+  const localChangeAt = useRef(0);
+  useEffect(
+    () =>
+      useSessionTimerStore.subscribe((next, prev) => {
+        if (next.session?.sessionId === prev.session?.sessionId && next.startedAt === prev.startedAt) return;
+        localChangeAt.current = Date.now();
+        window.setTimeout(
+          () => queryClient.invalidateQueries({ queryKey: ACTIVE_STUDY_SESSION_KEY }),
+          3000,
+        );
+      }),
+    [queryClient],
+  );
+
+  // The clock follows the server (GET /study-session/active — on load, every
+  // minute, and on focus). That's what brings a timer back after a crash, a
+  // closed tab or a reload, on another device too, and with the server's own
+  // elapsed time rather than this device's clock.
+  const { data: active, dataUpdatedAt } = useActiveStudySession();
   useEffect(() => {
-    if (!sessionKey || status !== "active") return;
-    const check = () => {
-      if (useSessionTimerStore.getState().status === "active") void dropIfStopped(sessionKey);
-    };
-    if (Date.now() - useSessionTimerStore.getState().startedAt >= 30_000) check();
-    const interval = window.setInterval(check, 60_000);
-    const onVisible = () => {
-      if (document.visibilityState === "visible") check();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [sessionKey, status, dropIfStopped]);
+    if (active === undefined || dataUpdatedAt <= localChangeAt.current) return;
+    const store = useSessionTimerStore.getState();
+    const clock = store.session;
+    // A clock that ran out is ringing / being ended — leave it be.
+    if (store.status === "finished") return;
+
+    const running = active && !active.isOnBreak ? active : null;
+    if (!running) {
+      // Nothing running there: the clock is stale (paused elsewhere, ended,
+      // or marked Missed) — dropIfStopped confirms and says which. Not in
+      // the first seconds of a start, while the server may still be on it.
+      if (clock && Date.now() - store.startedAt > 15_000) void dropIfStopped(clock.sessionId);
+      return;
+    }
+
+    const serverElapsed = secondsNow(running.elapsedSeconds, dataUpdatedAt);
+    if (clock?.sessionId === String(running.session.id)) {
+      // Same session — correct any drift from this device's clock.
+      if (Math.abs(elapsedSecondsOf(store) - serverElapsed) > 3) store.start(clock, serverElapsed);
+      return;
+    }
+
+    // The server is running a session this tab isn't timing (the app was
+    // closed mid-session, or it was started elsewhere): pick it up. Only one
+    // runs at a time, so whatever this tab was timing has stopped.
+    if (clock) clearSessionClock(clock.sessionId);
+    store.start(runningSessionFromActive(running), serverElapsed);
+    queryClient.invalidateQueries({ queryKey: ["execution-board"] });
+  }, [active, dataUpdatedAt, dropIfStopped, queryClient]);
 
   // Since when this timer has actually been watching the current session,
   // and where its clock stood then. Ending a session is destructive — the
   // backend closes it and trims it to the time worked — so it may only
   // happen on time this timer saw pass, never on a figure reconstructed
   // from storage or from the server's own startTime.
+  // A restart of the same session (the server correcting the elapsed time)
+  // starts the watch over from the corrected figure.
   const watching = useRef<{ since: number; from: number } | null>(null);
   const sessionId = session?.sessionId;
+  const startedAt = useSessionTimerStore((s) => s.startedAt);
   useEffect(() => {
     watching.current = sessionId
       ? { since: Date.now(), from: elapsedSecondsOf(useSessionTimerStore.getState()) }
       : null;
-  }, [sessionId]);
+  }, [sessionId, startedAt]);
 
   // Time's up → ring + notify + end on the server. Guarded so a re-render
   // (or React strict mode) can't end the same session twice.

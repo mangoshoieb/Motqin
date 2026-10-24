@@ -107,6 +107,10 @@ export const API_ROUTES = {
       `/spaced-repetition/set-plan/${sessionId}`,
     // The caller's plans whose next review falls in the window, soonest first.
     PLANS_FILTER: "/spaced-repetition/plans/filter",
+    // Body { lessonId, category }: the current repetition starts over — its
+    // finished questions count as unfinished again. The repetition number
+    // and next review date stay as they are.
+    RESTART: "/spaced-repetition/restart",
   },
 
   USERS: {
@@ -167,6 +171,9 @@ export const API_ROUTES = {
   STUDY_SESSIONS: {
     CREATE: "/study-session/create",
     MANUALLY_COMPLETED: "/study-session/manually-completed-session",
+    // What the student is in the middle of: a running session, or the break
+    // after one (204 when neither) — with server-computed elapsed times.
+    ACTIVE: "/study-session/active",
     GET_BY_ID: (id: string | number) => `/study-session/${id}`,
     UPDATE: (id: string | number) => `/study-session/${id}`,
     DELETE: (id: string | number) => `/study-session/${id}`,

@@ -128,4 +128,10 @@ export const spacedRepetitionService = {
   async endSession(input: EndSessionDto): Promise<void> {
     await axiosInstance.post(API_ROUTES.SPACED_REPETITION.END, input);
   },
+
+  // Un-finishes every question of a lesson + category in the current
+  // repetition, so the next session starts from the first one.
+  async restartRepetition(input: { lessonId: number; category: string }): Promise<void> {
+    await axiosInstance.post(API_ROUTES.SPACED_REPETITION.RESTART, input);
+  },
 };

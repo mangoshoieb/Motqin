@@ -99,6 +99,19 @@ export interface StudySessionDto {
   notes: string[];
 }
 
+// GET /study-session/active — everything needed to resume the timer after
+// the app or browser was closed. The seconds are computed on the server from
+// its own start stamps, so they're right whatever the device clock says.
+export interface ActiveStudySessionDto {
+  // true: the session has ended and the break after it is running.
+  isOnBreak: boolean;
+  session: StudySessionDto;
+  serverTimeUtc: string;
+  elapsedSeconds: number | null; // the session's, while it runs
+  remainingSeconds: number | null;
+  breakElapsedSeconds: number | null; // while on a break
+}
+
 export interface CreateStudySessionPayload {
   studyPlanId?: number;
   date: string;
@@ -438,6 +451,16 @@ export const studySessionsService = {
 
   // One session on its own — used to check whether the session a restored
   // clock is timing is actually still running on the server.
+  // null when nothing is running (204, no body).
+  async getActive(): Promise<ActiveStudySessionDto | null> {
+    const response = await axiosInstance.get<
+      ActiveStudySessionDto | ApiEnvelope<ActiveStudySessionDto> | ""
+    >(API_ROUTES.STUDY_SESSIONS.ACTIVE);
+    if (response.status === 204 || !response.data) return null;
+    const active = unwrap(response.data as ActiveStudySessionDto | ApiEnvelope<ActiveStudySessionDto>);
+    return active?.session ? active : null;
+  },
+
   async getById(id: number): Promise<StudySessionDto> {
     const { data } = await axiosInstance.get<
       StudySessionDto | ApiEnvelope<StudySessionDto>

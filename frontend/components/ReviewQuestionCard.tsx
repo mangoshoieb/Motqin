@@ -1,12 +1,14 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, ChevronDown, ImageIcon, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, ChevronDown, ImageIcon, Maximize2, Trash2 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { QUESTION_CATEGORIES } from "@/app/constants/question.constants";
 import { hasDraftErrors, type QuestionDraftErrors } from "@/app/lib/question-draft";
 import type { ReviewItem } from "@/app/lib/ai-questions-review.store";
 import type { QuestionDraft } from "@/app/lib/question-draft";
 import { QuestionFields, useImagePreview } from "@/components/QuestionFields";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 const CATEGORY_CHIP: Record<string, string> = {
   "أساسيات": "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
@@ -49,6 +51,7 @@ export const ReviewQuestionCard = ({
   const { draft } = item;
   const invalid = hasDraftErrors(errors);
   const thumbnail = useImagePreview(draft.image);
+  const [enlarged, setEnlarged] = useState(false);
   const heading = draft.title.trim() || draft.mcqText.trim() || "سؤال بدون عنوان";
   const subheading = draft.title.trim() ? draft.mcqText.trim() : draft.description.trim();
   const firstError = Object.values(errors)[0];
@@ -82,14 +85,32 @@ export const ReviewQuestionCard = ({
       >
         <span className="w-6 shrink-0 text-center text-sm tabular-nums text-zinc-400">{number}</span>
 
-        <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
-          {thumbnail ? (
-            // eslint-disable-next-line @next/next/no-img-element -- a local blob: preview
-            <img src={thumbnail} alt="" className="size-full object-cover" />
-          ) : (
+        {thumbnail ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              // Enlarge the image without toggling the card.
+              event.stopPropagation();
+              setEnlarged(true);
+            }}
+            aria-label="عرض الصورة بحجم كبير"
+            title="عرض الصورة"
+            className="group relative size-11 shrink-0 overflow-hidden rounded-lg ring-1 ring-zinc-200 dark:ring-zinc-700"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- a local preview */}
+            <img src={thumbnail} alt="" className="size-full object-cover transition group-hover:scale-105" />
+            <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition group-hover:opacity-100">
+              <Maximize2 className="size-4" />
+            </span>
+          </button>
+        ) : (
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
             <ImageIcon className="size-4" />
-          )}
-        </div>
+          </div>
+        )}
+        {thumbnail && enlarged && (
+          <ImageLightbox src={thumbnail} caption={draft.image?.name} onClose={() => setEnlarged(false)} />
+        )}
 
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100" dir="auto">
