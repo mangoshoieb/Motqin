@@ -13,7 +13,9 @@ import {
   Trophy,
   ShieldOff,
   CloudUpload,
+  Table2,
 } from "lucide-react";
+import { canUseTrackingTables } from "@/app/lib/tracking-table";
 import { useRef, useState } from "react";
 import ThemeSubMenu from "../Navbar/ThemeMenu";
 import { useLogout } from "@/app/hooks/useLogout";
@@ -166,6 +168,16 @@ export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
 
       {/* Menu */}
       <div className="py-2">
+        {canUseTrackingTables(user) && (
+          <Link
+            href="/tracking-tables"
+            onClick={onClose}
+            className="flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3 transition hover:bg-zinc-200 dark:hover:bg-zinc-800"
+          >
+            <Table2 size={19} />
+            <span>جداول المتابعة</span>
+          </Link>
+        )}
         {menuItems.map((item) => {
           const Icon = item.icon;
           if (!item.hasSubMenu) {

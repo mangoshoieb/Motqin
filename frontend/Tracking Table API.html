@@ -1,0 +1,564 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tracking Table API</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column of endpoint cards, grouped into four colored parts, like tabs in a teacher's binder */
+:root {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --fg: #172033;
+  --muted: #5b6579;
+  --line: #dfe5ee;
+  --code-bg: #f0f3f8;
+  --accent: #0e7c86;
+  --get: #12805c;  --get-bg: #e3f5ed;
+  --post: #2f5bd3; --post-bg: #e6edfd;
+  --put: #b26a00;  --put-bg: #fdf1dc;
+  --del: #c2364b;  --del-bg: #fce6e9;
+  --p1: #0e7c86; --p1-bg: #e0f3f4;
+  --p2: #7b4ad6; --p2-bg: #efe8fc;
+  --p3: #d1572b; --p3-bg: #fdebe4;
+  --p4: #3d6bb3; --p4-bg: #e5edf8;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141d; --card: #161d29; --fg: #e8ecf3; --muted: #9aa5b8; --line: #263043; --code-bg: #1d2533;
+    --accent: #3fc1cb;
+    --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+    --p1: #3fc1cb; --p1-bg: #10302f; --p2: #b69bff; --p2-bg: #261d40;
+    --p3: #ff9466; --p3-bg: #3a2018; --p4: #8fb4ee; --p4-bg: #18263b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141d; --card: #161d29; --fg: #e8ecf3; --muted: #9aa5b8; --line: #263043; --code-bg: #1d2533;
+  --accent: #3fc1cb;
+  --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+  --p1: #3fc1cb; --p1-bg: #10302f; --p2: #b69bff; --p2-bg: #261d40;
+  --p3: #ff9466; --p3-bg: #3a2018; --p4: #8fb4ee; --p4-bg: #18263b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 26px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.hero { display: grid; gap: 12px; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; }
+.lede { color: var(--muted); max-width: 65ch; font-size: 16px; }
+
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 999px; }
+.nav a.n1 { background: var(--p1-bg); color: var(--p1); }
+.nav a.n2 { background: var(--p2-bg); color: var(--p2); }
+.nav a.n3 { background: var(--p3-bg); color: var(--p3); }
+.nav a.n4 { background: var(--p4-bg); color: var(--p4); }
+.nav a.n0 { background: var(--code-bg); color: var(--fg); }
+
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.basics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.basic { display: grid; gap: 6px; min-width: 0; }
+.basic b { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+
+.diagram { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; }
+
+.part { display: grid; gap: 16px; }
+.part-head { display: grid; gap: 6px; padding: 18px 20px; border-radius: 14px; }
+.part-head .num { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+.part-head p { color: var(--fg); opacity: 0.85; max-width: 65ch; }
+.ph1 { background: var(--p1-bg); } .ph1 .num, .ph1 h2 { color: var(--p1); }
+.ph2 { background: var(--p2-bg); } .ph2 .num, .ph2 h2 { color: var(--p2); }
+.ph3 { background: var(--p3-bg); } .ph3 .num, .ph3 h2 { color: var(--p3); }
+.ph4 { background: var(--p4-bg); } .ph4 .num, .ph4 h2 { color: var(--p4); }
+.sub { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding-top: 6px; }
+
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 10px; min-width: 0; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.put { background: var(--put-bg); color: var(--put); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.use { color: var(--muted); }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 4px; }
+.io b { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; }
+.cases { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cases b { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-right: 2px; }
+.chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--code-bg); border: 1px solid var(--line); }
+.chip.s4 { border-color: var(--del); color: var(--del); }
+.chip.s3 { border-color: var(--put); color: var(--put); }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+.foot { color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">Motqin · Front-end guide</span>
+    <nav class="nav" aria-label="Sections">
+      <a class="n0" href="#flow">How it works</a>
+      <a class="n1" href="#part1">1 · Build the table</a>
+      <a class="n2" href="#part2">2 · Import &amp; export</a>
+      <a class="n3" href="#part3">3 · Reports to parents</a>
+      <a class="n4" href="#part4">4 · The rest</a>
+    </nav>
+  </header>
+
+  <section id="flow" class="part">
+    <h2>How the feature works</h2>
+    <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  T([Teacher]) --> C[Create a table]
+  T --> I[Import Excel]
+  I -- preview, then confirm --> TB
+  C --> TB[(Table<br/>columns + students)]
+  TB --> E[Edit columns, rows, cells]
+  E --> TB
+  TB --> Q[Search · filter · sort]
+  Q --> X[Export Excel]
+  TB --> R[Build a report<br/>preview]
+  R -- consent + Allow --> S{Quota in<br/>teacher bundle?}
+  S -- no --> B[Teacher bundles<br/>buy one]
+  S -- yes --> SND[Sender<br/>50 every 10 s]
+  SND --> W[[WhatsApp]] --> P([Parents])
+  SND --> L[Report status<br/>per parent]
+</pre>
+    </div>
+    <div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> Draft: build report
+  [*] --> Skipped: no phone / no-messages / empty value
+  Draft --> Queued: allow
+  Queued --> Sending
+  Sending --> Sent
+  Sending --> Queued: temporary error (retry)
+  Sending --> Failed: permanent error (use given back)
+  Queued --> Cancelled: stop
+  Cancelled --> Queued: allow again
+</pre>
+    </div>
+  </section>
+
+  <!-- ===================================================== PART 1 -->
+  <section id="part1" class="part">
+    <div class="part-head ph1">
+      <span class="num">Part 1</span>
+      <h2>Build the table and work with it</h2>
+      <p>A table is one group of students. It always has three fixed columns (name, student phone, parent phone).</p>
+    </div>
+
+    <div class="sub">Tables</div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables?deleted=false</span></div>
+      <p class="use">The teacher's tables. Use <code>deleted=true</code> for the trash view.</p>
+      <div class="io"><div><b>Response</b><pre class="code">[{ "groupId": "8afe…", "groupName": "السبت 4 م",
+   "rows": 32, "columns": 6, "isDeleted": false,
+   "createdAt": "…", "updatedAt": "…" }]</pre></div></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables</span></div>
+      <p class="use">Create an empty table.</p>
+      <div class="io">
+        <div><b>Body</b><pre class="code">{ "groupName": "السبت 4 م" }</pre></div>
+        <div><b>Response · the header row</b><pre class="code">{ "groupId": "8afe…", "groupName": "السبت 4 م",
+  "columns": [], "deletedColumns": [] }</pre></div>
+      </div>
+      <div class="cases"><b>Cases</b><span class="chip">validation_error</span><span class="chip">group_name_required</span><span class="chip">limit_reached · 50 tables</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables/{groupId}</span></div>
+      <p class="use">The table's header row: its columns in order, and the deleted ones (for a restore list).</p>
+      <div class="io"><div><b>Response</b><pre class="code">{ "groupId": "…", "groupName": "…",
+  "columns": [{ "id": "c4", "name": "امتحان 1", "type": "Exam",
+                "maxScore": 20, "options": null, "position": 4 }],
+  "deletedColumns": [] }</pre></div></div>
+      <div class="cases"><b>Cases</b><span class="chip s4">404 table_not_found</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/tracking-tables/{groupId}</span></div>
+      <p class="use">Rename the table. Body <code>{ "groupName": "…" }</code>.</p>
+      <div class="cases"><b>Cases</b><span class="chip">group_name_required</span><span class="chip s4">404 table_not_found</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/tracking-tables/{groupId}</span></div>
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/{groupId}/restore</span></div>
+      <p class="use">Move to the trash, and bring back. Nothing is lost: deleted tables keep all their students.</p>
+      <div class="cases"><b>Cases</b><span class="chip s4">404 table_not_found</span><span class="chip">limit_reached (restore)</span></div>
+    </article>
+
+    <div class="sub">Columns</div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/{groupId}/columns</span></div>
+      <p class="use">Add a column. The type decides the input to show in a cell.</p>
+      <div class="io">
+        <div><b>Body</b><pre class="code">{ "name": "امتحان 1", "type": "Exam", "maxScore": 20 }
+{ "name": "الحضور", "type": "Number" }
+{ "name": "المستوى", "type": "Choice",
+  "options": ["ممتاز", "جيد", "ضعيف"] }</pre></div>
+        <div><b>Types → cell input</b><pre class="code">Text    → text box (up to 500)
+Number  → number
+Date    → date picker
+YesNo   → toggle
+Choice  → dropdown of options
+Exam    → score 0…maxScore, or "absent"</pre></div>
+      </div>
+      <div class="cases"><b>Cases</b><span class="chip">column_name_taken</span><span class="chip">max_score_required</span><span class="chip">options_required</span><span class="chip">option_too_long</span><span class="chip">limit_reached · 50 columns</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/tracking-tables/{groupId}/columns/{columnId}</span></div>
+      <p class="use">Rename, or change type, max score or options. Existing values are converted, or the change is refused.</p>
+      <div class="cases"><b>Cases</b><span class="chip">values_dont_fit → show details.rows</span><span class="chip s4">404 column_not_found</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/tracking-tables/{groupId}/columns/{columnId}</span></div>
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/{groupId}/columns/{columnId}/restore</span></div>
+      <p class="use">Hide a column, and bring it back with its values.</p>
+      <div class="cases"><b>Cases</b><span class="chip s4">404 column_not_found</span><span class="chip">column_name_taken (restore)</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/tracking-tables/{groupId}/columns/order</span></div>
+      <p class="use">After a drag-and-drop. Send every column id once, in the new order.</p>
+      <div class="io"><div><b>Body</b><pre class="code">{ "columnIds": ["c3", "c1", "c2"] }</pre></div></div>
+      <div class="cases"><b>Cases</b><span class="chip">invalid_order</span></div>
+    </article>
+
+    <div class="sub">Students (rows)</div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/{groupId}/rows/query</span></div>
+      <p class="use">The table view: search, filter, sort and page. Draw the grid from <code>table</code> (headers) and <code>rows.items</code>.</p>
+      <div class="io">
+        <div><b>Body</b><pre class="code">{ "search": "أحمد",
+  "filters": [{ "field": "c4", "op": "lt", "value": 10 }],
+  "sort": { "field": "c4", "desc": true },
+  "page": 1, "pageSize": 50, "deleted": false }</pre></div>
+        <div><b>Response</b><pre class="code">{ "table": { …header row… },
+  "rows": { "items": [{ "id": 11, "fullName": "أحمد علي",
+      "studentPhone": "01012345678", "parentPhone": "01000001001",
+      "noParentMessages": false,
+      "values": { "c4": 18, "c5": "absent", "c6": true } }],
+    "total": 32, "page": 1, "pageSize": 50 } }</pre></div>
+      </div>
+      <p class="tip">Fields: <code>name</code>, <code>studentPhone</code>, <code>parentPhone</code> or a column id. Ops: <code>eq neq contains gt gte lt lte empty notEmpty in</code>. <code>pageSize</code> 1–200.</p>
+      <div class="cases"><b>Cases</b><span class="chip">unknown_field</span><span class="chip">invalid_filter</span><span class="chip">validation_error</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/{groupId}/rows</span></div>
+      <p class="use">Add a student.</p>
+      <div class="io">
+        <div><b>Body</b><pre class="code">{ "fullName": "أحمد علي",
+  "studentPhone": "01012345678",
+  "parentPhone": "+20 100 000 1001",
+  "noParentMessages": false,
+  "values": { "c4": 18, "c5": "absent" } }</pre></div>
+        <div><b>Response</b><pre class="code">{ "id": 11, "fullName": "أحمد علي",
+  "studentPhone": "01012345678",
+  "parentPhone": "01000001001",
+  "values": { "c4": 18, "c5": "absent" }, … }</pre></div>
+      </div>
+      <p class="tip">Phones in any form (Arabic digits, +20, spaces) come back cleaned as <code>01XXXXXXXXX</code>.</p>
+      <div class="cases"><b>Cases</b><span class="chip">name_required</span><span class="chip">invalid_phone → details.field</span><span class="chip">invalid_value → details.column</span><span class="chip">unknown_column</span><span class="chip">limit_reached · 1,000 students</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/tracking-tables/{groupId}/rows/{rowId}</span></div>
+      <p class="use">Edit a student. Always send name and phones; in <code>values</code> send only the changed cells (<code>null</code> clears a cell).</p>
+      <div class="io"><div><b>Body</b><pre class="code">{ "fullName": "أحمد علي", "studentPhone": "01012345678",
+  "parentPhone": "01000001001", "noParentMessages": false,
+  "values": { "c4": 17 } }</pre></div></div>
+      <div class="cases"><b>Cases</b><span class="chip">invalid_value</span><span class="chip">invalid_phone</span><span class="chip s4">404 row_not_found</span><span class="chip s3">409 edited_elsewhere → reload the row</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/tracking-tables/{groupId}/rows/{rowId}</span></div>
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/{groupId}/rows/{rowId}/restore</span></div>
+      <p class="use">Trash and restore a student. List deleted students with the query above and <code>"deleted": true</code>.</p>
+      <div class="cases"><b>Cases</b><span class="chip s4">404 row_not_found</span><span class="chip">limit_reached (restore)</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/tracking-tables/{groupId}/core-fields</span></div>
+      <p class="use">Choose which columns feed the name and phones, usually right after an import whose headers weren't recognised. <code>null</code> leaves a field as it is.</p>
+      <div class="io">
+        <div><b>Body</b><pre class="code">{ "name": "c1", "studentPhone": "c2", "parentPhone": "c3" }</pre></div>
+        <div><b>Response</b><pre class="code">{ "rowsUpdated": 32,
+  "warnings": [{ "row": 14, "message": "…isn't a valid mobile" }] }</pre></div>
+      </div>
+      <div class="cases"><b>Cases</b><span class="chip">unknown_column</span><span class="chip">nothing_to_map</span></div>
+    </article>
+  </section>
+
+  <!-- ===================================================== PART 2 -->
+  <section id="part2" class="part">
+    <div class="part-head ph2">
+      <span class="num">Part 2</span>
+      <h2>Import and export Excel</h2>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/import/preview</span></div>
+      <p class="use">Multipart, field <code>file</code> (.xlsx, up to 5 MB). Nothing is saved: show this to the teacher before importing.</p>
+      <div class="io"><div><b>Response</b><pre class="code">{ "sheetName": "Sheet1", "rowCount": 32,
+  "columns": [
+    { "index": 0, "header": "اسم الطالب", "guessedType": "Text", "coreField": "name" },
+    { "index": 1, "header": "رقم ولي الأمر", "guessedType": "Text", "coreField": "parentPhone" },
+    { "index": 2, "header": "امتحان 1", "guessedType": "Number", "coreField": null }],
+  "sampleRows": [["أحمد علي", "01000001001", "18"]] }</pre></div></div>
+      <div class="cases"><b>Cases</b><span class="chip">invalid_file (old .xls → "save as .xlsx")</span><span class="chip">unreadable_file</span><span class="chip">empty_file</span><span class="chip">limit_reached · 1,000 rows / 50 columns</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/import</span></div>
+      <p class="use">Multipart: <code>file</code>, <code>groupName</code> and optional <code>options</code> (JSON text) to override what was recognised.</p>
+      <div class="io">
+        <div><b>options (optional)</b><pre class="code">{ "name": 0, "studentPhone": -1, "parentPhone": 1,
+  "types": { "2": "Number" } }
+// -1 = no column for this field</pre></div>
+        <div><b>Response</b><pre class="code">{ "groupId": "…", "rows": 32, "columns": 7,
+  "coreFields": { "name": "c1", "studentPhone": null,
+                  "parentPhone": "c2" },
+  "warnings": [{ "row": 9, "message": "\"12345\" isn't a valid…" }] }</pre></div>
+      </div>
+      <p class="tip">If any <code>coreFields</code> is <code>null</code>, open the "pick name / phone columns" screen (core-fields, Part 1). Show <code>warnings</code> as a list.</p>
+      <div class="cases"><b>Cases</b><span class="chip">all file errors above</span><span class="chip">group_name_required</span><span class="chip">invalid_options</span><span class="chip">exam_after_import</span><span class="chip">too_many_options</span><span class="chip">limit_reached · 50 tables</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/{groupId}/export</span></div>
+      <p class="use">Download the table as .xlsx. The body takes the same <code>search</code> / <code>filters</code> / <code>sort</code> as the query; an empty body exports everyone.</p>
+      <div class="io"><div><b>Response</b><pre class="code">200 · application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+Right-to-left sheet, phones as text (leading 0 kept),
+exams as numbers or "غائب"</pre></div></div>
+      <p class="tip">Read the response as a file (blob) and save it. It is not JSON.</p>
+    </article>
+  </section>
+
+  <!-- ===================================================== PART 3 -->
+  <section id="part3" class="part">
+    <div class="part-head ph3">
+      <span class="num">Part 3</span>
+      <h2>Reports to parents</h2>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables/report-templates</span></div>
+      <p class="use">The templates the teacher can send. An empty list means sending is off: hide the "Send report" button.</p>
+      <div class="io"><div><b>Response</b><pre class="code">[{ "key": "exam_result", "label": "نتيجة امتحان", "blanks": 4,
+   "body": "ولي أمر الطالب {{1}}، نتيجة {{2}} في {{3}}: {{4}}" }]</pre></div></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/{groupId}/reports</span></div>
+      <p class="use">Build the report and get a preview. One source per blank, in order.</p>
+      <div class="io">
+        <div><b>Body</b><pre class="code">{ "templateKey": "exam_result",
+  "blanks": ["studentName", "text:امتحان 1",
+             "teacherName", "c4"],
+  "rowIds": null }
+// sources: studentName | groupName | teacherName
+//          | a column id | "text:…"
+// rowIds null = every student</pre></div>
+        <div><b>Response · preview</b><pre class="code">{ "batchId": "7f3c…", "ready": 30, "skipped": 2,
+  "quota": { "needed": 30, "remaining": 120, "code": null },
+  "messages": [{ "rowId": 11, "student": "أحمد علي",
+     "phone": "01000001001",
+     "text": "ولي أمر الطالب أحمد علي، نتيجة امتحان 1 في مستر محمد: 18 / 20" }],
+  "skippedRows": [{ "rowId": 14, "student": "منى",
+     "reason": "no_parent_phone" }] }</pre></div>
+      </div>
+      <p class="tip">Skip reasons: <code>no_parent_phone</code>, <code>no_messages</code>, <code>empty_value</code> (with the blank number). If <code>quota.code</code> is <code>not_in_plan</code>, show the teacher bundles before they try to send.</p>
+      <div class="cases"><b>Cases</b><span class="chip">template_not_found</span><span class="chip">wrong_blank_count</span><span class="chip">unknown_blank_source</span><span class="chip">unknown_rows</span><span class="chip">no_rows</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/reports/{batchId}/allow</span></div>
+      <p class="use">Start sending, or resume after a stop. The teacher must tick a consent box.</p>
+      <div class="io">
+        <div><b>Body</b><pre class="code">{ "confirmConsent": true }</pre></div>
+        <div><b>Response</b><pre class="code">{ "batchId": "7f3c…", "queued": 30 }</pre></div>
+      </div>
+      <div class="cases"><b>Cases</b><span class="chip">consent_required</span><span class="chip">messaging_blocked → "contact support"</span><span class="chip">template_not_configured</span><span class="chip">nothing_to_send</span><span class="chip s3">403 not_in_plan → bundles</span><span class="chip s3">403 quota_exhausted → details.needed / remaining</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables/reports/{batchId}</span></div>
+      <p class="use">Progress per parent. Poll every few seconds while any message is <code>Queued</code> or <code>Sending</code>.</p>
+      <div class="io"><div><b>Response</b><pre class="code">{ "batchId": "…", "groupName": "السبت 4 م", "template": "نتيجة امتحان",
+  "counts": { "queued": 0, "sending": 0, "sent": 28, "failed": 1, "skipped": 2, … },
+  "messages": [{ "student": "عمر", "phone": "01234567890", "status": "Failed",
+                 "error": "Recipient is not a valid WhatsApp user" }] }</pre></div></div>
+      <div class="cases"><b>Cases</b><span class="chip s4">404 batch_not_found</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/reports/{batchId}/stop</span></div>
+      <p class="use">Stop what hasn't gone out yet. Sent messages can't be recalled. Allow again to resume.</p>
+      <div class="io"><div><b>Response</b><pre class="code">{ "batchId": "…", "sent": 120, "cancelled": 380 }</pre></div></div>
+      <div class="cases"><b>Cases</b><span class="chip s4">404 batch_not_found</span></div>
+    </article>
+  </section>
+
+  <!-- ===================================================== PART 4 -->
+  <section id="part4" class="part">
+    <div class="part-head ph4">
+      <span class="num">Part 4</span>
+      <h2>The rest</h2>
+      <p>Report history, teacher bundles, the admin screen, and the error-code list.</p>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables/reports</span></div>
+      <p class="use">Every report sent, newest first, with counts per status. Tap one to open its detail.</p>
+      <div class="io"><div><b>Response</b><pre class="code">[{ "batchId": "…", "groupName": "السبت 4 م", "template": "نتيجة امتحان",
+   "createdAt": "…", "counts": { "sent": 28, "failed": 1, "skipped": 2, … } }]</pre></div></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables/bundles</span></div>
+      <p class="use">Teacher bundles (they include parent messages). Show them on <code>not_in_plan</code> or <code>quota_exhausted</code>; buy through the normal <code>/api/subscription/preview</code> → <code>/api/subscription/purchase</code> flow.</p>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables/admin/teachers</span></div>
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/tracking-tables/admin/teachers/{userId}/messaging</span></div>
+      <p class="use">Admin panel only (Support, Manager, Admin): list teachers, and block or allow their messages to parents.</p>
+      <div class="io">
+        <div><b>List response</b><pre class="code">[{ "userId": "…", "fullName": "مستر محمد", "phoneNumber": "…",
+   "tables": 4, "messagesThisMonth": 230, "messagingAllowed": true }]</pre></div>
+        <div><b>Messaging body</b><pre class="code">{ "allowed": false }</pre></div>
+      </div>
+      <div class="cases"><b>Cases</b><span class="chip s4">404 user_not_found</span><span class="chip">not_a_teacher</span><span class="chip s3">403 for teachers</span></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/lookups/error-codes</span></div>
+      <p class="use">Every error code with its status, group and Arabic message. No login needed. Load once and look up <code>error.code</code>.</p>
+      <div class="io"><div><b>Response</b><pre class="code">[{ "code": "invalid_phone", "status": 400, "group": "TrackingTables",
+   "message": "رقم الموبايل غير صحيح" }, …]</pre></div></div>
+    </article>
+
+    <p class="tip">Teachers get their role from an admin (<code>PUT /api/admin/users/{userId}/role</code>) or by being linked to a partner. There is no self sign-up endpoint.</p>
+  </section>
+
+</div>
+
+<!--claude-mermaid-runtime-begin:3477-->
+<style>.mermaid-diagram{margin-block:4px}.mermaid-diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}</style>
+<script src="/_runtime/mermaid-11.16.1.min.js"></script>
+<script>(function(){
+var CFG={"palettes":{"light":{"surface":"#f4efe4","text":"#42392e","line":"#8a7f6d","border":"#7a6c52","bg":"#fffdf8"},"dark":{"surface":"#262b34","text":"#f2f3f5","line":"#a8adb8","border":"#9aa4b8","bg":"#1f232b"}}};
+if(typeof mermaid==='undefined')return;
+var pres=Array.prototype.slice.call(document.querySelectorAll('pre.mermaid')).filter(function(p){if(p.hasAttribute('data-claude-mermaid-claimed'))return false;p.setAttribute('data-claude-mermaid-claimed','1');return true;});
+if(!pres.length)return;
+var mq=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+var root=document.documentElement;
+var items=pres.map(function(pre){
+var mount=document.createElement('div');mount.className='mermaid-diagram';
+return {pre:pre,mount:mount,src:pre.textContent||''};
+});
+var seq=0;
+var renderGen=0;
+var lastKey='';
+function pageBg(fallback){
+var els=[document.body,document.documentElement];
+for(var i=0;i<els.length;i++){
+var c=els[i]&&getComputedStyle(els[i]).backgroundColor;
+if(c&&c!=='transparent'&&c!=='rgba(0, 0, 0, 0)')return c;
+}
+return fallback;
+}
+function render(){
+var theme=root.getAttribute('data-theme');
+var dark=theme==='dark'||(!!(mq&&mq.matches)&&theme!=='light');
+var pal=dark?CFG.palettes.dark:CFG.palettes.light;
+var bg=pageBg(pal.bg);
+var key=(dark?'d':'l')+'|'+bg;
+if(key===lastKey)return;
+lastKey=key;
+var gen=++renderGen;
+var font=getComputedStyle(document.body).fontFamily||'sans-serif';
+var nat={useMaxWidth:false};
+mermaid.initialize({
+startOnLoad:false,securityLevel:'strict',theme:'base',
+flowchart:nat,sequence:nat,er:nat,state:nat,class:nat,pie:nat,
+gantt:nat,journey:nat,timeline:nat,gitGraph:nat,mindmap:nat,xyChart:nat,
+quadrantChart:nat,sankey:nat,c4:nat,requirement:nat,block:nat,
+packet:nat,kanban:nat,architecture:nat,radar:nat,
+themeVariables:{background:bg,mainBkg:pal.surface,primaryColor:pal.surface,
+primaryTextColor:pal.text,lineColor:pal.line,primaryBorderColor:pal.border,
+nodeBorder:pal.border,clusterBorder:pal.border,edgeLabelBackground:bg,
+clusterBkg:'rgba(127,127,127,0.07)',titleColor:pal.text,
+darkMode:dark,rowOdd:bg,rowEven:'rgba(127,127,127,0.07)',
+attributeBackgroundColorOdd:bg,attributeBackgroundColorEven:'rgba(127,127,127,0.07)',
+fontSize:'16px',fontFamily:font},
+themeCSS:'.node rect, .node circle, .node polygon, .node path, .cluster rect { stroke-width: 2px; }'
+});
+items.forEach(function(it){
+var id='claude-mermaid-'+seq++;
+mermaid.render(id,it.src).then(function(r){
+if(gen!==renderGen)return;
+var prev=it.pre.previousElementSibling;
+if(prev&&prev.className==='mermaid-diagram'&&prev!==it.mount)return;
+it.mount.innerHTML=r.svg;
+if(!it.mount.parentNode)it.pre.parentNode.insertBefore(it.mount,it.pre);
+it.pre.style.display='none';
+},function(){
+var scratch=document.getElementById(id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+scratch=document.getElementById('d'+id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+if(gen!==renderGen)return;
+if(it.mount.parentNode)it.mount.parentNode.removeChild(it.mount);
+it.pre.style.display='';
+});
+});
+}
+render();
+if(mq&&mq.addEventListener)mq.addEventListener('change',render);
+if(typeof MutationObserver!=='undefined')new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['data-theme']});
+})();</script>
+<!--claude-mermaid-runtime-end-->
+
+</body></html>
