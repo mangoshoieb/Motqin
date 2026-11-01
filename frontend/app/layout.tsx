@@ -4,7 +4,6 @@ import { Geist, Geist_Mono, Cairo, Inter } from "next/font/google";
 
 import "./globals.css";
 import { Providers } from "./providers/providers";
-import FacebookSDK from "./providers/FacebookProvider";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -41,9 +40,6 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("font-sans", inter.variable)}
     >
-      <head>
-        <FacebookSDK />
-      </head>
       <body
         className={`${geistSans.variable} ${cairo.className} antialiased`}
         suppressHydrationWarning

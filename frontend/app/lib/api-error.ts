@@ -81,6 +81,23 @@ export function getApiErrorMessage(error: unknown): string {
   return STATUS_FALLBACKS[status] ?? `حدث خطأ غير متوقع (${status})`;
 }
 
+// { success: false, data: null, error: { code, message, details } } — the
+// error shape newer controllers (mentorship, the blocker lock) send back.
+export interface CodedApiError<TDetails = Record<string, unknown>> {
+  code: string;
+  message: string;
+  details?: TDetails;
+}
+
+export function getCodedApiError<TDetails = Record<string, unknown>>(
+  error: unknown,
+): CodedApiError<TDetails> | null {
+  if (!axios.isAxiosError(error)) return null;
+  const body = error.response?.data as { error?: unknown } | undefined;
+  const coded = body?.error as CodedApiError<TDetails> | undefined;
+  return coded && typeof coded === "object" && typeof coded.code === "string" ? coded : null;
+}
+
 export function getApiErrorStatus(error: unknown): number | undefined {
   return axios.isAxiosError(error) ? error.response?.status : undefined;
 }

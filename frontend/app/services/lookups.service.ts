@@ -19,6 +19,12 @@ export const lookupsService = {
     return Array.isArray(data) ? data : [];
   },
 
+  // The blocker schedule's day picker, Saturday first.
+  async weekDays(): Promise<LookupItem[]> {
+    const { data } = await axiosInstance.get<LookupItem[]>(API_ROUTES.LOOKUPS.WEEK_DAYS);
+    return Array.isArray(data) ? data : [];
+  },
+
   // The Language choices for AI question generation (0 = auto).
   async informationLanguages(): Promise<LookupItem[]> {
     const { data } = await axiosInstance.get<LookupItem[]>(

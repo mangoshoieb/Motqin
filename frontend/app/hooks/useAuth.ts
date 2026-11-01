@@ -1,30 +1,36 @@
 import { useMutation } from "@tanstack/react-query";
-
-import { useEffect } from "react";
-interface Props {
-  onSuccess: (idToken: string) => void;
-}
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { authService } from "../services/auth.services";
 import { authStorage } from "../lib/auth-storage";
-import { toast } from "sonner";
+import { useAuthStore } from "../lib/auth.store";
+import { otpErrorMessage } from "../lib/otp-errors";
 import { useAuthSuccess } from "./useAuthSuccess";
 
 export function useGoogleLogin() {
+  const router = useRouter();
   const completeAuth = useAuthSuccess();
+  const setGoogleIdToken = useAuthStore((state) => state.setGoogleIdToken);
 
   return useMutation({
     mutationFn: authService.googleLogin,
 
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      // A Google account without a confirmed phone: nothing was created yet.
+      // Confirm a phone by WhatsApp first, sending the same Google token.
+      if (data.needsPhone) {
+        setGoogleIdToken(variables.idToken);
+        router.push("/google-phone");
+        return;
+      }
+
       completeAuth(data, data);
     },
 
     onError: (error) => {
       console.error(error);
-      // toast.error("حدث خطأ ما", {
-      //   className: "!bg-red-200/80 ",
-      // });
+      toast.error("تعذر تسجيل الدخول بجوجل", { description: otpErrorMessage(error) });
     },
   });
 }

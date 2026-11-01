@@ -5,7 +5,6 @@ import { Phone, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Image from "next/image";
 import { useRef } from "react";
-import { FaFacebook } from "react-icons/fa";
 import Link from "next/link";
 import { z } from "zod";
 import { signInSchema, signUpSchema } from "@/app/lib/validators/auth";
@@ -13,8 +12,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleLogin } from "@/app/hooks/useAuth";
 import GoogleSignIn from "@/components/GoogleSignIn";
-import { useFacebookLogin } from "@/app/hooks/useFacebookLogin";
-import { signInWithFacebook } from "@/app/services/facebook-auth.services";
 // import { useRegisterPhone } from "@/app/hooks/useRegisterPhone";
 import { useLogInPhone } from "@/app/hooks/useLoginPhone";
 type FormData = z.infer<typeof signInSchema>;
@@ -22,9 +19,6 @@ type FormData = z.infer<typeof signInSchema>;
 const SignUp = () => {
   const { mutate: registerPhone, isPending: isPhonePending } =
     useLogInPhone();
-
-  const { mutate: facebookLogin, isPending: isFacebookPending } =
-    useFacebookLogin();
 
   const { mutate: googleLogin, isPending: isGooglePending } = useGoogleLogin();
   const googleButtonRef = useRef<HTMLDivElement>(null);
@@ -40,20 +34,6 @@ const SignUp = () => {
     registerPhone({
       phoneNumber: data.phoneNumber,
     });
-  };
-
-  const handleFacebookLogin = async () => {
-    try {
-      console.log("facebook button pressed");
-      const accessToken = await signInWithFacebook();
-
-      facebookLogin({
-        accessToken,
-      });
-      console.log(accessToken);
-    } catch (error) {
-      console.error(error);
-    }
   };
 
   return (
@@ -72,15 +52,6 @@ const SignUp = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-6"
           >
-            <CustomButton
-              title="المتابعة باستخدام فيسبوك"
-              leftIcon={<FaFacebook size={22} />}
-              onClick={handleFacebookLogin}
-              variant="facebook"
-              className="w-full font-semibold"
-              disabled={isFacebookPending}
-            />
-  
             <div className="relative w-full h-12">
               <div className="absolute inset-0 opacity-0">
                 <GoogleSignIn

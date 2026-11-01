@@ -55,7 +55,10 @@ export const API_ROUTES = {
     REGISTER: "/auth/register",
     REFRESH: "/auth/refresh-token",
     GOOGLE: "/auth/google",
-    FACEBOOK: "/auth/facebook",
+    // A Google account without a confirmed phone gets needsPhone: true from
+    // GOOGLE; these two confirm one by WhatsApp code, with the same idToken.
+    GOOGLE_PHONE_REQUEST: "/auth/google/phone-request",
+    GOOGLE_PHONE_VERIFY: "/auth/google/phone-verify",
     REGISTER_PHONE: "/auth/register-phone",
     LOGIN_PHONE: "/auth/phone-logIn-request",
     VERIFY_PHONE: "/auth/phone-verify",
@@ -70,6 +73,8 @@ export const API_ROUTES = {
   LOOKUPS: {
     COUNTRIES: "/lookups/countries",
     EGYPTIAN_GOVERNORATES: "/lookups/egyptian-governorates",
+    // 0 = Sunday … 6 = Saturday, already in display order (Saturday first).
+    WEEK_DAYS: "/lookups/week-days",
   },
 
   SUBJECTS: {

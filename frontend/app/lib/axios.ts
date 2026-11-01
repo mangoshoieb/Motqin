@@ -40,7 +40,7 @@ const axiosInstance = axios.create({
 // instead. Guest tokens only live a few minutes, so refresh first.
 const GUEST_UPGRADE_ROUTES: string[] = [
   API_ROUTES.AUTH.GOOGLE,
-  API_ROUTES.AUTH.FACEBOOK,
+  API_ROUTES.AUTH.GOOGLE_PHONE_VERIFY,
   API_ROUTES.AUTH.COMPLETE_PROFILE,
 ];
 

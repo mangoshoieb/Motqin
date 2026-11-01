@@ -2,18 +2,40 @@ export interface GoogleLoginRequest {
   idToken: string;
 }
 
+// POST /auth/google/phone-request — step 2 of a Google sign-up.
+export interface GooglePhoneRequest {
+  idToken: string;
+  phoneNumber: string;
+}
+
+// POST /auth/google/phone-verify — step 3; signs in with the same token pair.
+export interface GooglePhoneVerifyRequest extends GooglePhoneRequest {
+  code: string;
+}
+
+// The phone-request endpoints all answer with the resend limits.
+export interface OtpSentResponse {
+  message: string;
+  resendCooldownSeconds: number;
+  resendsRemaining: number;
+}
+
 export interface AuthTokens {
   token: string;
   refreshToken: string;
   expiresAt: string;
 }
 
+// Either the token pair, or — for a Google account with no confirmed phone
+// yet — needsPhone: true and nothing else (no account is created until the
+// phone is confirmed).
 export interface GoogleLoginResponse {
-  message: string;
+  message?: string;
   token: string;
   refreshToken: string;
   expiresAt: string;
   guestDataDiscarded?: boolean;
+  needsPhone?: boolean;
 }
 
 // Free uses a guest has left. Separate counters, 3 each.
@@ -34,7 +56,7 @@ export interface GuestLoginResponse {
 }
 
 // Present on the sign-up/login responses when the request carried a guest
-// token. true = that phone/Google/Facebook account already existed, so the
+// token. true = that phone/Google account already existed, so the
 // user was signed into it and the trial work stayed behind on the guest.
 export interface GuestUpgradeResult {
   guestDataDiscarded?: boolean;
@@ -63,57 +85,6 @@ declare global {
   interface GoogleCredentialResponse {
     credential: string;
     select_by: string;
-  }
-}
-
-// facebook
-
-// export {};
-
-declare global {
-  interface Window {
-    FB: FacebookSDK;
-    fbAsyncInit: () => void;
-  }
-
-  interface FacebookSDK {
-    init(options: FacebookInitOptions): void;
-
-    login(
-      callback: (response: FacebookLoginResponse) => void,
-      options?: FacebookLoginOptions
-    ): void;
-  }
-
-  interface FacebookInitOptions {
-    appId: string;
-    cookie?: boolean;
-    xfbml?: boolean;
-    version: string;
-  }
-
-  interface FacebookLoginOptions {
-    scope?: string;
-  }
-  export interface FacebookLoginRequest {
-    accessToken: string;
-  }
-
-  interface FacebookLoginResponse {
-
-    guestDataDiscarded?: boolean;
-    token: string;
-    refreshToken: string;
-    status: "connected" | "not_authorized" | "unknown";
-
-    authResponse?: FacebookAuthResponse;
-  }
-
-  interface FacebookAuthResponse {
-    accessToken: string;
-    expiresIn: number;
-    userID: string;
-    signedRequest: string;
   }
 }
 

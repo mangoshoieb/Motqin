@@ -8,7 +8,7 @@ import { authReturnPath } from "../lib/auth-gate.store";
 import { useGuestStore } from "../lib/guest.store";
 import { GuestUpgradeResult } from "../types/auth.types";
 
-// Shared finish line for every sign-in/sign-up (Google, Facebook, phone):
+// Shared finish line for every sign-in/sign-up (Google, phone):
 // store the new tokens, drop whatever the cache held for the previous
 // session (a guest, usually), and go back to where the popup sent them from.
 export function useAuthSuccess() {

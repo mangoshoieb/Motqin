@@ -1,0 +1,813 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Distraction Blocker API</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column of endpoint cards in five colored parts (settings, schedules, blocks, mentor lock, test flow) - same family as the Mentors and Tracking Table guides */
+:root {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --fg: #172033;
+  --muted: #5b6579;
+  --line: #dfe5ee;
+  --code-bg: #f0f3f8;
+  --accent: #0e7c86;
+  --get: #12805c;  --get-bg: #e3f5ed;
+  --post: #2f5bd3; --post-bg: #e6edfd;
+  --put: #b26a00;  --put-bg: #fdf1dc;
+  --del: #c2364b;  --del-bg: #fce6e9;
+  --ok: #12805c;   --warn: #b26a00;  --bad: #c2364b;
+  --p1: #0e7c86; --p1-bg: #e0f3f4;
+  --p2: #7b4ad6; --p2-bg: #efe8fc;
+  --p3: #d1572b; --p3-bg: #fdebe4;
+  --p4: #3d6bb3; --p4-bg: #e5edf8;
+  --p5: #3a7d2c; --p5-bg: #e7f3e2;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141d; --card: #161d29; --fg: #e8ecf3; --muted: #9aa5b8; --line: #263043; --code-bg: #1d2533;
+    --accent: #3fc1cb;
+    --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+    --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+    --p1: #3fc1cb; --p1-bg: #10302f; --p2: #b69bff; --p2-bg: #261d40;
+    --p3: #ff9466; --p3-bg: #3a2018; --p4: #8fb4ee; --p4-bg: #18263b;
+    --p5: #8fd47d; --p5-bg: #18301a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141d; --card: #161d29; --fg: #e8ecf3; --muted: #9aa5b8; --line: #263043; --code-bg: #1d2533;
+  --accent: #3fc1cb;
+  --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+  --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+  --p1: #3fc1cb; --p1-bg: #10302f; --p2: #b69bff; --p2-bg: #261d40;
+  --p3: #ff9466; --p3-bg: #3a2018; --p4: #8fb4ee; --p4-bg: #18263b;
+  --p5: #8fd47d; --p5-bg: #18301a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 940px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 26px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.hero { display: grid; gap: 12px; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; }
+.lede { color: var(--muted); max-width: 68ch; font-size: 16px; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 999px; }
+.nav a.n0 { background: var(--code-bg); color: var(--fg); }
+.nav a.n1 { background: var(--p1-bg); color: var(--p1); }
+.nav a.n2 { background: var(--p2-bg); color: var(--p2); }
+.nav a.n3 { background: var(--p3-bg); color: var(--p3); }
+.nav a.n4 { background: var(--p4-bg); color: var(--p4); }
+.nav a.n5 { background: var(--p5-bg); color: var(--p5); }
+
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td code.j { display: block; background: var(--code-bg); padding: 6px 8px; border-radius: 6px; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+
+.diagram { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; }
+.diagrams { display: grid; gap: 14px; }
+
+.part { display: grid; gap: 16px; }
+.part-head { display: grid; gap: 6px; padding: 18px 20px; border-radius: 14px; }
+.part-head .num { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+.part-head p { max-width: 68ch; }
+.ph1 { background: var(--p1-bg); } .ph1 .num, .ph1 h2 { color: var(--p1); }
+.ph2 { background: var(--p2-bg); } .ph2 .num, .ph2 h2 { color: var(--p2); }
+.ph3 { background: var(--p3-bg); } .ph3 .num, .ph3 h2 { color: var(--p3); }
+.ph4 { background: var(--p4-bg); } .ph4 .num, .ph4 h2 { color: var(--p4); }
+.ph5 { background: var(--p5-bg); } .ph5 .num, .ph5 h2 { color: var(--p5); }
+.sub { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding-top: 6px; }
+
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.put { background: var(--put-bg); color: var(--put); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.tag.new { color: var(--ok); }
+.tag.changed { color: var(--warn); }
+.tag.removed { color: var(--bad); }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.who.st { background: var(--p1-bg); color: var(--p1); }
+.who.mt { background: var(--p2-bg); color: var(--p2); }
+.who.any { background: var(--code-bg); color: var(--muted); }
+.use { color: var(--fg); max-width: 72ch; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 4px; align-content: start; }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; }
+.st { font-family: var(--font-mono); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.st.s2 { color: var(--ok); } .st.s4 { color: var(--bad); } .st.s429 { color: var(--warn); } .st.s5 { color: var(--bad); }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+.note-list { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+
+.flow { display: grid; gap: 14px; }
+.flow ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+.flow li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; display: grid; gap: 8px; min-width: 0; }
+.flow li::before { content: counter(step); position: absolute; left: 14px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--p5-bg); color: var(--p5); font-family: var(--font-mono); font-weight: 600; font-size: 13px; display: grid; place-items: center; }
+.expect { color: var(--muted); font-size: 14px; }
+.expect b { color: var(--fg); }
+.foot { color: var(--muted); font-size: 13px; }
+@media (max-width: 520px) { .flow li { padding-left: 16px; padding-top: 50px; } }
+</style>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">Motqin · Front-end guide</span>
+    <h1>Distraction Blocker API</h1>
+    <p class="lede">The server keeps the student's blocker settings and schedules, and a log of every block that actually ran. The phone decides when a time window starts (it knows the local clock and must work offline), blocks the apps and websites, and reports each block's start and end. A mentor can lock the settings so changes need a code.</p>
+    <nav class="nav" aria-label="Sections">
+      <a class="n0" href="#basics">Response shapes</a>
+      <a class="n0" href="#flowcharts">How it works</a>
+      <a class="n1" href="#settings">1 · Settings</a>
+      <a class="n2" href="#schedules">2 · Schedules</a>
+      <a class="n3" href="#blocks">3 · Blocks</a>
+      <a class="n4" href="#lock">4 · Mentor lock</a>
+      <a class="n5" href="#test">5 · Manual test</a>
+    </nav>
+  </header>
+
+  <!-- ================================================================ BASICS -->
+  <section id="basics" class="panel">
+    <h2>Response shapes</h2>
+    <p class="use">Every endpoint here lives under <code>/api/distraction-blocker</code>, needs a signed-in user, and answers in this envelope:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Case</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td>Success</td><td><code class="j">{ "success": true, "message": "…", "errors": null, "data": {…} }</code></td></tr>
+          <tr><td>A rule was broken (most errors)</td><td><code class="j">{ "success": false, "message": "Choose at least one day.", "errors": null }</code><span class="expect">There's no code: show <code>message</code>.</span></td></tr>
+          <tr><td>The mentor lock, and invalid JSON</td><td><code class="j">{ "success": false, "data": null, "error": { "code": "…", "message": "…", "details": {…} } }</code><span class="expect">Check <code>error.code</code>: <code>blocker_locked</code> or <code>validation_error</code>.</span></td></tr>
+          <tr><td>Unexpected server error</td><td><code class="j">{ "success": false, "message": "Error creating block schedule.", "errors": "…technical detail…" }</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Errors any endpoint here can return</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Status</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">401</span></td><td>No token, or it expired. Refresh with <code>POST /api/auth/refresh-token</code>.</td><td><code class="j">(empty body)</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>No body, where one is needed</td><td><code class="j">{"success":false,"data":null,"error":{"code":"validation_error","message":"Invalid request body.","details":{"":["A non-empty request body is required."],"dto":["The dto field is required."]}}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A value of the wrong type, e.g. <code>"startTime": "5pm"</code></td><td><code class="j">{"success":false,"data":null,"error":{"code":"validation_error","message":"Invalid request body.","details":{"dto":["The dto field is required."],"$.startTime":["The JSON value could not be converted to System.Nullable`1[System.TimeOnly]. Path: $.startTime | LineNumber: 0 | BytePositionInLine: 32."]}}}</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="note-list">
+      <li><b>Numbers, not words:</b> days are <code>0</code> = Sunday … <code>6</code> = Saturday. Draw the day picker from <code>GET /api/lookups/week-days</code> (Part 2). <code>trigger</code> and <code>endReason</code> are numbers too (tables below).</li>
+      <li><b>Times of day</b> go in as <code>"17:00"</code> and come back as <code>"17:00:00"</code>. They're the phone's local wall-clock times.</li>
+      <li><b>Moments</b> (<code>startTime</code>, <code>endTime</code>, <code>plannedEndTime</code>, <code>createdAt</code>) are UTC. Some come back without a <code>Z</code>, e.g. <code>"2026-10-28T17:04:10.427"</code>. Treat those as UTC too, or the app will be 2–3 hours off.</li>
+      <li><b>While a block runs,</b> PUT settings, PUT schedules/{id} and DELETE schedules/{id} are refused with <code>block_running</code>. A block counts as running until it's ended or its planned end passes; a plan block with no planned end counts for 24 hours at most.</li>
+      <li><b>Guests can use the blocker.</b> Their responses also carry the usual guest reminder header.</li>
+    </ul>
+  </section>
+
+  <!-- ================================================================ DIAGRAMS -->
+  <section id="flowcharts" class="part">
+    <h2>How it works</h2>
+    <div class="diagrams">
+      <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  participant App as Student's phone
+  participant API as Motqin API
+  App->>API: GET settings and GET schedules
+  Note over App: compares the local clock with each schedule
+  App->>API: POST sessions/start (trigger, schedule, planned end)
+  API-->>App: the block's id
+  Note over App: blocks every app except the allowed ones, and the blocked websites
+  App->>API: PUT sessions/id/end (endReason)
+  API-->>App: the finished block with its minutes
+</pre>
+      </div>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  S[Schedule] -->|time window| W[trigger 0 Schedule]
+  S -->|until today's plan is done| P[trigger 1 PlanBlock]
+  SS[Study session running] --> T2[trigger 2 StudySession]
+  M[Student starts it by hand] --> T3[trigger 3 Manual]
+  W --> E[end: 0 WindowEnded]
+  P --> E1[end: 1 PlanCompleted]
+  T2 --> E2[end: 2 SessionEnded]
+  T3 --> E3[end: 3 StoppedByUser]
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ PART 1 -->
+  <section id="settings" class="part">
+    <div class="part-head ph1">
+      <span class="num">Part 1</span>
+      <h2>Settings</h2>
+      <p>What gets blocked and when, apart from schedules: during study sessions, during breaks, the automatic plan block, the apps that stay usable, and the blocked websites.</p>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/distraction-blocker/settings</span></div>
+      <p class="use">The student's settings. A student who never saved any gets the defaults below.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "message": "Distraction blocker settings retrieved successfully.",
+  "errors": null,
+  "data": {
+    "blockDuringStudySessions": false,
+    "unblockDuringBreaks": true,
+    "autoStartPlanBlock": false,
+    "allowedApps": [],
+    "blockedWebsites": [],
+    "lockedByMentor": false,
+    "unlockedUntil": null
+  }
+}</pre></div>
+        <div><span class="lbl">The fields</span>
+          <ul class="note-list">
+            <li><code>blockDuringStudySessions</code>: block while a study session runs, even outside every schedule.</li>
+            <li><code>unblockDuringBreaks</code>: with the above on, lift the block during the session's break.</li>
+            <li><code>autoStartPlanBlock</code>: the app starts the day's "until the plan is done" block by itself at midnight.</li>
+            <li><code>allowedApps</code>: Android package ids that stay usable; every other app is blocked. iOS app picks never reach the server.</li>
+            <li><code>blockedWebsites</code>: hosts, e.g. <code>youtube.com</code>.</li>
+            <li><code>lockedByMentor</code> / <code>unlockedUntil</code>: the mentor lock (Part 4). Read-only.</li>
+          </ul>
+          <span class="lbl">Errors</span><span class="expect">Only the common ones.</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/distraction-blocker/settings</span></div>
+      <p class="use">Save all the settings at once. Refused while a block is running. Websites can be full links; only the host is kept, lower-case, without <code>www.</code>, and duplicates are dropped. The student needs planner preferences first (<code>POST /api/user-preferences/planner/basic</code>).</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">{
+  "blockDuringStudySessions": true,
+  "unblockDuringBreaks": true,
+  "autoStartPlanBlock": false,
+  "allowedApps": ["com.whatsapp", "com.google.android.apps.maps"],
+  "blockedWebsites": ["https://www.YouTube.com/watch?v=1", "facebook.com"]
+}</pre>
+          <span class="expect"><code>lockedByMentor</code> and <code>unlockedUntil</code> are ignored if sent. Limits: 200 apps, 200 websites, 255 characters each.</span></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "message": "Distraction blocker settings updated successfully.",
+  "errors": null,
+  "data": {
+    "blockDuringStudySessions": true,
+    "unblockDuringBreaks": true,
+    "autoStartPlanBlock": false,
+    "allowedApps": ["com.whatsapp", "com.google.android.apps.maps"],
+    "blockedWebsites": ["youtube.com", "facebook.com"],
+    "lockedByMentor": false,
+    "unlockedUntil": null
+  }
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td>No planner preferences yet</td><td><code class="j">{"success":false,"message":"Set up your planner preferences before configuring the distraction blocker.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A website that isn't one</td><td><code class="j">{"success":false,"message":"'not a site' is not a valid website.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>An app id over 255 characters</td><td><code class="j">{"success":false,"message":"An app id cannot be longer than 255 characters.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A website over 255 characters</td><td><code class="j">{"success":false,"message":"A website cannot be longer than 255 characters.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>More than 200 apps</td><td><code class="j">{"success":false,"message":"You can allow at most 200 apps.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>More than 200 websites</td><td><code class="j">{"success":false,"message":"You can block at most 200 websites.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A mentor holds the lock (Part 4)</td><td><code class="j">{"success":false,"data":null,"error":{"code":"blocker_locked","message":"Your mentor locked these settings. Ask them for the code to change them."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A block is running. <code>details.endsAt</code> is its planned end (UTC), or <code>null</code> for a plan block</td><td><code class="j">{"success":false,"data":null,"error":{"code":"block_running","message":"A block is running. Change the blocker after it ends.","details":{"blockId":4,"endsAt":"2026-10-29T13:02:51Z"}}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+  </section>
+
+  <!-- ================================================================ PART 2 -->
+  <section id="schedules" class="part">
+    <div class="part-head ph2">
+      <span class="num">Part 2</span>
+      <h2>Schedules</h2>
+      <p>Two kinds. A <b>time window</b> blocks between two times on chosen days; an end before the start crosses midnight. An <b>until the plan is done</b> schedule blocks the whole day on chosen days and lifts once today's plan and due reviews are finished. Each day can have only one active plan schedule.</p>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/lookups/week-days</span><span class="tag new">new</span><span class="who any">anyone</span></div>
+      <p class="use">The days for the schedule's day picker, already in display order (the week starts on Saturday). Show <code>nameAr</code>, and send back <code>value</code> in <code>days</code>. No sign-in needed; cache it, since it never changes.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">[
+  { "value": 6, "key": "Saturday",  "nameAr": "السبت",    "nameEn": "Saturday" },
+  { "value": 0, "key": "Sunday",    "nameAr": "الأحد",    "nameEn": "Sunday" },
+  { "value": 1, "key": "Monday",    "nameAr": "الاثنين",  "nameEn": "Monday" },
+  { "value": 2, "key": "Tuesday",   "nameAr": "الثلاثاء", "nameEn": "Tuesday" },
+  { "value": 3, "key": "Wednesday", "nameAr": "الأربعاء", "nameEn": "Wednesday" },
+  { "value": 4, "key": "Thursday",  "nameAr": "الخميس",   "nameEn": "Thursday" },
+  { "value": 5, "key": "Friday",    "nameAr": "الجمعة",   "nameEn": "Friday" }
+]</pre></div>
+        <div><span class="lbl">Showing a saved schedule</span><span class="expect">Schedules return <code>days</code> sorted 0–6, e.g. <code>[0, 1, 6]</code>. Walk this list in its order and highlight the days whose <code>value</code> is in <code>days</code>, so they show Saturday first.</span>
+          <span class="lbl">Checking today on the phone</span><span class="expect">Dart: <code>DateTime.now().weekday % 7</code> gives the same number (Dart counts Monday = 1 … Sunday = 7). JavaScript's <code>getDay()</code> already matches.</span>
+          <span class="lbl">Errors</span><span class="expect">None.</span></div>
+      </div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/distraction-blocker/schedules</span></div>
+      <p class="use">All the student's schedules, oldest first, switched-off ones included.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "message": "Block schedules retrieved successfully.",
+  "errors": null,
+  "data": [
+    { "id": 4, "days": [0, 1, 2, 3, 6], "blockUntilPlanCompleted": false,
+      "startTime": "17:00:00", "endTime": "22:00:00",
+      "isEnabled": true, "createdAt": "2026-10-28T17:04:09.184" },
+    { "id": 5, "days": [4, 5], "blockUntilPlanCompleted": true,
+      "startTime": null, "endTime": null,
+      "isEnabled": true, "createdAt": "2026-10-28T17:04:09.374" }
+  ]
+}</pre></div>
+        <div><span class="lbl">Errors</span><span class="expect">Only the common ones.</span></div>
+      </div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/distraction-blocker/schedules</span></div>
+      <p class="use">Add a schedule. Never refused by the mentor lock or a running block, because it only makes blocking stricter.</p>
+      <div class="io">
+        <div><span class="lbl">Body: time window</span><pre class="code">{
+  "days": [6, 0, 1, 2, 3],
+  "blockUntilPlanCompleted": false,
+  "startTime": "17:00",
+  "endTime": "22:00",
+  "isEnabled": true
+}</pre>
+          <span class="lbl">Body: until the plan is done</span><pre class="code">{
+  "days": [4, 5],
+  "blockUntilPlanCompleted": true,
+  "isEnabled": true
+}</pre>
+          <span class="expect">Leave out the times for a plan schedule. <code>isEnabled</code> defaults to <code>true</code>.</span></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "message": "Block schedule created successfully.",
+  "errors": null,
+  "data": {
+    "id": 4,
+    "days": [0, 1, 2, 3, 6],
+    "blockUntilPlanCompleted": false,
+    "startTime": "17:00:00",
+    "endTime": "22:00:00",
+    "isEnabled": true,
+    "createdAt": "2026-10-28T17:04:09.184Z"
+  }
+}</pre><span class="expect">The days come back sorted.</span></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td>No days</td><td><code class="j">{"success":false,"message":"Choose at least one day.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A day outside 0–6</td><td><code class="j">{"success":false,"message":"Days must be between 0 (Sunday) and 6 (Saturday).","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>Time window without both times</td><td><code class="j">{"success":false,"message":"StartTime and EndTime are required unless blocking until the plan is completed.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>Same start and end</td><td><code class="j">{"success":false,"message":"StartTime and EndTime cannot be the same value.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>Plan schedule with times</td><td><code class="j">{"success":false,"message":"A 'block until plan is completed' schedule has no StartTime or EndTime.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>Another active plan schedule already covers one of the days</td><td><code class="j">{"success":false,"message":"These days already have a 'block until plan is completed' schedule: Friday.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A time that isn't <code>HH:mm</code></td><td><code class="j">validation_error, as in the common errors above</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/distraction-blocker/schedules/{id}</span></div>
+      <p class="use">Change a schedule, including switching it off with <code>"isEnabled": false</code>. Send the whole schedule, with the same rules as adding one. Refused while a block is running or a mentor holds the lock.</p>
+      <div class="io">
+        <div><span class="lbl">Body (crossing midnight)</span><pre class="code">{
+  "days": [6, 0],
+  "blockUntilPlanCompleted": false,
+  "startTime": "22:00",
+  "endTime": "06:00",
+  "isEnabled": true
+}</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "message": "Block schedule updated successfully.",
+  "errors": null,
+  "data": {
+    "id": 4,
+    "days": [0, 6],
+    "blockUntilPlanCompleted": false,
+    "startTime": "22:00:00",
+    "endTime": "06:00:00",
+    "isEnabled": true,
+    "createdAt": "2026-10-28T17:04:09.184"
+  }
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">404</span></td><td>Wrong id, or another student's</td><td><code class="j">{"success":false,"message":"Block schedule not found for this user.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>Any rule from adding a schedule</td><td><code class="j">{"success":false,"message":"Choose at least one day.","errors":null}</code><span class="expect">and the other messages in the table above.</span></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A mentor holds the lock</td><td><code class="j">{"success":false,"data":null,"error":{"code":"blocker_locked","message":"Your mentor locked these settings. Ask them for the code to change them."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A block is running. <code>details.endsAt</code> is its planned end (UTC), or <code>null</code> for a plan block</td><td><code class="j">{"success":false,"data":null,"error":{"code":"block_running","message":"A block is running. Change the blocker after it ends.","details":{"blockId":4,"endsAt":"2026-10-29T13:02:51Z"}}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/distraction-blocker/schedules/{id}</span></div>
+      <p class="use">Delete a schedule. Blocks it already started keep their history, with no schedule attached. Refused while a block is running or a mentor holds the lock.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "message": "Block schedule deleted successfully.",
+  "errors": null
+}</pre></div>
+        <div><span class="lbl">Errors</span>
+          <span class="expect"><b>404</b> <code>{"success":false,"message":"Block schedule not found for this user.","errors":null}</code></span>
+          <span class="expect"><b>400</b> <code>blocker_locked</code> or <code>block_running</code>, same bodies as above.</span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ================================================================ PART 3 -->
+  <section id="blocks" class="part">
+    <div class="part-head ph3">
+      <span class="num">Part 3</span>
+      <h2>Blocks (what actually ran)</h2>
+      <p>The app reports each block it runs, so the server knows how long the student was blocked and why it ended. Only one block runs at a time. <b>While a block runs, the settings can't be changed and schedules can't be updated or deleted</b> (<code>block_running</code>); adding a schedule still works.</p>
+    </div>
+
+    <div class="table-wrap panel">
+      <table>
+        <thead><tr><th><code>trigger</code></th><th>Started by</th><th><code>blockScheduleId</code></th><th><code>plannedEndTime</code></th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code> Schedule</td><td>A time-window schedule</td><td>Required: a time-window schedule</td><td>The window's end, in UTC</td></tr>
+          <tr><td><code>1</code> PlanBlock</td><td>An "until the plan is done" schedule</td><td>Required: a plan schedule</td><td>Must be left out</td></tr>
+          <tr><td><code>2</code> StudySession</td><td>A running study session</td><td>Must be left out</td><td>Optional</td></tr>
+          <tr><td><code>3</code> Manual</td><td>The student, by hand</td><td>Must be left out</td><td>Optional</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th><code>endReason</code></th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code> WindowEnded</td><td>The time window finished</td></tr>
+          <tr><td><code>1</code> PlanCompleted</td><td>Today's plan was done</td></tr>
+          <tr><td><code>2</code> SessionEnded</td><td>The study session ended</td></tr>
+          <tr><td><code>3</code> StoppedByUser</td><td>The student stopped it</td></tr>
+          <tr><td><code>4</code> Interrupted</td><td>Set by the server: a new block started while this one was still open (the app was killed or the phone was off)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/distraction-blocker/sessions/start</span></div>
+      <p class="use">Call when the app starts blocking. The server stamps the start time. A block still open from before is closed as <code>Interrupted</code> instead of refusing the new one.</p>
+      <div class="io">
+        <div><span class="lbl">Body: from a time window</span><pre class="code">{
+  "trigger": 0,
+  "blockScheduleId": 4,
+  "plannedEndTime": "2026-10-28T20:00:00Z"
+}</pre>
+          <span class="lbl">Body: until the plan is done</span><pre class="code">{ "trigger": 1, "blockScheduleId": 5 }</pre>
+          <span class="lbl">Body: by hand, for one hour</span><pre class="code">{ "trigger": 3, "plannedEndTime": "2026-10-28T18:04:08Z" }</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "message": "Block started.",
+  "errors": null,
+  "data": {
+    "id": 2,
+    "blockScheduleId": 4,
+    "trigger": 0,
+    "startTime": "2026-10-28T17:04:10.689Z",
+    "endTime": null,
+    "plannedEndTime": "2026-10-28T18:04:08Z",
+    "endReason": null,
+    "durationInMinutes": 0
+  }
+}</pre><span class="expect">Keep <code>data.id</code>; the end call needs it.</span></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td>Schedule or PlanBlock without <code>blockScheduleId</code></td><td><code class="j">{"success":false,"message":"BlockScheduleId is required for Schedule and PlanBlock triggers.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>StudySession or Manual with a <code>blockScheduleId</code></td><td><code class="j">{"success":false,"message":"BlockScheduleId is only sent for Schedule or PlanBlock triggers.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>The schedule isn't the student's</td><td><code class="j">{"success":false,"message":"Block schedule not found for this user.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>Trigger 0 with a plan schedule</td><td><code class="j">{"success":false,"message":"Schedule needs a time-window schedule; use PlanBlock for 'block until plan is completed'.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>Trigger 1 with a time-window schedule</td><td><code class="j">{"success":false,"message":"PlanBlock needs a 'block until plan is completed' schedule.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>Trigger 1 with a <code>plannedEndTime</code></td><td><code class="j">{"success":false,"message":"A plan block has no PlannedEndTime; it ends when the plan is completed.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>plannedEndTime</code> not in the future</td><td><code class="j">{"success":false,"message":"PlannedEndTime must be in the future.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>A trigger other than 0–3</td><td><code class="j">{"success":false,"message":"Unknown trigger.","errors":null}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/distraction-blocker/sessions/{id}/end</span></div>
+      <p class="use">Call when the app stops blocking, with the reason. The server stamps the end time and the minutes.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">{ "endReason": 1 }</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "message": "Block ended.",
+  "errors": null,
+  "data": {
+    "id": 3,
+    "blockScheduleId": 5,
+    "trigger": 1,
+    "startTime": "2026-10-28T17:04:11.654",
+    "endTime": "2026-10-28T17:04:12.096Z",
+    "plannedEndTime": null,
+    "endReason": 1,
+    "durationInMinutes": 0
+  }
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">404</span></td><td>Wrong id, or another student's</td><td><code class="j">{"success":false,"message":"Block session not found for this user.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>Already ended, including closed as Interrupted by a newer block</td><td><code class="j">{"success":false,"message":"This block has already ended.","errors":null}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>An end reason other than 0–4</td><td><code class="j">{"success":false,"message":"Unknown end reason.","errors":null}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/distraction-blocker/sessions/active</span></div>
+      <p class="use">The block running now, so the app can pick it up again after a restart. <code>data</code> is <code>null</code> when none is running. <code>durationInMinutes</code> counts up to now.</p>
+      <div class="io">
+        <div><span class="lbl">200 (running)</span><pre class="code">{
+  "success": true,
+  "message": "Active block retrieved successfully.",
+  "errors": null,
+  "data": {
+    "id": 1,
+    "blockScheduleId": null,
+    "trigger": 3,
+    "startTime": "2026-10-28T17:04:10.427",
+    "endTime": null,
+    "plannedEndTime": "2026-10-28T18:04:08",
+    "endReason": null,
+    "durationInMinutes": 0
+  }
+}</pre></div>
+        <div><span class="lbl">200 (none)</span><pre class="code">{
+  "success": true,
+  "message": "No block is running.",
+  "errors": null,
+  "data": null
+}</pre></div>
+      </div>
+    </article>
+
+    <p class="tip"><b>Not available yet:</b> uploading blocks recorded offline (<code>sessions/sync</code>), the block history list (<code>GET sessions</code>) and the status summary (<code>GET status</code>) exist in the code but are switched off.</p>
+  </section>
+
+  <!-- ================================================================ PART 4 -->
+  <section id="lock" class="part">
+    <div class="part-head ph4">
+      <span class="num">Part 4</span>
+      <h2>The mentor lock</h2>
+      <p>If the student gave one mentor the lock privilege, then <b>changing settings, updating a schedule and deleting a schedule</b> are refused with <code>blocker_locked</code>. Adding a schedule and starting or ending blocks still work. A code from the mentor allows changes for 15 minutes. The Mentors &amp; Sign-in guide covers the mentor side.</p>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/blocker-unlock/request</span></div>
+      <p class="use">Ask for a code. It appears on the lock-holding mentor's page for 10 minutes; asking again keeps the same code.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": { "locked": true, "unlockedUntil": null,
+            "codeExpiresAt": "2026-10-27T16:39:59.131Z" },
+  "error": null,
+  "message": "The code is on your mentor's page."
+}</pre></div>
+        <div><span class="lbl">Errors</span>
+          <span class="expect"><b>400</b> <code>{"success":false,"data":null,"error":{"code":"blocker_not_locked","message":"Your blocker settings aren't locked right now."}}</code></span>
+          <span class="expect"><b>400</b> <code>{"success":false,"data":null,"error":{"code":"cooldown","message":"Wait a little before asking for another code.","details":{"retryAfterSeconds":42}}}</code></span>
+        </div>
+      </div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/blocker-unlock/verify</span></div>
+      <p class="use">Enter the code from the mentor. Locked changes work until <code>unlockedUntil</code>.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">{ "code": "482913" }</pre>
+          <span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": { "locked": false,
+            "unlockedUntil": "2026-10-27T16:45:00.071Z",
+            "codeExpiresAt": null },
+  "error": null,
+  "message": "Unlocked."
+}</pre></div>
+        <div><span class="lbl">Errors</span>
+          <span class="expect"><b>400</b> <code>{"success":false,"data":null,"error":{"code":"unlock_code_invalid","message":"Wrong code.","details":{"attemptsLeft":4}}}</code></span>
+          <span class="expect"><b>400</b> <code>{"success":false,"data":null,"error":{"code":"unlock_code_expired","message":"This code has expired. Ask your mentor for a new one."}}</code><br>Sent when there's no code, the code is older than 10 minutes, or it was cancelled after 5 wrong tries.</span>
+          <span class="expect"><b>400</b> <code>{"success":false,"data":null,"error":{"code":"blocker_not_locked","message":"Your blocker settings aren't locked."}}</code></span>
+        </div>
+      </div>
+    </article>
+
+    <p class="tip">To show the lock: read <code>lockedByMentor</code> and <code>unlockedUntil</code> from <code>GET /api/distraction-blocker/settings</code> (or <code>blockerLock</code> in <code>GET /api/mentorship/my-mentors</code>). When locked, show a lock on the settings and on the edit and delete buttons of each schedule, plus an "Ask my mentor for a code" button.</p>
+  </section>
+
+  <!-- ================================================================ PART 5 -->
+  <section id="test" class="part">
+    <div class="part-head ph5">
+      <span class="num">Part 5</span>
+      <h2>Manual test in Swagger</h2>
+      <p>About 15 minutes with one account. Moments are UTC, so set <code>plannedEndTime</code> to an hour from now in UTC (Egypt time minus 2 or 3 hours).</p>
+    </div>
+
+    <div class="flow"><ol>
+      <li>
+        <div class="ep-line"><span class="who any">sign in</span><span class="m post">POST</span><span class="path">/api/auth/test-phone-login</span></div>
+        <p class="expect">Copy <b><code>token</code></b>, click Authorize and paste it.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m get">GET</span><span class="path">/api/distraction-blocker/settings</span></div>
+        <p class="expect">The defaults, or the account's saved settings.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/distraction-blocker/settings</span></div>
+        <pre class="code">{ "blockDuringStudySessions": true, "unblockDuringBreaks": true, "autoStartPlanBlock": false, "allowedApps": ["com.whatsapp"], "blockedWebsites": ["https://www.YouTube.com/watch?v=1", "facebook.com"] }</pre>
+        <p class="expect"><b>200</b>, with websites saved as <code>["youtube.com", "facebook.com"]</code>. If you get "Set up your planner preferences…", send this to <code>POST /api/user-preferences/planner/basic</code> and try again:</p>
+        <pre class="code">{ "minWorkHours": 2, "maxWorkHours": 6, "startSleepTime": "23:00", "endSleepTime": "07:00", "pomodoroWorkingMinutes": 25, "pomodoroBreakMinutes": 5, "planFailureDecision": 0 }</pre>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/distraction-blocker/settings</span> with a bad website</div>
+        <pre class="code">{ "blockedWebsites": ["not a site"] }</pre>
+        <p class="expect"><b>400</b> <code>"'not a site' is not a valid website."</code></p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m post">POST</span><span class="path">/api/distraction-blocker/schedules</span>, twice</div>
+        <pre class="code">{ "days": [6, 0, 1, 2, 3], "blockUntilPlanCompleted": false, "startTime": "17:00", "endTime": "22:00", "isEnabled": true }</pre>
+        <pre class="code">{ "days": [4, 5], "blockUntilPlanCompleted": true, "isEnabled": true }</pre>
+        <p class="expect">Both <b>200</b>. Note the ids: <b>W</b> for the time window, <b>P</b> for the plan schedule.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m post">POST</span><span class="path">/api/distraction-blocker/schedules</span> with the broken bodies</div>
+        <pre class="code">{ "days": [5], "blockUntilPlanCompleted": true }</pre>
+        <pre class="code">{ "days": [] , "startTime": "17:00", "endTime": "22:00" }</pre>
+        <pre class="code">{ "days": [7], "startTime": "17:00", "endTime": "22:00" }</pre>
+        <pre class="code">{ "days": [1], "startTime": "17:00", "endTime": "17:00" }</pre>
+        <p class="expect">These give, in order: "These days already have a … schedule: Friday.", "Choose at least one day.", "Days must be between 0 (Sunday) and 6 (Saturday).", "StartTime and EndTime cannot be the same value."</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m get">GET</span><span class="path">/api/distraction-blocker/schedules</span>, then <span class="m put">PUT</span><span class="path">/api/distraction-blocker/schedules/W</span></div>
+        <pre class="code">{ "days": [6, 0], "blockUntilPlanCompleted": false, "startTime": "22:00", "endTime": "06:00", "isEnabled": true }</pre>
+        <p class="expect">Both schedules are listed. The update gives <b>200</b>: a window that crosses midnight.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m get">GET</span><span class="path">/api/distraction-blocker/sessions/active</span></div>
+        <p class="expect"><code>"data": null</code>, "No block is running."</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m post">POST</span><span class="path">/api/distraction-blocker/sessions/start</span></div>
+        <pre class="code">{ "trigger": 3, "plannedEndTime": "PUT_A_UTC_TIME_ONE_HOUR_AHEAD_Z" }</pre>
+        <p class="expect">For example <code>"2026-10-28T19:00:00Z"</code>. Expect <b>200</b> and note <b>data.id</b> (block A). <code>GET sessions/active</code> now returns it.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m post">POST</span><span class="path">/api/distraction-blocker/sessions/start</span> from the window</div>
+        <pre class="code">{ "trigger": 0, "blockScheduleId": W, "plannedEndTime": "PUT_A_UTC_TIME_ONE_HOUR_AHEAD_Z" }</pre>
+        <p class="expect"><b>200</b> (block B). Block A is closed automatically as Interrupted: <code>PUT sessions/A/end</code> now gives "This block has already ended." While B runs, try the step 3 settings body and <code>DELETE schedules/W</code>: both give <b>400 <code>block_running</code></b>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m post">POST</span><span class="path">/api/distraction-blocker/sessions/start</span> with the broken bodies</div>
+        <pre class="code">{ "trigger": 0 }</pre>
+        <pre class="code">{ "trigger": 0, "blockScheduleId": P }</pre>
+        <pre class="code">{ "trigger": 1, "blockScheduleId": P, "plannedEndTime": "2030-01-01T00:00:00Z" }</pre>
+        <pre class="code">{ "trigger": 9 }</pre>
+        <p class="expect">These give, in order: "BlockScheduleId is required…", "Schedule needs a time-window schedule…", "A plan block has no PlannedEndTime…", "Unknown trigger."</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/distraction-blocker/sessions/B/end</span></div>
+        <pre class="code">{ "endReason": 3 }</pre>
+        <p class="expect"><b>200</b>, with <code>endTime</code> and <code>durationInMinutes</code> filled. Send it again: "This block has already ended."</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m post">POST</span><span class="path">/api/distraction-blocker/sessions/start</span>, then end it as plan completed</div>
+        <pre class="code">{ "trigger": 1, "blockScheduleId": P }</pre>
+        <pre class="code">{ "endReason": 1 }</pre>
+        <p class="expect">Both <b>200</b>; <code>plannedEndTime</code> stays <code>null</code>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who mt">optional</span>the mentor lock</div>
+        <p class="expect">Follow steps 4 to 14 of the Mentors &amp; Sign-in guide's manual test. Updating or deleting W gives <b>400 <code>blocker_locked</code></b>, adding a schedule still works, and after the code everything works for 15 minutes.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/distraction-blocker/schedules/W</span> and <span class="path">/P</span></div>
+        <p class="expect">Both <b>200</b>. Deleting again gives <b>404</b> "Block schedule not found for this user."</p>
+      </li>
+    </ol></div>
+  </section>
+
+  <p class="foot">Limits: 200 allowed apps, 200 blocked websites, 255 characters each. One active plan schedule per day. One block running at a time; no settings or schedule edits while it runs.</p>
+</div>
+
+<!--claude-mermaid-runtime-begin:3477-->
+<style>.mermaid-diagram{margin-block:4px}.mermaid-diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}</style>
+<script src="/_runtime/mermaid-11.16.1.min.js"></script>
+<script>(function(){
+var CFG={"palettes":{"light":{"surface":"#f4efe4","text":"#42392e","line":"#8a7f6d","border":"#7a6c52","bg":"#fffdf8"},"dark":{"surface":"#262b34","text":"#f2f3f5","line":"#a8adb8","border":"#9aa4b8","bg":"#1f232b"}}};
+if(typeof mermaid==='undefined')return;
+var pres=Array.prototype.slice.call(document.querySelectorAll('pre.mermaid')).filter(function(p){if(p.hasAttribute('data-claude-mermaid-claimed'))return false;p.setAttribute('data-claude-mermaid-claimed','1');return true;});
+if(!pres.length)return;
+var mq=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+var root=document.documentElement;
+var items=pres.map(function(pre){
+var mount=document.createElement('div');mount.className='mermaid-diagram';
+return {pre:pre,mount:mount,src:pre.textContent||''};
+});
+var seq=0;
+var renderGen=0;
+var lastKey='';
+function pageBg(fallback){
+var els=[document.body,document.documentElement];
+for(var i=0;i<els.length;i++){
+var c=els[i]&&getComputedStyle(els[i]).backgroundColor;
+if(c&&c!=='transparent'&&c!=='rgba(0, 0, 0, 0)')return c;
+}
+return fallback;
+}
+function render(){
+var theme=root.getAttribute('data-theme');
+var dark=theme==='dark'||(!!(mq&&mq.matches)&&theme!=='light');
+var pal=dark?CFG.palettes.dark:CFG.palettes.light;
+var bg=pageBg(pal.bg);
+var key=(dark?'d':'l')+'|'+bg;
+if(key===lastKey)return;
+lastKey=key;
+var gen=++renderGen;
+var font=getComputedStyle(document.body).fontFamily||'sans-serif';
+var nat={useMaxWidth:false};
+mermaid.initialize({
+startOnLoad:false,securityLevel:'strict',theme:'base',
+flowchart:nat,sequence:nat,er:nat,state:nat,class:nat,pie:nat,
+gantt:nat,journey:nat,timeline:nat,gitGraph:nat,mindmap:nat,xyChart:nat,
+quadrantChart:nat,sankey:nat,c4:nat,requirement:nat,block:nat,
+packet:nat,kanban:nat,architecture:nat,radar:nat,
+themeVariables:{background:bg,mainBkg:pal.surface,primaryColor:pal.surface,
+primaryTextColor:pal.text,lineColor:pal.line,primaryBorderColor:pal.border,
+nodeBorder:pal.border,clusterBorder:pal.border,edgeLabelBackground:bg,
+clusterBkg:'rgba(127,127,127,0.07)',titleColor:pal.text,
+darkMode:dark,rowOdd:bg,rowEven:'rgba(127,127,127,0.07)',
+attributeBackgroundColorOdd:bg,attributeBackgroundColorEven:'rgba(127,127,127,0.07)',
+fontSize:'16px',fontFamily:font},
+themeCSS:'.node rect, .node circle, .node polygon, .node path, .cluster rect { stroke-width: 2px; }'
+});
+items.forEach(function(it){
+var id='claude-mermaid-'+seq++;
+mermaid.render(id,it.src).then(function(r){
+if(gen!==renderGen)return;
+var prev=it.pre.previousElementSibling;
+if(prev&&prev.className==='mermaid-diagram'&&prev!==it.mount)return;
+it.mount.innerHTML=r.svg;
+if(!it.mount.parentNode)it.pre.parentNode.insertBefore(it.mount,it.pre);
+it.pre.style.display='none';
+},function(){
+var scratch=document.getElementById(id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+scratch=document.getElementById('d'+id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+if(gen!==renderGen)return;
+if(it.mount.parentNode)it.mount.parentNode.removeChild(it.mount);
+it.pre.style.display='';
+});
+});
+}
+render();
+if(mq&&mq.addEventListener)mq.addEventListener('change',render);
+if(typeof MutationObserver!=='undefined')new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['data-theme']});
+})();</script>
+<!--claude-mermaid-runtime-end-->
+
+</body></html>

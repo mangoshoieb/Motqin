@@ -1,0 +1,1250 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mentors &amp; Sign-in API</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column of endpoint cards in five colored parts (student, mentor page, blocker, sign-in, test flow) - same family as the Tracking Table guide */
+:root {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --fg: #172033;
+  --muted: #5b6579;
+  --line: #dfe5ee;
+  --code-bg: #f0f3f8;
+  --accent: #0e7c86;
+  --get: #12805c;  --get-bg: #e3f5ed;
+  --post: #2f5bd3; --post-bg: #e6edfd;
+  --put: #b26a00;  --put-bg: #fdf1dc;
+  --del: #c2364b;  --del-bg: #fce6e9;
+  --ok: #12805c;   --warn: #b26a00;  --bad: #c2364b;
+  --p1: #0e7c86; --p1-bg: #e0f3f4;
+  --p2: #7b4ad6; --p2-bg: #efe8fc;
+  --p3: #d1572b; --p3-bg: #fdebe4;
+  --p4: #3d6bb3; --p4-bg: #e5edf8;
+  --p5: #3a7d2c; --p5-bg: #e7f3e2;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141d; --card: #161d29; --fg: #e8ecf3; --muted: #9aa5b8; --line: #263043; --code-bg: #1d2533;
+    --accent: #3fc1cb;
+    --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+    --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+    --p1: #3fc1cb; --p1-bg: #10302f; --p2: #b69bff; --p2-bg: #261d40;
+    --p3: #ff9466; --p3-bg: #3a2018; --p4: #8fb4ee; --p4-bg: #18263b;
+    --p5: #8fd47d; --p5-bg: #18301a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141d; --card: #161d29; --fg: #e8ecf3; --muted: #9aa5b8; --line: #263043; --code-bg: #1d2533;
+  --accent: #3fc1cb;
+  --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+  --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+  --p1: #3fc1cb; --p1-bg: #10302f; --p2: #b69bff; --p2-bg: #261d40;
+  --p3: #ff9466; --p3-bg: #3a2018; --p4: #8fb4ee; --p4-bg: #18263b;
+  --p5: #8fd47d; --p5-bg: #18301a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 940px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 26px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.hero { display: grid; gap: 12px; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; }
+.lede { color: var(--muted); max-width: 68ch; font-size: 16px; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 999px; }
+.nav a.n0 { background: var(--code-bg); color: var(--fg); }
+.nav a.n1 { background: var(--p1-bg); color: var(--p1); }
+.nav a.n2 { background: var(--p2-bg); color: var(--p2); }
+.nav a.n3 { background: var(--p3-bg); color: var(--p3); }
+.nav a.n4 { background: var(--p4-bg); color: var(--p4); }
+.nav a.n5 { background: var(--p5-bg); color: var(--p5); }
+
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td code.j { display: block; background: var(--code-bg); padding: 6px 8px; border-radius: 6px; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+
+.diagram { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; }
+.diagrams { display: grid; gap: 14px; }
+
+.part { display: grid; gap: 16px; }
+.part-head { display: grid; gap: 6px; padding: 18px 20px; border-radius: 14px; }
+.part-head .num { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+.part-head p { max-width: 68ch; }
+.ph1 { background: var(--p1-bg); } .ph1 .num, .ph1 h2 { color: var(--p1); }
+.ph2 { background: var(--p2-bg); } .ph2 .num, .ph2 h2 { color: var(--p2); }
+.ph3 { background: var(--p3-bg); } .ph3 .num, .ph3 h2 { color: var(--p3); }
+.ph4 { background: var(--p4-bg); } .ph4 .num, .ph4 h2 { color: var(--p4); }
+.ph5 { background: var(--p5-bg); } .ph5 .num, .ph5 h2 { color: var(--p5); }
+.sub { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding-top: 6px; }
+
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.put { background: var(--put-bg); color: var(--put); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.tag.new { color: var(--ok); }
+.tag.changed { color: var(--warn); }
+.tag.removed { color: var(--bad); }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.who.st { background: var(--p1-bg); color: var(--p1); }
+.who.mt { background: var(--p2-bg); color: var(--p2); }
+.who.any { background: var(--code-bg); color: var(--muted); }
+.use { color: var(--fg); max-width: 72ch; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 4px; align-content: start; }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; }
+.st { font-family: var(--font-mono); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.st.s2 { color: var(--ok); } .st.s4 { color: var(--bad); } .st.s429 { color: var(--warn); } .st.s5 { color: var(--bad); }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+.note-list { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+
+.flow { display: grid; gap: 14px; }
+.flow ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+.flow li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; display: grid; gap: 8px; min-width: 0; }
+.flow li::before { content: counter(step); position: absolute; left: 14px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--p5-bg); color: var(--p5); font-family: var(--font-mono); font-weight: 600; font-size: 13px; display: grid; place-items: center; }
+.expect { color: var(--muted); font-size: 14px; }
+.expect b { color: var(--fg); }
+.foot { color: var(--muted); font-size: 13px; }
+@media (max-width: 520px) { .flow li { padding-left: 16px; padding-top: 50px; } }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">Motqin · Front-end guide</span>
+    <h1>Mentors &amp; Sign-in API</h1>
+    <p class="lede">A student can invite people as mentors and let them see their performance and their distraction blocker. One mentor can also lock the blocker, so changing it needs a code from that mentor. This guide also covers the sign-in changes: Google now asks for a phone confirmed by WhatsApp, and Facebook is gone.</p>
+    <nav class="nav" aria-label="Sections">
+      <a class="n0" href="#flowcharts">How it works</a>
+      <a class="n1" href="#student">1 · Student</a>
+      <a class="n2" href="#mentor">2 · Mentor page</a>
+      <a class="n3" href="#blocker">3 · Blocker lock</a>
+      <a class="n4" href="#signin">4 · Sign-in</a>
+      <a class="n5" href="#test">5 · Manual test</a>
+    </nav>
+  </header>
+
+  <!-- ================================================================ DIAGRAMS -->
+  <section id="flowcharts" class="part">
+    <h2>How it works</h2>
+    <div class="diagrams">
+      <div class="diagram">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> Pending: student sends a request
+  Pending --> Active: mentor accepts
+  Pending --> Declined: mentor declines
+  Pending --> Cancelled: student cancels
+  Active --> Ended: mentor unlinks (any time)
+  Active --> Ended: student ends (no privileges left)
+  Active --> Ended: mentor approves the student's unlink request
+</pre>
+      </div>
+      <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  participant S as Student app
+  participant API as Motqin API
+  participant M as Mentor page
+  S->>API: update or delete a schedule
+  API-->>S: 400 blocker_locked
+  S->>API: POST blocker-unlock/request
+  API-->>S: codeExpiresAt (10 minutes)
+  M->>API: GET mentees/id
+  API-->>M: unlockCode 482913
+  M-->>S: tells the code (in person or by message)
+  S->>API: POST blocker-unlock/verify
+  API-->>S: unlockedUntil (15 minutes)
+  S->>API: update or delete the schedule again
+  API-->>S: 200
+</pre>
+      </div>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  G[POST google] -->|account with a confirmed phone| T([token])
+  G -->|needsPhone: true| R[POST google/phone-request]
+  R -->|code on WhatsApp| V[POST google/phone-verify]
+  V -->|phone already has an account| L[Google linked to that account]
+  V -->|new person| N[new account, or the guest trial upgraded]
+  L --> T
+  N --> T
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ PART 1 -->
+  <section id="student" class="part">
+    <div class="part-head ph1">
+      <span class="num">Part 1</span>
+      <h2>Student: my mentors</h2>
+      <p>Any registered user can invite mentors. Mentorship has nothing to do with the Parent role. A student turns privileges on whenever they like, but turning one off needs the mentor's approval.</p>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/requests</span><span class="tag new">new</span><span class="who st">student</span></div>
+      <p class="use">Invite someone to be your mentor, by their phone number. The request shows on their mentor page until they accept or decline.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">{ "phoneNumber": "01094341573" }</pre><span class="expect">Also accepts <code>+20 109 434 1573</code> and Arabic digits.</span></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "mentorName": "أ. حسن محمود",
+    "mentorPhone": "01094341573",
+    "mentorPhotoUrl": null,
+    "id": 12,
+    "status": "Pending",
+    "canViewPerformance": false,
+    "canViewBlocker": false,
+    "canLockBlocker": false,
+    "removalRequested": [],
+    "endRequested": false,
+    "createdAt": "2026-10-27T16:29:54.227Z",
+    "respondedAt": null
+  },
+  "error": null,
+  "message": "Request sent."
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>validation_error</code></td><td>No <code>phoneNumber</code></td><td><code class="j">{"success":false,"data":null,"error":{"code":"validation_error","message":"Invalid request body.","details":{"PhoneNumber":["The PhoneNumber field is required."]}}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>invalid_phone</code></td><td>Not an Egyptian mobile number</td><td><code class="j">{"success":false,"data":null,"error":{"code":"invalid_phone","message":"Enter a valid Egyptian mobile number."}}</code></td></tr>
+          <tr><td><span class="st s4">404</span></td><td><code>user_not_found</code></td><td>No account has this phone</td><td><code class="j">{"success":false,"data":null,"error":{"code":"user_not_found","message":"No account uses this phone number."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>cannot_mentor_self</code></td><td>Your own number</td><td><code class="j">{"success":false,"data":null,"error":{"code":"cannot_mentor_self","message":"You can't be your own mentor."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>mentor_request_exists</code></td><td>Already asked this person, or they're already your mentor</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentor_request_exists","message":"You already asked this person, or they're already your mentor."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>mentor_limit_reached</code></td><td>10 mentors already, waiting requests included</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentor_limit_reached","message":"You can have at most 10 mentors, requests included.","details":{"max":10}}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>mentee_limit_reached</code></td><td>That person already mentors 100 students</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentee_limit_reached","message":"This person can't take more students."}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/mentorship/my-mentors</span><span class="tag new">new</span><span class="who st">student</span></div>
+      <p class="use">Your mentors and the requests still waiting, newest first, plus whether your blocker is locked right now.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "mentors": [
+      {
+        "mentorName": "أ. حسن محمود",
+        "mentorPhone": "01094341573",
+        "mentorPhotoUrl": null,
+        "id": 12,
+        "status": "Active",
+        "canViewPerformance": true,
+        "canViewBlocker": true,
+        "canLockBlocker": true,
+        "removalRequested": [],
+        "endRequested": false,
+        "createdAt": "2026-10-27T16:29:54.227Z",
+        "respondedAt": "2026-10-27T16:29:55.482Z"
+      }
+    ],
+    "blockerLock": {
+      "locked": true,
+      "unlockedUntil": null,
+      "codeExpiresAt": null
+    }
+  },
+  "error": null
+}</pre></div>
+        <div><span class="lbl">Reading blockerLock</span>
+          <ul class="note-list">
+            <li><code>locked: true</code>: show a lock on the blocker screen and an "Ask my mentor for a code" button.</li>
+            <li><code>codeExpiresAt</code>: a code is waiting on the mentor's page until this time.</li>
+            <li><code>unlockedUntil</code>: a correct code was entered; changes are allowed until this time. Show a countdown.</li>
+          </ul>
+          <span class="lbl">Errors</span><span class="expect">Only the common ones: 401, and 403 for guests.</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/mentorship/{id}/privileges</span><span class="tag new">new</span><span class="who st">student</span></div>
+      <p class="use">Choose what this mentor can see or do. Send all three switches as you want them. Switching one on applies at once. Switching one off waits for the mentor's approval, and shows in <code>removalRequested</code> until then.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">{
+  "canViewPerformance": true,
+  "canViewBlocker": true,
+  "canLockBlocker": true
+}</pre>
+          <ul class="note-list">
+            <li><code>canViewPerformance</code>: today's numbers and the last 7 days.</li>
+            <li><code>canViewBlocker</code>: the blocker settings and schedules.</li>
+            <li><code>canLockBlocker</code>: <b>only one mentor can hold this privilege.</b> With it, changes need this mentor's code. It also turns on <code>canViewBlocker</code>.</li>
+          </ul>
+        </div>
+        <div><span class="lbl">200 (turning performance off waits)</span><pre class="code">{
+  "success": true,
+  "data": {
+    "mentorName": "أ. حسن محمود",
+    "mentorPhone": "01094341573",
+    "mentorPhotoUrl": null,
+    "id": 12,
+    "status": "Active",
+    "canViewPerformance": true,
+    "canViewBlocker": true,
+    "canLockBlocker": true,
+    "removalRequested": ["ViewPerformance"],
+    "endRequested": false,
+    "createdAt": "2026-10-27T16:29:54.227Z",
+    "respondedAt": "2026-10-27T16:29:55.482Z"
+  },
+  "error": null
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">404</span></td><td><code>mentorship_not_found</code></td><td>Wrong id, or not your link</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_found","message":"Mentor not found."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>mentorship_not_active</code></td><td>The mentor hasn't accepted yet, or the link ended</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_active","message":"This mentor hasn't accepted yet, or the link has ended."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>lock_held_by_another_mentor</code></td><td>Only one mentor can hold the lock privilege, and another mentor already holds it</td><td><code class="j">{"success":false,"data":null,"error":{"code":"lock_held_by_another_mentor","message":"Another mentor already holds the blocker lock."}}</code></td></tr>
+          <tr><td><span class="st s4">409</span></td><td><code>edited_elsewhere</code></td><td>Saved twice at the same moment</td><td><code class="j">{"success":false,"data":null,"error":{"code":"edited_elsewhere","message":"Someone else changed this at the same time. Reload and try again."}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/{id}/end</span><span class="tag new">new</span><span class="who st">student</span></div>
+      <p class="use">Stop a mentor. What happens depends on the link:</p>
+      <ul class="note-list">
+        <li><b>Request not answered yet:</b> it's cancelled (<code>"status": "Cancelled"</code>).</li>
+        <li><b>Mentor with no privileges:</b> it ends now (<code>"status": "Ended"</code>).</li>
+        <li><b>Mentor with privileges:</b> it asks the mentor first (<code>"endRequested": true</code>, still <code>Active</code>).</li>
+      </ul>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">(none)</pre></div>
+        <div><span class="lbl">200 (has privileges, so it waits)</span><pre class="code">{
+  "success": true,
+  "data": {
+    "mentorName": "أ. حسن محمود",
+    "mentorPhone": "01094341573",
+    "mentorPhotoUrl": null,
+    "id": 12,
+    "status": "Active",
+    "canViewPerformance": false,
+    "canViewBlocker": true,
+    "canLockBlocker": true,
+    "removalRequested": [],
+    "endRequested": true,
+    "createdAt": "2026-10-27T16:29:54.227Z",
+    "respondedAt": "2026-10-27T16:29:55.482Z"
+  },
+  "error": null
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">404</span></td><td><code>mentorship_not_found</code></td><td>Wrong id, or not your link</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_found","message":"Mentor not found."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>mentorship_not_active</code></td><td>Already ended, declined or cancelled</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_active","message":"This link has already ended."}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/blocker-unlock/request</span><span class="tag new">new</span><span class="who st">student</span></div>
+      <p class="use">Ask for an unlock code. It isn't sent anywhere; it appears only on the page of the mentor who holds the lock, for 10 minutes. Asking again while a code is waiting keeps the same code.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">(none)</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "locked": true,
+    "unlockedUntil": null,
+    "codeExpiresAt": "2026-10-27T16:39:59.131Z"
+  },
+  "error": null,
+  "message": "The code is on your mentor's page."
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>blocker_not_locked</code></td><td>No mentor holds the lock, or a 15-minute unlock is already running</td><td><code class="j">{"success":false,"data":null,"error":{"code":"blocker_not_locked","message":"Your blocker settings aren't locked right now."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>cooldown</code></td><td>A new code within 60 seconds of the last one (e.g. right after 5 wrong tries)</td><td><code class="j">{"success":false,"data":null,"error":{"code":"cooldown","message":"Wait a little before asking for another code.","details":{"retryAfterSeconds":42}}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/blocker-unlock/verify</span><span class="tag new">new</span><span class="who st">student</span></div>
+      <p class="use">Enter the code your mentor gave you. For the next 15 minutes you can change the blocker settings and update or delete schedules.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">{ "code": "482913" }</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "locked": false,
+    "unlockedUntil": "2026-10-27T16:45:00.071Z",
+    "codeExpiresAt": null
+  },
+  "error": null,
+  "message": "Unlocked."
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>validation_error</code></td><td>No <code>code</code></td><td><code class="j">{"success":false,"data":null,"error":{"code":"validation_error","message":"Invalid request body.","details":{"Code":["The Code field is required."]}}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>blocker_not_locked</code></td><td>No mentor holds the lock</td><td><code class="j">{"success":false,"data":null,"error":{"code":"blocker_not_locked","message":"Your blocker settings aren't locked."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>unlock_code_expired</code></td><td>No code was asked for, it's older than 10 minutes, or it was cancelled after 5 wrong tries</td><td><code class="j">{"success":false,"data":null,"error":{"code":"unlock_code_expired","message":"This code has expired. Ask your mentor for a new one."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>unlock_code_invalid</code></td><td>Wrong code, tries 1 to 4</td><td><code class="j">{"success":false,"data":null,"error":{"code":"unlock_code_invalid","message":"Wrong code.","details":{"attemptsLeft":4}}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>unlock_code_invalid</code></td><td>5th wrong code; this code stops working</td><td><code class="j">{"success":false,"data":null,"error":{"code":"unlock_code_invalid","message":"Wrong code. This code no longer works - ask for a new one.","details":{"attemptsLeft":0}}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+  </section>
+
+  <!-- ================================================================ PART 2 -->
+  <section id="mentor" class="part">
+    <div class="part-head ph2">
+      <span class="num">Part 2</span>
+      <h2>The mentor page</h2>
+      <p>Requests to answer, the students you mentor, and the changes they ask you to approve. You only ever see what the student shared; anything not shared comes back as <code>null</code>.</p>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/mentorship/requests/incoming</span><span class="tag new">new</span><span class="who mt">mentor</span></div>
+      <p class="use">Students who want you as their mentor, newest first.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": [
+    {
+      "id": 12,
+      "studentName": "أحمد علي",
+      "studentPhone": "01000000150",
+      "studentPhotoUrl": null,
+      "createdAt": "2026-10-27T16:29:54.227Z"
+    }
+  ],
+  "error": null
+}</pre></div>
+        <div><span class="lbl">Errors</span><span class="expect">Only the common ones (401, 403).</span></div>
+      </div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/{id}/accept</span><span class="tag new">new</span><span class="who mt">mentor</span></div>
+      <p class="use">Accept the request. You become this student's mentor, with no privileges until the student grants some.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">(none)</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "studentName": "أحمد علي",
+    "studentPhotoUrl": null,
+    "today": null,
+    "unlockCode": null,
+    "unlockCodeExpiresAt": null,
+    "id": 12,
+    "status": "Active",
+    "canViewPerformance": false,
+    "canViewBlocker": false,
+    "canLockBlocker": false,
+    "removalRequested": [],
+    "endRequested": false,
+    "createdAt": "2026-10-27T16:29:54.227Z",
+    "respondedAt": "2026-10-27T16:29:55.482Z"
+  },
+  "error": null,
+  "message": "You are now this student's mentor."
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">404</span></td><td><code>mentorship_not_found</code></td><td>Wrong id, or the request was sent to someone else</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_found","message":"Request not found."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>mentorship_not_pending</code></td><td>Already accepted, declined or cancelled</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_pending","message":"This request was already answered."}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/{id}/decline</span><span class="tag new">new</span><span class="who mt">mentor</span></div>
+      <p class="use">Say no to the request. The student can ask again later.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">(none)</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": { "id": 12 },
+  "error": null,
+  "message": "Request declined."
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">404</span></td><td><code>mentorship_not_found</code></td><td>Wrong id, or not sent to you</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_found","message":"Request not found."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>mentorship_not_pending</code></td><td>Already answered or cancelled</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_pending","message":"This request was already answered."}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/mentorship/mentees</span><span class="tag new">new</span><span class="who mt">mentor</span></div>
+      <p class="use">The students you mentor, A to Z. Build the list from it:</p>
+      <ul class="note-list">
+        <li><code>today</code> is filled only if the student shares performance.</li>
+        <li><code>unlockCode</code> appears only while the student is waiting for a code, and only if you hold the lock. Show it big, so you can read it out.</li>
+        <li><code>removalRequested</code> or <code>endRequested: true</code> means a change is waiting for your approval. Show a badge.</li>
+      </ul>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": [
+    {
+      "studentName": "أحمد علي",
+      "studentPhotoUrl": null,
+      "today": {
+        "date": "2026-10-27",
+        "completedPlansCount": 2,
+        "completedSessionsCount": 3,
+        "productiveMinutes": 95
+      },
+      "unlockCode": "482913",
+      "unlockCodeExpiresAt": "2026-10-27T16:39:59.131Z",
+      "id": 12,
+      "status": "Active",
+      "canViewPerformance": true,
+      "canViewBlocker": true,
+      "canLockBlocker": true,
+      "removalRequested": [],
+      "endRequested": false,
+      "createdAt": "2026-10-27T16:29:54.227Z",
+      "respondedAt": "2026-10-27T16:29:55.482Z"
+    }
+  ],
+  "error": null
+}</pre></div>
+        <div><span class="lbl">Errors</span><span class="expect">Only the common ones (401, 403).</span></div>
+      </div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/mentorship/mentees/{id}</span><span class="tag new">new</span><span class="who mt">mentor</span></div>
+      <p class="use">Everything you may see about one student: today and the last 7 days day by day (with performance), the blocker settings, schedules and lock state (with blocker), and the unlock code (with the lock). Sections the student didn't share are <code>null</code>.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "week": {
+      "startDate": "2026-10-21",
+      "endDate": "2026-10-27",
+      "days": [
+        { "date": "2026-10-21", "completedPlansCount": 1, "completedSessionsCount": 2, "productiveMinutes": 60 },
+        "… one entry per day, 7 in total …"
+      ],
+      "totalCompletedPlansCount": 9,
+      "totalCompletedSessionsCount": 14,
+      "totalProductiveMinutes": 610,
+      "activeDaysCount": 6
+    },
+    "blocker": {
+      "settings": {
+        "blockDuringStudySessions": false,
+        "unblockDuringBreaks": true,
+        "autoStartPlanBlock": false,
+        "allowedApps": [],
+        "blockedWebsites": [],
+        "lockedByMentor": true,
+        "unlockedUntil": null
+      },
+      "schedules": [
+        { "id": 2, "days": [0, 1, 6], "blockUntilPlanCompleted": false,
+          "startTime": "17:00:00", "endTime": "22:00:00",
+          "isEnabled": true, "createdAt": "2026-10-27T16:29:58.574" }
+      ],
+      "lock": { "locked": true, "unlockedUntil": null,
+                "codeExpiresAt": "2026-10-27T16:39:59.131Z" }
+    },
+    "studentName": "أحمد علي",
+    "studentPhotoUrl": null,
+    "today": { "date": "2026-10-27", "completedPlansCount": 2,
+               "completedSessionsCount": 3, "productiveMinutes": 95 },
+    "unlockCode": "482913",
+    "unlockCodeExpiresAt": "2026-10-27T16:39:59.131Z",
+    "id": 12,
+    "status": "Active",
+    "canViewPerformance": true,
+    "canViewBlocker": true,
+    "canLockBlocker": true,
+    "removalRequested": [],
+    "endRequested": false,
+    "createdAt": "2026-10-27T16:29:54.227Z",
+    "respondedAt": "2026-10-27T16:29:55.482Z"
+  },
+  "error": null
+}</pre></div>
+        <div><span class="lbl">Without privileges</span><pre class="code">"week": null,
+"blocker": null,
+"today": null,
+"unlockCode": null</pre>
+          <span class="expect">"Today" and the 7 days follow the UTC calendar day. <code>days</code> in schedules: 0 = Sunday … 6 = Saturday.</span>
+        </div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">404</span></td><td><code>mentorship_not_found</code></td><td>Wrong id, not your student, or the link isn't active</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_found","message":"This student isn't linked to you."}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/{id}/approve-change</span><span class="tag new">new</span><span class="who mt">mentor</span></div>
+      <p class="use">Agree to what the student asked: remove the privileges in <code>removalRequested</code>, or end the link if <code>endRequested</code> is true. It doesn't approve blocker changes: those are allowed by the unlock code instead (the student asks for it, you read it from <code>unlockCode</code> and tell them, they enter it).</p>
+      <div class="io">
+        <div><span class="lbl">200 (privileges removed)</span><pre class="code">{
+  "success": true,
+  "data": {
+    "studentName": "أحمد علي",
+    "studentPhotoUrl": null,
+    "today": null,
+    "unlockCode": null,
+    "unlockCodeExpiresAt": null,
+    "id": 12,
+    "status": "Active",
+    "canViewPerformance": false,
+    "canViewBlocker": true,
+    "canLockBlocker": true,
+    "removalRequested": [],
+    "endRequested": false,
+    "createdAt": "2026-10-27T16:29:54.227Z",
+    "respondedAt": "2026-10-27T16:29:55.482Z"
+  },
+  "error": null,
+  "message": "Privileges removed."
+}</pre></div>
+        <div><span class="lbl">200 (the link ended)</span><pre class="code">{
+  "success": true,
+  "data": null,
+  "error": null,
+  "message": "Unlinked."
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">404</span></td><td><code>mentorship_not_found</code></td><td>Wrong id, or not your student</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_found","message":"Request not found."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>mentorship_not_active</code></td><td>The link isn't active</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_active","message":"This student isn't linked to you."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>no_change_pending</code></td><td>The student hasn't asked for anything</td><td><code class="j">{"success":false,"data":null,"error":{"code":"no_change_pending","message":"There's no request waiting for your approval."}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/{id}/reject-change</span><span class="tag new">new</span><span class="who mt">mentor</span></div>
+      <p class="use">Say no to the student's request. Privileges stay as they are, and <code>removalRequested</code> and <code>endRequested</code> are cleared.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "studentName": "أحمد علي",
+    "…": "same fields as accept",
+    "canViewPerformance": true,
+    "removalRequested": [],
+    "endRequested": false
+  },
+  "error": null
+}</pre></div>
+        <div><span class="lbl">Errors</span><span class="expect">The same three as approve-change: <code>mentorship_not_found</code> (404), <code>mentorship_not_active</code> (400), <code>no_change_pending</code> (400), with the same bodies.</span></div>
+      </div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/{id}/unlink-mentorship</span><span class="tag new">new</span><span class="who mt">mentor</span></div>
+      <p class="use">Stop being this student's mentor, at any time. Every privilege ends with it, the lock included.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">(none)</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": { "id": 12 },
+  "error": null,
+  "message": "Unlinked."
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">404</span></td><td><code>mentorship_not_found</code></td><td>Wrong id, or not your student</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_found","message":"Request not found."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>mentorship_not_active</code></td><td>Already ended, or never accepted</td><td><code class="j">{"success":false,"data":null,"error":{"code":"mentorship_not_active","message":"This student isn't linked to you."}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+  </section>
+
+  <!-- ================================================================ PART 3 -->
+  <section id="blocker" class="part">
+    <div class="part-head ph3">
+      <span class="num">Part 3</span>
+      <h2>Distraction blocker: the lock</h2>
+      <p>While a mentor holds the lock, changing the settings and updating or deleting a schedule are refused until the student enters a code. Adding a schedule is always allowed, because it only makes blocking stricter.</p>
+    </div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m get">GET</span><span class="path">/api/distraction-blocker/settings</span><span class="tag changed">changed</span><span class="who st">student</span></div>
+      <p class="use">Same as before, with two new fields at the end. They're output only and ignored when saving.</p>
+      <div class="io">
+        <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "message": "Distraction blocker settings retrieved successfully.",
+  "errors": null,
+  "data": {
+    "blockDuringStudySessions": false,
+    "unblockDuringBreaks": true,
+    "autoStartPlanBlock": false,
+    "allowedApps": [],
+    "blockedWebsites": [],
+    "lockedByMentor": true,
+    "unlockedUntil": null
+  }
+}</pre></div>
+        <div><span class="lbl">New fields</span>
+          <ul class="note-list">
+            <li><code>lockedByMentor</code>: true means show a lock and the "ask for a code" button; editing, updating and deleting will be refused.</li>
+            <li><code>unlockedUntil</code>: set while a correct code's 15 minutes are running.</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/distraction-blocker/settings</span><span class="tag changed">changed</span><span class="who st">student</span></div>
+      <p class="use">Unchanged when not locked. While locked, it's refused.</p>
+      <div class="io">
+        <div><span class="lbl">Body (unchanged)</span><pre class="code">{
+  "blockDuringStudySessions": true,
+  "unblockDuringBreaks": true,
+  "autoStartPlanBlock": false,
+  "allowedApps": ["com.whatsapp"],
+  "blockedWebsites": ["youtube.com"]
+}</pre></div>
+        <div><span class="lbl">200 (unchanged)</span><pre class="code">{
+  "success": true,
+  "message": "Distraction blocker settings updated successfully.",
+  "errors": null,
+  "data": { "…": "the saved settings" }
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>blocker_locked</code></td><td>A mentor holds the lock and no unlock is running</td><td><code class="j">{"success":false,"data":null,"error":{"code":"blocker_locked","message":"Your mentor locked these settings. Ask them for the code to change them."}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td>(old)</td><td>The existing checks, unchanged</td><td><code class="j">{"success":false,"message":"…","errors":null}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/distraction-blocker/schedules/{id}</span><span class="tag changed">changed</span><span class="who st">student</span></div>
+      <p class="use">Update a schedule. Refused while locked; this covers switching a schedule off too.</p>
+      <div class="io">
+        <div><span class="lbl">Body (unchanged)</span><pre class="code">{
+  "days": [6, 0],
+  "blockUntilPlanCompleted": false,
+  "startTime": "18:00",
+  "endTime": "22:00",
+  "isEnabled": true
+}</pre></div>
+        <div><span class="lbl">200 (unchanged)</span><pre class="code">{
+  "success": true,
+  "message": "Block schedule updated successfully.",
+  "errors": null,
+  "data": {
+    "id": 2,
+    "days": [0, 6],
+    "blockUntilPlanCompleted": false,
+    "startTime": "18:00:00",
+    "endTime": "22:00:00",
+    "isEnabled": true,
+    "createdAt": "2026-10-27T16:29:58.574"
+  }
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>blocker_locked</code></td><td>Locked</td><td><code class="j">{"success":false,"data":null,"error":{"code":"blocker_locked","message":"Your mentor locked these settings. Ask them for the code to change them."}}</code></td></tr>
+          <tr><td><span class="st s4">404</span></td><td>(old)</td><td>Not your schedule</td><td><code class="j">{"success":false,"message":"Block schedule not found for this user.","errors":null}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/distraction-blocker/schedules/{id}</span><span class="tag changed">changed</span><span class="who st">student</span></div>
+      <p class="use">Delete a schedule. Refused while locked.</p>
+      <div class="io">
+        <div><span class="lbl">200 (unchanged)</span><pre class="code">{
+  "success": true,
+  "message": "Block schedule deleted successfully.",
+  "errors": null
+}</pre></div>
+        <div><span class="lbl">Errors</span>
+          <span class="expect"><b>400 <code>blocker_locked</code></b>, same body as above. <b>404</b> <code>{"success":false,"message":"Block schedule not found for this user.","errors":null}</code>.</span>
+        </div>
+      </div>
+    </article>
+
+    <p class="tip"><code>POST /api/distraction-blocker/schedules</code> (adding a schedule) is unchanged and is never locked.</p>
+  </section>
+
+  <!-- ================================================================ PART 4 -->
+  <section id="signin" class="part">
+    <div class="part-head ph4">
+      <span class="num">Part 4</span>
+      <h2>Sign-in changes</h2>
+      <p>Google sign-up now confirms a phone by WhatsApp. Sign-in codes go out by WhatsApp, wrong codes are limited, and the Facebook button goes away.</p>
+    </div>
+
+    <p class="tip"><b>Codes in responses.</b> While WhatsApp codes are switched off on the server (today's setting), the code still comes back in <code>message</code>, e.g. <code>"OTP sent successfully. Debug Code: 690210"</code>. Once the server switches them on, the code arrives on WhatsApp and <code>message</code> is just <code>"OTP sent successfully."</code>. Development servers always show it.</p>
+
+    <div class="sub">Google</div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/google</span><span class="tag changed">changed</span><span class="who any">anyone</span></div>
+      <p class="use">Sign in with Google. Every Google account now needs a confirmed phone. If the account exists and has one, you get the token as before. If not, you get <code>needsPhone: true</code>; nothing is created, and the app continues with the two phone steps below, sending the same Google ID token. Existing Google users already count as confirmed.</p>
+      <div class="io">
+        <div><span class="lbl">Body (unchanged)</span><pre class="code">{
+  "idToken": "GOOGLE_ID_TOKEN",
+  "inviterCode": null
+}</pre></div>
+        <div><span class="lbl">200 (signed in)</span><pre class="code">{
+  "token": "eyJhbGciOiJIUzI1NiIs…",
+  "refreshToken": "8f2c1e…",
+  "expiresAt": "2026-10-27T17:29:55Z"
+}</pre>
+          <span class="lbl">200 (new, needs a phone)</span><pre class="code">{
+  "needsPhone": true,
+  "message": "Confirm your phone number to finish signing up."
+}</pre>
+          <span class="expect">Called with a guest token while the Google account already exists: the token response also has <code>"guestDataDiscarded": true</code> (the trial is dropped, as on the phone path).</span>
+        </div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>google_token_invalid</code></td><td>Missing, fake or expired Google token (they last about an hour)</td><td><code class="j">{"message":"Invalid Google token","code":"google_token_invalid"}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/google/phone-request</span><span class="tag new">new</span><span class="who any">anyone</span></div>
+      <p class="use">Step 2 of Google sign-up: the user enters their phone, and a code goes to its WhatsApp. Same limits as phone sign-in.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">{
+  "idToken": "GOOGLE_ID_TOKEN",
+  "phoneNumber": "01000000153"
+}</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "message": "OTP sent successfully. Debug Code: 690210",
+  "resendCooldownSeconds": 60,
+  "resendsRemaining": 4
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>validation_error</code></td><td>Phone isn't 01 followed by 9 digits</td><td><code class="j">{"success":false,"data":null,"error":{"code":"validation_error","message":"Invalid request body.","details":{"PhoneNumber":["Must be a valid 11-digit Egyptian mobile number."]}}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>google_token_invalid</code></td><td>Bad or expired Google token</td><td><code class="j">{"message":"Invalid Google token","code":"google_token_invalid"}</code></td></tr>
+          <tr><td><span class="st s429">429</span></td><td></td><td>Less than 60 seconds since the last code</td><td><code class="j">{"message":"Please wait before requesting another code.","retryAfterSeconds":60,"blocked":false}</code></td></tr>
+          <tr><td><span class="st s429">429</span></td><td></td><td>5 codes in 15 minutes; blocked for 15 minutes</td><td><code class="j">{"message":"Too many OTP requests. Please try again later.","retryAfterSeconds":900,"blocked":true}</code></td></tr>
+          <tr><td><span class="st s5">503</span></td><td><code>otp_send_failed</code></td><td>WhatsApp refused the message. Doesn't count as a resend; try again.</td><td><code class="j">{"message":"The code couldn't be sent by WhatsApp. Please try again shortly.","code":"otp_send_failed"}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/google/phone-verify</span><span class="tag new">new</span><span class="who any">anyone</span></div>
+      <p class="use">Step 3: the code from WhatsApp finishes sign-up and signs in. If the phone already has an account, Google is linked to it and the user signs into that account. Otherwise a new account is created; if the request carries a guest token, that trial becomes the account and keeps its data.</p>
+      <div class="io">
+        <div><span class="lbl">Body</span><pre class="code">{
+  "idToken": "GOOGLE_ID_TOKEN",
+  "phoneNumber": "01000000153",
+  "code": "690210",
+  "inviterCode": null
+}</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "token": "eyJhbGciOiJIUzI1NiIs…",
+  "refreshToken": "8f2c1e…",
+  "expiresAt": "2026-10-27T17:29:55Z"
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>validation_error</code></td><td>Missing field or bad phone format</td><td><code class="j">{"success":false,"data":null,"error":{"code":"validation_error","message":"Invalid request body.","details":{"Code":["The Code field is required."]}}}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>google_token_invalid</code></td><td>Bad or expired Google token</td><td><code class="j">{"message":"Invalid Google token","code":"google_token_invalid"}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>otp_too_many_attempts</code></td><td>5 wrong codes; request a new code</td><td><code class="j">{"message":"Too many wrong codes. Request a new code.","code":"otp_too_many_attempts"}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>No code was requested for this phone</td><td><code class="j">{"message":"No code was requested for this number."}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>The code is older than 10 minutes</td><td><code class="j">{"message":"The code has expired. Please request a new one."}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>Wrong code</td><td><code class="j">{"message":"Invalid verification code."}</code></td></tr>
+          <tr><td><span class="st s4">409</span></td><td></td><td>The Google account and the phone belong to two different accounts</td><td><code class="j">{"message":"This phone number is already used by another account."}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <div class="sub">Phone codes</div>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/phone-login-request</span><span class="tag changed">changed</span><span class="who any">anyone</span></div>
+      <p class="use">Same as before, but the code now goes out by WhatsApp (when switched on), and a failed send returns 503.</p>
+      <div class="io">
+        <div><span class="lbl">Body (unchanged)</span><pre class="code">{ "phoneNumber": "01000000150" }</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "message": "OTP sent successfully. Debug Code: 690210",
+  "isNewUser": true,
+  "resendCooldownSeconds": 60,
+  "resendsRemaining": 4
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>validation_error</code></td><td>Not 01 + 9 digits</td><td><code class="j">{"success":false,"data":null,"error":{"code":"validation_error","message":"Invalid request body.","details":{"PhoneNumber":["Must be a valid 11-digit Egyptian mobile number."]}}}</code></td></tr>
+          <tr><td><span class="st s429">429</span></td><td></td><td>Less than 60 seconds since the last code</td><td><code class="j">{"message":"Please wait before requesting another code.","retryAfterSeconds":60,"blocked":false}</code></td></tr>
+          <tr><td><span class="st s429">429</span></td><td></td><td>5 codes in 15 minutes</td><td><code class="j">{"message":"Too many OTP requests. Please try again later.","retryAfterSeconds":900,"blocked":true}</code></td></tr>
+          <tr><td><span class="st s5">503</span></td><td><code>otp_send_failed</code></td><td>WhatsApp refused the message</td><td><code class="j">{"message":"The code couldn't be sent by WhatsApp. Please try again shortly.","code":"otp_send_failed"}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/phone-verify</span><span class="tag changed">changed</span><span class="who any">anyone</span></div>
+      <p class="use">Same as before, plus a limit: after 5 wrong codes, even the right code is refused until a new code is requested.</p>
+      <div class="io">
+        <div><span class="lbl">Body (unchanged)</span><pre class="code">{
+  "phoneNumber": "01000000150",
+  "code": "690210"
+}</pre></div>
+        <div><span class="lbl">200 (existing account)</span><pre class="code">{
+  "message": "Login successful.",
+  "token": {
+    "token": "eyJhbGciOiJIUzI1NiIs…",
+    "refreshToken": "8f2c1e…",
+    "expiresAt": "2026-10-27T17:29:55Z"
+  },
+  "needsSignup": false
+}</pre>
+          <span class="lbl">200 (new number)</span><pre class="code">{
+  "message": "Phone verified. Please complete your profile.",
+  "needsSignup": true
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td><code>otp_too_many_attempts</code></td><td>5 wrong codes since the last code was sent</td><td><code class="j">{"message":"Too many wrong codes. Request a new code.","code":"otp_too_many_attempts"}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>Wrong code for an existing account</td><td><code class="j">{"message":"Invalid or expired code."}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>Wrong code for a new number</td><td><code class="j">{"message":"Invalid verification code."}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>No code was requested</td><td><code class="j">{"message":"No pending authentication found for this number."}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>The code is older than 10 minutes</td><td><code class="j">{"message":"The code has expired. Please request a new one."}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>validation_error</code></td><td>Missing field</td><td><code class="j">{"success":false,"data":null,"error":{"code":"validation_error","message":"Invalid request body.","details":{"Code":["The Code field is required."]}}}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/change-phone-request</span><span class="tag changed">changed</span><span class="who st">signed in</span></div>
+      <p class="use">Same as before; the code now goes to the new number's WhatsApp.</p>
+      <div class="io">
+        <div><span class="lbl">Body (unchanged)</span><pre class="code">{ "newPhoneNumber": "01000000154" }</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "message": "OTP sent to new number. Debug Code: 762676",
+  "resendCooldownSeconds": 60,
+  "resendsRemaining": 4
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">400</span></td><td></td><td>Same as your current number</td><td><code class="j">{"message":"This is already your phone number."}</code></td></tr>
+          <tr><td><span class="st s4">409</span></td><td></td><td>Another account uses it</td><td><code class="j">{"message":"This phone number is already in use by another account."}</code></td></tr>
+          <tr><td><span class="st s429">429</span></td><td></td><td>Cooldown or blocked, as in phone-login-request</td><td><code class="j">{"message":"Please wait before requesting another code.","retryAfterSeconds":60,"blocked":false}</code></td></tr>
+          <tr><td><span class="st s5">503</span></td><td><code>otp_send_failed</code></td><td>WhatsApp refused the message</td><td><code class="j">{"message":"The code couldn't be sent by WhatsApp. Please try again shortly.","code":"otp_send_failed"}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/change-phone-confirm</span><span class="tag changed">changed</span><span class="who st">signed in</span></div>
+      <p class="use">Same as before, with the 5-wrong-codes limit.</p>
+      <div class="io">
+        <div><span class="lbl">Body (unchanged)</span><pre class="code">{
+  "newPhoneNumber": "01000000154",
+  "code": "762676"
+}</pre></div>
+        <div><span class="lbl">200</span><pre class="code">{
+  "message": "Phone number changed successfully.",
+  "token": {
+    "token": "eyJhbGciOiJIUzI1NiIs…",
+    "refreshToken": "8f2c1e…",
+    "expiresAt": "2026-10-27T17:29:55Z"
+  }
+}</pre></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Status</th><th>Code</th><th>When</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td><span class="st s4">409</span></td><td></td><td>Another account took the number meanwhile</td><td><code class="j">{"message":"This phone number is already in use by another account."}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>No change was requested for this number</td><td><code class="j">{"message":"No pending phone-change request found for this number."}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>Older than 10 minutes</td><td><code class="j">{"message":"The code has expired. Please request a new one."}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td><code>otp_too_many_attempts</code></td><td>5 wrong codes</td><td><code class="j">{"message":"Too many wrong codes. Request a new code.","code":"otp_too_many_attempts"}</code></td></tr>
+          <tr><td><span class="st s4">400</span></td><td></td><td>Wrong code</td><td><code class="j">{"message":"Invalid verification code."}</code></td></tr>
+        </tbody>
+      </table></div>
+    </article>
+
+    <article class="ep">
+      <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/facebook</span><span class="tag removed">removed</span></div>
+      <p class="use">Facebook sign-in is switched off. Calls get <span class="st s4">404</span> with an empty body. Remove the Facebook button. No account used it.</p>
+    </article>
+
+    <div class="panel">
+      <h3>For whoever deploys</h3>
+      <ul class="note-list">
+        <li>The shared database is already migrated. Upload the new build.</li>
+        <li><code>WhatsApp:OtpEnabled</code>: <code>false</code> until Meta approves the Authentication template; then <code>true</code>.</li>
+        <li><code>WhatsApp:OtpTemplateName</code> and <code>WhatsApp:OtpLanguage</code> (<code>ar</code>): the approved template.</li>
+        <li><code>WhatsApp:VerifyToken</code>: the webhook secret (<code>motqin_secure_token_123</code> today), now read from settings.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================================================================ PART 5 -->
+  <section id="test" class="part">
+    <div class="part-head ph5">
+      <span class="num">Part 5</span>
+      <h2>Manual test in Swagger</h2>
+      <p>About 20 minutes. Open Swagger in two browser tabs: one signed in as the mentor, one as the student. Steps 1 to 3 create the accounts; after that, each step says which tab to use. Keep WhatsApp codes switched off on the server so the codes show in the responses.</p>
+    </div>
+
+    <div class="flow"><ol>
+      <li>
+        <div class="ep-line"><span class="who mt">mentor tab</span><span class="m post">POST</span><span class="path">/api/auth/test-phone-login</span></div>
+        <p class="expect">No body. Copy <b><code>token</code></b> from the response, click Authorize, and paste it. This account (01094341573) is the mentor.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m post">POST</span><span class="path">/api/auth/phone-login-request</span></div>
+        <pre class="code">{ "phoneNumber": "01000000150" }</pre>
+        <p class="expect">Expect <b>200</b> with <code>"message": "OTP sent successfully. Debug Code: 123456"</code>. Note the 6 digits.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m post">POST</span><span class="path">/api/auth/phone-verify</span>, then <span class="m post">POST</span><span class="path">/api/auth/phone-complete-signup</span></div>
+        <pre class="code">{ "phoneNumber": "01000000150", "code": "123456" }</pre>
+        <pre class="code">{ "phoneNumber": "01000000150", "name": "طالب تجربة", "region": 1 }</pre>
+        <p class="expect">The first gives <b><code>needsSignup: true</code></b>; the second gives <code>token.token</code>. Authorize this tab with it. On a second run the number already exists: phone-verify then returns the token directly (<code>token.token</code>), so skip phone-complete-signup.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m post">POST</span><span class="path">/api/mentorship/requests</span></div>
+        <pre class="code">{ "phoneNumber": "01094341573" }</pre>
+        <p class="expect">Expect <b>200</b>, <code>"status": "Pending"</code>. Note the <b><code>id</code></b>; every step below uses it as <code>{id}</code>. Send it again: <b>400 <code>mentor_request_exists</code></b>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who mt">mentor tab</span><span class="m get">GET</span><span class="path">/api/mentorship/requests/incoming</span>, then <span class="m post">POST</span><span class="path">/api/mentorship/{id}/accept</span></div>
+        <p class="expect">The request shows with the student's name and phone. Accept: <b>200</b>, <code>"status": "Active"</code>. Accept again: <b>400 <code>mentorship_not_pending</code></b>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who mt">mentor tab</span><span class="m get">GET</span><span class="path">/api/mentorship/mentees/{id}</span></div>
+        <p class="expect"><code>today</code>, <code>week</code> and <code>blocker</code> are all <b><code>null</code></b>, because nothing is shared yet.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m put">PUT</span><span class="path">/api/mentorship/{id}/privileges</span></div>
+        <pre class="code">{ "canViewPerformance": true, "canViewBlocker": true, "canLockBlocker": true }</pre>
+        <p class="expect">Expect <b>200</b> with all three <code>true</code>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who mt">mentor tab</span><span class="m get">GET</span><span class="path">/api/mentorship/mentees</span>, then <span class="m get">GET</span><span class="path">/api/mentorship/mentees/{id}</span></div>
+        <p class="expect">Now <code>today</code>, <code>week</code> (7 days) and <code>blocker</code> are filled, with <code>blocker.lock.locked: true</code>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m get">GET</span><span class="path">/api/distraction-blocker/settings</span>, then <span class="m post">POST</span><span class="path">/api/distraction-blocker/schedules</span></div>
+        <pre class="code">{ "days": [6, 0, 1], "blockUntilPlanCompleted": false, "startTime": "17:00", "endTime": "22:00", "isEnabled": true }</pre>
+        <p class="expect">Settings show <b><code>lockedByMentor: true</code></b>. Adding the schedule still works (<b>200</b>). Note its <b><code>data.id</code></b> as <code>{scheduleId}</code>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m put">PUT</span><span class="path">/api/distraction-blocker/schedules/{scheduleId}</span>, <span class="m del">DELETE</span> the same, <span class="m put">PUT</span><span class="path">/api/distraction-blocker/settings</span></div>
+        <pre class="code">{ "days": [6, 0], "blockUntilPlanCompleted": false, "startTime": "18:00", "endTime": "22:00", "isEnabled": true }</pre>
+        <pre class="code">{ "blockDuringStudySessions": true, "unblockDuringBreaks": true, "autoStartPlanBlock": false, "allowedApps": [], "blockedWebsites": ["youtube.com"] }</pre>
+        <p class="expect">All three: <b>400 <code>blocker_locked</code></b>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m post">POST</span><span class="path">/api/mentorship/blocker-unlock/request</span></div>
+        <p class="expect">No body. Expect <b>200</b> with <code>codeExpiresAt</code> about 10 minutes away.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who mt">mentor tab</span><span class="m get">GET</span><span class="path">/api/mentorship/mentees/{id}</span></div>
+        <p class="expect"><b><code>unlockCode</code></b> now shows 6 digits. This is what the mentor reads out to the student.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m post">POST</span><span class="path">/api/mentorship/blocker-unlock/verify</span>, twice</div>
+        <pre class="code">{ "code": "000000" }</pre>
+        <pre class="code">{ "code": "THE_CODE_FROM_STEP_12" }</pre>
+        <p class="expect">The wrong code gives <b>400 <code>unlock_code_invalid</code></b> with <code>attemptsLeft: 4</code>. The right one gives <b>200</b>, <code>locked: false</code> and <code>unlockedUntil</code> 15 minutes away.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span>repeat the <span class="m put">PUT</span> schedule and <span class="m del">DELETE</span> schedule from step 10</div>
+        <p class="expect">Both <b>200</b> now. <code>GET /api/distraction-blocker/settings</code> shows <code>lockedByMentor: false</code> and the <code>unlockedUntil</code> time.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m put">PUT</span><span class="path">/api/mentorship/{id}/privileges</span></div>
+        <pre class="code">{ "canViewPerformance": false, "canViewBlocker": true, "canLockBlocker": true }</pre>
+        <p class="expect"><code>canViewPerformance</code> is still <code>true</code>, with <b><code>removalRequested: ["ViewPerformance"]</code></b>: it waits for the mentor.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who mt">mentor tab</span><span class="m post">POST</span><span class="path">/api/mentorship/{id}/reject-change</span>, then the student repeats step 15, then <span class="m post">POST</span><span class="path">/api/mentorship/{id}/approve-change</span></div>
+        <p class="expect">Reject keeps performance on. Approve gives <b>200</b>, <code>"message": "Privileges removed."</code>, with <code>canViewPerformance: false</code>. Approving again gives <b>400 <code>no_change_pending</code></b>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span><span class="m post">POST</span><span class="path">/api/mentorship/{id}/end</span></div>
+        <p class="expect">The mentor still has privileges, so this gives <b><code>endRequested: true</code></b> and the status stays <code>Active</code>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who mt">mentor tab</span><span class="m post">POST</span><span class="path">/api/mentorship/{id}/approve-change</span></div>
+        <p class="expect">Expect <b>200</b>, <code>"data": null</code>, <code>"message": "Unlinked."</code>. In the student tab, <code>GET /api/distraction-blocker/settings</code> now shows <code>lockedByMentor: false</code>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who st">student tab</span>the other endings</div>
+        <p class="expect">Send the request again (step 4 body); the mentor <b>declines</b> it (<code>POST /{id}/decline</code>). Send it once more and <b>cancel</b> it yourself (<code>POST /{id}/end</code> gives <code>"status": "Cancelled"</code>). Send it a third time; the mentor accepts it and then calls <code>POST /{id}/unlink-mentorship</code> (<b>200</b>, "Unlinked.").</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who any">any tab</span>one lock holder (optional, needs a third account)</div>
+        <p class="expect">Create 01000000151 with steps 2 to 3. Have the student invite both accounts, both accept, give the first <code>canLockBlocker</code>, then try the same for the second: <b>400 <code>lock_held_by_another_mentor</code></b>.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who any">any tab</span><span class="m post">POST</span><span class="path">/api/auth/guest</span>, then <span class="m get">GET</span><span class="path">/api/mentorship/my-mentors</span> with the guest token</div>
+        <p class="expect"><b>403</b> <code>registration_required</code>: guests can't use mentors.</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who any">no token</span>wrong-code limit on phone sign-in</div>
+        <pre class="code">{ "phoneNumber": "01000000152" }</pre>
+        <pre class="code">{ "phoneNumber": "01000000152", "code": "000000" }</pre>
+        <p class="expect">Request a code with the first body, then send the second body to <code>/api/auth/phone-verify</code> 5 times: each gives <code>"Invalid verification code."</code>. The 6th try, even with the right code, gives <b>400 <code>otp_too_many_attempts</code></b>. After 60 seconds request a new code; the right code works again (<code>needsSignup: true</code>).</p>
+      </li>
+      <li>
+        <div class="ep-line"><span class="who any">no token</span>Google and Facebook</div>
+        <pre class="code">{ "idToken": "fake" }</pre>
+        <p class="expect"><code>POST /api/auth/google</code> with this body gives <b>400 <code>google_token_invalid</code></b>. <code>POST /api/auth/facebook</code> gives <b>404</b>. The full Google sign-up needs a real Google ID token, so test it from the app with a Google account that has never signed in:
+          <code>google</code> (<code>needsPhone: true</code>) → <code>google/phone-request</code> → <code>google/phone-verify</code> → token. Sign in with Google again and the token comes straight from <code>google</code>.</p>
+      </li>
+    </ol></div>
+  </section>
+
+  <p class="foot">Times are UTC. Codes: unlock codes live 10 minutes and allow 5 tries; sign-in codes live 10 minutes and allow 5 tries per code sent.</p>
+</div>
+
+<!--claude-mermaid-runtime-begin:3477-->
+<style>.mermaid-diagram{margin-block:4px}.mermaid-diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}</style>
+<script src="/_runtime/mermaid-11.16.1.min.js"></script>
+<script>(function(){
+var CFG={"palettes":{"light":{"surface":"#f4efe4","text":"#42392e","line":"#8a7f6d","border":"#7a6c52","bg":"#fffdf8"},"dark":{"surface":"#262b34","text":"#f2f3f5","line":"#a8adb8","border":"#9aa4b8","bg":"#1f232b"}}};
+if(typeof mermaid==='undefined')return;
+var pres=Array.prototype.slice.call(document.querySelectorAll('pre.mermaid')).filter(function(p){if(p.hasAttribute('data-claude-mermaid-claimed'))return false;p.setAttribute('data-claude-mermaid-claimed','1');return true;});
+if(!pres.length)return;
+var mq=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+var root=document.documentElement;
+var items=pres.map(function(pre){
+var mount=document.createElement('div');mount.className='mermaid-diagram';
+return {pre:pre,mount:mount,src:pre.textContent||''};
+});
+var seq=0;
+var renderGen=0;
+var lastKey='';
+function pageBg(fallback){
+var els=[document.body,document.documentElement];
+for(var i=0;i<els.length;i++){
+var c=els[i]&&getComputedStyle(els[i]).backgroundColor;
+if(c&&c!=='transparent'&&c!=='rgba(0, 0, 0, 0)')return c;
+}
+return fallback;
+}
+function render(){
+var theme=root.getAttribute('data-theme');
+var dark=theme==='dark'||(!!(mq&&mq.matches)&&theme!=='light');
+var pal=dark?CFG.palettes.dark:CFG.palettes.light;
+var bg=pageBg(pal.bg);
+var key=(dark?'d':'l')+'|'+bg;
+if(key===lastKey)return;
+lastKey=key;
+var gen=++renderGen;
+var font=getComputedStyle(document.body).fontFamily||'sans-serif';
+var nat={useMaxWidth:false};
+mermaid.initialize({
+startOnLoad:false,securityLevel:'strict',theme:'base',
+flowchart:nat,sequence:nat,er:nat,state:nat,class:nat,pie:nat,
+gantt:nat,journey:nat,timeline:nat,gitGraph:nat,mindmap:nat,xyChart:nat,
+quadrantChart:nat,sankey:nat,c4:nat,requirement:nat,block:nat,
+packet:nat,kanban:nat,architecture:nat,radar:nat,
+themeVariables:{background:bg,mainBkg:pal.surface,primaryColor:pal.surface,
+primaryTextColor:pal.text,lineColor:pal.line,primaryBorderColor:pal.border,
+nodeBorder:pal.border,clusterBorder:pal.border,edgeLabelBackground:bg,
+clusterBkg:'rgba(127,127,127,0.07)',titleColor:pal.text,
+darkMode:dark,rowOdd:bg,rowEven:'rgba(127,127,127,0.07)',
+attributeBackgroundColorOdd:bg,attributeBackgroundColorEven:'rgba(127,127,127,0.07)',
+fontSize:'16px',fontFamily:font},
+themeCSS:'.node rect, .node circle, .node polygon, .node path, .cluster rect { stroke-width: 2px; }'
+});
+items.forEach(function(it){
+var id='claude-mermaid-'+seq++;
+mermaid.render(id,it.src).then(function(r){
+if(gen!==renderGen)return;
+var prev=it.pre.previousElementSibling;
+if(prev&&prev.className==='mermaid-diagram'&&prev!==it.mount)return;
+it.mount.innerHTML=r.svg;
+if(!it.mount.parentNode)it.pre.parentNode.insertBefore(it.mount,it.pre);
+it.pre.style.display='none';
+},function(){
+var scratch=document.getElementById(id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+scratch=document.getElementById('d'+id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+if(gen!==renderGen)return;
+if(it.mount.parentNode)it.mount.parentNode.removeChild(it.mount);
+it.pre.style.display='';
+});
+});
+}
+render();
+if(mq&&mq.addEventListener)mq.addEventListener('change',render);
+if(typeof MutationObserver!=='undefined')new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['data-theme']});
+})();</script>
+<!--claude-mermaid-runtime-end-->
+
+</body></html>

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/app/lib/utils";
+import { useIncomingMentorRequests, useMentees } from "@/app/hooks/useMentorship";
+import { awaitsApproval } from "@/app/lib/mentorship";
 import {
   Settings as SettingsIcon,
   Palette,
@@ -12,6 +14,9 @@ import {
   Bot,
   Bell,
   CreditCard,
+  ShieldOff,
+  UsersRound,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,18 +34,38 @@ const navItems: SettingsNavItem[] = [
   { label: "تفضيلات المخطط", href: "/settings/planner", icon: CalendarClock },
   { label: "تفضيلات متقن", href: "/settings/quiz", icon: ListChecks },
   { label: "تفضيلات دليل", href: "/settings/ai-teacher", icon: Bot },
+  { label: "منع المشتتات", href: "/settings/blocker", icon: ShieldOff },
+  { label: "المشرفون", href: "/settings/mentors", icon: UsersRound },
+  { label: "طلابي", href: "/settings/mentees", icon: GraduationCap },
   { label: "الإشعارات", href: "/settings/notifications", icon: Bell },
   { label: "الاشتراك", href: "/subscription", icon: CreditCard, external: true },
 ];
 
+// What's waiting on the user as a mentor: requests to answer, changes to
+// approve, and unlock codes to read out.
+const useMenteesBadge = () => {
+  const { data: incoming } = useIncomingMentorRequests();
+  const { data: mentees } = useMentees({ poll: false });
+  return (
+    (incoming?.length ?? 0) +
+    (mentees?.filter((mentee) => awaitsApproval(mentee) || mentee.unlockCode).length ?? 0)
+  );
+};
+
 export const SettingsSidebar = () => {
   const pathname = usePathname();
+  const menteesBadge = useMenteesBadge();
 
   return (
     <nav className="flex flex-col gap-1 rounded-2xl bg-white border border-zinc-200 p-3 dark:bg-zinc-900 dark:border-zinc-800">
       {navItems.map((item) => {
         const Icon = item.icon;
-        const isActive = !item.external && pathname === item.href;
+        // Sub-pages (a student's detail) keep their section highlighted.
+        const isActive =
+          !item.external &&
+          (pathname === item.href ||
+            (item.href !== "/settings" && pathname.startsWith(`${item.href}/`)));
+        const badge = item.href === "/settings/mentees" ? menteesBadge : 0;
 
         return (
           <Link
@@ -55,6 +80,11 @@ export const SettingsSidebar = () => {
           >
             <Icon size={18} />
             {item.label}
+            {badge > 0 && (
+              <span className="ms-auto flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] font-bold text-white">
+                {badge}
+              </span>
+            )}
           </Link>
         );
       })}

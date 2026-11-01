@@ -3,7 +3,10 @@ import axiosInstance from "../lib/axios";
 import {
   GoogleLoginRequest,
   GoogleLoginResponse,
+  GooglePhoneRequest,
+  GooglePhoneVerifyRequest,
   GuestLoginResponse,
+  OtpSentResponse,
 } from "../types/auth.types";
 import { authStorage } from "../lib/auth-storage";
 
@@ -31,11 +34,21 @@ export const authService = {
     return data;
   },
 
-  async facebookLogin(
-    body: FacebookLoginRequest
-  ): Promise<FacebookLoginResponse> {
-    const { data } = await axiosInstance.post<FacebookLoginResponse>(
-      API_ROUTES.AUTH.FACEBOOK,
+  // Google sign-up, step 2: a code goes to this phone's WhatsApp.
+  async googlePhoneRequest(body: GooglePhoneRequest): Promise<OtpSentResponse> {
+    const { data } = await axiosInstance.post<OtpSentResponse>(
+      API_ROUTES.AUTH.GOOGLE_PHONE_REQUEST,
+      body
+    );
+
+    return data;
+  },
+
+  // Step 3: links Google to the account that owns the phone, or creates one
+  // (upgrading the guest trial if the request carries a guest token).
+  async googlePhoneVerify(body: GooglePhoneVerifyRequest): Promise<GoogleLoginResponse> {
+    const { data } = await axiosInstance.post<GoogleLoginResponse>(
+      API_ROUTES.AUTH.GOOGLE_PHONE_VERIFY,
       body
     );
 

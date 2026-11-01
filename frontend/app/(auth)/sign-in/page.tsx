@@ -5,7 +5,6 @@ import { Phone, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Image from "next/image";
 import { useRef } from "react";
-import { FaFacebook } from "react-icons/fa";
 import Link from "next/link";
 import { z } from "zod";
 import { signInSchema } from "@/app/lib/validators/auth";
@@ -13,8 +12,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleLogin } from "@/app/hooks/useAuth";
 import GoogleSignIn from "@/components/GoogleSignIn";
-import { useFacebookLogin } from "@/app/hooks/useFacebookLogin";
-import { signInWithFacebook } from "@/app/services/facebook-auth.services";
 import { useLogInPhone } from "@/app/hooks/useLoginPhone";
 import { useGuestLogin } from "@/app/hooks/useGuestLogin";
 import { useAuthKind } from "@/app/hooks/useAuthKind";
@@ -25,9 +22,6 @@ const SignIn = () => {
   const { mutate: startGuest, isPending: isGuestPending } = useGuestLogin();
   // Already a guest? They're here to upgrade, not to start another trial.
   const isGuest = useAuthKind() === "guest";
-
-  const { mutate: facebookLogin, isPending: isFacebookPending } =
-    useFacebookLogin();
 
   const { mutate: googleLogin, isPending: isGooglePending } = useGoogleLogin();
   const googleButtonRef = useRef<HTMLDivElement>(null);
@@ -45,20 +39,6 @@ const SignIn = () => {
     });
   };
 
-  const handleFacebookLogin = async () => {
-    try {
-      console.log("facebook button pressed");
-      const accessToken = await signInWithFacebook();
-
-      facebookLogin({
-        accessToken,
-      });
-      console.log(accessToken);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   return (
     <main
       dir="rtl"
@@ -73,15 +53,6 @@ const SignIn = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-6"
           >
-            <CustomButton
-              title="المتابعة باستخدام فيسبوك"
-              leftIcon={<FaFacebook size={22} />}
-              onClick={handleFacebookLogin}
-              variant="facebook"
-              className="w-full font-semibold"
-              disabled={isFacebookPending}
-            />
-
             <div className="relative w-full h-12">
               <div className="absolute inset-0 opacity-0">
                 <GoogleSignIn
