@@ -31,7 +31,7 @@ interface ExecutionTaskRowProps {
   onStartBreak?: (sessionId: string) => void;
   onStopBreak?: () => void;
   // title / duration edits from the expanded card, saved per field on blur
-  onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => void;
+  onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => boolean | void;
   onDeleteSession?: (sessionId: string) => void;
   onStartRevision?: (task: ExecutionTask) => void; // navigates into the real quiz flow
   onPostpone?: (task: ExecutionTask) => void; // sends an unfinished task to tomorrow
@@ -50,6 +50,17 @@ const formatClock = (totalSeconds: number) => {
   const mins = Math.floor(totalSeconds / 60);
   const secs = Math.floor(totalSeconds % 60);
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+};
+
+// The overtime counter stops at 4 hours (see the board's overtimeSecondsFor).
+const OVERTIME_CAP_SECONDS = 4 * 60 * 60;
+
+// h:mm:ss once past an hour, mm:ss below — overtime can run to 4 hours.
+const formatLongClock = (totalSeconds: number) => {
+  const hours = Math.floor(totalSeconds / 3600);
+  if (hours === 0) return formatClock(totalSeconds);
+  const rest = formatClock(totalSeconds % 3600);
+  return `${hours}:${rest}`;
 };
 
 // "2:40 م" — the time a session was finished, in local time (the server
@@ -226,10 +237,12 @@ export const ExecutionTaskRow = ({
       revertDetails(session);
       return;
     }
-    onUpdateSession?.(session.id, {
+    const accepted = onUpdateSession?.(session.id, {
       ...(title !== session.title ? { title } : {}),
       ...(durationMinutes !== session.sessionDurationMinutes ? { durationMinutes } : {}),
     });
+    // Refused (e.g. shorter than the time already spent) — show what's saved.
+    if (accepted === false) revertDetails(session);
   };
 
   // The break is offered once, after the day's most recently completed
@@ -549,8 +562,18 @@ export const ExecutionTaskRow = ({
                     <span className="min-w-0 flex-1 truncate text-xs text-amber-800 dark:text-amber-200">
                       انتهى وقت الجلسة — ما زلت تعمل؟ :
                     </span>
-                    <span className="shrink-0 text-xs font-bold tabular-nums text-amber-800 dark:text-amber-200">
-                      +{formatClock(session.overtimeSeconds ?? 0)}
+                    <span
+                      title={
+                        (session.overtimeSeconds ?? 0) >= OVERTIME_CAP_SECONDS
+                          ? "الحد الأقصى للوقت الإضافي 4 ساعات"
+                          : undefined
+                      }
+                      className="shrink-0 text-xs font-bold tabular-nums text-amber-800 dark:text-amber-200"
+                    >
+                      +{formatLongClock(session.overtimeSeconds ?? 0)}
+                      {(session.overtimeSeconds ?? 0) >= OVERTIME_CAP_SECONDS && (
+                        <span className="font-normal"> (الحد الأقصى)</span>
+                      )}
                     </span>
                     <button
                       type="button"

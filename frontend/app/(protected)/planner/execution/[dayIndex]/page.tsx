@@ -26,12 +26,26 @@ import {
   sortSessionsByOrder,
   studySessionToExecutionSession,
 } from "@/app/lib/study-plan";
-import { clearSessionClock, elapsedSinceStart, saveSessionClock } from "@/app/lib/session-clock";
+import { clearSessionClock, elapsedSinceStart, parseServerDate, saveSessionClock } from "@/app/lib/session-clock";
 import { primeSessionAlerts } from "@/app/lib/session-alerts";
 import { toastApiError } from "@/app/lib/api-error";
 import { elapsedSecondsOf, useSessionTimerStore } from "@/app/lib/session-timer.store";
 import { API_ROUTES } from "@/app/constants/planner.constants";
+import { formatMinutes } from "@/app/lib/duration";
 import { ACTIVE_STUDY_SESSION_KEY, secondsNow, useActiveStudySession } from "@/app/hooks/useActiveStudySession";
+
+// The bonus counter stops here: past 4 hours it's no longer time worked on
+// the session.
+const MAX_OVERTIME_SECONDS = 4 * 60 * 60;
+
+// Seconds since the session ended (its endTime, UTC from the server), capped
+// at MAX_OVERTIME_SECONDS. Falls back to the last count when there's no
+// usable endTime.
+const overtimeSecondsFor = (session: ExecutionSession) => {
+  const endedAt = parseServerDate(session.endTime);
+  const seconds = endedAt === null ? session.overtimeSeconds ?? 0 : Math.floor((Date.now() - endedAt) / 1000);
+  return Math.min(MAX_OVERTIME_SECONDS, Math.max(0, seconds));
+};
 
 const ExecutionBoardPage = () => {
   const params = useParams();
@@ -87,13 +101,14 @@ const ExecutionBoardPage = () => {
     setInitializedFor(data);
     setTasks(sortByPriority([...data.detail.dailyTasks, ...data.detail.revisionTasks]));
     // A refetch (e.g. after a pause) replaces the list, but the overtime
-    // counter is local-only — carry it over for sessions that are still there.
+    // counter is local-only — carry it over for sessions that are still
+    // there, re-reading it against the server's endTime.
     setSessions((previous) =>
       data.detail.sessions.map((session) => {
         const local = previous.find((s) => s.id === session.id);
-        return local?.overtimeRunning
-          ? { ...session, overtimeRunning: true, overtimeSeconds: local.overtimeSeconds }
-          : session;
+        if (!local?.overtimeRunning) return session;
+        const carried = { ...session, endTime: session.endTime ?? local.endTime, overtimeRunning: true };
+        return { ...carried, overtimeSeconds: overtimeSecondsFor(carried) };
       }),
     );
     // The break clock follows the server: a break started (break-start) but
@@ -249,11 +264,15 @@ const ExecutionBoardPage = () => {
       setBreakTimer((prev) => (prev ? { ...prev, elapsedSeconds: prev.elapsedSeconds + 1 } : prev));
 
       // Overtime counters run independently of the (single) active session.
+      // Read off the session's endTime each tick rather than counted up, so
+      // a throttled background tab or a refetch can't skew them.
       if (sessionsRef.current.some((s) => s.overtimeRunning)) {
         setSessions((prev) =>
-          prev.map((s) =>
-            s.overtimeRunning ? { ...s, overtimeSeconds: (s.overtimeSeconds ?? 0) + 1 } : s,
-          ),
+          prev.map((s) => {
+            if (!s.overtimeRunning) return s;
+            const seconds = overtimeSecondsFor(s);
+            return seconds === s.overtimeSeconds ? s : { ...s, overtimeSeconds: seconds };
+          }),
         );
       }
 
@@ -302,8 +321,22 @@ const ExecutionBoardPage = () => {
     return map;
   }, [sessions]);
 
-  // The one session on the whole board a break may follow.
-  const breakSessionId = useMemo(() => lastCompletedSessionId(sessions), [sessions]);
+  // Whether a session is running — on this board, or per GET /active (the
+  // app was reopened, or it runs on another day or device). A session the
+  // board already shows as finished doesn't count, in case /active is a
+  // moment behind.
+  const sessionRunning =
+    sessions.some((s) => s.status === "active") ||
+    (!!active &&
+      !active.isOnBreak &&
+      !sessions.some(
+        (s) => s.id === String(active.session.id) && (s.status === "completed" || s.status === "missed"),
+      ));
+
+  // The one session on the whole board a break may follow — none while a
+  // session is running (no break line or button then).
+  const lastCompletedId = useMemo(() => lastCompletedSessionId(sessions), [sessions]);
+  const breakSessionId = sessionRunning ? undefined : lastCompletedId;
 
   const toggleTaskComplete = (id: string) => {
     const task = tasks.find((item) => item.id === id);
@@ -380,6 +413,8 @@ const ExecutionBoardPage = () => {
       const started = await studySessionsService.start(Number(sessionId));
       console.log("[SESSION START] response ←", started);
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      // Now running on the server — /active says so, and the break line hides.
+      queryClient.invalidateQueries({ queryKey: ACTIVE_STUDY_SESSION_KEY });
     } catch (error) {
       setSessionStatus(sessionId, previous);
       if (running) setSessionStatus(running.id, "active");
@@ -411,6 +446,7 @@ const ExecutionBoardPage = () => {
       const paused = await studySessionsService.pause(Number(sessionId));
       console.log("[SESSION PAUSE] response ←", paused);
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
+      queryClient.invalidateQueries({ queryKey: ACTIVE_STUDY_SESSION_KEY });
       // The server closed the worked part and opened a new session for the
       // remaining time — show that, and complete the task if nothing is left.
       await refetchBoard(pausing?.taskId);
@@ -497,7 +533,7 @@ const ExecutionBoardPage = () => {
     const target = sessions.find((s) => s.id === sessionId);
     if (!target?.overtimeRunning) return;
 
-    const minutesToAdd = Math.max(1, Math.round((target.overtimeSeconds ?? 0) / 60));
+    const minutesToAdd = Math.max(1, Math.round(overtimeSecondsFor(target) / 60));
 
     setSessions((prev) =>
       prev.map((s) => (s.id === sessionId ? { ...s, overtimeRunning: false } : s)),
@@ -617,7 +653,7 @@ const ExecutionBoardPage = () => {
     const target = sessionsRef.current.find((s) => s.id === sessionId);
     if (!target?.overtimeRunning) return;
     dismissOvertime(sessionId);
-    void startBreak(sessionId, target.overtimeSeconds ?? 0);
+    void startBreak(sessionId, overtimeSecondsFor(target));
   };
 
   const toggleSession = (sessionId: string) => {
@@ -660,13 +696,30 @@ const ExecutionBoardPage = () => {
   };
 
   // Each field in the expanded card saves on blur, so only what actually
-  // changed goes in the PUT.
+  // changed goes in the PUT. Returns false when the change was refused, so
+  // the card can put its fields back.
   const updateSession = (
     sessionId: string,
     changes: { title?: string; durationMinutes?: number; notes?: string },
-  ) => {
+  ): boolean => {
     const target = sessions.find((s) => s.id === sessionId);
-    if (!target) return;
+    if (!target) return false;
+
+    // A session already under way can't be shortened below the time spent
+    // in it — the running one's figure comes from the app-wide clock.
+    if (changes.durationMinutes && (target.status === "active" || target.status === "paused")) {
+      const clock = useSessionTimerStore.getState();
+      const spentSeconds =
+        clock.session?.sessionId === sessionId
+          ? elapsedSecondsOf(clock)
+          : target.elapsedSeconds ?? target.actualMinutes * 60;
+      if (changes.durationMinutes * 60 < spentSeconds) {
+        toast.error(
+          `لا يمكن أن تكون مدة الجلسة أقل من الوقت الذي قضيته فيها (${formatMinutes(Math.ceil(spentSeconds / 60))})`,
+        );
+        return false;
+      }
+    }
 
     const title = changes.title?.trim();
     const nextTitle = title && title !== target.title ? title : undefined;
@@ -679,7 +732,13 @@ const ExecutionBoardPage = () => {
     const notes = changes.notes?.trim();
     const nextNotes = notes !== undefined && notes !== (target.notes ?? "").trim() ? notes : undefined;
 
-    if (nextTitle === undefined && nextDuration === undefined && nextNotes === undefined) return;
+    if (nextTitle === undefined && nextDuration === undefined && nextNotes === undefined) return true;
+
+    // The floating box times the running session against its length, so it
+    // has to count towards the new one — not stop at the old.
+    if (nextDuration !== undefined) {
+      useSessionTimerStore.getState().setDuration(sessionId, nextDuration * 60);
+    }
 
     setSessions((prev) =>
       prev.map((s) =>
@@ -700,7 +759,7 @@ const ExecutionBoardPage = () => {
       ...(nextNotes !== undefined ? { notes: nextNotes ? [nextNotes] : [] } : {}),
     })
       .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
-      .catch(() => {
+      .catch((error) => {
         setSessions((prev) =>
           prev.map((s) =>
             s.id === sessionId
@@ -713,8 +772,12 @@ const ExecutionBoardPage = () => {
               : s,
           ),
         );
-        toast.error("تعذر حفظ تعديلات الجلسة");
+        if (nextDuration !== undefined) {
+          useSessionTimerStore.getState().setDuration(sessionId, target.sessionDurationMinutes * 60);
+        }
+        toastApiError("تعذر حفظ تعديلات الجلسة", error);
       });
+    return true;
   };
 
   const deleteSession = (sessionId: string) => {

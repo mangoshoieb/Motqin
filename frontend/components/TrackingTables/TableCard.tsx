@@ -10,6 +10,7 @@ import { useTableView } from "@/app/lib/tracking-table-view.store";
 import { formatNumber, tableInitial } from "@/app/lib/tracking-table";
 import { useDeleteTable, useRenameTable, useRestoreTable } from "@/app/hooks/useTrackingTables";
 import { TrackingTableSummary } from "@/app/types/tracking-table.types";
+import { canOnTable, isOwnTable } from "@/app/lib/tracking-table";
 import { RenameTableDialog } from "./CreateTableDialog";
 import { Dropdown } from "./ui";
 
@@ -31,6 +32,15 @@ export function TableCard({ table }: { table: TrackingTableSummary }) {
   const rename = useRenameTable(table.groupId);
   const remove = useDeleteTable();
   const restore = useRestoreTable();
+  // On a shared table, only what the teacher allowed.
+  const canRename = canOnTable(table, "EditTables");
+  const canDelete = canOnTable(table, "DeleteTables");
+  const menu = [
+    ...(canRename ? [{ label: "تغيير الاسم", Icon: Pencil, onSelect: () => setRenaming(true) }] : []),
+    ...(canDelete
+      ? [{ label: "حذف الجدول", Icon: Trash2, danger: true, separatorBefore: canRename, onSelect: () => deleteTable() }]
+      : []),
+  ];
 
   const deleteTable = () =>
     remove.mutate(table.groupId, {
@@ -55,7 +65,10 @@ export function TableCard({ table }: { table: TrackingTableSummary }) {
           </span>
           <div className="min-w-0 flex-1 pe-8">
             <h3 className="truncate text-base font-bold text-zinc-900 dark:text-zinc-100">{table.groupName}</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">آخر تعديل {timeAgo(table.updatedAt)}</p>
+            <p className="mt-0.5 truncate text-xs text-zinc-500">
+              {!isOwnTable(table) && table.teacher ? `${table.teacher.name} · ` : ""}
+              آخر تعديل {timeAgo(table.updatedAt)}
+            </p>
           </div>
         </div>
         <div className="mt-5 flex gap-2">
@@ -68,24 +81,23 @@ export function TableCard({ table }: { table: TrackingTableSummary }) {
         </div>
       </Link>
 
-      <div className="absolute end-3 top-5">
-        <Dropdown
-          align="end"
-          trigger={
-            <button
-              type="button"
-              aria-label="خيارات الجدول"
-              className="rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-            >
-              <MoreHorizontal size={18} />
-            </button>
-          }
-          items={[
-            { label: "تغيير الاسم", Icon: Pencil, onSelect: () => setRenaming(true) },
-            { label: "حذف الجدول", Icon: Trash2, danger: true, separatorBefore: true, onSelect: deleteTable },
-          ]}
-        />
-      </div>
+      {menu.length > 0 && (
+        <div className="absolute end-3 top-5">
+          <Dropdown
+            align="end"
+            trigger={
+              <button
+                type="button"
+                aria-label="خيارات الجدول"
+                className="rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              >
+                <MoreHorizontal size={18} />
+              </button>
+            }
+            items={menu}
+          />
+        </div>
+      )}
 
       {renaming && (
         <RenameTableDialog

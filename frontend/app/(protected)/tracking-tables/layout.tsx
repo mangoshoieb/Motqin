@@ -4,13 +4,13 @@ import Link from "next/link";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { Lock } from "lucide-react";
 import Skeleton from "@/components/ui/Skeleton";
-import { useAuth } from "@/app/(public)/context/auth.context";
-import { canUseTrackingTables } from "@/app/lib/tracking-table";
+import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
 
-// Tracking tables are for teachers (and the admins who support them). The
-// backend checks the role too; this only spares everyone else a broken page.
+// Tracking tables are for teachers (and the admins who support them), plus
+// anyone a teacher added as an assistant. The backend checks access too;
+// this only spares everyone else a broken page.
 export default function TrackingTablesLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { canEnter, isLoading } = useTrackingAccess();
 
   let content = children;
   if (isLoading) {
@@ -24,7 +24,7 @@ export default function TrackingTablesLayout({ children }: { children: React.Rea
         </div>
       </div>
     );
-  } else if (!canUseTrackingTables(user)) {
+  } else if (!canEnter) {
     content = (
       <div className="mx-auto flex max-w-md flex-col items-center px-4 py-24 text-center">
         <div className="flex size-16 items-center justify-center rounded-3xl bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
@@ -32,7 +32,8 @@ export default function TrackingTablesLayout({ children }: { children: React.Rea
         </div>
         <h1 className="mt-5 text-xl font-bold text-zinc-900 dark:text-zinc-100">جداول المتابعة للمعلمين</h1>
         <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-          هذه الصفحة متاحة لحسابات المعلمين والمشرفين فقط. إذا كنت معلمًا تواصل مع الدعم لتفعيل حسابك.
+          هذه الصفحة متاحة لحسابات المعلمين ومساعديهم. إذا كنت معلمًا تواصل مع الدعم لتفعيل حسابك، وإذا كنت
+          مساعدًا اطلب من المعلم أن يضيفك برقم هاتفك.
         </p>
         <Link href="/" className="mt-6 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700">
           العودة للرئيسية

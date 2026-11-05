@@ -84,10 +84,22 @@ export interface GridProps {
   onSaveCell: (row: TrackingRow, field: GridField, value: CellValue) => void;
   onToggleMessages: (row: TrackingRow) => void;
   onDeleteRow: (row: TrackingRow) => void;
+  // What an assistant may do on this shared table; everything when omitted.
+  permissions?: GridPermissions;
 }
+
+export interface GridPermissions {
+  editTables: boolean; // add / edit / delete / reorder columns
+  addRows: boolean;
+  editRows: boolean; // cells and parent-message switch
+  deleteRows: boolean;
+}
+
+const ALL_ALLOWED: GridPermissions = { editTables: true, addRows: true, editRows: true, deleteRows: true };
 
 export function Grid(props: GridProps) {
   const { fields, rows, view, selected, loading } = props;
+  const can = props.permissions ?? ALL_ALLOWED;
   const density = TABLE_DENSITIES[view.density];
   const color = TABLE_COLORS[view.color];
   const [dragId, setDragId] = useState<string | null>(null);
@@ -147,14 +159,16 @@ export function Grid(props: GridProps) {
                 />
               ))}
               <th className={cn("sticky top-0 z-20 w-full border-b border-zinc-200 px-2 text-start dark:border-zinc-800", headBg)}>
-                <button
-                  type="button"
-                  onClick={props.onAddColumn}
-                  title="إضافة عمود"
-                  className="flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-zinc-500 transition hover:bg-zinc-200/70 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-                >
-                  <Plus size={16} /> عمود
-                </button>
+                {can.editTables && (
+                  <button
+                    type="button"
+                    onClick={props.onAddColumn}
+                    title="إضافة عمود"
+                    className="flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-zinc-500 transition hover:bg-zinc-200/70 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                  >
+                    <Plus size={16} /> عمود
+                  </button>
+                )}
               </th>
             </tr>
           </thead>
@@ -197,7 +211,7 @@ export function Grid(props: GridProps) {
                           {index === 0 ? (
                             <div className="flex items-center gap-1.5">
                               <div className="min-w-0 flex-1">
-                                <Cell row={row} field={field} onSave={(v) => props.onSaveCell(row, field, v)} />
+                                <Cell row={row} field={field} readOnly={!can.editRows} onSave={(v) => props.onSaveCell(row, field, v)} />
                               </div>
                               {row.noParentMessages && (
                                 <span title="ولي الأمر لا يستقبل رسائل">
@@ -207,7 +221,7 @@ export function Grid(props: GridProps) {
                               <RowMenu row={row} {...props} />
                             </div>
                           ) : (
-                            <Cell row={row} field={field} onSave={(v) => props.onSaveCell(row, field, v)} />
+                            <Cell row={row} field={field} readOnly={!can.editRows} onSave={(v) => props.onSaveCell(row, field, v)} />
                           )}
                         </td>
                       ))}
@@ -221,12 +235,14 @@ export function Grid(props: GridProps) {
                 <td colSpan={fields.length + 2} className="px-6 py-12 text-center text-sm text-zinc-500">
                   {props.filtered
                     ? "لا يوجد طلاب يطابقون البحث أو التصفية."
-                    : "لا يوجد طلاب بعد. أضف أول طالب من الصف بالأسفل."}
+                    : can.addRows
+                      ? "لا يوجد طلاب بعد. أضف أول طالب من الصف بالأسفل."
+                      : "لا يوجد طلاب بعد."}
                 </td>
               </tr>
             )}
 
-            <AddStudentRow groupId={props.groupId} fields={fields} density={density} />
+            {can.addRows && <AddStudentRow groupId={props.groupId} fields={fields} density={density} />}
           </tbody>
 
           {rows.length > 0 && <SummaryRow fields={fields} rows={rows} total={props.total} cellClass={density.cell} />}
@@ -279,6 +295,7 @@ function HeaderCell({
   onDragEnter,
   onDragEnd,
   onDrop,
+  permissions,
 }: GridProps & {
   field: GridField;
   sticky?: boolean;
@@ -292,7 +309,9 @@ function HeaderCell({
   onDrop?: () => void;
 }) {
   const sorted = sort?.field === field.id ? sort : null;
-  const column = field.kind === "column" ? field.column : null;
+  // Sorting and hiding are the viewer's own; changing columns needs EditTables.
+  const column = field.kind === "column" && (permissions ?? ALL_ALLOWED).editTables ? field.column : null;
+  const examMax = field.kind === "column" && field.column.type === "Exam" ? field.column.maxScore : null;
   const draggable = !!column;
 
   const items: MenuEntry[] = [
@@ -344,8 +363,8 @@ function HeaderCell({
       <Dropdown
         items={items}
         header={
-          column?.type === "Exam" && column.maxScore ? (
-            <p className="px-3 pb-1 pt-1.5 text-xs text-zinc-500">من {formatNumber(column.maxScore)} درجة</p>
+          examMax ? (
+            <p className="px-3 pb-1 pt-1.5 text-xs text-zinc-500">من {formatNumber(examMax)} درجة</p>
           ) : undefined
         }
         trigger={
@@ -378,7 +397,22 @@ function RowMenu({
   row,
   onToggleMessages,
   onDeleteRow,
+  permissions,
 }: GridProps & { row: TrackingRow }) {
+  const can = permissions ?? ALL_ALLOWED;
+  const items: MenuEntry[] = [];
+  if (can.editRows) {
+    items.push(
+      row.noParentMessages
+        ? { label: "تفعيل رسائل ولي الأمر", Icon: BellRing, onSelect: () => onToggleMessages(row) }
+        : { label: "إيقاف رسائل ولي الأمر", Icon: BellOff, onSelect: () => onToggleMessages(row) },
+    );
+  }
+  if (can.deleteRows) {
+    items.push({ label: "حذف الطالب", Icon: Trash2, danger: true, separatorBefore: items.length > 0, onSelect: () => onDeleteRow(row) });
+  }
+  if (items.length === 0) return null;
+
   return (
     <Dropdown
       align="end"
@@ -391,12 +425,7 @@ function RowMenu({
           <MoreHorizontal size={16} />
         </button>
       }
-      items={[
-        row.noParentMessages
-          ? { label: "تفعيل رسائل ولي الأمر", Icon: BellRing, onSelect: () => onToggleMessages(row) }
-          : { label: "إيقاف رسائل ولي الأمر", Icon: BellOff, onSelect: () => onToggleMessages(row) },
-        { label: "حذف الطالب", Icon: Trash2, danger: true, separatorBefore: true, onSelect: () => onDeleteRow(row) },
-      ]}
+      items={items}
     />
   );
 }

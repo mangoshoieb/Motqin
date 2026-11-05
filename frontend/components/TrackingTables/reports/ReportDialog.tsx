@@ -37,11 +37,15 @@ export function ReportDialog({
   columns,
   rowIds,
   onClose,
+  canSend = true,
 }: {
   groupId: string;
   columns: TrackingColumn[];
   rowIds: number[] | null; // null = every student
   onClose: () => void;
+  // An assistant may prepare a report (PrepareReports) without being allowed
+  // to send it (SendReports): the teacher sends it from their reports list.
+  canSend?: boolean;
 }) {
   const { data: templates = [] } = useReportTemplates();
   const [templateKey, setTemplateKey] = useState<string | null>(null);
@@ -112,15 +116,21 @@ export function ReportDialog({
             <button type="button" onClick={() => setPreview(null)} className={cn(secondaryButton, "flex-1")}>
               رجوع
             </button>
-            <button
-              type="button"
-              onClick={send}
-              disabled={!consent || planBlocked || preview.ready === 0 || allow.isPending}
-              className={cn(primaryButton, "flex-1 bg-emerald-600 hover:bg-emerald-700")}
-            >
-              <MessageCircle size={17} />
-              {allow.isPending ? "جارٍ البدء..." : `إرسال ${formatNumber(preview.ready)} رسالة`}
-            </button>
+            {canSend ? (
+              <button
+                type="button"
+                onClick={send}
+                disabled={!consent || planBlocked || preview.ready === 0 || allow.isPending}
+                className={cn(primaryButton, "flex-1 bg-emerald-600 hover:bg-emerald-700")}
+              >
+                <MessageCircle size={17} />
+                {allow.isPending ? "جارٍ البدء..." : `إرسال ${formatNumber(preview.ready)} رسالة`}
+              </button>
+            ) : (
+              <button type="button" onClick={onClose} className={cn(primaryButton, "flex-1")}>
+                تم التجهيز
+              </button>
+            )}
           </>
         }
       >
@@ -175,10 +185,17 @@ export function ReportDialog({
           </details>
         )}
 
-        <label className="mt-5 flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1" />
-          أؤكد أن أولياء الأمور وافقوا على استلام هذه الرسائل على واتساب.
-        </label>
+        {canSend ? (
+          <label className="mt-5 flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1" />
+            أؤكد أن أولياء الأمور وافقوا على استلام هذه الرسائل على واتساب.
+          </label>
+        ) : (
+          <p className="mt-5 rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-900 dark:bg-blue-500/10 dark:text-blue-200">
+            جهّزت التقرير ولم يُرسل شيء. الإرسال يحتاج صلاحية «إرسال التقارير» من المعلم، ويجده المعلم في تقاريره
+            المجهّزة.
+          </p>
+        )}
 
         {error && <div className="mt-3">{error.plan ? <PlanNotice message={error.message} /> : <p className="text-sm text-rose-600">{error.message}</p>}</div>}
       </Modal>

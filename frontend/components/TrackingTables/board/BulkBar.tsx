@@ -10,6 +10,8 @@ export function BulkBar({
   count,
   columns,
   canReport,
+  canClear = true,
+  canDelete = true,
   onReport,
   onClearColumn,
   onDelete,
@@ -18,6 +20,9 @@ export function BulkBar({
   count: number;
   columns: TrackingColumn[];
   canReport: boolean;
+  // An assistant without EditRows / DeleteRows doesn't get those actions.
+  canClear?: boolean;
+  canDelete?: boolean;
   onReport: () => void;
   onClearColumn: (column: TrackingColumn) => void;
   onDelete: () => void;
@@ -43,17 +48,21 @@ export function BulkBar({
             <Send size={16} /> إرسال تقرير
           </button>
         )}
-        <Dropdown
-          trigger={
-            <button type="button" disabled={columns.length === 0} className={action}>
-              <Eraser size={16} /> مسح عمود
-            </button>
-          }
-          items={columns.map((column) => ({ label: column.name, onSelect: () => onClearColumn(column) }))}
-        />
-        <button type="button" onClick={onDelete} className={`${action} text-rose-300 hover:bg-rose-500/20`}>
-          <Trash2 size={16} /> حذف
-        </button>
+        {canClear && (
+          <Dropdown
+            trigger={
+              <button type="button" disabled={columns.length === 0} className={action}>
+                <Eraser size={16} /> مسح عمود
+              </button>
+            }
+            items={columns.map((column) => ({ label: column.name, onSelect: () => onClearColumn(column) }))}
+          />
+        )}
+        {canDelete && (
+          <button type="button" onClick={onDelete} className={`${action} text-rose-300 hover:bg-rose-500/20`}>
+            <Trash2 size={16} /> حذف
+          </button>
+        )}
         <button type="button" onClick={onCancel} aria-label="إلغاء التحديد" className={action}>
           <X size={16} />
         </button>

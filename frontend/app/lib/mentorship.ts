@@ -59,7 +59,8 @@ export function mentorshipErrorMessage(error: unknown): string {
     case "validation_error":
       return "بعض البيانات المرسلة غير صالحة.";
     default:
-      return coded.message;
+      // The server's Arabic catalogue; coded.message is English.
+      return getApiErrorMessage(error);
   }
 }
 

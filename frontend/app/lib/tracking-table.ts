@@ -7,6 +7,7 @@ import {
   TRACKING_TABLE_ROLES,
 } from "../constants/tracking-table.constants";
 import {
+  AssistantPermission,
   CellValue,
   ColumnType,
   CoreField,
@@ -14,6 +15,7 @@ import {
   RowFilter,
   TrackingColumn,
   TrackingRow,
+  TrackingTableSummary,
 } from "../types/tracking-table.types";
 
 // --- Errors ------------------------------------------------------------------
@@ -39,6 +41,17 @@ export const canUseTrackingTables = (user?: { role?: string | null; roles?: stri
   const roles = [...(user?.roles ?? []), ...(user?.role ? [user.role] : [])];
   return roles.some((role) => TRACKING_TABLE_ROLES.includes(role));
 };
+
+// Tables from servers without assistants carry no isOwner — they're the
+// caller's own.
+export const isOwnTable = (table: Pick<TrackingTableSummary, "isOwner">) => table.isOwner !== false;
+
+// The guide's can(): the owner may do anything; an assistant only what the
+// teacher listed in myPermissions.
+export const canOnTable = (
+  table: Pick<TrackingTableSummary, "isOwner" | "myPermissions">,
+  permission: AssistantPermission,
+) => isOwnTable(table) || (table.myPermissions ?? []).includes(permission);
 
 // --- Fields ------------------------------------------------------------------
 

@@ -1,0 +1,1036 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tracking Assistants &amp; Performance API</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: two sections in one reading column - endpoint cards for the front, then a numbered manual test - same family as the Mentors and Distraction Blocker guides */
+:root {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --fg: #172033;
+  --muted: #5b6579;
+  --line: #dfe5ee;
+  --code-bg: #f0f3f8;
+  --accent: #2f5bd3;
+  --get: #12805c;  --get-bg: #e3f5ed;
+  --post: #2f5bd3; --post-bg: #e6edfd;
+  --put: #b26a00;  --put-bg: #fdf1dc;
+  --del: #c2364b;  --del-bg: #fce6e9;
+  --ok: #12805c;   --warn: #b26a00;  --bad: #c2364b;
+  --p1: #0e7c86; --p1-bg: #e0f3f4;
+  --p2: #7b4ad6; --p2-bg: #efe8fc;
+  --p7: #3a7d2c; --p7-bg: #e7f3e2;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141d; --card: #161d29; --fg: #e8ecf3; --muted: #9aa5b8; --line: #263043; --code-bg: #1d2533;
+    --accent: #86a8ff;
+    --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+    --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+    --p1: #3fc1cb; --p1-bg: #10302f; --p2: #b69bff; --p2-bg: #261d40;
+    --p7: #8fd47d; --p7-bg: #18301a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141d; --card: #161d29; --fg: #e8ecf3; --muted: #9aa5b8; --line: #263043; --code-bg: #1d2533;
+  --accent: #86a8ff;
+  --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+  --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+  --p1: #3fc1cb; --p1-bg: #10302f; --p2: #b69bff; --p2-bg: #261d40;
+  --p7: #8fd47d; --p7-bg: #18301a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 28px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ar { font-family: "IBM Plex Sans Arabic", var(--font-body); direction: rtl; unicode-bidi: isolate; }
+
+.hero { display: grid; gap: 12px; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 999px; }
+.nav a.n1 { background: var(--p2-bg); color: var(--p2); }
+.nav a.n2 { background: var(--p7-bg); color: var(--p7); }
+.nav a.n0 { background: var(--code-bg); color: var(--fg); }
+
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+
+.part { display: grid; gap: 16px; }
+.part-head { display: grid; gap: 6px; padding: 18px 20px; border-radius: 14px; }
+.part-head .num { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+.part-head p { max-width: 72ch; }
+.ph1 { background: var(--p2-bg); } .ph1 .num, .ph1 h2 { color: var(--p2); }
+.ph2 { background: var(--p7-bg); } .ph2 .num, .ph2 h2 { color: var(--p7); }
+.sub { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding-top: 10px; scroll-margin-top: 16px; }
+
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.put { background: var(--put-bg); color: var(--put); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.tag.new { color: var(--ok); }
+.tag.changed { color: var(--warn); }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.who.tc { background: var(--p2-bg); color: var(--p2); }
+.who.as { background: var(--p1-bg); color: var(--p1); }
+.who.any { background: var(--code-bg); color: var(--muted); }
+.use { color: var(--fg); max-width: 76ch; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; }
+.note-list { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+
+.errs { width: 100%; font-size: 13px; }
+.errs td, .errs th { padding: 6px 8px; }
+.errs td:first-child, .errs td:nth-child(2) { white-space: nowrap; }
+.s { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+.s.s4 { background: var(--del-bg); color: var(--bad); }
+.s.s403 { background: var(--put-bg); color: var(--warn); }
+
+.perm { display: inline-block; font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--p2-bg); color: var(--p2); white-space: nowrap; }
+.perm.none { background: var(--code-bg); color: var(--muted); }
+
+.explain { border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; background: var(--bg); }
+.explain h3 { color: var(--accent); }
+.explain h4 { margin: 0; font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+.explain .rules { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.explain table { background: var(--card); }
+.explain td:first-child { white-space: nowrap; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.chip.up { background: var(--get-bg); color: var(--ok); }
+.chip.mid { background: var(--code-bg); color: var(--muted); }
+.chip.down { background: var(--del-bg); color: var(--bad); }
+.chip.warn { background: var(--put-bg); color: var(--warn); }
+.layout { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.fnote { border-top: 1px dashed var(--line); padding-top: 12px; display: grid; gap: 6px; min-width: 0; }
+.fnote .lbl { color: var(--accent); }
+.fnote pre.code { font-size: 12px; }
+
+.flow { display: grid; gap: 14px; }
+.flow ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+.flow li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; display: grid; gap: 8px; min-width: 0; }
+.flow li::before { content: counter(step); position: absolute; left: 14px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--p7-bg); color: var(--p7); font-family: var(--font-mono); font-weight: 600; font-size: 13px; display: grid; place-items: center; }
+.flow li.stage { counter-increment: none; background: none; border: 0; padding: 8px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--p7); }
+.flow li.stage::before { content: none; }
+.expect { color: var(--muted); font-size: 14px; }
+.expect b { color: var(--fg); }
+.foot { color: var(--muted); font-size: 13px; }
+@media (max-width: 520px) { .flow li { padding-left: 16px; padding-top: 50px; } .flow li.stage { padding-top: 8px; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Motqin backend · tracking tables · for the front</span>
+  <h1>Tracking Assistants &amp; Performance API</h1>
+  <nav class="nav">
+    <a class="n1" href="#endpoints">1 · Endpoints</a>
+    <a class="n2" href="#test">2 · Manual test</a>
+  </nav>
+  <nav class="nav">
+    <a class="n0" href="#common">Every request</a>
+    <a class="n0" href="#lookups">Lookups</a>
+    <a class="n0" href="#assistants">Assistants</a>
+    <a class="n0" href="#tables">Tables &amp; permissions</a>
+    <a class="n0" href="#performance">Performance</a>
+    <a class="n0" href="#import">Import</a>
+  </nav>
+</header>
+
+<!-- ======================================================================= 1. endpoints -->
+<section class="part" id="endpoints">
+  <div class="part-head ph1"><span class="num">Section 1</span><h2>Endpoints</h2><p>Every new or changed endpoint, with a valid body, the real response, its errors and what the front should do. In every error table, <b>Show</b> is the Arabic message <code>GET /api/lookups/error-codes</code> returns for that code.</p></div>
+
+  <!-- ............................................................ common -->
+  <span class="sub" id="common">Every request</span>
+  <article class="ep">
+    <div class="ep-line"><span class="path">Response shape and common errors</span></div>
+    <div class="io">
+      <div><span class="lbl">Success</span><pre class="code">{
+  "success": true,
+  "data": { … },
+  "error": null,
+  "message": "Assistant added."
+}</pre></div>
+      <div><span class="lbl">Failure</span><pre class="code">{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "assistant_permission_missing",
+    "message": "The teacher hasn't given you the EditTables permission.",
+    "details": { "permission": "EditTables" }
+  }
+}</pre></div>
+    </div>
+    <span class="lbl">Errors any endpoint can return</span>
+    <div class="table-wrap"><table class="errs">
+      <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+      <tr><td><span class="s s4">401</span></td><td><code>unauthorized</code></td><td>no token, or it expired: refresh it and retry</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      <tr><td><span class="s s403">403</span></td><td><code>registration_required</code></td><td>a guest account</td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>validation_error</code></td><td>a field is missing or has the wrong type; <code>details</code> is keyed by field</td><td class="ar">بعض البيانات المدخلة غير صحيحة</td></tr>
+      <tr><td><span class="s s4">409</span></td><td><code>edited_elsewhere</code></td><td>two saves at the same moment: reload and retry</td><td class="ar">تم تعديل هذا العنصر من مكان آخر، أعد التحميل وحاول مرة أخرى</td></tr>
+    </table></div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list">
+        <li>Show the Arabic message for <code>error.code</code>. <code>error.message</code> is English text for developers; never show it. For a code missing from the list, show a general "something went wrong".</li>
+        <li><code>validation_error</code>: <code>details</code> keys use the server's spelling, e.g. <code>{"PhoneNumber": ["The PhoneNumber field is required."]}</code>. Match them to your fields ignoring case and show each under its field.</li>
+        <li>Times are UTC but have no <code>Z</code>. Add it before converting to local time:
+          <pre class="code">// Dart
+DateTime.parse(s.endsWith('Z') ? s : '${s}Z').toLocal();
+// JS
+new Date(s.endsWith('Z') ? s : s + 'Z');</pre></li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ............................................................ lookups -->
+  <span class="sub" id="lookups">Lookups</span>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/lookups/assistant-permissions</span><span class="tag new">new</span><span class="who any">anyone</span></div>
+    <p class="use">The 10 permissions a teacher can give an assistant, in display order. A plain list, without the envelope.</p>
+    <div class="io">
+      <div><span class="lbl">200</span><pre class="code">[
+  { "value": 1,   "key": "CreateTables",   "nameAr": "إنشاء جداول",               "nameEn": "Create tables" },
+  { "value": 2,   "key": "EditTables",     "nameAr": "تعديل الجداول والأعمدة",    "nameEn": "Edit tables and columns" },
+  { "value": 4,   "key": "AddRows",        "nameAr": "إضافة طلاب",                "nameEn": "Add students" },
+  { "value": 8,   "key": "EditRows",       "nameAr": "تعديل بيانات الطلاب",       "nameEn": "Edit students" },
+  { "value": 16,  "key": "DeleteRows",     "nameAr": "حذف الطلاب",                "nameEn": "Delete students" },
+  { "value": 32,  "key": "DeleteTables",   "nameAr": "حذف الجداول",               "nameEn": "Delete tables" },
+  { "value": 64,  "key": "Import",         "nameAr": "استيراد من Excel",          "nameEn": "Import from Excel" },
+  { "value": 128, "key": "Export",         "nameAr": "تصدير إلى Excel",           "nameEn": "Export to Excel" },
+  { "value": 256, "key": "PrepareReports", "nameAr": "تجهيز تقارير أولياء الأمور", "nameEn": "Prepare parent reports" },
+  { "value": 512, "key": "SendReports",    "nameAr": "إرسال التقارير",            "nameEn": "Send reports" }
+]</pre></div>
+    </div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list">
+        <li>Load this, <code>performance-flags</code> and <code>error-codes</code> once at app start and keep them for a day.</li>
+        <li>Show <code>nameAr</code>; send back <code>key</code>. Use it for the assistant form's checkboxes and the permission chips, and to name the permission in an <code>assistant_permission_missing</code> error.</li>
+        <li>Seeing shared tables, their students and the performance report needs no permission.</li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/lookups/performance-flags</span><span class="tag new">new</span><span class="who any">anyone</span></div>
+    <p class="use">Names for the performance report's standings and flags.</p>
+    <div class="io">
+      <div><span class="lbl">200</span><pre class="code">{
+  "standings": [
+    { "key": "above",   "nameAr": "فوق المتوسط", "nameEn": "Above average" },
+    { "key": "average", "nameAr": "متوسط",       "nameEn": "Average" },
+    { "key": "below",   "nameAr": "تحت المتوسط", "nameEn": "Below average" }
+  ],
+  "flags": [
+    { "key": "fell_from_full_mark",   "nameAr": "تراجع بعد الدرجة النهائية", "nameEn": "Fell after a full mark" },
+    { "key": "dropped_below_average", "nameAr": "نزل تحت المتوسط",           "nameEn": "Dropped below average" },
+    { "key": "rose_above_average",    "nameAr": "صعد فوق المتوسط",           "nameEn": "Rose above average" },
+    { "key": "big_drop",              "nameAr": "هبوط كبير",                 "nameEn": "Big drop" },
+    { "key": "improving",             "nameAr": "في تحسن",                   "nameEn": "Improving" },
+    { "key": "declining",             "nameAr": "في تراجع",                  "nameEn": "Declining" },
+    { "key": "always_below",          "nameAr": "دائماً تحت المتوسط",        "nameEn": "Always below average" },
+    { "key": "inconsistent",          "nameAr": "مستوى غير ثابت",            "nameEn": "Inconsistent" },
+    { "key": "often_absent",          "nameAr": "كثير الغياب",               "nameEn": "Often absent" },
+    { "key": "missing_scores",        "nameAr": "درجات غير مسجلة",           "nameEn": "Missing scores" }
+  ]
+}</pre></div>
+    </div>
+  </article>
+
+  <!-- ............................................................ assistants -->
+  <span class="sub" id="assistants">Assistants · the teacher's screen</span>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/assistants</span><span class="tag new">new</span><span class="who tc">teacher</span></div>
+    <p class="use">Adds an assistant by phone number. Any registered user can be one; their own role doesn't change. Access starts at once, with no accept step. <code>permissions: []</code> means view only. <code>allTables: true</code> shares every table, including ones made later; otherwise list the tables in <code>groupIds</code>.</p>
+    <div class="io">
+      <div><span class="lbl">Body</span><pre class="code">{
+  "phoneNumber": "01000000120",
+  "permissions": ["AddRows", "EditRows", "Export"],
+  "allTables": false,
+  "groupIds": ["3f7bf12e-5a6e-4816-8d9b-6bd83dde398d"]
+}</pre></div>
+      <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "id": 3,
+    "userId": "2ce8f3aa-534d-4cf1-8596-dcef0040a6b8",
+    "name": "Pay Test U3",
+    "phoneNumber": "01000000120",
+    "permissions": ["AddRows", "EditRows", "Export"],
+    "allTables": false,
+    "tables": [
+      { "groupId": "3f7bf12e-5a6e-4816-8d9b-6bd83dde398d",
+        "groupName": "فيزياء ٣ ثانوي – مجموعة السبت ٤ م" }
+    ],
+    "createdAt": "2026-11-01T10:17:29.9927628",
+    "updatedAt": "2026-11-01T10:17:29.9927866"
+  },
+  "error": null,
+  "message": "Assistant added."
+}</pre></div>
+    </div>
+    <div class="table-wrap"><table class="errs">
+      <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>validation_error</code></td><td><code>phoneNumber</code> missing</td><td class="ar">بعض البيانات المدخلة غير صحيحة</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>invalid_phone</code></td><td>not an Egyptian mobile number</td><td class="ar">رقم الموبايل غير صحيح</td></tr>
+      <tr><td><span class="s s4">404</span></td><td><code>user_not_found</code></td><td>no registered account uses that phone</td><td class="ar">المستخدم غير موجود</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>cannot_assist_self</code></td><td>the teacher's own phone</td><td class="ar">لا يمكنك إضافة نفسك كمساعد</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>assistant_exists</code></td><td>already this teacher's assistant</td><td class="ar">هذا الشخص مساعد لديك بالفعل، عدّل صلاحياته بدلاً من إضافته مرة أخرى</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>limit_reached</code></td><td>10 assistants already; <code>details.limit</code></td><td class="ar">وصلت للحد الأقصى المسموح</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>invalid_permission</code></td><td>a key not in the lookup; <code>details.permission</code></td><td class="ar">إحدى الصلاحيات غير معروفة</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>no_tables_chosen</code></td><td><code>allTables: false</code> and empty <code>groupIds</code></td><td class="ar">اختر جدولاً واحداً على الأقل أو كل الجداول</td></tr>
+      <tr><td><span class="s s4">404</span></td><td><code>table_not_found</code></td><td>a groupId that isn't the teacher's</td><td class="ar">الجدول غير موجود</td></tr>
+    </table></div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list">
+        <li>Show the "My assistants" screen to teacher accounts and above only.</li>
+        <li>Check the phone locally for <code>01XXXXXXXXX</code> before sending.</li>
+        <li>Checkboxes from <code>assistant-permissions</code>, in its order, all unchecked by default (view only).</li>
+        <li>An "all tables" switch. When it's off, a multi-select of the teacher's own tables only (<code>isOwner: true</code> in the table list). Disable Save while nothing is selected.</li>
+        <li><code>user_not_found</code>: say the number has no Motqin account and the person should register first. <code>assistant_exists</code>: open that person's edit form instead of an error.</li>
+        <li><code>id</code> is the link's id, used in PUT and DELETE. <code>tables</code> is empty when <code>allTables</code> is true.</li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables/assistants</span><span class="tag new">new</span><span class="who tc">teacher</span></div>
+    <p class="use">The teacher's assistants, by name. Each item has the same shape as the POST response.</p>
+    <div class="io">
+      <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": [
+    { "id": 3, "userId": "2ce8f3aa-…", "name": "Pay Test U3",
+      "phoneNumber": "01000000120",
+      "permissions": ["AddRows", "EditRows", "Export"],
+      "allTables": false,
+      "tables": [{ "groupId": "3f7bf12e-…", "groupName": "فيزياء ٣ ثانوي – مجموعة السبت ٤ م" }],
+      "createdAt": "2026-11-01T10:17:29.99", "updatedAt": "2026-11-01T10:17:29.99" }
+  ],
+  "error": null
+}</pre></div>
+      <div><span class="lbl">Errors</span><p class="expect">Only the common ones.</p>
+        <div class="fnote"><span class="lbl">For the front</span>
+          <ul class="note-list">
+            <li>Each assistant: name, phone, permissions as chips (<code>nameAr</code>), and the tables or "كل الجداول".</li>
+            <li>Prefill the edit form from this item.</li>
+            <li>A table the teacher deleted drops out of <code>tables</code> until it's restored.</li>
+          </ul>
+        </div></div>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/tracking-tables/assistants/{id}</span><span class="tag new">new</span><span class="who tc">teacher</span></div>
+    <p class="use">Replaces the assistant's permissions and tables. It takes effect on the assistant's next request.</p>
+    <div class="io">
+      <div><span class="lbl">Body</span><pre class="code">{
+  "permissions": ["AddRows", "EditRows", "Export", "CreateTables", "PrepareReports"],
+  "allTables": false,
+  "groupIds": ["3f7bf12e-5a6e-4816-8d9b-6bd83dde398d"]
+}</pre></div>
+      <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "id": 3,
+    "userId": "2ce8f3aa-534d-4cf1-8596-dcef0040a6b8",
+    "name": "Pay Test U3",
+    "phoneNumber": "01000000120",
+    "permissions": ["CreateTables", "AddRows", "EditRows", "Export", "PrepareReports"],
+    "allTables": false,
+    "tables": [{ "groupId": "3f7bf12e-…", "groupName": "فيزياء ٣ ثانوي – مجموعة السبت ٤ م" }],
+    "createdAt": "2026-11-01T10:17:29.9927628",
+    "updatedAt": "2026-11-01T10:17:31.4017503"
+  },
+  "error": null,
+  "message": "Access updated."
+}</pre></div>
+    </div>
+    <div class="table-wrap"><table class="errs">
+      <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+      <tr><td><span class="s s4">404</span></td><td><code>assistant_not_found</code></td><td>no assistant with this id for this teacher</td><td class="ar">المساعد غير موجود</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>invalid_permission</code></td><td>e.g. <code>["DeleteEverything"]</code></td><td class="ar">إحدى الصلاحيات غير معروفة</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>no_tables_chosen</code></td><td>no tables and not all tables</td><td class="ar">اختر جدولاً واحداً على الأقل أو كل الجداول</td></tr>
+      <tr><td><span class="s s4">404</span></td><td><code>table_not_found</code></td><td>a groupId that isn't the teacher's</td><td class="ar">الجدول غير موجود</td></tr>
+      <tr><td><span class="s s4">409</span></td><td><code>edited_elsewhere</code></td><td>saved twice at the same moment</td><td class="ar">تم تعديل هذا العنصر من مكان آخر، أعد التحميل وحاول مرة أخرى</td></tr>
+    </table></div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list">
+        <li>Send the whole new state, including permissions and tables that didn't change.</li>
+        <li>Permissions come back in the lookup's display order, whatever order you sent.</li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/tracking-tables/assistants/{id}</span><span class="tag new">new</span><span class="who tc">teacher</span></div>
+    <p class="use">Removes the assistant. From their next request, the teacher's tables answer 404 for them.</p>
+    <div class="io">
+      <div><span class="lbl">200</span><pre class="code">{ "success": true, "data": { "id": 3 }, "error": null, "message": "Assistant removed." }</pre></div>
+      <div><div class="table-wrap"><table class="errs">
+        <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+        <tr><td><span class="s s4">404</span></td><td><code>assistant_not_found</code></td><td>already removed</td><td class="ar">المساعد غير موجود</td></tr>
+      </table></div></div>
+    </div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list"><li>Confirm on the page first: the assistant loses every shared table at once.</li></ul>
+    </div>
+  </article>
+
+  <!-- ............................................................ assisting -->
+  <span class="sub" id="assisting">Teachers I assist · the assistant's screen</span>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables/assisting</span><span class="tag new">new</span><span class="who as">assistant</span></div>
+    <p class="use">The teachers I assist, my permissions with each, and the tables they shared.</p>
+    <div class="io">
+      <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": [
+    {
+      "id": 3,
+      "teacherId": "362458c4-4ed1-48d0-8cf4-fb46c283f23e",
+      "teacherName": "أ. محمد سامي",
+      "teacherPhone": "01094341573",
+      "permissions": ["CreateTables", "AddRows", "EditRows", "Export", "PrepareReports"],
+      "allTables": false,
+      "tables": [{ "groupId": "3f7bf12e-…", "groupName": "فيزياء ٣ ثانوي – مجموعة السبت ٤ م" }],
+      "createdAt": "2026-11-01T10:17:29.9927628"
+    }
+  ],
+  "error": null
+}</pre></div>
+      <div><span class="lbl">Errors</span><p class="expect">Only the common ones. Someone who assists nobody gets <code>[]</code>.</p>
+        <div class="fnote"><span class="lbl">For the front</span>
+          <ul class="note-list">
+            <li>Show this screen to any registered user, only when the list isn't empty.</li>
+            <li>Per teacher: name, phone, permissions as chips, and the tables or "كل الجداول".</li>
+            <li>Keep the list: "new table" and "import" use it to choose the teacher. <code>teacherId</code> is what you send as <code>forTeacherId</code>.</li>
+            <li>The teacher's name above is an example; the API returns the account's name.</li>
+          </ul>
+        </div></div>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/tracking-tables/assisting/{id}</span><span class="tag new">new</span><span class="who as">assistant</span></div>
+    <p class="use">The assistant stops helping this teacher. <code>id</code> comes from <code>GET assisting</code>.</p>
+    <div class="io">
+      <div><span class="lbl">200</span><pre class="code">{ "success": true, "data": { "id": 4 }, "error": null, "message": "You no longer assist this teacher." }</pre></div>
+      <div><div class="table-wrap"><table class="errs">
+        <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+        <tr><td><span class="s s4">404</span></td><td><code>assistant_not_found</code></td><td>no such link for this user</td><td class="ar">المساعد غير موجود</td></tr>
+      </table></div></div>
+    </div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list"><li>Confirm on the page first, then refetch <code>GET /api/tracking-tables</code>: that teacher's tables disappear.</li></ul>
+    </div>
+  </article>
+
+  <!-- ............................................................ tables -->
+  <span class="sub" id="tables">Tables &amp; permissions</span>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">Permission needed for each table and report action</span></div>
+    <p class="use">The table and report endpoints are open to every registered user. A teacher works on their own tables as before. An assistant uses the same endpoints on shared tables, and each action checks one permission. The table stays the teacher's: limits, the teacher's name in reports and the message quota are the teacher's.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Endpoint</th><th>Permission</th></tr>
+      <tr><td><code>GET /api/tracking-tables</code> · <code>GET /{groupId}</code> · <code>POST /{groupId}/rows/query</code> · <code>POST /{groupId}/performance</code> · <code>GET /report-templates</code> · <code>POST /import/preview</code></td><td><span class="perm none">none</span></td></tr>
+      <tr><td><code>POST /api/tracking-tables</code> with <code>forTeacherId</code></td><td><span class="perm">CreateTables</span></td></tr>
+      <tr><td><code>PUT /{groupId}</code> (rename) · every <code>/{groupId}/columns…</code> endpoint · <code>PUT /{groupId}/core-fields</code></td><td><span class="perm">EditTables</span></td></tr>
+      <tr><td><code>POST /{groupId}/rows</code></td><td><span class="perm">AddRows</span></td></tr>
+      <tr><td><code>PUT /{groupId}/rows/{rowId}</code></td><td><span class="perm">EditRows</span></td></tr>
+      <tr><td><code>DELETE /{groupId}/rows/{rowId}</code> · <code>POST /{groupId}/rows/{rowId}/restore</code></td><td><span class="perm">DeleteRows</span></td></tr>
+      <tr><td><code>DELETE /{groupId}</code> · <code>POST /{groupId}/restore</code></td><td><span class="perm">DeleteTables</span></td></tr>
+      <tr><td><code>POST /import</code> with <code>forTeacherId</code></td><td><span class="perm">Import</span></td></tr>
+      <tr><td><code>POST /{groupId}/export</code></td><td><span class="perm">Export</span></td></tr>
+      <tr><td><code>POST /{groupId}/prepare-report</code> · <code>GET /reports</code> · <code>GET /reports/prepared</code> · <code>GET /reports/{batchId}</code></td><td><span class="perm">PrepareReports</span></td></tr>
+      <tr><td><code>POST /reports/{batchId}/allow</code> · <code>POST /reports/{batchId}/stop</code></td><td><span class="perm">SendReports</span></td></tr>
+    </table></div>
+    <span class="lbl">The two errors an assistant meets on any of them</span>
+    <div class="table-wrap"><table class="errs">
+      <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+      <tr><td><span class="s s4">404</span></td><td><code>table_not_found</code></td><td>the table isn't shared with them, or they were removed (looks exactly like a missing table)</td><td class="ar">الجدول غير موجود</td></tr>
+      <tr><td><span class="s s403">403</span></td><td><code>assistant_permission_missing</code></td><td>shared, but the action needs a permission they don't have; <code>details.permission</code> names it</td><td class="ar">ليس لديك صلاحية لهذا الإجراء، اطلبها من المعلم</td></tr>
+      <tr><td><span class="s s4">404</span></td><td><code>batch_not_found</code></td><td>a report on a table they can't reach</td><td class="ar">التقرير غير موجود</td></tr>
+    </table></div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list">
+        <li>Hide the buttons the user can't use, with one helper fed by the table list's <code>myPermissions</code>:
+          <pre class="code">can(t, key) =&gt; t.isOwner || t.myPermissions.contains(key)
+// rename / columns / core-fields → 'EditTables'
+// add student                    → 'AddRows'
+// edit student                   → 'EditRows'
+// delete / restore student       → 'DeleteRows'
+// delete / restore table         → 'DeleteTables'
+// export                         → 'Export'
+// prepare report / reports list  → 'PrepareReports'
+// allow / stop                   → 'SendReports'</pre></li>
+        <li>On <code>assistant_permission_missing</code>, add the permission's <code>nameAr</code>: "ليس لديك صلاحية لهذا الإجراء: تعديل الجداول والأعمدة".</li>
+        <li>On either of the first two errors, refetch the table list: the teacher may have just changed the access. Leave the screen if the table is gone.</li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/tracking-tables</span><span class="tag changed">changed</span><span class="who any">teacher or assistant</span></div>
+    <p class="use">The caller's own tables first, then the tables shared with them. Each item has three new fields: <code>isOwner</code>, <code>teacher</code> and <code>myPermissions</code>. For your own tables, <code>myPermissions</code> lists all 10 keys. <code>?deleted=true</code> lists deleted tables the caller may restore: their own, plus shared ones where they have <code>DeleteTables</code>.</p>
+    <div class="io">
+      <div><span class="lbl">200, as the assistant</span><pre class="code">{
+  "success": true,
+  "data": [
+    {
+      "groupId": "3f7bf12e-5a6e-4816-8d9b-6bd83dde398d",
+      "groupName": "فيزياء ٣ ثانوي – مجموعة السبت ٤ م",
+      "rows": 10,
+      "columns": 8,
+      "isDeleted": false,
+      "createdAt": "2026-11-01T06:35:33.3942621",
+      "updatedAt": "2026-11-01T06:57:09.8419943",
+      "isOwner": false,
+      "teacher": { "userId": "362458c4-4ed1-48d0-8cf4-fb46c283f23e", "name": "أ. محمد سامي" },
+      "myPermissions": ["CreateTables", "AddRows", "EditRows", "Export", "PrepareReports"]
+    }
+  ],
+  "error": null
+}</pre></div>
+      <div><span class="lbl">Errors</span><p class="expect">Only the common ones.</p>
+        <div class="fnote"><span class="lbl">For the front</span>
+          <ul class="note-list">
+            <li><b>Who sees the tracking menu:</b> teacher accounts and above, plus anyone whose <code>GET assisting</code> isn't empty. A student with no shared tables now gets <code>200 []</code> instead of 403, so don't wait for a 403 to hide it.</li>
+            <li><b>Two groups:</b> "جداولي" (<code>isOwner: true</code>), then one group per <code>teacher.name</code>.</li>
+            <li>Keep <code>myPermissions</code> with each table for the <code>can()</code> helper above.</li>
+          </ul>
+        </div></div>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables</span><span class="tag changed">changed</span><span class="who any">teacher or assistant</span></div>
+    <p class="use">A teacher creates their own table as before. An assistant adds <code>forTeacherId</code> to create one for that teacher. The table belongs to the teacher and counts against the teacher's 50-table limit. If the assistant's access is limited to chosen tables, the new table is added to it automatically.</p>
+    <div class="io">
+      <div><span class="lbl">Body, as the assistant</span><pre class="code">{
+  "groupName": "مجموعة الأحد ٦ م",
+  "forTeacherId": "362458c4-4ed1-48d0-8cf4-fb46c283f23e"
+}</pre></div>
+      <div><span class="lbl">200</span><pre class="code">{
+  "success": true,
+  "data": {
+    "groupId": "649a9e51-f006-4f36-8826-e510ba0effe0",
+    "groupName": "مجموعة الأحد ٦ م",
+    "columns": [],
+    "deletedColumns": []
+  },
+  "error": null,
+  "message": "Table created."
+}</pre></div>
+    </div>
+    <div class="table-wrap"><table class="errs">
+      <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+      <tr><td><span class="s s403">403</span></td><td><code>teacher_account_required</code></td><td>no <code>forTeacherId</code>, and the caller isn't a teacher</td><td class="ar">إنشاء الجداول متاح لحسابات المعلمين فقط</td></tr>
+      <tr><td><span class="s s4">404</span></td><td><code>assistant_not_found</code></td><td><code>forTeacherId</code> names a teacher the caller doesn't assist</td><td class="ar">المساعد غير موجود</td></tr>
+      <tr><td><span class="s s403">403</span></td><td><code>assistant_permission_missing</code></td><td>no <code>CreateTables</code></td><td class="ar">ليس لديك صلاحية لهذا الإجراء، اطلبها من المعلم</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>limit_reached</code></td><td>the teacher already has 50 tables</td><td class="ar">وصلت للحد الأقصى المسموح</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>group_name_required</code></td><td>empty name</td><td class="ar">اسم المجموعة مطلوب</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>name_too_long</code></td><td>over 100 characters</td><td class="ar">الاسم طويل جداً</td></tr>
+    </table></div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list">
+        <li>For an assistant, ask "for which teacher?" first. Offer only teachers from <code>GET assisting</code> whose permissions include <code>CreateTables</code>, and send their <code>teacherId</code>.</li>
+        <li>If no teacher gives the assistant <code>CreateTables</code>, hide the "new table" button.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ............................................................ performance -->
+  <span class="sub" id="performance">Performance report</span>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/{groupId}/performance</span><span class="tag new">new</span><span class="who any">teacher or assistant</span></div>
+    <p class="use">How the students did across the exams the teacher picks. Send 1 to 20 Exam column ids, oldest first. <code>rowIds: null</code> means every student. It reads only.</p>
+
+    <div class="explain">
+      <h3>The statistics, explained simply</h3>
+      <ul class="rules">
+        <li><b>Everything is a percent of the full mark</b>, so a 15/20 and a 30/40 are both 75. Numbers come rounded to 1 decimal: add <code>%</code> and don't round again.</li>
+        <li><b>Absent ("غائب") and empty cells don't count</b> in any average; they're counted on their own.</li>
+        <li><b>"Average" is a range, not one number.</b> A student is average when they're close to the class mean: within half the class's spread. Above it is "above", under it is "below". Examples below are from the demo table's first exam.</li>
+      </ul>
+
+      <h4>1 · Each exam (<code>exams[]</code>): one card per exam</h4>
+      <div class="table-wrap"><table>
+        <tr><th>Field</th><th>In plain words</th><th>Example</th><th>Show it as</th></tr>
+        <tr><td><code>name</code> · <code>maxScore</code></td><td>the exam and its full mark</td><td class="num">امتحان الوحدة الأولى · 20</td><td>the card title: "امتحان الوحدة الأولى (من 20)"</td></tr>
+        <tr><td><code>counted</code> · <code>absent</code> · <code>missing</code></td><td>who sat it, who was absent, whose score wasn't entered</td><td class="num">10 · 0 · 0</td><td>a small line: "حضر 10 · غاب 0"; mention missing only when it's above 0</td></tr>
+        <tr><td><code>meanScore</code> · <code>mean</code></td><td>the class average, in marks and in percent</td><td class="num">15.4 · 77</td><td>the card's big number: "15.4 / 20 (77%)"</td></tr>
+        <tr><td><code>median</code></td><td>the middle student's score: half the class is above it, half below. Not pulled by one very high or very low score</td><td class="num">77.5</td><td>small text under the mean; skip it if space is tight</td></tr>
+        <tr><td><code>min</code> · <code>max</code></td><td>the lowest and the highest score</td><td class="num">50 · 100</td><td>"أقل 50% · أعلى 100%"</td></tr>
+        <tr><td><code>stdDev</code></td><td>how spread out the class is. Small: everyone scored close together. Large: big gaps between strong and weak students</td><td class="num">15.2</td><td>a word, not the number: under 10 "متقارب", 10–20 "متوسط التفاوت", over 20 "متفاوت جداً". Show the number in a tooltip</td></tr>
+        <tr><td><code>variance</code></td><td>the same spread, squared. It's for calculations</td><td class="num">231</td><td>don't show it to teachers</td></tr>
+        <tr><td><code>averageFrom</code> · <code>averageTo</code></td><td>the range that counts as "average" for this exam</td><td class="num">69.4 – 84.6</td><td>the shaded middle zone on the distribution chart, or "المتوسط من 69% إلى 85%"</td></tr>
+        <tr><td><code>above</code> · <code>average</code> · <code>below</code></td><td>how many students are in each group</td><td class="num">4 · 3 · 3</td><td>one stacked bar in three colors: <span class="chip up">فوق 4</span> <span class="chip mid">متوسط 3</span> <span class="chip down">تحت 3</span>. Tapping a part filters the student table</td></tr>
+        <tr><td><code>fullMarks</code></td><td>how many got the full mark</td><td class="num">1</td><td>"1 درجة نهائية", only when above 0</td></tr>
+        <tr><td><code>passRate</code></td><td>percent of those who sat it that scored 50% or more</td><td class="num">100</td><td>a small ring or "نسبة النجاح 100%"</td></tr>
+        <tr><td><code>distribution</code></td><td>how many students fall in each score range: 0-49, 50-64, 65-74, 75-84, 85-100</td><td class="num">0 · 2 · 2 · 2 · 4</td><td>a 5-bar chart, ranges in that order, the 0-49 bar in red</td></tr>
+      </table></div>
+
+      <h4>2 · All chosen exams together (<code>overall</code>): one summary card</h4>
+      <p>The same fields as an exam, worked out on each student's average across the chosen exams. Example: <code>mean</code> 77, <code>stdDev</code> 14, 3 above · 2 average · 5 below. Show it as the summary at the top of the report. With one exam it equals the exam's card, so hide it.</p>
+
+      <h4>3 · Each student (<code>students[]</code>): one row per student</h4>
+      <div class="table-wrap"><table>
+        <tr><th>Field</th><th>In plain words</th><th>Example (حبيبة)</th><th>Show it as</th></tr>
+        <tr><td><code>scores[]</code></td><td>one entry per exam, in the order you sent: <code>score</code> (marks), <code>percent</code>, <code>rank</code> in that exam, <code>standing</code>, <code>absent</code></td><td class="num">15 (75%) · 13 (65%)</td><td>one cell per exam: "15 / 20", colored by its standing. "غائب" when <code>absent</code>; "—" when empty</td></tr>
+        <tr><td><code>scores[].zScore</code></td><td>how far from the class average in that exam, in "spread steps": 0 = right at the average, +1 = clearly above, −1 = clearly below</td><td class="num">−0.13 · −0.88</td><td>usually hidden; the standing color already says it. Useful for sorting "most above average"</td></tr>
+        <tr><td><code>taken</code> · <code>absent</code> · <code>missing</code></td><td>exams the student sat, missed, or has no score for</td><td class="num">2 · 0 · 0</td><td>show absences next to the name: "غاب 1"</td></tr>
+        <tr><td><code>average</code></td><td>the student's average percent over the exams they sat</td><td class="num">70</td><td>the main number in the row: "70%"</td></tr>
+        <tr><td><code>rank</code></td><td>place in the class by average; equal averages share a place</td><td class="num">6</td><td>"#6". The table opens sorted by it</td></tr>
+        <tr><td><code>standing</code></td><td>above, average or below the class, by average</td><td class="num">below</td><td>a chip: <span class="chip up">فوق المتوسط</span> <span class="chip mid">متوسط</span> <span class="chip down">تحت المتوسط</span></td></tr>
+        <tr><td><code>stdDev</code></td><td>how steady the student is. Small: similar scores every time. Large: up and down</td><td class="num">5</td><td>"ثابت" under 5; nothing in between; the <code>inconsistent</code> flag covers 15 and up</td></tr>
+        <tr><td><code>trend</code></td><td>points gained (or lost) per exam, from a straight line through the scores</td><td class="num">−10</td><td>an arrow: <span class="chip up">▲ +5</span> or <span class="chip down">▼ −10</span> "نقطة لكل امتحان"</td></tr>
+        <tr><td><code>change</code></td><td>last exam taken minus first exam taken</td><td class="num">−10</td><td>"−10 نقطة منذ أول امتحان", red when negative, green when positive</td></tr>
+        <tr><td><code>rankChange</code></td><td>places moved between the first and last exam; positive = moved up</td><td class="num">−2</td><td>"▼ 2" or "▲ 2" next to the rank; nothing when 0</td></tr>
+        <tr><td><code>flags</code></td><td>things the teacher should notice (next table)</td><td class="num">dropped_below_average</td><td>chips after the name, named from <code>performance-flags</code></td></tr>
+      </table></div>
+
+      <h4>4 · Flags: what to notice about a student</h4>
+      <div class="table-wrap"><table>
+        <tr><th>Flag</th><th>In plain words</th><th>Needs</th><th>Chip</th></tr>
+        <tr><td><code>fell_from_full_mark</code></td><td>got the full mark once, then fell below average later</td><td class="num">2 exams</td><td><span class="chip down">تراجع بعد الدرجة النهائية</span></td></tr>
+        <tr><td><code>dropped_below_average</code></td><td>below average in the latest exam, after being average or above</td><td class="num">2 exams</td><td><span class="chip down">نزل تحت المتوسط</span></td></tr>
+        <tr><td><code>big_drop</code></td><td>lost 20 points or more between two exams in a row</td><td class="num">2 exams</td><td><span class="chip down">هبوط كبير</span></td></tr>
+        <tr><td><code>declining</code></td><td>going down steadily: 5 points or more per exam</td><td class="num">3 exams</td><td><span class="chip down">في تراجع</span></td></tr>
+        <tr><td><code>always_below</code></td><td>below average in every exam they sat</td><td class="num">2 exams</td><td><span class="chip down">دائماً تحت المتوسط</span></td></tr>
+        <tr><td><code>rose_above_average</code></td><td>above average in the latest exam, after being below</td><td class="num">2 exams</td><td><span class="chip up">صعد فوق المتوسط</span></td></tr>
+        <tr><td><code>improving</code></td><td>going up steadily: 5 points or more per exam</td><td class="num">3 exams</td><td><span class="chip up">في تحسن</span></td></tr>
+        <tr><td><code>inconsistent</code></td><td>scores jump around a lot (spread of 15 or more)</td><td class="num">2 exams</td><td><span class="chip warn">مستوى غير ثابت</span></td></tr>
+        <tr><td><code>often_absent</code></td><td>absent in at least half of the chosen exams</td><td class="num">2 exams</td><td><span class="chip warn">كثير الغياب</span></td></tr>
+        <tr><td><code>missing_scores</code></td><td>a score was never entered (not absent, just empty)</td><td class="num">1 exam</td><td><span class="chip warn">درجات غير مسجلة</span></td></tr>
+      </table></div>
+
+      <h4>5 · Highlights (<code>highlights</code>): the cards the teacher reads first</h4>
+      <div class="table-wrap"><table>
+        <tr><th>Field</th><th>In plain words</th><th><code>value</code> is</th><th>Show it as</th></tr>
+        <tr><td><code>top</code></td><td>the 3 best averages</td><td>average %</td><td>a podium card: "مريم 97.5%"</td></tr>
+        <tr><td><code>needsFollowUp</code></td><td>below average overall, or dropped below average, fell after a full mark, a big drop, or declining while not above average. Lowest first</td><td>average %</td><td>a red-edged list with a "متابعة" button per student</td></tr>
+        <tr><td><code>mostImproved</code></td><td>the biggest rise from first to last exam</td><td>change, in points</td><td>"أكثر تحسناً: آدم +10"</td></tr>
+        <tr><td><code>mostDeclined</code></td><td>the biggest fall from first to last exam</td><td>change, in points</td><td>"أكثر تراجعاً: حبيبة −10"</td></tr>
+        <tr><td><code>hardestExam</code> · <code>easiestExam</code></td><td>the exam with the lowest / highest class mean; <code>null</code> when the means are equal or there's one exam</td><td>(<code>mean</code>)</td><td>"أصعب امتحان: … (65%)"; hide when <code>null</code></td></tr>
+        <tr><td><code>mostConsistent</code> · <code>leastConsistent</code></td><td>the steadiest student, and the one whose scores jump around most</td><td>the student's spread</td><td>"الأكثر ثباتاً: جنى" — show the name, not the number</td></tr>
+      </table></div>
+
+      <h4>A good screen layout</h4>
+      <ol class="layout">
+        <li><b>Top:</b> the <code>overall</code> summary card (mean, the above / average / below bar, the spread word), with the chosen exams' names.</li>
+        <li><b>Highlights row:</b> top 3, needs follow-up, most improved / declined, hardest exam.</li>
+        <li><b>Exam cards:</b> one per exam, side by side, each with its big mean, the stacked bar and the 5-bar chart.</li>
+        <li><b>Student table:</b> rank, name with flag chips, one cell per exam, average, standing chip, trend arrow. Sortable; filter by standing or flag.</li>
+      </ol>
+    </div>
+
+    <div class="io">
+      <div><span class="lbl">Body</span><pre class="code">{
+  "examColumnIds": ["c1", "c2"],
+  "rowIds": null
+}</pre>
+      </div>
+      <div><span class="lbl">200 (one exam and two students shown)</span><pre class="code">{
+  "success": true,
+  "data": {
+    "groupId": "3f7bf12e-5a6e-4816-8d9b-6bd83dde398d",
+    "groupName": "فيزياء ٣ ثانوي – مجموعة السبت ٤ م",
+    "averageBand": 0.5,
+    "exams": [
+      {
+        "columnId": "c1", "name": "امتحان الوحدة الأولى", "maxScore": 20,
+        "counted": 10, "absent": 0, "missing": 0,
+        "mean": 77, "meanScore": 15.4, "median": 77.5,
+        "min": 50, "max": 100,
+        "variance": 231, "stdDev": 15.2,
+        "averageFrom": 69.4, "averageTo": 84.6,
+        "above": 4, "average": 3, "below": 3,
+        "fullMarks": 1, "passRate": 100,
+        "distribution": [
+          { "range": "0-49", "count": 0 }, { "range": "50-64", "count": 2 },
+          { "range": "65-74", "count": 2 }, { "range": "75-84", "count": 2 },
+          { "range": "85-100", "count": 4 }
+        ]
+      }
+    ],
+    "overall": {
+      "counted": 10, "mean": 77, "median": 76.3, "min": 52.5, "max": 97.5,
+      "variance": 194.8, "stdDev": 14,
+      "averageFrom": 70, "averageTo": 84,
+      "above": 3, "average": 2, "below": 5,
+      "distribution": [ … ]
+    },
+    "students": [
+      {
+        "rowId": 43, "name": "مريم خالد محمود",
+        "scores": [
+          { "columnId": "c1", "score": 20, "percent": 100, "absent": false, "rank": 1, "standing": "above", "zScore": 1.51 },
+          { "columnId": "c2", "score": 19, "percent": 95,  "absent": false, "rank": 1, "standing": "above", "zScore": 1.32 }
+        ],
+        "taken": 2, "absent": 0, "missing": 0,
+        "average": 97.5, "rank": 1, "standing": "above",
+        "stdDev": 2.5, "trend": -5, "change": -5, "rankChange": 0,
+        "flags": []
+      },
+      {
+        "rowId": 51, "name": "حبيبة ياسر كمال",
+        "scores": [
+          { "columnId": "c1", "score": 15, "percent": 75, "absent": false, "rank": 6, "standing": "average", "zScore": -0.13 },
+          { "columnId": "c2", "score": 13, "percent": 65, "absent": false, "rank": 8, "standing": "below",   "zScore": -0.88 }
+        ],
+        "taken": 2, "absent": 0, "missing": 0,
+        "average": 70, "rank": 6, "standing": "below",
+        "stdDev": 5, "trend": -10, "change": -10, "rankChange": -2,
+        "flags": ["dropped_below_average"]
+      }
+    ],
+    "highlights": {
+      "top": [
+        { "rowId": 43, "name": "مريم خالد محمود", "value": 97.5 },
+        { "rowId": 49, "name": "جنى أشرف عادل", "value": 92.5 },
+        { "rowId": 42, "name": "يوسف أحمد عبد الرحمن", "value": 92.5 }
+      ],
+      "needsFollowUp": [
+        { "rowId": 46, "name": "زياد حسن فتحي", "value": 52.5 },
+        { "rowId": 44, "name": "عمر محمد السيد", "value": 65 }
+      ],
+      "mostImproved":    { "rowId": 48, "name": "آدم وليد مصطفى", "value": 10 },
+      "mostDeclined":    { "rowId": 51, "name": "حبيبة ياسر كمال", "value": -10 },
+      "hardestExam": null,
+      "easiestExam": null,
+      "mostConsistent":  { "rowId": 49, "name": "جنى أشرف عادل", "value": 2.5 },
+      "leastConsistent": { "rowId": 48, "name": "آدم وليد مصطفى", "value": 5 }
+    }
+  },
+  "error": null
+}</pre></div>
+    </div>
+    <div class="table-wrap"><table class="errs">
+      <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>exams_required</code></td><td><code>examColumnIds</code> is empty</td><td class="ar">اختر امتحاناً واحداً على الأقل</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>limit_reached</code></td><td>more than 20 exams; <code>details.limit</code></td><td class="ar">وصلت للحد الأقصى المسموح</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>unknown_column</code></td><td>e.g. <code>"c99"</code> or a deleted column; <code>details.column</code></td><td class="ar">العمود غير موجود في هذا الجدول</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>not_an_exam_column</code></td><td>e.g. a Number column; <code>details.column</code></td><td class="ar">أحد الأعمدة المختارة ليس عمود امتحان</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>unknown_rows</code></td><td>a rowId not in this table</td><td class="ar">بعض الطلاب المختارين ليسوا في هذا الجدول</td></tr>
+      <tr><td><span class="s s4">404</span></td><td><code>table_not_found</code></td><td>missing, or not shared with this assistant</td><td class="ar">الجدول غير موجود</td></tr>
+    </table></div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list">
+        <li><b>Exam picker:</b> only columns with <code>type: "Exam"</code> from <code>GET /{groupId}</code>, in the table's column order. Send the chosen ids oldest first, because the order drives trends and drops. Allow 1 to 20; disable Run with none.</li>
+        <li><b>Weekly / monthly:</b> exams have no date. The teacher picks that week's or month's exams.</li>
+        <li><b>One exam:</b> hide the overall card, the trend, change and steadiness columns, and hardest / easiest exam; they're <code>null</code> or repeat the exam.</li>
+        <li><b>Any <code>null</code>:</b> show "—".</li>
+        <li><b>Absent from every chosen exam:</b> no average or rank, and not in highlights. List them at the end of the table with their absences.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ............................................................ import -->
+  <span class="sub" id="import">Excel import</span>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/tracking-tables/import</span><span class="tag changed">changed</span><span class="who any">teacher or assistant</span></div>
+    <p class="use">Creates a new table from the sheet. The sheet columns used for name and phones now fill only the three fixed fields, with phones cleaned to <code>01XXXXXXXXX</code>; they're no longer added again as table columns. The three index fields are optional: leave one out to use the column the preview recognised, or send <code>-1</code> for none, in which case that sheet column stays a normal table column.</p>
+    <div class="io">
+      <div><span class="lbl">multipart/form-data</span><pre class="code">file               = students.xlsx
+groupName          = مجموعة الاثنين ٤ م
+nameColumn         = 0      (optional)
+studentPhoneColumn = 1      (optional, -1 = none)
+parentPhoneColumn  = 2      (optional)
+forTeacherId       = …      (assistant only, needs Import)</pre></div>
+      <div><span class="lbl">200 (no index fields sent)</span><pre class="code">{
+  "success": true,
+  "data": {
+    "groupId": "7a788608-aff7-4d30-8de5-dee0d59b394d",
+    "rows": 3,
+    "columns": 2,
+    "coreFields": {
+      "name": "الاسم",
+      "studentPhone": "رقم الطالب",
+      "parentPhone": "رقم ولي الأمر"
+    },
+    "warnings": [
+      { "row": 3,
+        "message": "\"123\" isn't a valid parent mobile number - left empty; enter it on the student." }
+    ]
+  },
+  "error": null,
+  "message": "Imported 3 students."
+}</pre></div>
+    </div>
+    <div class="table-wrap"><table class="errs">
+      <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>duplicate_core_column</code></td><td>the same index for two fields; <code>details.field</code>, <code>details.index</code></td><td class="ar">اخترت نفس العمود لأكثر من حقل أساسي</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>unknown_column</code></td><td>an index the sheet doesn't have; <code>details.field</code></td><td class="ar">العمود غير موجود في هذا الجدول</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>invalid_file</code></td><td>not an .xlsx file, or over 5 MB</td><td class="ar">الملف غير مدعوم، المسموح ملفات Excel بصيغة xlsx</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>unreadable_file</code></td><td>a damaged .xlsx</td><td class="ar">تعذر قراءة الملف، احفظه مرة أخرى بصيغة xlsx</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>empty_file</code></td><td>no sheet, or headers without students</td><td class="ar">الملف لا يحتوي على طلاب</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>limit_reached</code></td><td>over 1,000 students or 50 columns, or the teacher has 50 tables</td><td class="ar">وصلت للحد الأقصى المسموح</td></tr>
+      <tr><td><span class="s s4">400</span></td><td><code>group_name_required</code></td><td>empty <code>groupName</code></td><td class="ar">اسم المجموعة مطلوب</td></tr>
+      <tr><td><span class="s s403">403</span></td><td><code>teacher_account_required</code></td><td>not a teacher, and no <code>forTeacherId</code></td><td class="ar">إنشاء الجداول متاح لحسابات المعلمين فقط</td></tr>
+      <tr><td><span class="s s403">403</span></td><td><code>assistant_permission_missing</code></td><td>an assistant without <code>Import</code></td><td class="ar">ليس لديك صلاحية لهذا الإجراء، اطلبها من المعلم</td></tr>
+    </table></div>
+    <div class="fnote"><span class="lbl">For the front</span>
+      <ul class="note-list">
+        <li>Send the index fields only for fields the user changed from the preview; "none" is <code>-1</code>.</li>
+        <li>For an assistant, choose the teacher from <code>GET assisting</code> (those with <code>Import</code>) and send <code>forTeacherId</code>.</li>
+        <li>After the import, show "تم استيراد N طالب" (<code>data.rows</code>) and the warnings as a list ("صف {row}: {message}"; <code>row</code> is the Excel row number), then open the new table.</li>
+        <li><code>coreFields</code> now holds the <b>sheet header</b> used for each field, or <code>null</code>. It used to hold a column id.</li>
+      </ul>
+    </div>
+  </article>
+
+</section>
+
+<!-- ======================================================================= 2. manual test -->
+<section class="part" id="test">
+  <div class="part-head ph2"><span class="num">Section 2</span><h2>Manual test</h2><p>In Swagger on the dev server, with two accounts. Keep one browser tab signed in as each, and paste that tab's token into Authorize before its steps.</p></div>
+
+  <div class="panel">
+    <h3>What you need</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Item</th><th>Value</th></tr>
+      <tr><td><b>Teacher</b> (admin account)</td><td><code>01094341573</code>, signed in with <code>POST /api/auth/test-phone-login</code> (no body)</td></tr>
+      <tr><td><b>Assistant</b> (test account)</td><td><code>01000000120</code>, signed in with <code>phone-login-request</code> then <code>phone-verify</code>. On the dev server the code is in the first response's message ("Debug Code: …")</td></tr>
+      <tr><td><b>Demo table</b> (the teacher's)</td><td><code>3f7bf12e-5a6e-4816-8d9b-6bd83dde398d</code>, 10 students. Exams <code>c1</code> and <code>c2</code> (out of 20), <code>c5</code> is the lessons Number column</td></tr>
+      <tr><td><b>Excel file</b></td><td><b>students.xlsx</b>: row 1 <span class="ar">الاسم · رقم الطالب · رقم ولي الأمر · الحضور · امتحان 1</span>, then the 3 rows below</td></tr>
+    </table></div>
+    <pre class="code">سارة محمود   01200000401        01000000401   12   18
+كريم عادل    01200000402        123           10   15
+ليلى حسن     +20 120 000 0403   01000000403    9   غائب</pre>
+    <span class="lbl">Write these down as you go</span>
+    <div class="table-wrap"><table>
+      <tr><th>Name</th><th>From step</th><th>What</th></tr>
+      <tr><td><b>OTHER</b></td><td class="num">5</td><td>a table that won't be shared</td></tr>
+      <tr><td><b>LINK</b></td><td class="num">6</td><td>the assistant link's <code>id</code></td></tr>
+      <tr><td><b>TEACHER</b></td><td class="num">10</td><td><code>teacherId</code> from <code>GET assisting</code></td></tr>
+      <tr><td><b>ROW</b></td><td class="num">11</td><td>the student the assistant adds</td></tr>
+      <tr><td><b>MADE</b></td><td class="num">16</td><td>the table the assistant creates for the teacher</td></tr>
+      <tr><td><b>G</b></td><td class="num">20</td><td>the 4-exam test table</td></tr>
+      <tr><td><b>IMPORTED</b></td><td class="num">22</td><td>the imported table's <code>groupId</code></td></tr>
+    </table></div>
+    <p class="tip">Don't press <b>allow</b> on a report from the demo table. Its parent phones are placeholder numbers, and once the template is live that sends real WhatsApp messages.</p>
+  </div>
+
+  <div class="flow"><ol>
+    <li class="stage">Sign in and lookups</li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m post">POST</span><span class="path">/api/auth/test-phone-login</span></div>
+      <p class="expect">No body. <b>200</b>. Copy <code>token</code> into the teacher tab's Authorize.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span><span class="m post">POST</span><span class="path">/api/auth/phone-login-request</span>, then <span class="m post">POST</span><span class="path">/api/auth/phone-verify</span></div>
+      <pre class="code">{ "phoneNumber": "01000000120" }
+{ "phoneNumber": "01000000120", "code": "&lt;Debug Code&gt;" }</pre>
+      <p class="expect"><b>200</b>. Copy <code>token</code> into the assistant tab's Authorize.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who any">either</span><span class="m get">GET</span><span class="path">/api/lookups/assistant-permissions</span> · <span class="path">/api/lookups/performance-flags</span> · <span class="path">/api/lookups/error-codes</span></div>
+      <p class="expect"><b>200</b>: 10 permissions; 3 standings and 10 flags; the catalogue includes <code>assistant_permission_missing</code> (403) and <code>duplicate_core_column</code>.</p>
+    </li>
+
+    <li class="stage">Add the assistant</li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m get">GET</span><span class="path">/api/tracking-tables/assistants</span></div>
+      <p class="expect"><b>200</b>. If 01000000120 is already listed, delete it with <code>DELETE /api/tracking-tables/assistants/{id}</code> first.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m post">POST</span><span class="path">/api/tracking-tables</span></div>
+      <pre class="code">{ "groupName": "جدول غير مشارك" }</pre>
+      <p class="expect"><b>200</b>. <code>groupId</code> → <b>OTHER</b>.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m post">POST</span><span class="path">/api/tracking-tables/assistants</span></div>
+      <pre class="code">{ "phoneNumber": "01000000120", "permissions": ["AddRows", "Export"], "allTables": false, "groupIds": ["3f7bf12e-5a6e-4816-8d9b-6bd83dde398d"] }</pre>
+      <p class="expect"><b>200</b>, <code>permissions</code> ["AddRows","Export"], one table. <code>id</code> → <b>LINK</b>.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m post">POST</span><span class="path">/api/tracking-tables/assistants</span>, one at a time</div>
+      <pre class="code">{ "phoneNumber": "01000000120", "permissions": [], "allTables": true }   → 400 assistant_exists
+{ "phoneNumber": "01094341573", "permissions": [], "allTables": true }   → 400 cannot_assist_self
+{ "phoneNumber": "01099999999", "permissions": [], "allTables": true }   → 404 user_not_found
+{ "phoneNumber": "12345", "permissions": [], "allTables": true }         → 400 invalid_phone
+{ "permissions": [], "allTables": true }                                 → 400 validation_error, details.PhoneNumber</pre>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m put">PUT</span><span class="path">/api/tracking-tables/assistants/{LINK}</span>, one at a time</div>
+      <pre class="code">{ "permissions": ["DeleteEverything"], "allTables": true }                                          → 400 invalid_permission
+{ "permissions": [], "allTables": false, "groupIds": [] }                                         → 400 no_tables_chosen
+{ "permissions": [], "allTables": false, "groupIds": ["00000000-0000-0000-0000-000000000001"] }   → 404 table_not_found</pre>
+      <p class="expect">And <code>PUT /api/tracking-tables/assistants/999999</code> with any body → <b>404</b> <code>assistant_not_found</code>. None of these change the link.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m get">GET</span><span class="path">/api/tracking-tables/assistants</span></div>
+      <p class="expect"><b>200</b>, the assistant still with ["AddRows","Export"] and the demo table.</p>
+    </li>
+
+    <li class="stage">Work as the assistant</li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span><span class="m get">GET</span><span class="path">/api/tracking-tables/assisting</span> · <span class="m get">GET</span><span class="path">/api/tracking-tables</span></div>
+      <p class="expect"><b>200</b>. <code>assisting</code> shows the teacher: <code>teacherId</code> → <b>TEACHER</b>. The table list shows the demo table with <code>isOwner: false</code> and <code>myPermissions</code> ["AddRows","Export"]; OTHER isn't there.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span><span class="m post">POST</span><span class="path">/api/tracking-tables/3f7bf12e-5a6e-4816-8d9b-6bd83dde398d/rows</span></div>
+      <pre class="code">{ "fullName": "طالب تجربة المساعد", "studentPhone": "01200000999", "values": { "c1": 11 } }</pre>
+      <p class="expect"><b>200</b>. <code>id</code> → <b>ROW</b>.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span> actions without the permission (demo table = <code>3f7bf12e-…</code>)</div>
+      <pre class="code">PUT    /api/tracking-tables/3f7bf12e-…              { "groupName": "اسم جديد" }        → 403, permission EditTables
+PUT    /api/tracking-tables/3f7bf12e-…/rows/{ROW}   { "fullName": "تعديل" }            → 403, permission EditRows
+DELETE /api/tracking-tables/3f7bf12e-…/rows/{ROW}                                     → 403, permission DeleteRows
+POST   /api/tracking-tables/3f7bf12e-…/prepare-report
+       { "templateKey": "monthly_exam_report",
+         "blanks": ["studentName","text:أكتوبر","c1","c2","c1","c2","teacherName"] }  → 403, permission PrepareReports</pre>
+      <p class="expect">Each is <code>assistant_permission_missing</code> with <code>details.permission</code> as shown.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span> outside their access</div>
+      <pre class="code">GET  /api/tracking-tables/{OTHER}                                          → 404 table_not_found
+POST /api/tracking-tables  { "groupName": "جدولي" }                         → 403 teacher_account_required
+POST /api/tracking-tables  { "groupName": "x", "forTeacherId": "{TEACHER}" } → 403 assistant_permission_missing (CreateTables)
+POST /api/tracking-tables  { "groupName": "x", "forTeacherId": "abc" }       → 404 assistant_not_found</pre>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span><span class="m post">POST</span><span class="path">/api/tracking-tables/3f7bf12e-…/export</span></div>
+      <pre class="code">{}</pre>
+      <p class="expect"><b>200</b>, an .xlsx download.</p>
+    </li>
+
+    <li class="stage">Change the access</li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m put">PUT</span><span class="path">/api/tracking-tables/assistants/{LINK}</span></div>
+      <pre class="code">{ "permissions": ["AddRows", "Export", "DeleteRows", "CreateTables", "PrepareReports"], "allTables": false, "groupIds": ["3f7bf12e-5a6e-4816-8d9b-6bd83dde398d"] }</pre>
+      <p class="expect"><b>200</b>, permissions in display order: CreateTables, AddRows, DeleteRows, Export, PrepareReports.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span> right away, without signing in again</div>
+      <pre class="code">DELETE /api/tracking-tables/3f7bf12e-…/rows/{ROW}                                         → 200
+POST   /api/tracking-tables  { "groupName": "جدول أنشأه المساعد", "forTeacherId": "{TEACHER}" } → 200, groupId → MADE
+GET    /api/tracking-tables/reports                                                        → 200</pre>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span><span class="m get">GET</span><span class="path">/api/tracking-tables/assisting</span> · <span class="who tc">teacher</span><span class="m get">GET</span><span class="path">/api/tracking-tables</span></div>
+      <p class="expect">The assistant's <code>tables</code> now include MADE. The teacher's list shows MADE with <code>isOwner: true</code>.</p>
+    </li>
+
+    <li class="stage">Performance report</li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span><span class="m post">POST</span><span class="path">/api/tracking-tables/3f7bf12e-…/performance</span></div>
+      <pre class="code">{ "examColumnIds": ["c1", "c2"], "rowIds": null }</pre>
+      <p class="expect"><b>200</b>. Exam 1: <b>mean 77</b>, <b>stdDev 15.2</b>, <b>4 above / 3 average / 3 below</b>, band 69.4–84.6. Top: مريم 97.5. حبيبة has <code>dropped_below_average</code>; زياد and مالك have <code>always_below</code>. No <code>improving</code> / <code>declining</code> with 2 exams.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span> the same endpoint, one at a time</div>
+      <pre class="code">{ "examColumnIds": ["c1"] }                    → 200; trend, change, stdDev null; flags []; hardestExam null
+{ "examColumnIds": [] }                        → 400 exams_required
+{ "examColumnIds": ["c1", "c5"] }              → 400 not_an_exam_column (details.column "c5")
+{ "examColumnIds": ["c99"] }                   → 400 unknown_column
+{ "examColumnIds": ["c1"], "rowIds": [1] }     → 400 unknown_rows</pre>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span> flags over 4 exams</div>
+      <pre class="code">POST /api/tracking-tables                   { "groupName": "اختبار الأداء" }                        → groupId G
+POST /api/tracking-tables/{G}/columns       { "name": "امتحان 1", "type": "Exam", "maxScore": 20 }  (×4: امتحان 1–4 → c1–c4)
+POST /api/tracking-tables/{G}/rows          { "fullName": "نجم ثم هبوط", "values": { "c1": 20, "c2": 18, "c3": 9, "c4": 8 } }
+POST /api/tracking-tables/{G}/rows          { "fullName": "صاعد",        "values": { "c1": 8,  "c2": 11, "c3": 15, "c4": 19 } }
+POST /api/tracking-tables/{G}/rows          { "fullName": "ثابت",        "values": { "c1": 15, "c2": 15, "c3": 15, "c4": 15 } }
+POST /api/tracking-tables/{G}/performance   { "examColumnIds": ["c1", "c2", "c3", "c4"] }</pre>
+      <p class="expect"><b>200</b>. نجم ثم هبوط: <code>fell_from_full_mark</code>, <code>big_drop</code>, <code>declining</code>. صاعد: <code>improving</code>, <code>rose_above_average</code>. ثابت: no flags, <code>stdDev</code> 0. <code>hardestExam</code> is امتحان 3 (mean 65), <code>easiestExam</code> امتحان 2.</p>
+    </li>
+
+    <li class="stage">Import</li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m post">POST</span><span class="path">/api/tracking-tables/import/preview</span></div>
+      <pre class="code">file = students.xlsx</pre>
+      <p class="expect"><b>200</b>. Indexes 0, 1, 2 have <code>coreField</code> name, studentPhone, parentPhone.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m post">POST</span><span class="path">/api/tracking-tables/import</span></div>
+      <pre class="code">file = students.xlsx
+groupName = مجموعة الاثنين ٤ م</pre>
+      <p class="expect"><b>200</b>, <b><code>columns: 2</code></b>, <code>coreFields</code> with the three headers, 1 warning for row 3 ("123"). <code>groupId</code> → <b>IMPORTED</b>.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m post">POST</span><span class="path">/api/tracking-tables/{IMPORTED}/rows/query</span></div>
+      <pre class="code">{}</pre>
+      <p class="expect"><b>200</b>. Columns are only الحضور and امتحان 1. ليلى's <code>studentPhone</code> is <code>01200000403</code>; كريم's <code>parentPhone</code> is <code>null</code>.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span> / <span class="who as">assistant</span> the same import with index fields</div>
+      <pre class="code">teacher:   studentPhoneColumn = -1                       → 200, columns: 3, coreFields.studentPhone null
+teacher:   nameColumn = 0, studentPhoneColumn = 0        → 400 duplicate_core_column
+teacher:   parentPhoneColumn = 9                         → 400 unknown_column
+assistant: forTeacherId = {TEACHER}                      → 403 assistant_permission_missing (Import)
+teacher:   a .csv file                                   → 400 invalid_file</pre>
+    </li>
+
+    <li class="stage">Admin sending</li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m post">POST</span><span class="path">/api/tracking-tables/3f7bf12e-…/prepare-report</span></div>
+      <pre class="code">{ "templateKey": "monthly_exam_report", "blanks": ["studentName", "text:أكتوبر", "c1", "c2", "c1", "c2", "teacherName"], "rowIds": [42] }</pre>
+      <p class="expect"><b>200</b>, <code>quota.remaining: null</code>, <code>quota.code: null</code>. Don't allow it.</p>
+    </li>
+
+    <li class="stage">End the link and clean up</li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m del">DELETE</span><span class="path">/api/tracking-tables/assistants/{LINK}</span></div>
+      <p class="expect"><b>200</b>. Then as the assistant, <code>GET /api/tracking-tables/3f7bf12e-…</code> → <b>404</b> <code>table_not_found</code>.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span> re-add with every table, view only</div>
+      <pre class="code">{ "phoneNumber": "01000000120", "permissions": [], "allTables": true }</pre>
+      <p class="expect"><b>200</b>. As the assistant, <code>GET /api/tracking-tables/{OTHER}</code> is now <b>200</b> (all tables).</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who as">assistant</span><span class="m del">DELETE</span><span class="path">/api/tracking-tables/assisting/{id from GET assisting}</span></div>
+      <p class="expect"><b>200</b>. The teacher's <code>GET /assistants</code> no longer lists 01000000120. The same DELETE again → <b>404</b> <code>assistant_not_found</code>.</p>
+    </li>
+    <li>
+      <div class="ep-line"><span class="who tc">teacher</span><span class="m del">DELETE</span><span class="path">/api/tracking-tables/{id}</span> for OTHER, MADE, IMPORTED, G and the second import</div>
+      <p class="expect"><b>200</b> each. They move to <code>GET /api/tracking-tables?deleted=true</code>.</p>
+    </li>
+  </ol></div>
+  <p class="foot">Bodies and responses captured on 2026-11-01 from the dev server on the shared database. Times are UTC.</p>
+</section>
+
+</div>
+
+</body></html>

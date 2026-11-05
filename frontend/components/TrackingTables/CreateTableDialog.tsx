@@ -16,7 +16,9 @@ import { useCreateTable } from "@/app/hooks/useTrackingTables";
 import { trackingTableService } from "@/app/services/tracking-table.service";
 import { defaultView, useTableViewStore } from "@/app/lib/tracking-table-view.store";
 import { SaveColumnBody } from "@/app/types/tracking-table.types";
+import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
 import { Modal, inputClass, primaryButton, secondaryButton } from "./ui";
+import { TeacherPicker } from "./TeacherPicker";
 
 // Columns most groups start with; the teacher ticks the ones they want and
 // can change or delete them later.
@@ -40,6 +42,13 @@ export function CreateTableDialog({ onClose }: { onClose: () => void }) {
   const createTable = useCreateTable();
   const updateView = useTableViewStore((s) => s.update);
 
+  // An assistant creates tables for a teacher who gave them CreateTables.
+  const { isTeacher, createFor } = useTrackingAccess();
+  const [forTeacherId, setForTeacherId] = useState(isTeacher ? "" : createFor[0]?.teacherId ?? "");
+  const link = createFor.find((l) => l.teacherId === forTeacherId);
+  // Starter columns need EditTables on the teacher's side.
+  const canAddColumns = !link || link.permissions.includes("EditTables");
+
   const trimmed = name.trim();
   const busy = createTable.isPending || addingColumns;
 
@@ -50,14 +59,17 @@ export function CreateTableDialog({ onClose }: { onClose: () => void }) {
     event.preventDefault();
     if (!trimmed || busy) return;
 
-    const table = await createTable.mutateAsync(trimmed).catch(() => null);
+    const table = await createTable
+      .mutateAsync({ groupName: trimmed, forTeacherId: forTeacherId || undefined })
+      .catch(() => null);
     if (!table) return;
     updateView(table.groupId, { ...defaultView(table.groupId), color });
 
     // One at a time, so they keep the order shown here.
     setAddingColumns(true);
     try {
-      for (const { column } of STARTER_COLUMNS.filter((s) => starters.includes(s.key))) {
+      const chosen = canAddColumns ? STARTER_COLUMNS.filter((s) => starters.includes(s.key)) : [];
+      for (const { column } of chosen) {
         await trackingTableService.addColumn(table.groupId, column);
       }
     } catch {
@@ -83,6 +95,8 @@ export function CreateTableDialog({ onClose }: { onClose: () => void }) {
       }
     >
       <form id="create-table" onSubmit={submit} className="flex flex-col gap-5">
+        <TeacherPicker value={forTeacherId} onChange={setForTeacherId} isTeacher={isTeacher} links={createFor} />
+
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">اسم المجموعة</span>
           <input
@@ -117,7 +131,7 @@ export function CreateTableDialog({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        {canAddColumns && <div className="flex flex-col gap-2">
           <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">ابدأ بأعمدة جاهزة</span>
           <div className="grid gap-2 sm:grid-cols-2">
             {STARTER_COLUMNS.map(({ key, column }) => {
@@ -155,7 +169,7 @@ export function CreateTableDialog({ onClose }: { onClose: () => void }) {
               );
             })}
           </div>
-        </div>
+        </div>}
       </form>
     </Modal>
   );

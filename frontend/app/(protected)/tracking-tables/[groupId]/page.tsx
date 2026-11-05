@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowDown,
   ArrowUp,
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -54,6 +55,7 @@ import {
   useTableRows,
   useUpdateRow,
 } from "@/app/hooks/useTrackingTables";
+import { useTablePermissions } from "@/app/hooks/useTrackingAccess";
 import {
   CellValue,
   RowFilter,
@@ -95,6 +97,16 @@ export default function TrackingTableBoardPage() {
   const view = useTableView(groupId);
   const toggleHidden = useTableViewStore((s) => s.toggleHidden);
   const color = TABLE_COLORS[view.color];
+
+  // On a teacher's shared table, an assistant gets only the buttons for what
+  // the teacher allowed. Seeing the table and its performance needs nothing.
+  const { can, isOwner, table: summary } = useTablePermissions(groupId);
+  const gridPermissions = {
+    editTables: can("EditTables"),
+    addRows: can("AddRows"),
+    editRows: can("EditRows"),
+    deleteRows: can("DeleteRows"),
+  };
 
   // --- What the grid shows ---
   const [searchInput, setSearchInput] = useState("");
@@ -162,7 +174,32 @@ export default function TrackingTableBoardPage() {
   const restoreTable = useRestoreTable();
   const exportTable = useExportTable(groupId);
   const { data: templates = [] } = useReportTemplates();
-  const canReport = templates.length > 0;
+  const canReport = templates.length > 0 && can("PrepareReports");
+  const hasExams = columns.some((c) => c.type === "Exam");
+  const tableMenu = [
+    ...(gridPermissions.editTables
+      ? [
+          { label: "تغيير الاسم", Icon: Pencil, onSelect: () => setDialog({ kind: "rename" }) },
+          {
+            label: "الاسم والأرقام من عمود",
+            Icon: Wand2,
+            disabled: columns.length === 0,
+            onSelect: () => setDialog({ kind: "coreFields" }),
+          },
+        ]
+      : []),
+    ...(can("DeleteTables")
+      ? [
+          {
+            label: "حذف الجدول",
+            Icon: Trash2,
+            danger: true,
+            separatorBefore: gridPermissions.editTables,
+            onSelect: () => removeTable(),
+          },
+        ]
+      : []),
+  ];
 
   const saveCell = (row: TrackingRow, field: GridField, value: CellValue) => {
     const body = rowBody(row);
@@ -285,7 +322,7 @@ export default function TrackingTableBoardPage() {
           {table ? tableInitial(table.groupName) : ""}
         </span>
         <div className="min-w-0 flex-1">
-          {table ? (
+          {table && gridPermissions.editTables ? (
             <button
               type="button"
               onClick={() => setDialog({ kind: "rename" })}
@@ -294,10 +331,13 @@ export default function TrackingTableBoardPage() {
               <h1 className="truncate text-2xl font-bold text-zinc-900 dark:text-zinc-100">{table.groupName}</h1>
               <Pencil size={16} className="shrink-0 text-zinc-400 opacity-0 transition group-hover:opacity-100" />
             </button>
+          ) : table ? (
+            <h1 className="truncate text-2xl font-bold text-zinc-900 dark:text-zinc-100">{table.groupName}</h1>
           ) : (
             <Skeleton className="h-8 w-56" />
           )}
           <p className="mt-0.5 text-sm text-zinc-500">
+            {!isOwner && summary?.teacher ? `جدول ${summary.teacher.name} · ` : ""}
             {formatNumber(total)} طالب · {formatNumber(columns.length)} عمود
           </p>
         </div>
@@ -313,32 +353,34 @@ export default function TrackingTableBoardPage() {
               <Send size={17} /> إرسال تقرير
             </button>
           )}
-          <button type="button" onClick={exportExcel} disabled={exportTable.isPending || total === 0} className={secondaryButton}>
-            {exportTable.isPending ? <Loader2 size={17} className="animate-spin" /> : <Download size={17} />}
-            <span className="hidden sm:inline">تصدير Excel</span>
-          </button>
+          {hasExams && (
+            <Link href={`/tracking-tables/${groupId}/performance`} className={secondaryButton}>
+              <BarChart3 size={17} /> <span className="hidden sm:inline">تقرير الأداء</span>
+            </Link>
+          )}
+          {can("Export") && (
+            <button type="button" onClick={exportExcel} disabled={exportTable.isPending || total === 0} className={secondaryButton}>
+              {exportTable.isPending ? <Loader2 size={17} className="animate-spin" /> : <Download size={17} />}
+              <span className="hidden sm:inline">تصدير Excel</span>
+            </button>
+          )}
           <AppearancePopover groupId={groupId} fields={allFields} />
-          <button type="button" onClick={() => setDialog({ kind: "column" })} className={secondaryButton}>
-            <Plus size={17} /> <span className="hidden sm:inline">عمود</span>
-          </button>
-          <Dropdown
-            align="end"
-            trigger={
-              <button type="button" aria-label="المزيد" className={cn(secondaryButton, "px-2.5")}>
-                <MoreHorizontal size={18} />
-              </button>
-            }
-            items={[
-              { label: "تغيير الاسم", Icon: Pencil, onSelect: () => setDialog({ kind: "rename" }) },
-              {
-                label: "الاسم والأرقام من عمود",
-                Icon: Wand2,
-                disabled: columns.length === 0,
-                onSelect: () => setDialog({ kind: "coreFields" }),
-              },
-              { label: "حذف الجدول", Icon: Trash2, danger: true, separatorBefore: true, onSelect: removeTable },
-            ]}
-          />
+          {gridPermissions.editTables && (
+            <button type="button" onClick={() => setDialog({ kind: "column" })} className={secondaryButton}>
+              <Plus size={17} /> <span className="hidden sm:inline">عمود</span>
+            </button>
+          )}
+          {tableMenu.length > 0 && (
+            <Dropdown
+              align="end"
+              trigger={
+                <button type="button" aria-label="المزيد" className={cn(secondaryButton, "px-2.5")}>
+                  <MoreHorizontal size={18} />
+                </button>
+              }
+              items={tableMenu}
+            />
+          )}
         </div>
       </header>
 
@@ -442,6 +484,7 @@ export default function TrackingTableBoardPage() {
             updateRow.mutate({ row, body: { ...rowBody(row), noParentMessages: !row.noParentMessages } })
           }
           onDeleteRow={(row) => removeRows([row.id])}
+          permissions={gridPermissions}
         />
       </div>
 
@@ -464,6 +507,8 @@ export default function TrackingTableBoardPage() {
         count={selected.size}
         columns={columns}
         canReport={canReport}
+        canClear={gridPermissions.editRows}
+        canDelete={gridPermissions.deleteRows}
         onReport={() => setDialog({ kind: "report", rowIds: [...selected] })}
         onDelete={() => removeRows([...selected])}
         onCancel={() => setSelected(new Set())}
@@ -488,7 +533,13 @@ export default function TrackingTableBoardPage() {
         <ColumnDialog groupId={groupId} column={dialog.column} onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === "report" && (
-        <ReportDialog groupId={groupId} columns={columns} rowIds={dialog.rowIds} onClose={() => setDialog(null)} />
+        <ReportDialog
+          groupId={groupId}
+          columns={columns}
+          rowIds={dialog.rowIds}
+          canSend={can("SendReports")}
+          onClose={() => setDialog(null)}
+        />
       )}
       {dialog?.kind === "rename" && table && (
         <RenameTableDialog

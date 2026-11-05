@@ -34,7 +34,7 @@ interface ExecutionTaskListProps {
   breakSessionId?: string;
   onStartBreak?: (sessionId: string) => void;
   onStopBreak?: () => void;
-  onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => void;
+  onUpdateSession?: (sessionId: string, changes: { title?: string; durationMinutes?: number; notes?: string }) => boolean | void;
   onDeleteSession?: (sessionId: string) => void;
   onStartRevision?: (task: ExecutionTask) => void;
   onPostpone?: (task: ExecutionTask) => void;

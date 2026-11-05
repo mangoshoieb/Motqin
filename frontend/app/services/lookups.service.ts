@@ -1,7 +1,11 @@
 import axiosInstance from "@/app/lib/axios";
 import { API_ROUTES } from "@/app/constants/planner.constants";
 import { QUESTION_API_ROUTES } from "@/app/constants/question.constants";
-import { CountryLookupItem, LookupItem } from "@/app/types/lookup.types";
+import { CountryLookupItem, ErrorCodeItem, LookupItem } from "@/app/types/lookup.types";
+import {
+  AssistantPermissionItem,
+  PerformanceFlagsLookup,
+} from "@/app/types/tracking-table.types";
 
 // The lookup endpoints are open (no auth) and return a bare array.
 export const lookupsService = {
@@ -17,6 +21,27 @@ export const lookupsService = {
       API_ROUTES.LOOKUPS.EGYPTIAN_GOVERNORATES,
     );
     return Array.isArray(data) ? data : [];
+  },
+
+  // The Arabic message for every error code the API sends.
+  async errorCodes(): Promise<ErrorCodeItem[]> {
+    const { data } = await axiosInstance.get<ErrorCodeItem[]>(API_ROUTES.LOOKUPS.ERROR_CODES);
+    return Array.isArray(data) ? data : [];
+  },
+
+  // The 10 assistant permissions, in display order.
+  async assistantPermissions(): Promise<AssistantPermissionItem[]> {
+    const { data } = await axiosInstance.get<AssistantPermissionItem[]>(
+      API_ROUTES.LOOKUPS.ASSISTANT_PERMISSIONS,
+    );
+    return Array.isArray(data) ? data : [];
+  },
+
+  async performanceFlags(): Promise<PerformanceFlagsLookup | null> {
+    const { data } = await axiosInstance.get<PerformanceFlagsLookup>(
+      API_ROUTES.LOOKUPS.PERFORMANCE_FLAGS,
+    );
+    return data && Array.isArray(data.flags) ? data : null;
   },
 
   // The blocker schedule's day picker, Saturday first.

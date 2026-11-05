@@ -1,5 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
+import { errorCodeMessage } from "./error-codes";
+import { assistantPermissionName } from "./assistant-permissions";
 
 // Shape we've seen the .NET backend send back on errors. Not every field is
 // present on every error — we just take the first one that has a string in
@@ -8,7 +10,10 @@ type BackendErrorBody = {
   message?: string;
   title?: string;
   detail?: string;
-  error?: string;
+  // A string on older endpoints; { code, message, details } on newer ones.
+  error?: string | { code?: string; details?: Record<string, unknown> };
+  code?: string;
+  details?: Record<string, unknown>;
   errors?: Record<string, string[] | string>;
 } | string;
 
@@ -49,6 +54,19 @@ export function getApiErrorMessage(error: unknown): string {
   }
 
   if (data && typeof data === "object") {
+    // A coded error — { error: { code, details } } or a flat { code } —
+    // reads from the server's Arabic catalogue. Its own message is English
+    // text meant for developers.
+    const coded = typeof data.error === "object" && data.error ? data.error : data;
+    const catalogued = errorCodeMessage(coded.code);
+    if (catalogued) {
+      const permission = coded.details?.permission;
+      if (coded.code === "assistant_permission_missing" && typeof permission === "string") {
+        return `ليس لديك صلاحية لهذا الإجراء: ${assistantPermissionName(permission)}`;
+      }
+      return catalogued;
+    }
+
     if (typeof data.message === "string" && data.message.trim()) {
       return data.message;
     }

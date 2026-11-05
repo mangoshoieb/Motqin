@@ -19,11 +19,22 @@ import {
   ImportPreview,
   ImportResult,
 } from "@/app/types/tracking-table.types";
+import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
 import { Modal, inputClass, primaryButton, secondaryButton } from "./ui";
+import { TeacherPicker } from "./TeacherPicker";
 
 // Exam columns can't be imported directly (exam_after_import): bring them in
 // as numbers and change the type afterwards.
 const IMPORT_TYPES: ColumnType[] = ["Text", "Number", "Date", "YesNo", "Choice"];
+
+// Row warnings come back in English. The phone one is by far the most common
+// — say it in Arabic; anything else shows as sent.
+const importWarningText = (message: string) => {
+  const phone = message.match(/^"(.*)" isn't a valid (student|parent) mobile number/i);
+  if (!phone) return message;
+  const whose = phone[2].toLowerCase() === "student" ? "الطالب" : "ولي الأمر";
+  return `«${phone[1]}» ليس رقم موبايل صحيحًا لـ${whose}، فتُرك فارغًا. أدخله من صف الطالب.`;
+};
 
 type Role = CoreField | "column";
 
@@ -41,6 +52,10 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
 
   const previewImport = usePreviewImport();
   const importTable = useImportTable();
+
+  // An assistant imports into a teacher who gave them Import.
+  const { isTeacher, importFor } = useTrackingAccess();
+  const [forTeacherId, setForTeacherId] = useState(isTeacher ? "" : importFor[0]?.teacherId ?? "");
 
   const choose = async (picked: File | undefined) => {
     setError(null);
@@ -92,12 +107,17 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
         .filter((c) => roles[c.index] === "column" && types[c.index] !== c.guessedType)
         .map((c) => [String(c.index), types[c.index]]),
     );
+    // Only the fixed fields the user moved away from what the preview
+    // recognised; the server keeps its own pick for the rest. -1 = none.
+    const recognised = (field: CoreField) =>
+      preview.columns.find((c) => c.coreField === field)?.index ?? -1;
     const options: ImportOptions = {
-      name: indexOf("name"),
-      studentPhone: indexOf("studentPhone"),
-      parentPhone: indexOf("parentPhone"),
       ...(Object.keys(overrides).length ? { types: overrides } : {}),
+      ...(forTeacherId ? { forTeacherId } : {}),
     };
+    for (const field of CORE_FIELDS) {
+      if (indexOf(field) !== recognised(field)) options[field] = indexOf(field);
+    }
     try {
       setResult(await importTable.mutateAsync({ file, groupName: groupName.trim(), options }));
     } catch (err) {
@@ -126,7 +146,7 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
         <div className="flex flex-col items-center gap-2 text-center">
           <CheckCircle2 size={44} className="text-emerald-500" />
           <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-            {result.rows} طالب و{result.columns} عمود
+            تم استيراد {result.rows} طالب و{result.columns} عمود
           </p>
           {!result.coreFields.name && (
             <p className="text-sm text-amber-700 dark:text-amber-400">
@@ -134,6 +154,18 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
             </p>
           )}
         </div>
+        {/* Which sheet column filled each fixed field — those columns aren't
+            added again as table columns. */}
+        <ul className="mt-4 flex flex-col gap-1 rounded-2xl bg-zinc-50 px-4 py-3 text-sm dark:bg-zinc-800/50">
+          {CORE_FIELDS.map((field) => (
+            <li key={field} className="flex items-center justify-between gap-3">
+              <span className="text-zinc-500">{CORE_FIELD_LABELS[field]}</span>
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {result.coreFields[field] ?? "—"}
+              </span>
+            </li>
+          ))}
+        </ul>
         {result.warnings.length > 0 && (
           <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
             <p className="mb-2 flex items-center gap-2 text-sm font-bold text-amber-800 dark:text-amber-300">
@@ -142,7 +174,7 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
             <ul className="max-h-48 space-y-1 overflow-y-auto text-sm text-amber-900 dark:text-amber-200">
               {result.warnings.map((w, i) => (
                 <li key={i}>
-                  <span className="font-semibold tabular-nums">صف {w.row}:</span> {w.message}
+                  <span className="font-semibold tabular-nums">صف {w.row}:</span> {importWarningText(w.message)}
                 </li>
               ))}
             </ul>
@@ -183,6 +215,10 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
           </>
         }
       >
+        <div className="mb-4">
+          <TeacherPicker value={forTeacherId} onChange={setForTeacherId} isTeacher={isTeacher} links={importFor} />
+        </div>
+
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">اسم المجموعة</span>
           <input
@@ -241,6 +277,7 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
           })}
         </div>
         <p className="mt-2 text-xs text-zinc-500">
+          أعمدة الاسم والأرقام تملأ الحقول الأساسية فقط، ولا تُضاف إلى الجدول كأعمدة. الأرقام تُحفظ بصيغة 01XXXXXXXXX.
           أعمدة الامتحانات استوردها كأرقام، ثم غيّر نوعها إلى &quot;امتحان&quot; من داخل الجدول.
         </p>
         {nameMissing && (
@@ -253,7 +290,11 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
 
   // --- Step 1: pick the file ---
   return (
-    <Modal title="استيراد من Excel" description="كل عمود في الملف يصبح عمودًا في الجدول." onClose={onClose}>
+    <Modal
+      title="استيراد من Excel"
+      description="الاسم والأرقام تملأ الحقول الأساسية، وباقي الأعمدة تصبح أعمدة في الجدول."
+      onClose={onClose}
+    >
       <button
         type="button"
         onClick={() => inputRef.current?.click()}

@@ -14,11 +14,12 @@ import {
   ImportOptions,
   RowQuery,
   RowQueryResult,
+  SaveAssistantBody,
   SaveColumnBody,
   SaveRowBody,
   TrackingRow,
 } from "@/app/types/tracking-table.types";
-import { toastApiError } from "@/app/lib/api-error";
+import { getApiErrorStatus, toastApiError } from "@/app/lib/api-error";
 import { apiErrorCode } from "@/app/lib/tracking-table";
 
 export const TRACKING_KEYS = {
@@ -31,6 +32,8 @@ export const TRACKING_KEYS = {
   templates: ["tracking-tables", "templates"] as const,
   reports: ["tracking-tables", "reports"] as const,
   report: (batchId: string) => ["tracking-tables", "reports", batchId] as const,
+  assistants: ["tracking-tables", "assistants"] as const,
+  assisting: ["tracking-tables", "assisting"] as const,
 };
 
 // Every cached page of a table's rows, edited in place so a change shows at
@@ -57,10 +60,12 @@ const replaceRow = (data: RowQueryResult, row: TrackingRow): RowQueryResult => (
 export const useTrackingTables = () =>
   useQuery({ queryKey: TRACKING_KEYS.list, queryFn: () => api.listTables(false) });
 
+// forTeacherId: an assistant creating the table for that teacher.
 export const useCreateTable = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.createTable,
+    mutationFn: ({ groupName, forTeacherId }: { groupName: string; forTeacherId?: string }) =>
+      api.createTable(groupName, forTeacherId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: TRACKING_KEYS.list }),
     onError: (error) => toastApiError("تعذر إنشاء الجدول", error),
   });
@@ -97,6 +102,15 @@ export const useRestoreTable = () => {
 
 // The grid: header row + one page of students. The previous page stays on
 // screen while a new search/filter/sort loads.
+// GET /{groupId} — the name and columns, without rows (the performance
+// report's exam picker). Under the table's key, so column edits refresh it.
+export const useTableHeader = (groupId: string) =>
+  useQuery({
+    queryKey: [...TRACKING_KEYS.table(groupId), "header"],
+    queryFn: () => api.getTable(groupId),
+    enabled: !!groupId,
+  });
+
 export const useTableRows = (groupId: string, query: RowQuery) =>
   useQuery({
     queryKey: TRACKING_KEYS.rowsQuery(groupId, query),
@@ -330,3 +344,72 @@ export const useReports = () =>
       return [...prepared.filter((r) => !seen.has(r.batchId)), ...sent];
     },
   });
+
+// --- Performance -------------------------------------------------------------
+
+// A mutation rather than a query: it's a POST the teacher runs on demand,
+// with the exams they picked. Errors show inside the report page.
+export const usePerformanceReport = (groupId: string) =>
+  useMutation({
+    mutationFn: ({ examColumnIds, rowIds }: { examColumnIds: string[]; rowIds?: number[] | null }) =>
+      api.performance(groupId, examColumnIds, rowIds ?? null),
+  });
+
+// --- Assistants (the teacher's side) -----------------------------------------
+
+export const useAssistants = (enabled = true) =>
+  useQuery({ queryKey: TRACKING_KEYS.assistants, queryFn: api.listAssistants, enabled });
+
+// Errors are shown in the assistant form, next to the field they're about.
+export const useAddAssistant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SaveAssistantBody & { phoneNumber: string }) => api.addAssistant(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: TRACKING_KEYS.assistants }),
+  });
+};
+
+export const useUpdateAssistant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number; body: SaveAssistantBody }) => api.updateAssistant(id, body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: TRACKING_KEYS.assistants }),
+  });
+};
+
+export const useRemoveAssistant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.removeAssistant(id),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: TRACKING_KEYS.assistants }),
+    onError: (error) => toastApiError("تعذر إزالة المساعد", error),
+  });
+};
+
+// --- Teachers I assist (the assistant's side) --------------------------------
+
+// Someone who assists nobody gets []. Older servers answer 404 — read as [].
+export const useAssisting = (enabled = true) =>
+  useQuery({
+    queryKey: TRACKING_KEYS.assisting,
+    queryFn: () => api.listAssisting().catch((error) => {
+      if (getApiErrorStatus(error) === 404) return [];
+      throw error;
+    }),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+export const useLeaveTeacher = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.leaveTeacher(id),
+    onSettled: () => {
+      // That teacher's tables disappear from the list.
+      void queryClient.invalidateQueries({ queryKey: TRACKING_KEYS.assisting });
+      void queryClient.invalidateQueries({ queryKey: TRACKING_KEYS.list });
+    },
+    onError: (error) => toastApiError("تعذر إيقاف المساعدة", error),
+  });
+};

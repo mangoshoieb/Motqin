@@ -188,6 +188,7 @@ export const GlobalSessionTimer = () => {
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["study-plans"] });
         queryClient.invalidateQueries({ queryKey: ["execution-board"] });
+        queryClient.invalidateQueries({ queryKey: ACTIVE_STUDY_SESSION_KEY });
       })
       .catch((error) => toastApiError("تعذر إنهاء الجلسة على الخادم", error));
   }, [session, status, elapsed, finish, clear, queryClient, now]);
@@ -212,6 +213,7 @@ export const GlobalSessionTimer = () => {
       await studySessionsService.pause(Number(running.sessionId));
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
       queryClient.invalidateQueries({ queryKey: ["execution-board"] });
+      queryClient.invalidateQueries({ queryKey: ACTIVE_STUDY_SESSION_KEY });
     } catch (error) {
       // A refusal doesn't mean it's still running: the server may already
       // have stopped it (e.g. as Missed). Put the box back on the clock only

@@ -8,9 +8,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
+  AssistantPermissionItem,
   ColumnType,
   CoreField,
   FilterOp,
+  PerformanceFlag,
+  PerformanceFlagsLookup,
   ReportMessageStatus,
 } from "../types/tracking-table.types";
 
@@ -40,6 +43,13 @@ export const TRACKING_TABLE_ROUTES = {
   REPORT: (batchId: string) => `${BASE}/reports/${batchId}`,
   ALLOW_REPORT: (batchId: string) => `${BASE}/reports/${batchId}/allow`,
   STOP_REPORT: (batchId: string) => `${BASE}/reports/${batchId}/stop`,
+  // 1–20 exam columns, oldest first. Reads only.
+  PERFORMANCE: (groupId: string) => `${BASE}/${groupId}/performance`,
+  // The teacher's assistants, and (as an assistant) the teachers I assist.
+  ASSISTANTS: `${BASE}/assistants`,
+  ASSISTANT: (id: number) => `${BASE}/assistants/${id}`,
+  ASSISTING: `${BASE}/assisting`,
+  ASSISTING_LINK: (id: number) => `${BASE}/assisting/${id}`,
 };
 
 // Backend limits, so the UI can stop before the server refuses.
@@ -55,8 +65,25 @@ export const TRACKING_LIMITS = {
 export const ROWS_PAGE_SIZE = 100;
 
 // Who sees the page. The admin roles are the ones the backend lets into its
-// tracking-table admin screen.
+// tracking-table admin screen. Assistants get in too, through their links.
 export const TRACKING_TABLE_ROLES = ["Teacher", "Admin", "Manager", "Support"];
+
+export const MAX_ASSISTANTS = 10;
+
+// GET /lookups/assistant-permissions as the guide gives it, in display order —
+// used until the lookup answers (it isn't on every server yet).
+export const ASSISTANT_PERMISSIONS_FALLBACK: AssistantPermissionItem[] = [
+  { value: 1, key: "CreateTables", nameAr: "إنشاء جداول", nameEn: "Create tables" },
+  { value: 2, key: "EditTables", nameAr: "تعديل الجداول والأعمدة", nameEn: "Edit tables and columns" },
+  { value: 4, key: "AddRows", nameAr: "إضافة طلاب", nameEn: "Add students" },
+  { value: 8, key: "EditRows", nameAr: "تعديل بيانات الطلاب", nameEn: "Edit students" },
+  { value: 16, key: "DeleteRows", nameAr: "حذف الطلاب", nameEn: "Delete students" },
+  { value: 32, key: "DeleteTables", nameAr: "حذف الجداول", nameEn: "Delete tables" },
+  { value: 64, key: "Import", nameAr: "استيراد من Excel", nameEn: "Import from Excel" },
+  { value: 128, key: "Export", nameAr: "تصدير إلى Excel", nameEn: "Export to Excel" },
+  { value: 256, key: "PrepareReports", nameAr: "تجهيز تقارير أولياء الأمور", nameEn: "Prepare parent reports" },
+  { value: 512, key: "SendReports", nameAr: "إرسال التقارير", nameEn: "Send reports" },
+];
 
 export const COLUMN_TYPES: Record<
   ColumnType,
@@ -241,6 +268,44 @@ export const REPORT_STATUS_META: Record<
   Skipped: { label: "تم التخطي", className: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300" },
   Cancelled: { label: "أُلغي", className: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300" },
 };
+
+// --- Performance report ----------------------------------------------------
+
+// GET /lookups/performance-flags as the guide gives it — used until the
+// lookup answers.
+export const PERFORMANCE_FLAGS_FALLBACK: PerformanceFlagsLookup = {
+  standings: [
+    { key: "above", nameAr: "فوق المتوسط", nameEn: "Above average" },
+    { key: "average", nameAr: "متوسط", nameEn: "Average" },
+    { key: "below", nameAr: "تحت المتوسط", nameEn: "Below average" },
+  ],
+  flags: [
+    { key: "fell_from_full_mark", nameAr: "تراجع بعد الدرجة النهائية", nameEn: "Fell after a full mark" },
+    { key: "dropped_below_average", nameAr: "نزل تحت المتوسط", nameEn: "Dropped below average" },
+    { key: "rose_above_average", nameAr: "صعد فوق المتوسط", nameEn: "Rose above average" },
+    { key: "big_drop", nameAr: "هبوط كبير", nameEn: "Big drop" },
+    { key: "improving", nameAr: "في تحسن", nameEn: "Improving" },
+    { key: "declining", nameAr: "في تراجع", nameEn: "Declining" },
+    { key: "always_below", nameAr: "دائماً تحت المتوسط", nameEn: "Always below average" },
+    { key: "inconsistent", nameAr: "مستوى غير ثابت", nameEn: "Inconsistent" },
+    { key: "often_absent", nameAr: "كثير الغياب", nameEn: "Often absent" },
+    { key: "missing_scores", nameAr: "درجات غير مسجلة", nameEn: "Missing scores" },
+  ],
+};
+
+// Flags that call for a closer look get the warm chip; the rest are neutral
+// or good news.
+export const WORRYING_FLAGS: PerformanceFlag[] = [
+  "fell_from_full_mark",
+  "dropped_below_average",
+  "big_drop",
+  "declining",
+  "always_below",
+  "often_absent",
+];
+export const GOOD_FLAGS: PerformanceFlag[] = ["rose_above_average", "improving"];
+
+export const MAX_REPORT_EXAMS = 20;
 
 // Quota codes on prepare-report / allow that mean "buy or upgrade a bundle".
 export const REPORT_PLAN_CODES = ["not_in_plan", "quota_exhausted"];

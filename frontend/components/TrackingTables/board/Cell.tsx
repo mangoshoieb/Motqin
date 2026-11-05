@@ -35,19 +35,42 @@ export function Cell({
   row,
   field,
   onSave,
+  readOnly = false,
 }: {
   row: TrackingRow;
   field: GridField;
   onSave: (value: CellValue) => void;
+  // An assistant without EditRows sees the value and can't change it.
+  readOnly?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const type = fieldType(field);
   const value = rowValue(row, field);
   const column = field.kind === "column" ? field.column : null;
 
+  if (readOnly && (type === "YesNo" || type === "Choice")) {
+    // Same look, no clicks or keyboard focus.
+    return (
+      <span inert className="contents">
+        {type === "YesNo" ? (
+          <YesNoCell value={value} onChange={onSave} />
+        ) : (
+          <ChoiceCell value={value} options={column?.options ?? []} onChange={onSave} />
+        )}
+      </span>
+    );
+  }
   if (type === "YesNo") return <YesNoCell value={value} onChange={onSave} />;
   if (type === "Choice")
     return <ChoiceCell value={value} options={column?.options ?? []} onChange={onSave} />;
+
+  if (readOnly) {
+    return (
+      <div className="flex h-full min-h-7 w-full items-center">
+        <CellDisplay type={type} value={value} maxScore={column?.maxScore ?? null} />
+      </div>
+    );
+  }
 
   if (editing) {
     return (

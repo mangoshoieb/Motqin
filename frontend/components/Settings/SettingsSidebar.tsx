@@ -17,14 +17,19 @@ import {
   ShieldOff,
   UsersRound,
   GraduationCap,
+  UserCheck,
+  Handshake,
   type LucideIcon,
 } from "lucide-react";
+import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
 
 interface SettingsNavItem {
   label: string;
   href: string;
   icon: LucideIcon;
   external?: boolean; // navigates away from the settings shell entirely
+  // Shown only to some users (teachers, assistants).
+  show?: (access: { isTeacher: boolean; assists: boolean }) => boolean;
 }
 
 const navItems: SettingsNavItem[] = [
@@ -37,6 +42,18 @@ const navItems: SettingsNavItem[] = [
   { label: "منع المشتتات", href: "/settings/blocker", icon: ShieldOff },
   { label: "المشرفون", href: "/settings/mentors", icon: UsersRound },
   { label: "طلابي", href: "/settings/mentees", icon: GraduationCap },
+  {
+    label: "مساعدو الجداول",
+    href: "/settings/assistants",
+    icon: UserCheck,
+    show: ({ isTeacher }) => isTeacher,
+  },
+  {
+    label: "أساعد المعلمين",
+    href: "/settings/assisting",
+    icon: Handshake,
+    show: ({ assists }) => assists,
+  },
   { label: "الإشعارات", href: "/settings/notifications", icon: Bell },
   { label: "الاشتراك", href: "/subscription", icon: CreditCard, external: true },
 ];
@@ -55,10 +72,12 @@ const useMenteesBadge = () => {
 export const SettingsSidebar = () => {
   const pathname = usePathname();
   const menteesBadge = useMenteesBadge();
+  const { isTeacher, links } = useTrackingAccess();
+  const access = { isTeacher, assists: links.length > 0 };
 
   return (
     <nav className="flex flex-col gap-1 rounded-2xl bg-white border border-zinc-200 p-3 dark:bg-zinc-900 dark:border-zinc-800">
-      {navItems.map((item) => {
+      {navItems.filter((item) => !item.show || item.show(access)).map((item) => {
         const Icon = item.icon;
         // Sub-pages (a student's detail) keep their section highlighted.
         const isActive =

@@ -10,6 +10,15 @@ export interface LookupItem {
   nameEn: string;
 }
 
+// GET /lookups/error-codes — the Arabic message to show for every
+// error.code the API sends.
+export interface ErrorCodeItem {
+  code: string;
+  status: number;
+  group: string;
+  message: string;
+}
+
 export interface CountryLookupItem extends LookupItem {
   // ISO code, countries only.
   code?: string | null;

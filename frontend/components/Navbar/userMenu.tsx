@@ -15,7 +15,7 @@ import {
   CloudUpload,
   Table2,
 } from "lucide-react";
-import { canUseTrackingTables } from "@/app/lib/tracking-table";
+import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
 import { useRef, useState } from "react";
 import ThemeSubMenu from "../Navbar/ThemeMenu";
 import { useLogout } from "@/app/hooks/useLogout";
@@ -120,6 +120,8 @@ const menuItems = [
 
 export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
   const { user, isGuest } = useAuth();
+  // Teachers, and anyone a teacher added as an assistant.
+  const { canEnter: canUseTracking } = useTrackingAccess();
   const displayName = shortName(user?.fullName);
   // Phone-registered users get a synthetic "@motqin.internal" email — show
   // the phone number for them instead. Guests have neither.
@@ -168,7 +170,7 @@ export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
 
       {/* Menu */}
       <div className="py-2">
-        {canUseTrackingTables(user) && (
+        {canUseTracking && (
           <Link
             href="/tracking-tables"
             onClick={onClose}

@@ -1,18 +1,22 @@
 import axiosInstance from "../lib/axios";
 import { TRACKING_TABLE_ROUTES as R } from "../constants/tracking-table.constants";
 import {
+  AssistingLink,
   CoreField,
   ImportOptions,
   ImportPreview,
   ImportResult,
+  PerformanceReport,
   ReportBatch,
   ReportPreview,
   ReportTemplate,
   RowQuery,
   RowQueryResult,
   RowWarning,
+  SaveAssistantBody,
   SaveColumnBody,
   SaveRowBody,
+  TrackingAssistant,
   TrackingTableHeader,
   TrackingTableSummary,
   TrackingRow,
@@ -52,7 +56,9 @@ export const trackingTableService = {
     const tables = await get<TrackingTableSummary[]>(R.TABLES, { deleted });
     return Array.isArray(tables) ? tables : [];
   },
-  createTable: (groupName: string) => post<TrackingTableHeader>(R.TABLES, { groupName }),
+  // An assistant sends forTeacherId: the table is that teacher's.
+  createTable: (groupName: string, forTeacherId?: string) =>
+    post<TrackingTableHeader>(R.TABLES, forTeacherId ? { groupName, forTeacherId } : { groupName }),
   getTable: (groupId: string) => get<TrackingTableHeader>(R.TABLE(groupId)),
   renameTable: (groupId: string, groupName: string) =>
     put<TrackingTableHeader>(R.TABLE(groupId), { groupName }),
@@ -88,11 +94,23 @@ export const trackingTableService = {
     const { data } = await axiosInstance.post(R.IMPORT_PREVIEW, form, multipart);
     return unwrap<ImportPreview>(data);
   },
-  importTable: async (file: File, groupName: string, options?: ImportOptions) => {
+  importTable: async (file: File, groupName: string, options: ImportOptions = {}) => {
+    const { forTeacherId, ...columnOptions } = options;
     const form = new FormData();
     form.append("file", file);
     form.append("groupName", groupName);
-    if (options) form.append("options", JSON.stringify(options));
+    // The index fields go both as their own form fields (current API) and in
+    // the older `options` JSON, with the same values either way.
+    const indexFields = [
+      ["nameColumn", options.name],
+      ["studentPhoneColumn", options.studentPhone],
+      ["parentPhoneColumn", options.parentPhone],
+    ] as const;
+    for (const [field, index] of indexFields) {
+      if (index !== undefined) form.append(field, String(index));
+    }
+    if (Object.keys(columnOptions).length) form.append("options", JSON.stringify(columnOptions));
+    if (forTeacherId) form.append("forTeacherId", forTeacherId);
     const { data } = await axiosInstance.post(R.IMPORT, form, multipart);
     return unwrap<ImportResult>(data);
   },
@@ -126,4 +144,30 @@ export const trackingTableService = {
     const reports = await get<ReportBatch[]>(R.PREPARED_REPORTS);
     return Array.isArray(reports) ? reports : [];
   },
+
+  // --- Performance ---
+  // 1–20 Exam column ids, oldest first (the order drives trends and drops).
+  // rowIds: null = every student.
+  performance: (groupId: string, examColumnIds: string[], rowIds: number[] | null = null) =>
+    post<PerformanceReport>(R.PERFORMANCE(groupId), { examColumnIds, rowIds }),
+
+  // --- Assistants (the teacher's side) ---
+  listAssistants: async () => {
+    const assistants = await get<TrackingAssistant[]>(R.ASSISTANTS);
+    return Array.isArray(assistants) ? assistants : [];
+  },
+  // Access starts at once, with no accept step. permissions: [] = view only.
+  addAssistant: (body: SaveAssistantBody & { phoneNumber: string }) =>
+    post<TrackingAssistant>(R.ASSISTANTS, body),
+  // The whole new state, unchanged parts included.
+  updateAssistant: (id: number, body: SaveAssistantBody) =>
+    put<TrackingAssistant>(R.ASSISTANT(id), body),
+  removeAssistant: (id: number) => del(R.ASSISTANT(id)),
+
+  // --- Teachers I assist (the assistant's side) ---
+  listAssisting: async () => {
+    const links = await get<AssistingLink[]>(R.ASSISTING);
+    return Array.isArray(links) ? links : [];
+  },
+  leaveTeacher: (id: number) => del(R.ASSISTING_LINK(id)),
 };

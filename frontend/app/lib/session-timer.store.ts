@@ -33,6 +33,9 @@ interface SessionTimerState {
   finishedAt: number | null;
 
   start: (session: RunningSession, elapsedSeconds: number) => void;
+  // The running session's length changed (edited on the board): the clock
+  // keeps going, now towards the new length.
+  setDuration: (sessionId: string, durationSeconds: number) => void;
   finish: () => void;
   clear: () => void;
 }
@@ -48,6 +51,12 @@ export const useSessionTimerStore = create<SessionTimerState>()(
 
       start: (session, elapsedSeconds) =>
         set({ session, status: "active", elapsedAtStart: elapsedSeconds, startedAt: Date.now(), finishedAt: null }),
+      setDuration: (sessionId, durationSeconds) =>
+        set((state) =>
+          state.session?.sessionId === sessionId
+            ? { session: { ...state.session, durationSeconds } }
+            : {},
+        ),
       finish: () => set({ status: "finished", finishedAt: Date.now() }),
       clear: () => set({ session: null, status: "active", elapsedAtStart: 0, startedAt: 0, finishedAt: null }),
     }),

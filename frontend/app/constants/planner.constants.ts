@@ -75,6 +75,11 @@ export const API_ROUTES = {
     EGYPTIAN_GOVERNORATES: "/lookups/egyptian-governorates",
     // 0 = Sunday … 6 = Saturday, already in display order (Saturday first).
     WEEK_DAYS: "/lookups/week-days",
+    ERROR_CODES: "/lookups/error-codes",
+    // The 10 things a teacher can let a tracking-table assistant do.
+    ASSISTANT_PERMISSIONS: "/lookups/assistant-permissions",
+    // Names for the performance report's standings and flags.
+    PERFORMANCE_FLAGS: "/lookups/performance-flags",
   },
 
   SUBJECTS: {
