@@ -14,7 +14,9 @@ import {
   ShieldOff,
   CloudUpload,
   Table2,
+  LayoutDashboard,
 } from "lucide-react";
+import { isManager } from "@/app/lib/payments";
 import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
 import { useRef, useState } from "react";
 import ThemeSubMenu from "../Navbar/ThemeMenu";
@@ -178,6 +180,16 @@ export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
           >
             <Table2 size={19} />
             <span>جداول المتابعة</span>
+          </Link>
+        )}
+        {isManager(user) && (
+          <Link
+            href="/admin/bundles"
+            onClick={onClose}
+            className="flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3 transition hover:bg-zinc-200 dark:hover:bg-zinc-800"
+          >
+            <LayoutDashboard size={19} />
+            <span>لوحة الإدارة</span>
           </Link>
         )}
         {menuItems.map((item) => {

@@ -1,0 +1,399 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Motqin Plans &amp; Prices</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700;800&family=Public+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap">
+<style>
+/* Layout: one block per audience - three price cards, then one limits matrix with Free beside it for comparison; open decisions and admin payloads close the page. Same visual family as the Feature Catalogue. */
+:root {
+  --bg: #f4f6f9;
+  --paper: #ffffff;
+  --ink: #172030;
+  --muted: #5a6475;
+  --rule: #dde2ea;
+  --tint: #eef1f6;
+  --accent: #1f5f8b;
+  --usage: #2a5bd7;     --usage-bg: #e6edfd;
+  --allow: #0b7666;     --allow-bg: #dcf2ed;
+  --access: #6a4cb0;    --access-bg: #ede7f9;
+  --prop: #985a00;      --prop-bg: #fbefd7;
+  --idea: #ad3457;      --idea-bg: #f9e3ea;
+  --save: #1b7a3d;      --save-bg: #dff1e5;
+  --font-display: "Schibsted Grotesk", "Public Sans", system-ui, sans-serif;
+  --font-body: "Public Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-ar: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10141b; --paper: #171c25; --ink: #e6eaf1; --muted: #9aa4b5; --rule: #283040; --tint: #1e2531; --accent: #84b6e2;
+    --usage: #92adff; --usage-bg: #1c2747; --allow: #5fd0bd; --allow-bg: #10332d; --access: #bba5f2; --access-bg: #2a2143;
+    --prop: #f2b25a; --prop-bg: #33270f; --idea: #f28dab; --idea-bg: #3b1a26; --save: #6fd492; --save-bg: #123322;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10141b; --paper: #171c25; --ink: #e6eaf1; --muted: #9aa4b5; --rule: #283040; --tint: #1e2531; --accent: #84b6e2;
+  --usage: #92adff; --usage-bg: #1c2747; --allow: #5fd0bd; --allow-bg: #10332d; --access: #bba5f2; --access-bg: #2a2143;
+  --prop: #f2b25a; --prop-bg: #33270f; --idea: #f28dab; --idea-bg: #3b1a26; --save: #6fd492; --save-bg: #123322;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 36px 80px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 52px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.12; text-wrap: balance; }
+h1 { font-size: clamp(30px, 4.6vw, 44px); font-weight: 800; letter-spacing: -0.015em; }
+h2 { font-size: 28px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); }
+code { font-family: var(--font-mono); font-size: 12.5px; background: var(--tint); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+[lang="ar"] { font-family: var(--font-ar); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.hero { display: grid; gap: 14px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); }
+.lede { color: var(--muted); font-size: 17px; max-width: 70ch; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 999px; background: var(--paper); border: 1px solid var(--rule); color: var(--ink); }
+.nav a:hover { border-color: var(--accent); }
+
+.assume { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.assume > div { background: var(--paper); padding: 12px 14px; display: grid; gap: 4px; align-content: start; min-width: 0; font-size: 14.5px; }
+.label { font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+
+.aud { display: grid; gap: 22px; }
+.aud-head { display: grid; gap: 8px; border-top: 3px solid var(--ink); padding-top: 14px; }
+.aud-head .row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.aud-head .ar { font-size: 22px; color: var(--muted); font-weight: 700; }
+.aud-head p { color: var(--muted); max-width: 75ch; }
+.disc { font-size: 14.5px; }
+.disc b { color: var(--ink); }
+
+.tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; }
+.tier { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 18px 14px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.tier-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.tier-id { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 2px 7px; border-radius: 5px; background: var(--ink); color: var(--paper); }
+.tier-name { font-family: var(--font-display); font-size: 23px; font-weight: 800; }
+.tier-ar { margin-inline-start: auto; font-size: 20px; font-weight: 700; color: var(--accent); }
+.who { color: var(--muted); font-size: 14.5px; }
+.prices { display: grid; }
+.pr { display: grid; grid-template-columns: 5.6em 1fr; align-items: baseline; gap: 10px; padding: 9px 0; border-top: 1px solid var(--rule); }
+.pr .dur { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.pr .right { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.amt { font-family: var(--font-display); font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.amt small { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--muted); }
+.pr .sub { flex-basis: 100%; display: flex; align-items: center; gap: 8px; }
+.per { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.save { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; color: var(--save); background: var(--save-bg); }
+.unitcost { font-size: 13.5px; color: var(--muted); border-top: 1px dashed var(--rule); padding-top: 9px; }
+
+.chip { display: inline-block; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.03em; padding: 1px 7px; border-radius: 999px; white-space: nowrap; vertical-align: 1px; }
+.t-usage { color: var(--usage); background: var(--usage-bg); }
+.t-allowance { color: var(--allow); background: var(--allow-bg); }
+.t-access { color: var(--access); background: var(--access-bg); }
+.c-new { color: var(--muted); background: var(--tint); }
+.c-idea { color: var(--idea); background: var(--idea-bg); }
+
+.table-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 780px; font-size: 14.5px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+thead th { font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; }
+thead th b { display: block; font-family: var(--font-display); font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+th:first-child { width: 32%; }
+.free { background: var(--tint); }
+tr.area td { font-family: var(--font-display); font-weight: 700; font-size: 14px; padding-block: 7px; color: var(--accent); }
+td.f .nm { font-weight: 600; }
+td.f .k { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+td.f .nt { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+td.f .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.val { font-weight: 700; font-variant-numeric: tabular-nums; }
+.unit { color: var(--muted); font-size: 12.5px; margin-left: 4px; }
+.rate { display: block; color: var(--prop); font-size: 12.5px; margin-top: 3px; line-height: 1.35; }
+.no { color: var(--muted); }
+.yes { color: var(--allow); font-weight: 700; }
+tfoot td { background: var(--tint); border-bottom: 0; font-size: 13.5px; }
+tfoot td .val { font-size: 14.5px; }
+tfoot .pct { display: block; color: var(--muted); font-variant-numeric: tabular-nums; }
+tfoot .pct.hot { color: var(--prop); font-weight: 600; }
+
+.ideas { background: var(--paper); border: 1px dashed var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; }
+.ideas ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14.5px; }
+
+.decide { display: grid; gap: 10px; }
+.decide article { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 3.2em 1fr; gap: 4px 12px; min-width: 0; }
+.decide .did { font-family: var(--font-mono); font-weight: 600; font-size: 13px; color: var(--accent); padding-top: 2px; }
+.decide h3 { font-size: 16px; }
+.decide p { grid-column: 2; color: var(--muted); font-size: 14.5px; }
+.decide .touch { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.decide .touch span { font-family: var(--font-mono); font-size: 11.5px; padding: 1px 7px; border: 1px solid var(--rule); border-radius: 999px; color: var(--muted); }
+
+.payload { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.controls label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+select, button { font: inherit; font-size: 14.5px; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 7px; padding: 7px 10px; }
+button { cursor: pointer; font-weight: 600; background: var(--ink); color: var(--paper); border-color: var(--ink); }
+pre.code { margin: 0; background: var(--tint); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5; max-height: 460px; }
+.warnline { font-size: 14px; color: var(--prop); }
+.sources { font-size: 13px; color: var(--muted); display: grid; gap: 3px; }
+
+@media (max-width: 520px) {
+  .decide article { grid-template-columns: 1fr; }
+  .decide p, .decide .touch { grid-column: 1; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">Draft 1 · 4 November 2026 · in the system · prices in EGP</span>
+    <h1>Motqin Plans &amp; Prices</h1>
+    <nav class="nav" aria-label="Sections">
+      <a href="#students">Students</a>
+      <a href="#teachers">Teachers</a>
+      <a href="#mentors">Parents &amp; mentors</a>
+    </nav>
+  </header>
+
+  <section class="assume" aria-label="Assumptions">
+    <div><span class="label">Exchange rate</span>1 USD ≈ 50 EGP (bank quotes ran 49.8 to 51 in July and August 2026).</div>
+    <div><span class="label">AI cost per use</span>Gemini 2.5 Flash, estimated with thinking tokens: image question 0.30, PDF 1.50, AI study plan 0.75 EGP. Replace with real figures after a month of Google billing.</div>
+    <div><span class="label">WhatsApp report</span>0.25 EGP each: Meta's Utility rate for Egypt, $0.0036, plus 14% VAT, rounded up. Vendor figure, to verify on Meta's rate card.</div>
+    <div><span class="label">How limits behave</span>Usage resets every month from the plan's start. Allowances (how many at once) never reset. Durations are 30, 180 and 365 days, plus the 3-day grace.</div>
+    <div><span class="label">Market anchor</span>Families' main spend is private lessons. A month of the first student plan is set near the price of one center class.</div>
+    <div><span class="label">Not included</span>Paymob fees on wallet top-ups, VAT on plan prices, partner commission on coupon sales.</div>
+  </section>
+
+  <section class="aud" id="students">
+    <div class="aud-head">
+      <span class="eyebrow">Audience 1</span>
+      <div class="row"><h2>Students</h2><span class="ar" lang="ar" dir="rtl">طلاب الثانوية العامة والبكالوريا</span></div>
+      <p>Second and third secondary, Thanaweya Amma and the Egyptian Baccalaureate. Study sessions and reviews stay unlimited on every plan, Free included. Plans differ on AI, the student's own content, the blocker and mentors.</p>
+      <p class="disc" data-disc="students"></p>
+    </div>
+    <div class="tiers" data-tiers="students"></div>
+    <div class="table-wrap" data-matrix="students"></div>
+  </section>
+
+  <section class="aud" id="teachers">
+    <div class="aud-head">
+      <span class="eyebrow">Audience 2</span>
+      <div class="row"><h2>Teachers</h2><span class="ar" lang="ar" dir="rtl">مدرسين</span></div>
+      <p>Teachers who track their groups in Motqin and send results to parents on WhatsApp. Parent messages are the real cost, so each plan carries about 2 reports per student a month.</p>
+      <p class="disc" data-disc="teachers"></p>
+    </div>
+    <div class="tiers" data-tiers="teachers"></div>
+    <div class="table-wrap" data-matrix="teachers"></div>
+  </section>
+
+  <section class="aud" id="mentors">
+    <div class="aud-head">
+      <span class="eyebrow">Audience 3</span>
+      <div class="row"><h2>Parents &amp; mentors</h2><span class="ar" lang="ar" dir="rtl">أولياء أمور ومرشدين</span></div>
+      <p>Parents and mentors who follow students. Only one feature is paid today, how many students one account follows, so the plans differ by that number. Following one child stays free.</p>
+      <p class="disc" data-disc="mentors"></p>
+    </div>
+    <div class="tiers" data-tiers="mentors"></div>
+    <div class="table-wrap" data-matrix="mentors"></div>
+  </section>
+
+  <footer class="sources">
+    <span class="label">Sources</span>
+    <span>WhatsApp rates for Egypt: <a href="https://chatmaxima.com/whatsapp-api-pricing/egypt/" target="_blank" rel="noopener">ChatMaxima, July 2026</a> and <a href="https://developers.facebook.com/docs/whatsapp/pricing" target="_blank" rel="noopener">Meta's pricing page</a>.</span>
+    <span>Exchange rate: <a href="https://goldpricez.com/currency-rates/egypt" target="_blank" rel="noopener">goldpricez</a>, <a href="https://pluang.com/en/tools/currency-converter/usd-egp" target="_blank" rel="noopener">Pluang</a>.</span>
+  </footer>
+
+</div>
+
+<script>
+const U = null; // unlimited
+const R = (count, win, cool) => ({ count, win, cool });
+const DAYS = [30, 180, 365], MONTHS = [1, 6, 12], DUR = ['1 month', '6 months', '12 months'];
+// EGP per use; see the assumptions strip
+const COST = { AiImageQuestion: 0.30, AiPdfQuestions: 1.50, AiStudyPlanner: 0.75, ParentMessages: 0.25 };
+
+const F = {
+  StudySessions:            { name: 'Study sessions', type: 'usage' },
+  AiStudyPlanner:           { name: 'AI study planner', type: 'usage', note: 'One use = one week planned by the AI' },
+  PerformanceRange:         { name: 'Performance over any date range', type: 'access', note: 'When off, the basic report stays' },
+  SpacedRepetitionSessions: { name: 'Review sessions', type: 'usage' },
+  AiImageQuestion:          { name: 'AI question from an image', type: 'usage' },
+  AiPdfQuestions:           { name: 'AI questions from a PDF', type: 'usage', note: 'Up to 20 pages = 1 use' },
+  CustomSubjects:           { name: 'Own subjects', type: 'allowance' },
+  CustomLessons:            { name: 'Own lessons', type: 'allowance' },
+  CustomQuestions:          { name: 'Own questions', type: 'allowance', note: 'AI-made questions count too' },
+  CustomReviewIntervals:    { name: 'Own review intervals', type: 'access', note: 'When off, the default intervals apply' },
+  BlockerSchedules:         { name: 'Saved blocking schedules', type: 'allowance' },
+  BlockerSessions:          { name: 'Blocking sessions', type: 'usage' },
+  Mentors:                  { name: 'Mentors per student', type: 'allowance', note: 'Server cap 10' },
+  TrackingTables:           { name: 'Tables (groups)', type: 'allowance', note: 'Server cap 50' },
+  TrackedStudents:          { name: 'Students across all tables', type: 'allowance', note: 'Server cap 1000 per table' },
+  TableAssistants:          { name: 'Assistants', type: 'allowance', note: 'Server cap 10' },
+  ExcelImports:             { name: 'Excel imports', type: 'usage', note: '5 MB and 1000 rows per file' },
+  TablePerformance:         { name: 'Performance analysis of a table', type: 'access' },
+  ParentMessages:           { name: 'WhatsApp reports to parents', type: 'usage', note: 'Counted when actually sent' },
+  Mentees:                  { name: 'Students per mentor', type: 'allowance', note: 'Server cap 100' }
+};
+
+// v: [Free, tier 1, tier 2, tier 3]. A number is the limit, U unlimited, true on, false not included.
+// r: rate limit per column, same order.
+const AUD = {
+  students: {
+    disc: '<b>6 months = pay 5</b> (about 16% off). <b>12 months = pay 8</b> (about 33% off).',
+    tiers: [
+      { id: 'S1', en: 'Plus', ar: 'بلس', who: 'Students who mainly need the planner and reviews, with some AI help.', p: [99, 499, 799] },
+      { id: 'S2', en: 'Motqin', ar: 'متقن', who: 'Daily users: AI questions from every lesson and PDF, and progress across the term.', p: [179, 899, 1449] },
+      { id: 'S3', en: 'Motqin Pro', ar: 'متقن Pro', who: 'Heavy users aiming for the top: the most AI, unlimited own content, more mentors.', p: [299, 1499, 2399] }
+    ],
+    groups: [
+      { area: 'Study planner', rows: [
+        { k: 'StudySessions', v: [U, U, U, U] },
+        { k: 'AiStudyPlanner', v: [2, 6, 12, 20], r: [null, R(3, 60, 60), R(3, 60, 60), R(5, 60, 60)] },
+        { k: 'PerformanceRange', v: [false, false, true, true] }
+      ] },
+      { area: 'Spaced repetition', rows: [
+        { k: 'SpacedRepetitionSessions', v: [U, U, U, U] },
+        { k: 'AiImageQuestion', v: [10, 40, 100, 200], r: [null, R(15, 60, 30), R(25, 60, 30), R(40, 60, 30)] },
+        { k: 'AiPdfQuestions', v: [3, 10, 20, 30], r: [null, R(3, 60, 60), R(5, 60, 60), R(8, 60, 60)] },
+        { k: 'CustomSubjects', v: [2, 5, 15, U] },
+        { k: 'CustomLessons', v: [10, 50, 200, U] },
+        { k: 'CustomQuestions', v: [50, 300, 1500, U] },
+        { k: 'CustomReviewIntervals', v: [false, true, true, true] }
+      ] },
+      { area: 'Distraction blocker', rows: [
+        { k: 'BlockerSchedules', v: [1, 3, 10, U] },
+        { k: 'BlockerSessions', v: [30, 120, U, U] }
+      ] },
+      { area: 'Mentor', rows: [
+        { k: 'Mentors', v: [1, 2, 3, 5] }
+      ] }
+    ]
+  },
+  teachers: {
+    disc: '<b>6 months about 10% off, 12 months about 20% off.</b> Smaller than for students, because every message costs the same to send however long the plan.',
+    perUnit: { k: 'TrackedStudents', label: 'per student a month' },
+    tiers: [
+      { id: 'T1', en: 'Private', ar: 'خصوصي', who: 'A teacher with a few groups at home or in a small center.', p: [299, 1599, 2849] },
+      { id: 'T2', en: 'Center', ar: 'سنتر', who: 'A teacher with several center groups and a couple of assistants.', p: [899, 4849, 8599] },
+      { id: 'T3', en: 'Academy', ar: 'أكاديمية', who: 'Big Thanaweya teachers across centers, with a full team of assistants.', p: [2999, 16199, 28799] }
+    ],
+    groups: [
+      { area: 'Tracking tables', rows: [
+        { k: 'TrackingTables', v: [1, 5, 20, 50] },
+        { k: 'TrackedStudents', v: [30, 150, 600, 2000] },
+        { k: 'TableAssistants', v: [false, 1, 3, 10] },
+        { k: 'ExcelImports', v: [1, 5, 20, U] },
+        { k: 'TablePerformance', v: [false, false, true, true] },
+        { k: 'ParentMessages', v: [false, 300, 1200, 4000] }
+      ] }
+    ]
+  },
+  mentors: {
+    disc: '<b>6 months = pay 5</b> (about 16% off). <b>12 months = pay 8</b> (about 33% off). No cost per use, so these are priced on value.',
+    perUnit: { k: 'Mentees', label: 'per student followed a month' },
+    tiers: [
+      { id: 'M1', en: 'Family', ar: 'أسرة', who: 'Parents following up to 3 children. One child stays free.', p: [49, 249, 399] },
+      { id: 'M2', en: 'Mentor', ar: 'مرشد', who: 'Tutors and coaches following up to 15 students.', p: [199, 999, 1599] },
+      { id: 'M3', en: 'Supervisor', ar: 'مشرف', who: 'Schools, centers and supervisors following up to 100 students.', p: [499, 2499, 3999] }
+    ],
+    groups: [
+      { area: 'Mentor', rows: [
+        { k: 'Mentees', v: [1, 3, 15, 100] }
+      ] }
+    ]
+  }
+};
+
+const n = x => Number(x).toLocaleString('en-US');
+const egp = x => (Math.round(x * 10) / 10).toLocaleString('en-US');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const rows = a => a.groups.flatMap(g => g.rows);
+
+function rateText(r) {
+  const win = r.win === 60 ? 'hour' : r.win + ' min';
+  return `max ${r.count} per ${win}, then ${r.cool} min wait`;
+}
+
+function cell(type, v, r) {
+  let main;
+  if (v === false) main = '<span class="no">—</span>';
+  else if (type === 'access') main = '<span class="yes">Included</span>';
+  else if (v === U) main = '<span class="val">Unlimited</span>';
+  else main = `<span class="val">${n(v)}</span><span class="unit">${type === 'usage' ? 'a month' : 'at once'}</span>`;
+  return main + (r ? `<span class="rate">${rateText(r)}</span>` : '');
+}
+
+// The most a column can cost in a month if every counted limit is used up
+function worstCost(a, col) {
+  let sum = 0;
+  for (const row of rows(a)) {
+    const c = COST[row.k], v = row.v[col];
+    if (!c || v === false) continue;
+    if (v === U) return Infinity;
+    sum += v * c;
+  }
+  return sum;
+}
+
+function renderTiers(key) {
+  const a = AUD[key];
+  document.querySelector(`[data-disc="${key}"]`).innerHTML = a.disc;
+  document.querySelector(`[data-tiers="${key}"]`).innerHTML = a.tiers.map((t, i) => {
+    const prices = t.p.map((p, d) => {
+      const months = MONTHS[d];
+      const extra = d === 0 ? '' :
+        `<span class="sub"><span class="per">${n(Math.round(p / months))} a month</span><span class="save">save ${Math.round((1 - p / (t.p[0] * months)) * 100)}%</span></span>`;
+      return `<div class="pr"><span class="dur">${DUR[d]}</span><span class="right"><span class="amt">${n(p)}<small> EGP</small></span>${extra}</span></div>`;
+    }).join('');
+    let unit = '';
+    if (a.perUnit) {
+      const count = rows(a).find(r => r.k === a.perUnit.k).v[i + 1];
+      unit = `<div class="unitcost">≈ ${egp(t.p[0] / count)} EGP ${a.perUnit.label} at the full ${n(count)}, on the 1-month price</div>`;
+    }
+    return `<article class="tier">
+      <div class="tier-head"><span class="tier-id">${t.id}</span><span class="tier-name">${esc(t.en)}</span><span class="tier-ar" lang="ar" dir="rtl">${t.ar}</span></div>
+      <p class="who">${esc(t.who)}</p>
+      <div class="prices">${prices}</div>${unit}
+    </article>`;
+  }).join('');
+}
+
+function renderMatrix(key) {
+  const a = AUD[key];
+  const head = `<thead><tr><th>Feature</th><th class="free"><b>Free</b>everyone</th>${a.tiers.map(t => `<th><b>${t.id} · ${esc(t.en)}</b>${n(t.p[0])} EGP a month</th>`).join('')}</tr></thead>`;
+  const body = a.groups.map(g => {
+    const area = `<tr class="area"><td colspan="5">${esc(g.area)}</td></tr>`;
+    return area + g.rows.map(row => {
+      const f = F[row.k];
+      const chips = `<span class="chips"><span class="chip t-${f.type}">${f.type[0].toUpperCase() + f.type.slice(1)}</span></span>`;
+      const label = `<td class="f"><span class="nm">${esc(f.name)}</span><span class="k">${row.k}</span>${f.note ? `<span class="nt">${esc(f.note)}</span>` : ''}${chips}</td>`;
+      const cells = row.v.map((v, i) => `<td${i === 0 ? ' class="free"' : ''}>${cell(f.type, v, row.r && row.r[i])}</td>`).join('');
+      return `<tr>${label}${cells}</tr>`;
+    }).join('');
+  }).join('');
+
+  let foot = '';
+  if (rows(a).some(r => COST[r.k])) {
+    const cols = [0, 1, 2, 3].map(col => {
+      const w = worstCost(a, col);
+      if (col === 0) return `<td class="free"><span class="val">${egp(w)} EGP</span><span class="pct">per active user</span></td>`;
+      const t = a.tiers[col - 1];
+      const ofMonthly = w / t.p[0], ofYearly = w / (t.p[2] / 12);
+      const pct = (x, label) => `<span class="pct${x > 0.5 ? ' hot' : ''}">${Math.round(x * 100)}% of ${label}</span>`;
+      return `<td><span class="val">${egp(w)} EGP</span>${pct(ofMonthly, 'the 1-month price')}${pct(ofYearly, 'the 12-month price a month')}</td>`;
+    }).join('');
+    foot = `<tfoot><tr><td><b>Worst-case cost a month</b><span class="pct">Every AI and message limit used up, at the unit costs above</span></td>${cols}</tr></tfoot>`;
+  }
+  document.querySelector(`[data-matrix="${key}"]`).innerHTML = `<table>${head}<tbody>${body}</tbody>${foot}</table>`;
+}
+
+for (const key of Object.keys(AUD)) { renderTiers(key); renderMatrix(key); }
+
+</script>
+
+</body></html>

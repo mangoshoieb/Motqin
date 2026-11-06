@@ -1,4 +1,5 @@
 import { ErrorCodeItem } from "../types/lookup.types";
+import { PAYMENT_ERROR_DEFAULTS } from "../constants/payment.constants";
 
 // The server's catalogue of Arabic messages per error code (GET
 // /lookups/error-codes). Kept at module level so plain functions —
@@ -13,6 +14,7 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 // tracking-table assistants and performance report ship in a later
 // release). The guides' "Show" column; the catalogue's own copy wins.
 const GUIDE_DEFAULTS: Record<string, string> = {
+  ...PAYMENT_ERROR_DEFAULTS,
   user_not_found: "المستخدم غير موجود",
   cannot_assist_self: "لا يمكنك إضافة نفسك كمساعد",
   assistant_exists: "هذا الشخص مساعد لديك بالفعل، عدّل صلاحياته بدلاً من إضافته مرة أخرى",
