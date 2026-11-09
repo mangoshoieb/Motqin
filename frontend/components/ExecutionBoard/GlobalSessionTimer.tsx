@@ -10,6 +10,7 @@ import { notifySessionFinished, startSessionRing } from "@/app/lib/session-alert
 import { elapsedSecondsOf, useSessionTimerStore } from "@/app/lib/session-timer.store";
 import {
   ACTIVE_STUDY_SESSION_KEY,
+  ADDITIONAL_TIME_KEY,
   runningSessionFromActive,
   secondsNow,
   useActiveStudySession,
@@ -189,6 +190,8 @@ export const GlobalSessionTimer = () => {
         queryClient.invalidateQueries({ queryKey: ["study-plans"] });
         queryClient.invalidateQueries({ queryKey: ["execution-board"] });
         queryClient.invalidateQueries({ queryKey: ACTIVE_STUDY_SESSION_KEY });
+        // Ended — the server now offers the extra-minutes timer for it.
+        queryClient.invalidateQueries({ queryKey: ADDITIONAL_TIME_KEY });
       })
       .catch((error) => toastApiError("تعذر إنهاء الجلسة على الخادم", error));
   }, [session, status, elapsed, finish, clear, queryClient, now]);

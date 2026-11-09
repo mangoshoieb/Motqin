@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Clock3, Lock, UserMinus, X } from "lucide-react";
+import { Clock3, Lock, PauseCircle, UserMinus, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { MENTOR_PRIVILEGES } from "@/app/constants/mentorship.constants";
@@ -19,15 +19,19 @@ type PendingConfirm =
 interface MentorCardProps {
   mentor: MyMentor;
   // Another mentor who already holds the blocker lock, if any.
-  lockHolderName: string | null;
+  lockHolder: MyMentor | null;
 }
 
-export const MentorCard = ({ mentor, lockHolderName }: MentorCardProps) => {
+export const MentorCard = ({ mentor, lockHolder }: MentorCardProps) => {
   const updatePrivileges = useUpdateMentorPrivileges();
   const endMentorship = useEndMentorship();
   const [confirm, setConfirm] = useState<PendingConfirm | null>(null);
 
   const isPending = mentor.status === "Pending";
+  // The mentor's plan no longer covers this student: they see nothing, their
+  // lock doesn't apply, and taking privileges back or unlinking is instant.
+  const paused = !!mentor.paused;
+  const lockHolderName = lockHolder?.mentorName ?? null;
   const busy = updatePrivileges.isPending || endMentorship.isPending;
   const privileges: MentorPrivileges = {
     canViewPerformance: mentor.canViewPerformance,
@@ -50,7 +54,8 @@ export const MentorCard = ({ mentor, lockHolderName }: MentorCardProps) => {
 
   const toggle = (key: keyof MentorPrivileges, label: string, on: boolean) => {
     if (!on) {
-      // Switching off isn't instant — say so before sending it.
+      // Switching off isn't instant (except on a paused link) — say so
+      // before sending it.
       setConfirm({ kind: "privilege-off", key, label });
       return;
     }
@@ -79,6 +84,39 @@ export const MentorCard = ({ mentor, lockHolderName }: MentorCardProps) => {
     else void savePrivileges({ ...privileges, [pending.key]: false }, pending.label);
   };
 
+  // Requests sent before the pause still wait; sent again now, they apply
+  // at once.
+  const resend = () => {
+    if (mentor.endRequested) {
+      void end();
+      return;
+    }
+    const next = { ...privileges };
+    for (const { key, name } of MENTOR_PRIVILEGES) if (mentor.removalRequested.includes(name)) next[key] = false;
+    void savePrivileges(next, null);
+  };
+
+  // The lock is with a paused mentor: take it back from them at once, then
+  // give it to this one.
+  const takeLockFromPaused = async () => {
+    if (!lockHolder) return;
+    try {
+      await updatePrivileges.mutateAsync({
+        id: lockHolder.id,
+        privileges: {
+          canViewPerformance: lockHolder.canViewPerformance,
+          canViewBlocker: lockHolder.canViewBlocker,
+          canLockBlocker: false,
+        },
+      });
+      await savePrivileges({ ...privileges, canLockBlocker: true, canViewBlocker: true }, null);
+    } catch (error) {
+      toastMentorshipError("تعذر سحب القفل", error);
+    }
+  };
+
+  const pausedWaiting = paused && (mentor.endRequested || mentor.removalRequested.length > 0);
+
   return (
     <li
       className={cn(
@@ -86,14 +124,22 @@ export const MentorCard = ({ mentor, lockHolderName }: MentorCardProps) => {
         isPending
           ? "border-dashed border-zinc-300 dark:border-zinc-700"
           : "border-zinc-200 dark:border-zinc-800",
+        paused && "bg-zinc-50 dark:bg-zinc-900/60",
       )}
     >
       <div className="flex flex-wrap items-center gap-3">
-        <UserAvatar name={mentor.mentorName} photoUrl={mentor.mentorPhotoUrl} size={44} />
+        <span className={cn(paused && "opacity-50 grayscale")}>
+          <UserAvatar name={mentor.mentorName} photoUrl={mentor.mentorPhotoUrl} size={44} />
+        </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-bold text-zinc-900 dark:text-zinc-100">{mentor.mentorName}</p>
-            {isPending ? (
+            <p className={cn("font-bold", paused ? "text-zinc-500" : "text-zinc-900 dark:text-zinc-100")}>{mentor.mentorName}</p>
+            {paused ? (
+              <span className="flex items-center gap-1 rounded-full bg-zinc-200 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                <PauseCircle size={12} />
+                انتهت باقة متابعك
+              </span>
+            ) : isPending ? (
               <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
                 <Clock3 size={12} />
                 بانتظار القبول
@@ -143,7 +189,26 @@ export const MentorCard = ({ mentor, lockHolderName }: MentorCardProps) => {
         </p>
       ) : (
         <>
-          {mentor.endRequested && (
+          {paused && (
+            <p className="rounded-xl bg-zinc-100 px-3 py-2 text-xs leading-relaxed text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              انتهت باقة {mentor.mentorName}: بياناتك محجوبة عن المتابعة الآن والقفل لا يسري، حتى تتجدد الباقة. إيقاف أي صلاحية أو إنهاء المتابعة يسري فورًا.
+            </p>
+          )}
+          {pausedWaiting && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+              <Clock3 size={14} className="shrink-0" />
+              <span className="flex-1">أرسلت طلبًا قبل توقف المتابعة. أعد إرساله ليُطبّق فورًا.</span>
+              <button
+                type="button"
+                onClick={resend}
+                disabled={busy}
+                className="rounded-full bg-white px-3 py-1 font-bold text-amber-800 shadow-sm hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-950 dark:text-amber-200"
+              >
+                أعد الإرسال
+              </button>
+            </div>
+          )}
+          {mentor.endRequested && !paused && (
             <p className="flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
               <Clock3 size={14} className="shrink-0" />
               طلبت إنهاء المتابعة، وهو بانتظار موافقة {mentor.mentorName}.
@@ -165,11 +230,20 @@ export const MentorCard = ({ mentor, lockHolderName }: MentorCardProps) => {
                     <p className="mt-0.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                       {description}
                     </p>
-                    {removalPending ? (
+                    {removalPending && !paused ? (
                       <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
                         <Clock3 size={12} />
                         طلبت إيقافها، وهي بانتظار موافقة المشرف
                       </p>
+                    ) : heldElsewhere && lockHolder?.paused ? (
+                      <button
+                        type="button"
+                        onClick={() => void takeLockFromPaused()}
+                        disabled={busy}
+                        className="mt-1 text-xs font-bold text-blue-600 hover:underline disabled:opacity-50"
+                      >
+                        القفل مع {lockHolderName} لكن باقة المتابعة انتهت. اسحب القفل وامنحه لـ {mentor.mentorName}
+                      </button>
                     ) : heldElsewhere ? (
                       <p className="mt-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                         القفل مع {lockHolderName} الآن
@@ -183,7 +257,7 @@ export const MentorCard = ({ mentor, lockHolderName }: MentorCardProps) => {
                   <Switch
                     checked={on}
                     onCheckedChange={(next) => toggle(key, label, next)}
-                    disabled={busy || removalPending || coveredByLock || heldElsewhere}
+                    disabled={busy || (removalPending && !paused) || coveredByLock || heldElsewhere}
                     aria-label={label}
                     className="mt-0.5 bg-zinc-300 data-[checked]:bg-blue-600 dark:bg-zinc-700 dark:data-[checked]:bg-blue-500"
                   />
@@ -196,22 +270,28 @@ export const MentorCard = ({ mentor, lockHolderName }: MentorCardProps) => {
 
       {confirm && (
         <ConfirmDialog
-          tone={confirm.kind === "end" && !hasAnyPrivilege(privileges) ? "danger" : "default"}
+          tone={confirm.kind === "end" && (paused || !hasAnyPrivilege(privileges)) ? "danger" : "default"}
           title={
             confirm.kind === "privilege-off"
               ? `إيقاف «${confirm.label}»؟`
-              : hasAnyPrivilege(privileges)
+              : hasAnyPrivilege(privileges) && !paused
                 ? `طلب إنهاء متابعة ${mentor.mentorName}؟`
                 : `إنهاء متابعة ${mentor.mentorName}؟`
           }
           description={
-            confirm.kind === "privilege-off"
-              ? `لن تتوقف فورًا: يصل طلبك إلى ${mentor.mentorName}، وتبقى الصلاحية حتى الموافقة عليه. هكذا لا يُلغى اتفاقكما في لحظة ملل.`
-              : hasAnyPrivilege(privileges)
-                ? `لأن للمتابعة صلاحيات مفعّلة، يحتاج إنهاؤها موافقة ${mentor.mentorName}، وسيظهر طلبك في صفحة المشرف.`
-                : `تنتهي المتابعة فورًا، ويمكنك دعوة ${mentor.mentorName} من جديد لاحقًا.`
+            paused
+              ? confirm.kind === "privilege-off"
+                ? `تتوقف فورًا، لأن باقة ${mentor.mentorName} انتهت، فلا تحتاج موافقة الآن.`
+                : `تنتهي المتابعة فورًا، لأن باقة ${mentor.mentorName} انتهت. يمكنك إرسال دعوة جديدة لاحقًا.`
+              : confirm.kind === "privilege-off"
+                ? `لن تتوقف فورًا: يصل طلبك إلى ${mentor.mentorName}، وتبقى الصلاحية حتى الموافقة عليه. هكذا لا يُلغى اتفاقكما في لحظة ملل.`
+                : hasAnyPrivilege(privileges)
+                  ? `لأن للمتابعة صلاحيات مفعّلة، يحتاج إنهاؤها موافقة ${mentor.mentorName}، وسيظهر طلبك في صفحة المشرف.`
+                  : `تنتهي المتابعة فورًا، ويمكنك دعوة ${mentor.mentorName} من جديد لاحقًا.`
           }
-          confirmLabel={confirm.kind === "privilege-off" ? "إرسال الطلب" : hasAnyPrivilege(privileges) ? "إرسال الطلب" : "إنهاء"}
+          confirmLabel={
+            paused ? (confirm.kind === "privilege-off" ? "إيقاف" : "إنهاء") : confirm.kind === "privilege-off" || hasAnyPrivilege(privileges) ? "إرسال الطلب" : "إنهاء"
+          }
           onConfirm={onConfirm}
           onClose={() => setConfirm(null)}
         />

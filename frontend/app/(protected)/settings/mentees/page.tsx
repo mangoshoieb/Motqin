@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BellRing, Check, ChevronLeft, GraduationCap, Inbox, RotateCcw, X } from "lucide-react";
+import { BellRing, Check, ChevronLeft, GraduationCap, Inbox, PauseCircle, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthKind } from "@/app/hooks/useAuthKind";
 import {
@@ -60,6 +60,9 @@ const MenteesSettingsPage = () => {
   }
 
   const requests = incoming.data ?? [];
+  // Paused students (the plan doesn't cover them now) go last.
+  const sortedMentees = [...mentees.data].sort((a, b) => Number(!!a.paused) - Number(!!b.paused));
+  const pausedCount = mentees.data.filter((m) => m.paused).length;
 
   const answer = async (id: number, studentName: string, accepted: boolean) => {
     setBusyId(id);
@@ -161,7 +164,44 @@ const MenteesSettingsPage = () => {
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {mentees.data.map((mentee) => (
+            {pausedCount > 0 && (
+              <li className="flex flex-wrap items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                <PauseCircle size={18} className="shrink-0" />
+                <span className="min-w-0 flex-1">
+                  باقتك الحالية لا تغطي{" "}
+                  {pausedCount === 1
+                    ? "طالبًا واحدًا"
+                    : pausedCount === 2
+                      ? "طالبَين"
+                      : pausedCount <= 10
+                        ? `${pausedCount} طلاب`
+                        : `${pausedCount} طالبًا`}
+                  ، فتوقفت متابعتهم. لم يُحذف شيء، وتعود
+                  متابعتهم عند تجديد باقتك أو ترقيتها. الأقدم قبولًا يُتابَع أولًا.
+                </span>
+                <Link href="/subscription?audience=Mentor" className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-600">
+                  اعرض العروض
+                </Link>
+              </li>
+            )}
+            {sortedMentees.map((mentee) =>
+              mentee.paused ? (
+                <li
+                  key={mentee.id}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900/60"
+                >
+                  <span className="opacity-50 grayscale">
+                    <UserAvatar name={mentee.studentName} photoUrl={mentee.studentPhotoUrl} size={44} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-zinc-500">{mentee.studentName}</p>
+                    <p className="mt-0.5 text-xs text-zinc-500">جدد باقتك لتتابع هذا الطالب مرة أخرى</p>
+                  </div>
+                  <span className="flex items-center gap-1 rounded-full bg-zinc-200 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                    <PauseCircle size={12} /> متوقفة
+                  </span>
+                </li>
+              ) : (
               <li key={mentee.id} className="flex flex-col gap-3">
                 <Link
                   href={`/settings/mentees/${mentee.id}`}
@@ -203,7 +243,8 @@ const MenteesSettingsPage = () => {
                   />
                 )}
               </li>
-            ))}
+              ),
+            )}
           </ul>
         )}
       </section>

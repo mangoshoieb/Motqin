@@ -79,7 +79,45 @@ const MenteeDetailPage = () => {
   }
 
   if (isError || !mentee) {
-    const gone = getCodedApiError(error)?.code === "mentorship_not_found";
+    const code = getCodedApiError(error)?.code;
+    const gone = code === "mentorship_not_found";
+    // The mentor's plan doesn't cover this student now: no data, but
+    // unlinking still works.
+    if (code === "mentorship_paused") {
+      return (
+        <div className="flex flex-col gap-4">
+          <BackLink />
+          <div className="flex flex-col items-start gap-3 rounded-2xl border border-amber-200 bg-white p-6 dark:border-amber-900/50 dark:bg-zinc-900">
+            <p className="font-bold text-zinc-900 dark:text-zinc-100">المتابعة متوقفة لانتهاء باقتك</p>
+            <p className="text-sm text-zinc-500">جددها لتتابع هذا الطالب مرة أخرى. لم يُحذف شيء من بياناته.</p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/subscription?audience=Mentor"
+                className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                اعرض العروض
+              </Link>
+              <button
+                type="button"
+                onClick={() =>
+                  void unlink
+                    .mutateAsync(id)
+                    .then(() => {
+                      toast.success("انتهت المتابعة");
+                      router.replace("/settings/mentees");
+                    })
+                    .catch((err) => toastMentorshipError("تعذر إنهاء المتابعة", err))
+                }
+                disabled={unlink.isPending}
+                className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950/30"
+              >
+                <UserMinus size={15} /> إلغاء المتابعة
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex flex-col gap-4">
         <BackLink />

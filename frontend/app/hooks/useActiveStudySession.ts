@@ -21,6 +21,21 @@ export const useActiveStudySession = () =>
     enabled: typeof window !== "undefined" && !!localStorage.getItem("accessToken"),
   });
 
+export const ADDITIONAL_TIME_KEY = ["study-session", "additional-time"] as const;
+
+// The extra-minutes ("bonus") timer after a session ends. The server decides
+// whether it shows and from how many seconds, so it survives reloads, a
+// closed app and other devices; asked on every open, on focus, and whenever
+// a session starts, ends or a break begins.
+export const useAdditionalTime = () =>
+  useQuery({
+    queryKey: ADDITIONAL_TIME_KEY,
+    queryFn: studySessionsService.getAdditionalTime,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    enabled: typeof window !== "undefined" && !!localStorage.getItem("accessToken"),
+  });
+
 // Seconds the server reported, plus however long ago it reported them.
 export const secondsNow = (seconds: number | null | undefined, fetchedAt: number) =>
   Math.max(0, (seconds ?? 0) + Math.floor((Date.now() - fetchedAt) / 1000));

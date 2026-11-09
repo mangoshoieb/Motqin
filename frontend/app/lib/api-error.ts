@@ -151,7 +151,36 @@ export function getAuthGateError(error: unknown): AuthGateErrorBody | null {
 }
 
 export function isAuthGateError(error: unknown): boolean {
-  return getAuthGateError(error) !== null;
+  return getAuthGateError(error) !== null || getPlanLimitError(error) !== null;
+}
+
+// 403 quota_exhausted / not_in_plan: the plan, not a bug. The axios
+// interceptor offers the plans for these (except where a screen explains it
+// inline), so callers shouldn't also toast them.
+export const PLAN_LIMIT_CODES = ["quota_exhausted", "not_in_plan"] as const;
+
+export interface PlanLimitError {
+  code: (typeof PLAN_LIMIT_CODES)[number];
+  message?: string;
+  feature?: string;
+  resetsAt?: string | null;
+}
+
+export function getPlanLimitError(error: unknown): PlanLimitError | null {
+  if (!axios.isAxiosError(error) || error.response?.status !== 403) return null;
+  // Flat { code, details } or wrapped { error: { code, details } }.
+  const data = error.response.data as
+    | { code?: string; message?: string; details?: Record<string, unknown>; error?: { code?: string; message?: string; details?: Record<string, unknown> } }
+    | undefined;
+  const coded = data?.error && typeof data.error === "object" ? data.error : data;
+  if (!coded || !PLAN_LIMIT_CODES.includes(coded.code as PlanLimitError["code"])) return null;
+  const details = coded.details ?? {};
+  return {
+    code: coded.code as PlanLimitError["code"],
+    message: coded.message,
+    feature: typeof details.feature === "string" ? details.feature : undefined,
+    resetsAt: typeof details.resetsAt === "string" ? details.resetsAt : null,
+  };
 }
 
 /**

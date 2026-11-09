@@ -62,6 +62,17 @@ function BundlePicker({ value, onChange }: { value: number[]; onChange: (ids: nu
   );
 }
 
+// Off: refused when the student took main features off, so it doesn't stack
+// with that discount (the whole plan still takes it).
+function CustomizedCheckbox({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      يعمل مع الباقات المخصصة (التي حذف الطالب منها مميزات)
+    </label>
+  );
+}
+
 function PartnerSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const { data: partners = [] } = useAdminPartners();
   return (
@@ -88,6 +99,7 @@ export function CouponDialog({ coupon, onClose }: { coupon?: Coupon; onClose: ()
   const [validUntil, setValidUntil] = useState(toLocalInput(coupon?.validUntil));
   const [firstOnly, setFirstOnly] = useState(coupon?.firstPurchaseOnly ?? false);
   const [isActive, setIsActive] = useState(coupon?.isActive ?? true);
+  const [onCustomized, setOnCustomized] = useState(coupon?.allowOnCustomized ?? true);
   const [partnerId, setPartnerId] = useState(coupon?.partnerId ? String(coupon.partnerId) : "");
   const [bundleIds, setBundleIds] = useState<number[]>(coupon?.bundleIds ?? []);
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +132,7 @@ export function CouponDialog({ coupon, onClose }: { coupon?: Coupon; onClose: ()
           isActive,
           partnerId: partnerId ? Number(partnerId) : null,
           bundleIds,
+          allowOnCustomized: onCustomized,
         },
       },
       {
@@ -172,6 +185,7 @@ export function CouponDialog({ coupon, onClose }: { coupon?: Coupon; onClose: ()
             <input type="checkbox" checked={firstOnly} onChange={(e) => setFirstOnly(e.target.checked)} />
             لأول عملية شراء فقط (لمن لم يشترِ باقة مدفوعة من قبل)
           </label>
+          <CustomizedCheckbox checked={onCustomized} onChange={setOnCustomized} />
           <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
             مفعّل
@@ -197,6 +211,7 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
   const [validUntil, setValidUntil] = useState("");
   const [partnerId, setPartnerId] = useState("");
   const [bundleIds, setBundleIds] = useState<number[]>([]);
+  const [onCustomized, setOnCustomized] = useState(true);
   const [batch, setBatch] = useState<VoucherBatch | null>(null);
   const [error, setError] = useState<string | null>(null);
   const create = useCreateBatch();
@@ -226,6 +241,7 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
         validFrom: fromLocalInput(validFrom),
         validUntil: fromLocalInput(validUntil),
         partnerId: partnerId ? Number(partnerId) : null,
+        allowOnCustomized: onCustomized,
       },
       { onSuccess: setBatch, onError: (err) => setError(getApiErrorMessage(err)) },
     );
@@ -310,6 +326,9 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
           <input type="datetime-local" dir="ltr" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className={inputClass} />
         </Field>
         <PartnerSelect value={partnerId} onChange={setPartnerId} />
+        <div className="sm:col-span-2">
+          <CustomizedCheckbox checked={onCustomized} onChange={setOnCustomized} />
+        </div>
         <div className="sm:col-span-2">
           <BundlePicker value={bundleIds} onChange={setBundleIds} />
         </div>

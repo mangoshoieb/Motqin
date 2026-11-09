@@ -1,0 +1,1501 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Motqin Payments Front Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; a controller is a coloured band, each endpoint a card with brief, fields, good cases, bad cases, lookups and notes; the manual test closes the page - same family as the Tracking and Mentors guides */
+:root {
+  --bg: #f5f7f6;
+  --card: #ffffff;
+  --fg: #16211d;
+  --muted: #586560;
+  --line: #dbe3df;
+  --code-bg: #eef3f0;
+  --accent: #0f6b52;
+  --get: #12805c;  --get-bg: #e2f4ec;
+  --post: #2f5bd3; --post-bg: #e6edfd;
+  --put: #a66300;  --put-bg: #fcf0db;
+  --del: #c2364b;  --del-bg: #fce6e9;
+  --ok: #12805c;   --warn: #a66300;  --bad: #c2364b;
+  --u: #0f6b52;  --u-bg: #ddf1e8;
+  --a: #6a46c4;  --a-bg: #ede6fb;
+  --t: #3a7d2c;  --t-bg: #e7f3e2;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+    --accent: #4fcf9f;
+    --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+    --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+    --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+  --accent: #4fcf9f;
+  --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+  --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+  --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 72px;
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 26px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ar { font-family: "IBM Plex Sans Arabic", var(--font-body); direction: rtl; unicode-bidi: isolate; }
+
+.hero { display: grid; gap: 12px; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 13.5px; padding: 5px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--fg); }
+.nav a.u { background: var(--u-bg); color: var(--u); border-color: transparent; }
+.nav a.a { background: var(--a-bg); color: var(--a); border-color: transparent; }
+.nav a.t { background: var(--t-bg); color: var(--t); border-color: transparent; }
+
+.part { display: grid; gap: 16px; }
+.ctl { display: grid; gap: 6px; padding: 16px 20px; border-radius: 14px; scroll-margin-top: 12px; }
+.ctl .num { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; }
+.ctl p { max-width: 74ch; }
+.ctl.u { background: var(--u-bg); } .ctl.u .num, .ctl.u h2 { color: var(--u); }
+.ctl.a { background: var(--a-bg); } .ctl.a .num, .ctl.a h2 { color: var(--a); }
+.ctl.t { background: var(--t-bg); } .ctl.t .num, .ctl.t h2 { color: var(--t); }
+.ctl.n { background: var(--code-bg); }
+
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.put { background: var(--put-bg); color: var(--put); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; color: var(--warn); }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--code-bg); color: var(--muted); }
+.brief { max-width: 78ch; }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 6px; align-content: start; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.5; }
+.case { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; min-width: 0; }
+.case > .lbl { color: var(--ok); }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td code { white-space: pre-wrap; }
+.params td:first-child { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+.s { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+.s.ok { background: var(--get-bg); color: var(--ok); }
+.s.b4 { background: var(--del-bg); color: var(--bad); }
+.s.b3 { background: var(--put-bg); color: var(--warn); }
+.bad > .lbl { color: var(--bad); }
+.dep { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dep span.chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--code-bg); border: 1px solid var(--line); }
+.notes { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+.tip.warn { border-left-color: var(--warn); }
+
+.flow ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+.flow li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; display: grid; gap: 8px; min-width: 0; }
+.flow li::before { content: counter(step); position: absolute; left: 14px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--t-bg); color: var(--t); font-family: var(--font-mono); font-weight: 600; font-size: 13px; display: grid; place-items: center; }
+.flow li.stage { counter-increment: none; background: none; border: 0; padding: 8px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--t); }
+.flow li.stage::before { content: none; }
+.expect { color: var(--muted); font-size: 14px; }
+.expect b { color: var(--fg); }
+.foot { color: var(--muted); font-size: 13px; }
+.pmap { display: grid; gap: 14px; }
+.jr { display: grid; gap: 6px; min-width: 0; }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 6px; }
+.pg { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 8px; background: var(--card); border: 1px solid var(--line); color: var(--fg); text-decoration: none; }
+a.pg:hover { border-color: var(--accent); }
+.pg.hub { background: var(--u-bg); color: var(--u); border-color: transparent; }
+.pg.ext { border-style: dashed; color: var(--muted); background: transparent; }
+.arr { color: var(--muted); font-size: 13px; }
+.pname { font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+.pname-ar { font-size: 16px; font-weight: 600; color: var(--muted); }
+#pages .ep { scroll-margin-top: 12px; }
+@media (max-width: 520px) { .flow li { padding-left: 16px; padding-top: 50px; } .flow li.stage { padding-top: 8px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Motqin backend · payments · for the front</span>
+  <h1>Motqin Payments Front Guide</h1>
+  <nav class="nav" aria-label="Sections">
+    <a href="#how">How to read</a>
+    <a href="#pages">Pages to build</a>
+    <a href="#basics">Every request</a>
+    <a class="u" href="#bundles">Bundles</a>
+    <a class="u" href="#wallet">Wallet</a>
+    <a class="u" href="#payment">Payment</a>
+    <a class="u" href="#subscription">Subscription</a>
+    <a class="u" href="#partners">Partners</a>
+    <a class="a" href="#admin-bundles">Admin · Bundles</a>
+    <a class="a" href="#admin-coupons">Admin · Coupons</a>
+    <a class="a" href="#admin-partners">Admin · Partners</a>
+    <a class="a" href="#admin-users">Admin · Admins</a>
+    <a class="a" href="#admin-payments">Admin · Payments</a>
+    <a class="t" href="#test">Manual test</a>
+  </nav>
+</header>
+
+<!-- ===================================================================== how to read -->
+<section class="part" id="how">
+  <div class="ctl n"><span class="num">Start here</span><h2>How this guide is organized</h2><p>The page follows the backend's controllers. Each controller is a coloured band, and every endpoint under it is one card laid out the same way, so you always know where to look.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">One endpoint card, top to bottom</span></div>
+    <div class="table-wrap"><table>
+      <tr><th>Part</th><th>What it tells you</th></tr>
+      <tr><td><b>1. Header line</b></td><td>The method (<span class="m get">GET</span> <span class="m post">POST</span> <span class="m put">PUT</span> <span class="m del">DELETE</span>), the path with its query or <code>{id}</code>, and on the right <span class="who">who can call it</span>: anyone, registered user, guest, teacher or above, manager, admin.</td></tr>
+      <tr><td><b>2. Brief</b></td><td>One or two sentences: what the endpoint is for and which screen uses it.</td></tr>
+      <tr><td><b>3. Fields table</b></td><td>Every input: path value, query parameter or body field, with whether it's required, its allowed range and what it means. Endpoints with no input have no table.</td></tr>
+      <tr><td><b>4. <span style="color: var(--ok);">Valid</span> cases</b></td><td>One block per kind of success, each with the request body (or URL) and the real response. When a block shows two boxes side by side, the left is what you send and the right is what you get.</td></tr>
+      <tr><td><b>5. <span style="color: var(--bad);">Bad</span> cases</b></td><td>A table with one row per mistake: <b>Send</b> (the body or situation that causes it) · <b>Get</b> (the status and the response) · <b>Show</b> (the Arabic message for that <code>code</code>, the same text <code>GET /api/lookups/error-codes</code> returns).</td></tr>
+      <tr><td><b>6. Lookups and dependencies</b></td><td>The other endpoints this one needs, e.g. where a <code>bundleId</code> or <code>partnerId</code> comes from.</td></tr>
+      <tr><td><b>7. Notes</b></td><td>How to build the screen: what to show, which button to disable, when to refetch.</td></tr>
+    </table></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">Reading the bad-case tables</span></div>
+    <div class="table-wrap"><table>
+      <tr><th>Mark</th><th>Meaning</th></tr>
+      <tr><td><span class="s ok">200</span></td><td>Success. Preview is special: it always answers 200 and puts problems in <code>couponError</code> or <code>blockedReason</code>.</td></tr>
+      <tr><td><span class="s b4">400</span> <span class="s b4">401</span> <span class="s b4">404</span></td><td>Refused, not signed in, or not found. The code to read is <code>error.code</code>.</td></tr>
+      <tr><td><span class="s b3">403</span></td><td>Not allowed: an empty body when the role can't use the endpoint, or <code>registration_required</code> at the top level for a guest.</td></tr>
+      <tr><td><code>"…"</code> and <code>…</code></td><td>Parts of a response left out to keep it short, such as the rest of the 20 features. The real response has them.</td></tr>
+    </table></div>
+    <p class="tip">Ids, dates, names and amounts are from a real run on the dev server. Your ids differ on other databases: plans are easiest to find by their <code>code</code> (e.g. <code>M1-1M</code>).</p>
+    <p class="tip warn"><b>Updated 8 Nov 2026 · <span class="ar">اشتراكك على كيفك</span>.</b> A student can take main features off a plan and pay less, and coupons can be kept off such purchases. What's new is marked <span class="tag">new</span> in the Bundles, Subscription, Admin · Bundles and Admin · Coupons cards, and has its own steps in the manual test. Mentoring changes (Free can't mentor, paused students) are in the Mentors guide.</p>
+  </article>
+</section>
+
+<!-- ===================================================================== pages -->
+<section class="part" id="pages">
+  <div class="ctl n"><span class="num">Screens</span><h2>Pages to build</h2><p>Everything a student, teacher or parent does with money happens on one page, <b>Wallet &amp; Offers</b> (<span class="ar">المحفظة والعروض</span>), and the screens it opens. Teachers linked to a partner get one extra page. The admin endpoints belong to the admin dashboard, listed at the end.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">How the pages connect</span></div>
+    <div class="pmap">
+      <div class="jr"><span class="lbl">Top up the wallet</span>
+        <div class="chain"><a class="pg hub" href="#pg-wallet">Wallet &amp; Offers</a><span class="arr">→</span><a class="pg" href="#pg-topup">Top-up sheet</a><span class="arr">→</span><a class="pg ext" href="#pg-checkout">Paymob checkout</a><span class="arr">→</span><a class="pg" href="#pg-result">Top-up result</a><span class="arr">→</span><a class="pg hub" href="#pg-wallet">back to Wallet &amp; Offers</a></div></div>
+      <div class="jr"><span class="lbl">Buy a plan</span>
+        <div class="chain"><a class="pg hub" href="#pg-wallet">Wallet &amp; Offers · Offers</a><span class="arr">→</span><a class="pg" href="#pg-details">Plan details</a><span class="arr">(optional) →</span><a class="pg" href="#pg-confirm">Confirm subscription</a><span class="arr">→</span><a class="pg" href="#pg-done">Subscription done</a><span class="arr">→</span><a class="pg" href="#pg-limits">My plan &amp; limits</a></div></div>
+      <div class="jr"><span class="lbl">Buy a plan with too little in the wallet</span>
+        <div class="chain"><a class="pg" href="#pg-confirm">Confirm subscription</a><span class="arr">→</span><a class="pg" href="#pg-topup">Top-up sheet</a><span class="arr">(amount filled in) →</span><a class="pg ext" href="#pg-checkout">Paymob checkout</a><span class="arr">→</span><a class="pg" href="#pg-result">Top-up result</a><span class="arr">→</span><a class="pg" href="#pg-confirm">back to Confirm subscription</a></div></div>
+      <div class="jr"><span class="lbl">History and limits</span>
+        <div class="chain"><a class="pg hub" href="#pg-wallet">Wallet &amp; Offers</a><span class="arr">→</span><a class="pg" href="#pg-transactions">Transactions</a><span class="arr">(a pending top-up) →</span><a class="pg" href="#pg-result">Top-up result</a></div>
+        <div class="chain"><a class="pg hub" href="#pg-wallet">Wallet &amp; Offers · My plan</a><span class="arr">→</span><a class="pg" href="#pg-limits">My plan &amp; limits</a><span class="arr">→</span><a class="pg" href="#pg-limits">Subscription history</a></div></div>
+      <div class="jr"><span class="lbl">From the rest of the app</span>
+        <div class="chain"><span class="pg ext">any feature refused by the plan</span><span class="arr">→</span><a class="pg hub" href="#pg-wallet">Wallet &amp; Offers · Offers</a><span class="arr">(see </span><a href="#pg-prompts">plan-limit prompts</a><span class="arr">)</span></div>
+        <div class="chain"><span class="pg ext">a partner's link to a private plan</span><span class="arr">→</span><a class="pg" href="#pg-details">Plan details</a><span class="arr">→</span><a class="pg" href="#pg-confirm">Confirm subscription</a></div>
+        <div class="chain"><span class="pg ext">menu, teachers linked to a partner</span><span class="arr">→</span><a class="pg" href="#pg-partner">Partner dashboard</a></div></div>
+    </div>
+    <p class="foot">Dashed: not a page the app builds (Paymob's checkout) or a place outside these pages.</p>
+  </article>
+
+  <article class="ep" id="pg-wallet">
+    <div class="ep-line"><span class="pname">Wallet &amp; Offers</span><span class="ar pname-ar">المحفظة والعروض</span><span class="who">registered user · guest (limited)</span></div>
+    <p class="brief">The main page, opened from the app's menu or profile, and from every "see offers" button in the app. Four blocks, top to bottom, loaded together:</p>
+    <div class="table-wrap"><table>
+      <tr><th>Block</th><th>Shows</th><th>Calls</th></tr>
+      <tr><td><b>Balance</b></td><td>The balance in EGP and a <span class="ar">اشحن المحفظة</span> button that opens the Top-up sheet.</td><td><code>GET /api/wallet</code></td></tr>
+      <tr><td><b>My plan</b></td><td>The current plan and its end date; <span class="ar">جدّد الآن</span> when <code>inGrace</code> is true; the plan waiting to start, if any. Tapping it opens My plan &amp; limits.</td><td><code>GET /api/subscription/me</code></td></tr>
+      <tr><td><b>Offers</b></td><td>The plans for this account, cheapest first, with a 1 / 6 / 12-month switch and the current plan marked. Each card has <span class="ar">اشترك</span> (opens Confirm subscription) and <span class="ar">التفاصيل</span> (opens Plan details). A plan with <code>customizable: true</code> also gets a <span class="ar">اشتراكك على كيفك</span> badge.</td><td><code>GET /api/bundles</code> (no query: the token picks student, teacher or parent plans)</td></tr>
+      <tr><td><b>Recent activity</b></td><td>The last 5 wallet lines and <span class="ar">عرض الكل</span>, which opens Transactions.</td><td><code>GET /api/wallet/transactions?page=1&amp;pageSize=5</code></td></tr>
+    </table></div>
+    <ul class="notes">
+      <li>Reload the page when coming back from a top-up or a purchase.</li>
+      <li><b>Guests:</b> Balance and Recent activity answer <span class="s b3">403</span> <code>registration_required</code>. Show one <span class="ar">أنشئ حسابك</span> card in their place. Offers and My plan still load, and every <span class="ar">اشترك</span> opens sign-up.</li>
+      <li>Opened from a plan-limit prompt, scroll straight to Offers.</li>
+    </ul>
+  </article>
+
+  <article class="ep" id="pg-topup">
+    <div class="ep-line"><span class="pname">Top-up sheet</span><span class="ar pname-ar">شحن المحفظة</span><span class="who">registered user</span></div>
+    <p class="brief">A bottom sheet or dialog, opened from Balance, or from Confirm subscription with the amount already filled in.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Part</th><th>What to build</th></tr>
+      <tr><td>Amount</td><td>A number field (at least 10 EGP, up to 2 decimals) with quick picks such as 50 / 100 / 200. From Confirm subscription, filled with the preview's <code>suggestedRechargeAmount</code>.</td></tr>
+      <tr><td>Method</td><td>Card or mobile wallet, the default; send no <code>method</code>. Hide Fawry until it's switched on (it answers <code>method_unavailable</code> today).</td></tr>
+      <tr><td>Button</td><td><span class="ar">متابعة للدفع</span> calls <code>POST /api/payment/recharge-wallet</code>, saves <code>reference</code>, then opens <code>redirectUrl</code>.</td></tr>
+      <tr><td>Errors</td><td><code>amount_too_small</code> and <code>amount_invalid</code> under the field; <code>method_unavailable</code> and <code>recharge_failed</code> as a message, keeping the sheet open.</td></tr>
+    </table></div>
+  </article>
+
+  <article class="ep" id="pg-checkout">
+    <div class="ep-line"><span class="pname">Paymob checkout</span><span class="tag">not built by the app</span></div>
+    <p class="brief">Paymob's own page at <code>redirectUrl</code>, in a web view or the browser: card form, mobile-wallet code, or the Fawry number. Close it when its address reaches <code>…/api/payment/client-callback</code> or the user closes it, then open Top-up result with the saved <code>reference</code>.</p>
+  </article>
+
+  <article class="ep" id="pg-result">
+    <div class="ep-line"><span class="pname">Top-up result</span><span class="ar pname-ar">نتيجة الشحن</span><span class="who">registered user</span></div>
+    <p class="brief">Checks <code>GET /api/payment/recharges/{reference}</code> every 3 seconds for up to a minute, then shows the outcome.</p>
+    <div class="table-wrap"><table>
+      <tr><th>status</th><th>Show</th><th>Then</th></tr>
+      <tr><td><code>Pending</code></td><td class="ar">جارٍ تأكيد الدفع…</td><td>Keep checking. Still Pending after a minute: <span class="ar">سنضيف المبلغ لمحفظتك فور تأكيده</span>, with a button back. The top-up stays in Transactions.</td></tr>
+      <tr><td><code>Succeeded</code></td><td class="ar">تم شحن محفظتك بمبلغ X جنيه</td><td>X is <code>receivedAmount</code>. Go back to where the sheet was opened: Wallet &amp; Offers, or Confirm subscription, which previews again.</td></tr>
+      <tr><td><code>Failed</code></td><td class="ar">لم تتم عملية الدفع</td><td><span class="ar">حاول مرة أخرى</span> reopens the Top-up sheet with the same amount.</td></tr>
+      <tr><td><code>Expired</code></td><td class="ar">انتهت مهلة الدفع</td><td>The same as Failed.</td></tr>
+    </table></div>
+    <ul class="notes"><li>While a top-up is Pending, the server also asks Paymob about it, so a check can take a second longer. Keep the spinner up while it runs.</li></ul>
+  </article>
+
+  <article class="ep" id="pg-details">
+    <div class="ep-line"><span class="pname">Plan details</span><span class="ar pname-ar">تفاصيل الباقة</span><span class="who">anyone</span></div>
+    <p class="brief">One plan's full feature list, grouped by <code>group</code>, with <span class="ar">اشترك</span> at the bottom. Opened from an offer card, or from a partner's link to a private plan (a hidden plan never appears in Offers).</p>
+    <p class="brief"><span class="tag">new</span> For a plan with <code>customizable: true</code> this is the <b>plan builder</b>: build it from <code>groups</code>, with a switch on each group whose <code>removable</code> is true and its <code>discountPercent</code> beside it (<span class="ar">−15%</span>). Under a switched-off group, show what stays (<code>accessIfLeftOut</code> / <code>limitIfLeftOut</code>, e.g. 15 blocking sessions instead of unlimited), and keep at least one switch on. The live price is in the <a href="#bundles">Bundles card</a>. <span class="ar">اشترك</span> opens Confirm subscription with the main features kept.</p>
+    <div class="dep"><span class="lbl">Calls</span><span class="chip">GET /api/bundles/{id}</span><span>An offer card can pass its data along instead of calling again.</span></div>
+  </article>
+
+  <article class="ep" id="pg-confirm">
+    <div class="ep-line"><span class="pname">Confirm subscription</span><span class="ar pname-ar">تأكيد الاشتراك</span><span class="who">registered user</span></div>
+    <p class="brief">What the purchase will do and cost, a coupon field, and one button. Nothing is charged until that button.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Part</th><th>What to build</th></tr>
+      <tr><td>On open</td><td><code>POST /api/subscription/preview</code> with <code>{ "bundleId", "groups" }</code>. <span class="tag">new</span> <code>groups</code> = the main features kept in Plan details; leave it out for a whole plan.</td></tr>
+      <tr><td>Summary</td><td>The operation in words (<span class="ar">شراء</span> · <span class="ar">تجديد</span> · <span class="ar">ترقية</span> · <span class="ar">تبدأ بعد انتهاء باقتك</span>), the price in steps (<code>fullPrice</code> − <code>featuresDiscount</code> <span class="ar">خصم المميزات المحذوفة</span> − the coupon's <code>discountAmount</code> = <code>amountDue</code>), the start and end dates, and the wallet balance.</td></tr>
+      <tr><td>Coupon</td><td>A field with <span class="ar">تطبيق</span>, which previews again with <code>couponCode</code>. Show <code>couponError</code> under the field; the purchase still works without the coupon. On <code>coupon_not_for_customized</code>, offer <span class="ar">اشترك في الباقة كاملة</span>: preview again with no <code>groups</code>.</td></tr>
+      <tr><td>Button: enough balance</td><td><span class="ar">ادفع X جنيه من المحفظة</span> calls <code>POST /api/subscription/purchase</code> with the same <code>bundleId</code>, <code>groups</code> and <code>couponCode</code>, then opens Subscription done.</td></tr>
+      <tr><td>Button: balance too low</td><td><span class="ar">اشحن Y جنيه</span>, where Y is <code>suggestedRechargeAmount</code>, opens the Top-up sheet. After a successful top-up, come back here and preview again.</td></tr>
+      <tr><td>Blocked</td><td>With <code>blockedReason</code>, disable the button and show its message (for example <code>teacher_plan_only</code>, <code>already_scheduled</code>, <code>renew_first</code>).</td></tr>
+      <tr><td>Purchase errors</td><td>Something changed since the preview: <code>insufficient_balance</code> → offer the top-up; a <code>coupon_*</code> code → show it and preview again; <code>purchase_failed</code> → the balance didn't change, try again.</td></tr>
+    </table></div>
+  </article>
+
+  <article class="ep" id="pg-done">
+    <div class="ep-line"><span class="pname">Subscription done</span><span class="ar pname-ar">تم الاشتراك</span><span class="who">registered user</span></div>
+    <p class="brief">Built from the purchase response, with no extra call: the plan's title; <span class="ar">مفعّلة الآن</span> for an active plan, or <span class="ar">تبدأ في</span> + <code>startDate</code> when <code>status</code> is <code>Scheduled</code>; <code>amountCharged</code> and the new <code>walletBalance</code>. Buttons: <span class="ar">حدود باقتي</span> (My plan &amp; limits) and back to Wallet &amp; Offers.</p>
+  </article>
+
+  <article class="ep" id="pg-transactions">
+    <div class="ep-line"><span class="pname">Transactions</span><span class="ar pname-ar">سجل المعاملات</span><span class="who">registered user</span></div>
+    <p class="brief">The whole wallet history, newest first, loading more on scroll. Each line: the type in words (<span class="ar">شحن</span> · <span class="ar">اشتراك</span> · <span class="ar">تجديد</span> · <span class="ar">ترقية</span> · <span class="ar">تغيير الباقة</span>), the amount (+ for a top-up, − for spending), the status and the date. Tapping a Pending top-up opens Top-up result with its <code>reference</code>.</p>
+    <div class="dep"><span class="lbl">Calls</span><span class="chip">GET /api/wallet/transactions?page=n&amp;pageSize=20</span></div>
+  </article>
+
+  <article class="ep" id="pg-limits">
+    <div class="ep-line"><span class="pname">My plan &amp; limits</span><span class="ar pname-ar">باقتي وحدودها</span><span class="who">registered user · guest</span></div>
+    <p class="brief">The current plan, the plan waiting to start, and one row per feature, grouped by <code>group</code>:</p>
+    <ul class="notes">
+      <li><b>Limited:</b> "<code>used</code> of <code>limit</code>", plus <span class="ar">يتجدد في</span> + <code>resetsAt</code> for counted features.</li>
+      <li><b>Unlimited</b> (<code>remaining: null</code>): <span class="ar">غير محدود</span>.</li>
+      <li><b>Off:</b> a lock with <span class="ar">اعرض العروض</span>, opening Wallet &amp; Offers at Offers.</li>
+      <li><b>Guests:</b> <code>lifetime: true</code>, so say "<span class="ar">من التجربة المجانية</span>" and no reset date.</li>
+      <li><span class="tag">new</span> <b>Taken off</b> (<code>included: false</code>): the student took this feature's main feature off their plan and has half of the Free level. Show "<span class="ar">حذفت هذه الميزة من باقتك</span>" with <span class="ar">أضفها</span>, which opens Confirm subscription for the same plan with that main feature added back (an <code>Upgrade</code>). <code>current.groups</code> lists the main features kept (<code>null</code> = all).</li>
+    </ul>
+    <p class="brief">A <span class="ar">سجل الاشتراكات</span> link opens <b>Subscription history</b>: a list of every plan the user had (a section or a small page of its own).</p>
+    <div class="dep"><span class="lbl">Calls</span><span class="chip">GET /api/subscription/me</span><span class="chip">GET /api/subscription/history</span></div>
+  </article>
+
+  <article class="ep" id="pg-partner">
+    <div class="ep-line"><span class="pname">Partner dashboard</span><span class="ar pname-ar">لوحة الشريك</span><span class="who">teacher or above, linked to a partner</span></div>
+    <p class="brief">A separate menu item, not part of Wallet &amp; Offers. Call <code>GET /api/partners/me</code> when a teacher signs in, and show the item only if it answers 200 (<code>not_a_partner</code> → hide it). The page has a date-range filter (<code>from</code> / <code>to</code>), the totals, by month, by plan, by coupon, and the latest sales.</p>
+  </article>
+
+  <article class="ep" id="pg-prompts">
+    <div class="ep-line"><span class="pname">Plan-limit prompts</span><span class="tag">not a page</span></div>
+    <p class="brief">Any feature in the app can refuse because of the plan. The answer carries <code>details</code>: <code>feature</code>, <code>limit</code>, <code>used</code>, <code>remaining</code>, <code>resetsAt</code> and <code>retryAfter</code>. What to offer:</p>
+    <div class="table-wrap"><table>
+      <tr><th>code</th><th>Means</th><th>Offer</th></tr>
+      <tr><td><span class="s b3">403</span> <code>quota_exhausted</code></td><td>The plan's limit is used up (it resets at <code>resetsAt</code>, if given)</td><td><span class="ar">اعرض العروض</span> → Wallet &amp; Offers · Offers</td></tr>
+      <tr><td><span class="s b3">403</span> <code>not_in_plan</code></td><td>The plan doesn't include the feature</td><td><span class="ar">اعرض العروض</span> → Wallet &amp; Offers · Offers</td></tr>
+      <tr><td><span class="s b3">403</span> <code>rate_limited</code> · <code>cooldown</code></td><td>Too fast; wait <code>retryAfter</code></td><td>No offer: just the wait</td></tr>
+      <tr><td><span class="s b3">403</span> <code>guest_limit_reached</code> · <code>registration_required</code></td><td>A guest used up the trial</td><td><span class="ar">أنشئ حسابك</span> → sign-up</td></tr>
+      <tr><td><span class="s b4">400</span> <code>limit_reached</code></td><td>The app's own maximum, the same on every plan</td><td>No offer: delete one first</td></tr>
+    </table></div>
+  </article>
+
+  <article class="ep" id="pg-admin">
+    <div class="ep-line"><span class="pname">Admin dashboard pages</span><span class="who">manager · admin</span></div>
+    <div class="table-wrap"><table>
+      <tr><th>Page</th><th>Calls</th></tr>
+      <tr><td><a href="#admin-bundles"><b>Plans</b></a>: list, edit, the 20-feature editor, retire, catalogue check and apply</td><td><code>GET /api/admin/bundles</code> · <code>GET /api/admin/features</code> · <code>POST</code> / <code>PUT /api/admin/bundles</code> · <code>PUT …/{id}/features</code> · <code>POST …/{id}/deactivate</code> · <code>POST …/catalogue/apply</code></td></tr>
+      <tr><td><a href="#admin-coupons"><b>Coupons &amp; vouchers</b></a>: list with filters, create and edit, voucher batches (codes shown once), usage</td><td><code>GET</code> / <code>POST</code> / <code>PUT /api/admin/coupons</code> · <code>POST …/batches</code> · <code>GET …/{id}/usage</code> · <code>GET …/batches/{id}/usage</code></td></tr>
+      <tr><td><a href="#admin-partners"><b>Partners</b></a>: list, create and edit, link an account, sales report</td><td><code>GET</code> / <code>POST</code> / <code>PUT /api/admin/partners</code> · <code>PUT …/{id}/user</code> · <code>GET …/{id}/report</code></td></tr>
+      <tr><td><a href="#admin-users"><b>Admins &amp; roles</b></a>: Admin accounts only</td><td><code>GET</code> / <code>POST</code> / <code>DELETE /api/admin/admins</code> · <code>PUT /api/admin/users/{userId}/role</code></td></tr>
+      <tr><td><a href="#admin-payments"><b>Payment mismatches</b></a>: for finance</td><td><code>GET /api/admin/payments/mismatches</code></td></tr>
+    </table></div>
+  </article>
+</section>
+
+<!-- ===================================================================== basics -->
+<section class="part" id="basics">
+  <div class="ctl n"><span class="num">Read first</span><h2>Every request</h2><p>What every payment endpoint shares. Every body and response on this page comes from a real run against the dev server.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">Response shapes</span></div>
+    <div class="io">
+      <div><span class="lbl">Success</span><pre class="code">{ "success": true, "data": { … }, "error": null, "message": "Coupon created." }</pre>
+        <span class="lbl">Refused (400 / 404)</span><pre class="code">{ "success": false, "data": null,
+  "error": { "code": "insufficient_balance",
+             "message": "Your wallet balance doesn't cover this.",
+             "details": { "walletBalance": 40.0, "amountDue": 49.0 } } }</pre></div>
+      <div><span class="lbl">Guest account on a money endpoint (403) - a different shape</span><pre class="code">{ "success": false, "code": "registration_required",
+  "message": "أنشئ حسابك للمتابعة" }</pre>
+        <span class="lbl">No token (401) · role not allowed (403)</span><pre class="code">(empty body)</pre></div>
+    </div>
+    <div class="table-wrap"><table>
+      <tr><th>Status</th><th>code</th><th>When</th><th>Show</th></tr>
+      <tr><td><span class="s b4">401</span></td><td>(empty)</td><td>no token or it expired: refresh the token and retry</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      <tr><td><span class="s b3">403</span></td><td>(empty)</td><td>the account's role can't use this endpoint, e.g. a student on an admin endpoint</td><td>a general "not allowed" message</td></tr>
+      <tr><td><span class="s b3">403</span></td><td><code>registration_required</code></td><td>a guest account on wallet, payment, preview or purchase. Read <code>code</code> at the top level, not under <code>error</code></td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+      <tr><td><span class="s b4">400</span></td><td><code>validation_error</code></td><td>a field is missing, out of range or the wrong type; <code>details</code> is keyed by field (server spelling, e.g. <code>DiscountPercent</code>)</td><td class="ar">بعض البيانات المدخلة غير صحيحة</td></tr>
+      <tr><td><span class="s b4">404</span></td><td><code>not_found</code></td><td>the bundle, coupon, batch, partner or recharge doesn't exist</td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+    </table></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">GET /api/lookups/error-codes</span><span>every code with its status and Arabic message: show the message for <code>error.code</code>, never <code>error.message</code> (English, for developers).</span></div>
+    <ul class="notes">
+      <li><b>Money</b> is EGP, a number with up to 2 decimals (<code>49.0</code>, <code>12.5</code>).</li>
+      <li><b>Times</b> ending in <code>+00:00</code> or <code>Z</code> are UTC. Some fields (<code>createdAt</code>, <code>updatedAt</code>) have no zone: they're UTC too, so add <code>Z</code> before converting to local time.</li>
+      <li><b>Enums travel as text</b>: <code>kind</code> Guest/Free/Paid · <code>audience</code> Student/Teacher/Mentor · <code>access</code> Off/Limited/Unlimited · <code>type</code> Usage/Allowance/Access · <code>status</code> of a subscription Scheduled/Active/Expired/Replaced · of a payment Pending/Succeeded/Failed/Expired · <code>operation</code> Purchase/Renewal/Upgrade/Downgrade/Scheduled · <code>group</code> (a main feature) StudyPlanner/SpacedRepetition/DistractionBlocker/TrackingTables/Mentor.</li>
+      <li><b>Coupon codes</b> are stored without dashes or spaces and in capitals: <code>DOC100-56451</code> is saved and shown as <code>DOC10056451</code>, and either spelling works when typed.</li>
+    </ul>
+  </article>
+</section>
+
+<!-- ===================================================================== bundles -->
+<section class="part" id="bundles">
+  <div class="ctl u"><span class="num">BundlesController · /api/bundles</span><h2>Bundles (plans)</h2><p>The plans people can buy. No login needed. Each plan exists once per term (1, 6 and 12 months) and has a <code>code</code> such as <code>S2-6M</code>.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/bundles?audience=</span><span class="who">anyone</span></div>
+    <p class="brief">The plans screen. Free comes first, for comparison, then the audience's plans, cheapest first. Each plan lists only that audience's features: 14 for students, 7 for teachers, 1 (Mentees) for parents and mentors. Mentees, how many students a user can mentor, is on every plan: Free off · S1 1 · S2 3 · S3 5 · T1 2 · T2 5 · T3 10 · M1 3 · M2 15 · M3 100.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Query</th><th>Meaning</th></tr>
+      <tr><td>audience</td><td>Optional: <code>Student</code>, <code>Teacher</code> or <code>Mentor</code>. Left out, the signed-in account decides: teacher and above → Teacher, parent → Mentor, anyone else (or no token) → Student.</td></tr>
+    </table></div>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Response field</th><th>Meaning</th></tr>
+      <tr><td>customizable</td><td><span class="tag">new</span> <code>true</code> when main features can be taken off for a lower price (the S plans). <code>false</code> for Free, Guest, teacher, mentor and hand-made plans: show them as before.</td></tr>
+      <tr><td>groupDiscounts</td><td><span class="tag">new</span> % off the price for each removable main feature, e.g. <code>{ "DistractionBlocker": 15 }</code>; <code>{}</code> when not customisable.</td></tr>
+      <tr><td>groups[]</td><td><span class="tag">new</span> The same features, under their main feature: <code>group</code>, <code>removable</code>, <code>discountPercent</code> (null when it can't be taken off), <code>saving</code> (EGP saved by taking off only this one) and <code>features</code>.</td></tr>
+      <tr><td>features[].accessIfLeftOut<br>features[].limitIfLeftOut</td><td><span class="tag">new</span> What the student keeps of this feature if its main feature is taken off: half of the Free plan's limit, rounded up. <code>null</code> when it can't be taken off.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · a student's plans (<code>?audience=Student</code>, or a student's token)</span>
+      <pre class="code">{ "success": true, "data": [
+  { "id": 5, "title": "Free", "kind": "Free", "audience": null, "code": null, "price": 0.0, … },
+  { "id": 14, "title": "Plus · 1 month",
+    "description": "Students who mainly need the planner and reviews, with some AI help.",
+    "price": 99.0, "durationDays": 30, "kind": "Paid", "audience": "Student", "code": "S1-1M",
+    "quotaPeriod": "Monthly", "isHidden": false, "isActive": true, "partnerId": null,
+    "customizable": true,
+    "groupDiscounts": { "StudyPlanner": 25, "SpacedRepetition": 30, "DistractionBlocker": 15, "Mentor": 10 },
+    "groups": [ … the same features under their main feature, below … ],
+    "features": [
+      { "feature": "StudySessions", "displayName": "Study sessions", "group": "StudyPlanner",
+        "type": "Usage", "access": "Unlimited", "limit": null,
+        "rateLimitCount": null, "rateLimitWindowMinutes": null, "cooldownMinutes": null,
+        "accessIfLeftOut": "Unlimited", "limitIfLeftOut": null },
+      { "feature": "AiStudyPlanner", "displayName": "AI study planner", "group": "StudyPlanner",
+        "type": "Usage", "access": "Limited", "limit": 6,
+        "rateLimitCount": 3, "rateLimitWindowMinutes": 60, "cooldownMinutes": 60,
+        "accessIfLeftOut": "Limited", "limitIfLeftOut": 1 },
+      { "feature": "PerformanceRange", "displayName": "Performance over any date range",
+        "group": "StudyPlanner", "type": "Access", "access": "Off", "limit": null, … },
+      … 14 features in all ] },
+  … Motqin · 1 month (S2-1M), Motqin Pro · 1 month (S3-1M), the 6- and 12-month ones … ],
+  "error": null }</pre></div>
+    <div class="case"><span class="lbl">Valid · <span class="tag">new</span> the groups of S2 · 1 month (<code>S2-1M</code>, 179 EGP)</span>
+      <pre class="code">"groups": [
+  { "group": "StudyPlanner", "removable": true, "discountPercent": 25, "saving": 44, "features": [ … ] },
+  { "group": "SpacedRepetition", "removable": true, "discountPercent": 30, "saving": 53, "features": [ … ] },
+  { "group": "DistractionBlocker", "removable": true, "discountPercent": 15, "saving": 26, "features": [
+      { "feature": "BlockerSchedules", "access": "Limited", "limit": 10, "accessIfLeftOut": "Limited", "limitIfLeftOut": 1, … },
+      { "feature": "BlockerSessions", "access": "Unlimited", "limit": null, "accessIfLeftOut": "Limited", "limitIfLeftOut": 15, … } ] },
+  { "group": "Mentor", "removable": true, "discountPercent": 10, "saving": 17, "features": [
+      { "feature": "Mentors", "access": "Limited", "limit": 3, "accessIfLeftOut": "Limited", "limitIfLeftOut": 1, … },
+      { "feature": "Mentees", "access": "Limited", "limit": 3, "accessIfLeftOut": "Off", "limitIfLeftOut": null, … } ] } ]</pre></div>
+    <div class="case"><span class="lbl">Valid · a teacher's token, no query</span>
+      <p class="expect">Free and the 9 teacher plans (<code>T1-1M</code> … <code>T3-12M</code>), each with the 6 tracking-table features and Mentees. <code>customizable: false</code>, every group <code>removable: false</code>.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>?audience=Parent</code></td><td><span class="s b4">400</span> <code>validation_error</code>, <code>details: { "audience": ["The value 'Parent' is not valid."] }</code></td><td class="ar">بعض البيانات المدخلة غير صحيحة</td></tr>
+      </table></div></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">GET /api/subscription/me</span><span>to mark the plan the user is on.</span></div>
+    <ul class="notes">
+      <li>Group the cards by plan (the part of <code>title</code> before " · ", or <code>code</code> before the dash) and offer the three terms as a switch.</li>
+      <li><code>access</code>: Off = show the feature locked; Limited = "<code>limit</code> a month" for Usage, "<code>limit</code> at once" for Allowance; Unlimited = "Unlimited". An Access feature is only on (Unlimited) or off.</li>
+      <li>A rate limit reads "at most <code>rateLimitCount</code> per <code>rateLimitWindowMinutes</code> min, then a <code>cooldownMinutes</code> min wait".</li>
+      <li>Hidden plans (partner offers) never appear here; they're opened by id.</li>
+      <li><span class="tag">new</span> <b>Live price</b> in the plan builder: add up <code>discountPercent</code> of every main feature switched off, then <code>ceil(price × (100 − total) / 100)</code>, at least 1 EGP below <code>price</code> once anything is off. S2 · 1 month: blocker off 153 · Mentor off 162 · planner off 135 · only the planner kept 81. Preview gives the exact amount with a coupon. The percentages are placeholders until the business sets them: always read them from here.</li>
+    </ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/bundles/{id}</span><span class="who">anyone</span></div>
+    <p class="brief">One plan by id, hidden ones included. This is how a partner's link opens its private plan. Unlike the list, it returns <b>all 20 features</b>, with the same <span class="tag">new</span> <code>customizable</code>, <code>groupDiscounts</code>, <code>groups</code> and <code>…IfLeftOut</code> fields.</p>
+    <div class="table-wrap"><table class="params"><tr><th>Path</th><th>Meaning</th></tr><tr><td>id</td><td>the bundle's <code>id</code> from the list or from a partner's link</td></tr></table></div>
+    <div class="case"><span class="lbl">Valid · <code>/api/bundles/14</code></span>
+      <pre class="code">{ "success": true, "data": { "id": 14, "title": "Plus · 1 month", "price": 99.0, "durationDays": 30,
+  "kind": "Paid", "audience": "Student", "code": "S1-1M", …, "features": [ … all 20 … ] }, "error": null }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>/api/bundles/999999</code>, a retired plan, or the Guest plan</td><td><span class="s b4">404</span> <code>{ "code": "not_found", "message": "Bundle not found." }</code></td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+      </table></div></div>
+    <ul class="notes"><li>Show only the features of the plan's own <code>audience</code>, the same way the list does.</li></ul>
+  </article>
+</section>
+
+<!-- ===================================================================== wallet -->
+<section class="part" id="wallet">
+  <div class="ctl u"><span class="num">WalletController · /api/wallet</span><h2>Wallet</h2><p>Plans are paid from the wallet. Money gets in only through a Paymob top-up. Registered accounts only.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/wallet</span><span class="who">registered user</span></div>
+    <p class="brief">The balance. A wallet is created on first use.</p>
+    <div class="case"><span class="lbl">Valid</span><pre class="code">{ "success": true, "data": { "balance": 40.0, "updatedAt": "2026-11-14T17:58:07.350642" }, "error": null }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>a guest's token</td><td><span class="s b3">403</span> <code>{ "success": false, "code": "registration_required", "message": "أنشئ حسابك للمتابعة" }</code></td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+        <tr><td>no token</td><td><span class="s b4">401</span> empty body</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      </table></div></div>
+    <ul class="notes"><li>Refresh it after a top-up succeeds and after every purchase (the purchase response also carries <code>walletBalance</code>).</li></ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/wallet/transactions?page=1&amp;pageSize=20</span><span class="who">registered user</span></div>
+    <p class="brief">The wallet history, newest first: every top-up and every purchase is one line.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Query</th><th>Meaning</th></tr>
+      <tr><td>page</td><td>from 1, default 1</td></tr>
+      <tr><td>pageSize</td><td>default 20</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · <code>?page=1&amp;pageSize=3</code></span>
+      <pre class="code">{ "success": true, "data": {
+  "items": [
+    { "id": 91, "amount": 0.0, "type": "Renewal", "status": "Succeeded", "paymentMethod": null,
+      "reference": null, "userSubscriptionId": 152, "createdAt": "2026-11-04T14:06:28.7804896" },
+    { "id": 84, "amount": 40.0, "type": "Deposit", "status": "Succeeded", "paymentMethod": "card",
+      "reference": "7092188-2ce8f3aa-639281158543217769", "userSubscriptionId": null,
+      "createdAt": "2026-10-20T17:57:34.3217769" },
+    { "id": 61, "amount": -100.0, "type": "Subscribe", "status": "Succeeded", "paymentMethod": null,
+      "reference": null, "userSubscriptionId": 45, "createdAt": "2026-10-20T17:52:36.8369276" } ],
+  "total": 3, "page": 1, "pageSize": 3 }, "error": null }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">The same as <code>GET /api/wallet</code> (guest 403, no token 401).</p></div>
+    <ul class="notes">
+      <li><code>amount</code>: positive for a top-up (<code>Deposit</code>), negative for spending. A 100% coupon purchase is a line of <code>0.0</code>.</li>
+      <li><code>type</code>: Deposit, Subscribe, Renewal, Upgrade, Downgrade. <code>status</code>: Pending, Succeeded, Failed, Expired (a top-up never paid).</li>
+      <li>A Pending <code>Deposit</code> line keeps its <code>reference</code>: after an app restart, use it with <code>GET /api/payment/recharges/{reference}</code> to check it again.</li>
+    </ul>
+  </article>
+</section>
+
+<!-- ===================================================================== payment -->
+<section class="part" id="payment">
+  <div class="ctl u"><span class="num">PaymentController · /api/payment</span><h2>Payment (Paymob top-ups)</h2><p>Topping up the wallet through Paymob. The app calls the first two; Paymob calls the last two.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/payment/recharge-wallet</span><span class="who">registered user</span></div>
+    <p class="brief">Starts a top-up and returns the Paymob checkout link. It doesn't add money: only Paymob's server callback does.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>amount</td><td>Required. EGP, at least 10, at most 2 decimals.</td></tr>
+      <tr><td>method</td><td>Optional. Leave out for card and mobile wallets (checkout lasts 1 hour). <code>"kiosk"</code> = pay cash at Fawry (reference lasts 48 hours); not set up yet.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · card or mobile wallet</span>
+      <div class="io">
+        <div><pre class="code">{ "amount": 50 }</pre></div>
+        <div><pre class="code">{ "success": true, "data": {
+  "redirectUrl": "https://accept.paymob.com/unifiedcheckout/?publicKey=egy_pk_test_…&amp;clientSecret=egy_csk_test_…",
+  "reference": "2908194-2ce8f3aa-639293979627370331",
+  "expiresAt": "2026-11-04T15:06:02.7370331+00:00" }, "error": null }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>{ "amount": 5 }</code> or <code>{}</code></td><td><span class="s b4">400</span> <code>{ "code": "amount_too_small", "message": "The minimum recharge is 10 EGP.", "details": { "minimum": 10 } }</code></td><td class="ar">المبلغ أقل من الحد الأدنى للشحن</td></tr>
+        <tr><td><code>{ "amount": 10.555 }</code></td><td><span class="s b4">400</span> <code>{ "code": "amount_invalid", "message": "Use at most two decimal places." }</code></td><td class="ar">المبلغ غير صحيح</td></tr>
+        <tr><td><code>{ "amount": 50, "method": "kiosk" }</code></td><td><span class="s b4">400</span> <code>{ "code": "method_unavailable", "message": "Paying at Fawry isn't available yet." }</code></td><td class="ar">طريقة الدفع هذه غير متاحة حالياً</td></tr>
+        <tr><td>Paymob down or refusing</td><td><span class="s b4">400</span> <code>{ "code": "recharge_failed", … }</code></td><td class="ar">تعذر بدء عملية الدفع، حاول مرة أخرى</td></tr>
+        <tr><td>a guest's token</td><td><span class="s b3">403</span> <code>registration_required</code></td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+      </table></div></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">POST /api/subscription/preview</span><span>its <code>suggestedRechargeAmount</code> is the amount to prefill.</span></div>
+    <ul class="notes">
+      <li>Save <code>reference</code>, then open <code>redirectUrl</code> in a web view or the browser. Paymob shows the card form, the mobile-wallet OTP or the Fawry code; the app builds no payment UI.</li>
+      <li>When the web view reaches <code>…/api/payment/client-callback</code>, close it and start polling the status. Don't trust that page's success text.</li>
+    </ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/payment/recharges/{reference}</span><span class="who">registered user</span></div>
+    <p class="brief">Where a top-up stands. The only way the app learns that money arrived.</p>
+    <div class="table-wrap"><table class="params"><tr><th>Path</th><th>Meaning</th></tr><tr><td>reference</td><td>from the <code>recharge-wallet</code> response, or a Deposit line of the transactions list</td></tr></table></div>
+    <div class="case"><span class="lbl">Valid · just started</span>
+      <pre class="code">{ "success": true, "data": {
+  "reference": "2908194-2ce8f3aa-639293979627370331", "status": "Pending",
+  "requestedAmount": 50.0, "receivedAmount": null, "paymentMethod": null,
+  "createdAt": "2026-11-04T14:06:02.7370331", "expiresAt": "2026-11-04T15:06:02.7370331+00:00" }, "error": null }</pre>
+      <p class="expect">After Paymob confirms: <code>"status": "Succeeded"</code>, <code>"receivedAmount": 50.0</code>, <code>"paymentMethod": "card"</code>.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>/recharges/NOT-A-REFERENCE</code>, or another user's reference</td><td><span class="s b4">404</span> <code>{ "code": "not_found", "message": "Recharge not found." }</code></td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+      </table></div></div>
+    <ul class="notes">
+      <li>Poll every 2–3 seconds for about a minute after checkout closes:
+        <ul class="notes">
+          <li><b>Succeeded</b>: "تم شحن المحفظة بمبلغ X" using <code>receivedAmount</code> (it's what was credited, even if it differs from <code>requestedAmount</code>);</li>
+          <li><b>Failed</b>: offer a new top-up;</li>
+          <li><b>Pending</b>: show "جاري المعالجة" and check again later;</li>
+          <li><b>Expired</b>: never paid in time.</li>
+        </ul></li>
+      <li>There's no push for payments: polling is the only signal.</li>
+      <li>While a top-up is Pending, each check also asks Paymob directly (at most once every 15 seconds per top-up). A payment whose Paymob callback was lost still turns <b>Succeeded</b>; the check may just take a second longer.</li>
+    </ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/payment/client-callback?…&amp;hmac=…</span><span class="who">Paymob redirect</span></div>
+    <p class="brief">Where Paymob sends the browser after checkout. It returns an HTML page ("Payment Successful" / "Payment Failed" / "Invalid HMAC") and changes nothing. The app never calls it; it only watches for this URL to close the web view.</p>
+    <div class="case bad"><span class="lbl">Bad cases (only seen when called by hand)</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th></tr>
+        <tr><td>no query</td><td><span class="s b4">400</span> text <code>message = Missing expected field amount_cents.</code></td></tr>
+        <tr><td>some fields missing</td><td><span class="s b4">400</span> text <code>message = Missing expected field created_at.</code></td></tr>
+      </table></div></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/payment/server-callback?hmac=…</span><span class="who">Paymob server</span><span class="tag">not for the front</span></div>
+    <p class="tip warn"><b>The front doesn't need this endpoint.</b> Don't call it and don't build anything for it: Paymob's servers call it by themselves. The front only polls <code>GET /api/payment/recharges/{reference}</code>, and <code>Succeeded</code> there means this callback has already credited the wallet.</p>
+    <p class="brief">Paymob's signed notification: the only thing that credits a wallet. It works only on the hosted server, because Paymob needs a public HTTPS address. It's described here so the backend and the testers know what happens behind the poll.</p>
+    <div class="case"><span class="lbl">What Paymob sends and gets</span>
+      <div class="io">
+        <div><pre class="code">POST /api/payment/server-callback?hmac=3f1c…
+{ "type": "TRANSACTION",
+  "obj": { "id": 192837465, "pending": false, "success": true,
+           "amount_cents": 5000, "currency": "EGP",
+           "order": { "id": 34567890,
+                      "merchant_order_id": "2908194-2ce8f3aa-639293979627370331" },
+           "source_data": { "type": "card", "sub_type": "MasterCard", "pan": "2346" }, … } }</pre></div>
+        <div><pre class="code">200 { "message": "Transaction is processed successfully." }
+200 { "message": "Transaction is still pending on Paymob." }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th></tr>
+        <tr><td><code>{}</code></td><td><span class="s b4">400</span> text <code>Invalid payload structure.</code></td></tr>
+        <tr><td>a body with a wrong <code>hmac</code></td><td><span class="s b4">401</span> text <code>Invalid HMAC</code></td></tr>
+        <tr><td>a body that isn't JSON</td><td><span class="s b4">400</span> text <code>Invalid payload structure.</code></td></tr>
+        <tr><td>a signed body with no <code>merchant_order_id</code>, a reference that isn't a Motqin top-up, or a <code>TOKEN</code> callback</td><td><span class="s ok">200</span> <code>{ "message": "… ignored." }</code>: nothing to credit, so Paymob stops sending it</td></tr>
+        <tr><td>a server error (e.g. the database is down)</td><td><span class="s b4">500</span>: Paymob's auto-retry sends it again later</td></tr>
+      </table></div></div>
+    <ul class="notes"><li><code>merchant_order_id</code> is the app's <code>reference</code>. The same Paymob transaction is never credited twice, however many times it arrives.</li>
+      <li>The body is read as raw JSON and the signature is checked over Paymob's exact text, so extra or differently shaped fields never reject a real payment.</li></ul>
+  </article>
+</section>
+
+<!-- ===================================================================== subscription -->
+<section class="part" id="subscription">
+  <div class="ctl u"><span class="num">SubscriptionController · /api/subscription</span><h2>Subscription</h2><p>The user's plan, its limits, and buying from the wallet. Always preview, then purchase.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/subscription/me</span><span class="who">registered user or guest</span></div>
+    <p class="brief">The current plan, a paid plan waiting to start (if any), and every feature's limit with what's left.</p>
+    <div class="case"><span class="lbl">Valid · after buying Family · 1 month, with a renewal waiting</span>
+      <pre class="code">{ "success": true, "data": {
+  "current": { "id": 151, "bundleId": 32, "bundleTitle": "Family · 1 month", "kind": "Paid",
+    "status": "Active", "replacedReason": null,
+    "startDate": "2026-11-04T14:06:22.628521+00:00", "endDate": "2026-12-04T14:06:22.628521+00:00",
+    "inGrace": false, "graceEndsAt": "2026-12-07T14:06:22.628521+00:00",
+    "listPrice": 49.0, "discountAmount": 49.0, "pricePaid": 0.0, "couponCode": "DOC10056451",
+    "groups": null },
+  "scheduled": { "id": 152, "bundleTitle": "Family · 1 month", "status": "Scheduled",
+    "startDate": "2026-12-04T14:06:22.628521+00:00", "endDate": "2027-01-03T14:06:22.628521+00:00", … },
+  "quotas": [
+    { "feature": "AiStudyPlanner", "displayName": "AI study planner", "group": "StudyPlanner",
+      "type": "Usage", "access": "Limited", "limit": 2, "used": 0, "remaining": 2,
+      "resetsAt": "2026-12-04T14:06:22.628521+00:00", "lifetime": false, "included": true },
+    { "feature": "Mentees", "displayName": "Students per mentor", "group": "Mentor",
+      "type": "Allowance", "access": "Limited", "limit": 3, "used": 0, "remaining": 3,
+      "resetsAt": null, "lifetime": false, "included": true },
+    … all 20 features … ] }, "error": null }</pre></div>
+    <div class="case"><span class="lbl">Valid · <span class="tag">new</span> after buying S2 · 1 month without the Distraction blocker</span>
+      <pre class="code">"current": { "bundleTitle": "Motqin · 1 month", "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"],
+             "listPrice": 153.0, "pricePaid": 0.0, … },
+"quotas": [
+  { "feature": "BlockerSessions", "group": "DistractionBlocker", "access": "Limited", "limit": 15, "used": 0,
+    "remaining": 15, "included": false, … },
+  { "feature": "BlockerSchedules", "group": "DistractionBlocker", "access": "Limited", "limit": 1, "used": 0,
+    "remaining": 1, "included": false, … },
+  { "feature": "AiImageQuestion", "group": "SpacedRepetition", "access": "Limited", "limit": 100, "used": 0,
+    "remaining": 100, "included": true, … }, … ]</pre></div>
+    <div class="case"><span class="lbl">Valid · a free user / a guest</span>
+      <p class="expect">Free: <code>"bundleTitle": "Free", "kind": "Free", "endDate": null</code>. Guest: <code>"kind": "Guest"</code>, and every quota has <code>"lifetime": true</code> (the trial never resets).</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">No token: <span class="s b4">401</span>.</p></div>
+    <ul class="notes">
+      <li><code>status</code>: Scheduled, Active, Expired, Replaced. <code>inGrace</code> true = the end date passed but access continues until <code>graceEndsAt</code> (3 days): show "renew now".</li>
+      <li><code>quotas</code>: <code>access: Off</code> = locked; <code>remaining: null</code> = unlimited; <code>used</code> for an Allowance is how many the user has now; <code>resetsAt</code> = when Usage goes back to 0.</li>
+      <li>Use it for "3 left, resets on 4 Dec" next to each feature, and to mark the current plan on the plans screen.</li>
+      <li><span class="tag">new</span> <code>current.groups</code> / <code>scheduled.groups</code>: the main features kept; <code>null</code> = the whole plan (always for Free and Guest). <code>quotas[].included: false</code>: this feature's main feature was taken off, so the student has half of the Free level.</li>
+    </ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/subscription/history</span><span class="who">registered user</span></div>
+    <p class="brief">Every subscription the user had, newest first. Each purchase, renewal, upgrade or change is its own row.</p>
+    <div class="case"><span class="lbl">Valid</span>
+      <pre class="code">{ "success": true, "data": [
+  { "id": 76, "bundleId": 5, "bundleTitle": "Free", "kind": "Free", "status": "Active", "endDate": null, … },
+  { "id": 45, "bundleId": 6, "bundleTitle": "Basic", "kind": "Paid", "status": "Expired",
+    "startDate": "2026-10-20T17:52:36.2993226+00:00", "endDate": "2026-11-19T17:52:36.2993226+00:00",
+    "listPrice": 100.0, "discountAmount": 0.0, "pricePaid": 100.0, "couponCode": null } ], "error": null }</pre></div>
+    <ul class="notes"><li><code>replacedReason</code>: <code>Upgrade</code> (replaced by a bigger plan) or <code>Superseded</code> (a Free/Guest row ended by a purchase or by signing up).</li>
+      <li><span class="tag">new</span> Each row has <code>groups</code> (the main features kept; <code>null</code> = the whole plan). <code>listPrice</code> is the price after taking features off, before the coupon.</li></ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/preview</span><span class="who">registered user</span></div>
+    <p class="brief">What buying a plan would do and cost. Saves nothing. Show it on the confirm screen, before <code>purchase</code>.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>bundleId</td><td>Required. The plan's <code>id</code> from <code>GET /api/bundles</code>.</td></tr>
+      <tr><td>groups</td><td><span class="tag">new</span> Optional. The main features to <b>keep</b>, from the plan's <code>groups</code> with <code>removable: true</code>; at least one. Left out or <code>null</code> = the whole plan (sending all of them means the same). Only for a plan with <code>customizable: true</code>.</td></tr>
+      <tr><td>couponCode</td><td>Optional discount or voucher code, as the user typed it.</td></tr>
+      <tr><td>→ fullPrice</td><td><span class="tag">new</span> The plan's price with everything in it.</td></tr>
+      <tr><td>→ featuresDiscountPercent<br>→ featuresDiscount</td><td><span class="tag">new</span> % and EGP taken off for the main features taken off.</td></tr>
+      <tr><td>→ groups</td><td><span class="tag">new</span> The kept main features, sorted; <code>null</code> = the whole plan.</td></tr>
+      <tr><td>→ listPrice</td><td>The price after taking features off, before the coupon (= <code>fullPrice</code> for a whole plan).</td></tr>
+      <tr><td>→ discountPercent · discountAmount</td><td>The coupon only, taken from <code>listPrice</code>.</td></tr>
+    </table></div>
+    <p class="tip"><b>Preview always answers 200.</b> Problems come back inside <code>data</code>: <code>couponError</code> (the coupon doesn't apply; the purchase still works without it) and <code>blockedReason</code> (this purchase isn't possible at all). Show both with the lookup's Arabic.</p>
+    <div class="case"><span class="lbl">Valid · Purchase (from Free) · <code>{ "bundleId": 32, "couponCode": null }</code></span>
+      <pre class="code">{ "operation": "Purchase", "listPrice": 49.0, "discountPercent": 0, "discountAmount": 0.0,
+  "amountDue": 49.0, "walletBalance": 40.0, "suggestedRechargeAmount": 10,
+  "couponError": null, "blockedReason": null,
+  "startsAt": "2026-11-04T14:06:12.8913584+00:00", "endsAt": "2026-12-04T14:06:12.8913584+00:00" }</pre></div>
+    <div class="case"><span class="lbl">Valid · with a 100% coupon · <code>{ "bundleId": 32, "couponCode": "DOC100-56451" }</code></span>
+      <pre class="code">{ "operation": "Purchase", "listPrice": 49.0, "discountPercent": 100, "discountAmount": 49.0,
+  "amountDue": 0.0, "walletBalance": 40.0, "suggestedRechargeAmount": 0, "couponError": null, … }</pre></div>
+    <div class="case"><span class="lbl">Valid · <span class="tag">new</span> S2 · 1 month without the blocker, 10% coupon · <code>{ "bundleId": 17, "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"], "couponCode": "T10-1104" }</code></span>
+      <pre class="code">{ "operation": "Purchase", "fullPrice": 179.0, "featuresDiscountPercent": 15, "featuresDiscount": 26.0,
+  "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"],
+  "listPrice": 153.0, "discountPercent": 10, "discountAmount": 15.30, "amountDue": 137.70,
+  "walletBalance": 0.0, "suggestedRechargeAmount": 138, "couponError": null, "blockedReason": null, … }</pre>
+      <p class="expect">The coupon comes after the feature discount: 179 − 26 = 153, then 10% of 153.</p></div>
+    <div class="case"><span class="lbl">Valid · Renewal (the same plan again, starts when the current one ends)</span>
+      <pre class="code">{ "operation": "Renewal", "amountDue": 49.0,
+  "startsAt": "2026-12-04T14:06:22.628521+00:00", "endsAt": "2027-01-03T14:06:22.628521+00:00", … }</pre></div>
+    <div class="case"><span class="lbl">Valid · Upgrade (a pricier plan, same length, keeping every main feature the user has: pay the difference for the days left) · Family 1M → Mentor 1M</span>
+      <pre class="code">{ "operation": "Upgrade", "listPrice": 199.0, "discountAmount": 0, "amountDue": 150,
+  "walletBalance": 40.0, "suggestedRechargeAmount": 110,
+  "startsAt": "2026-11-04T14:06:26.2554103+00:00", "endsAt": "2026-12-04T14:06:22.628521+00:00", … }</pre></div>
+    <div class="case"><span class="lbl">Valid · Scheduled (a different length, starts when the current one ends) · Family 1M → Family 6M</span>
+      <pre class="code">{ "operation": "Scheduled", "listPrice": 249.0, "amountDue": 249.0, "suggestedRechargeAmount": 209,
+  "startsAt": "2026-12-04T14:06:22.628521+00:00", "endsAt": "2027-06-02T14:06:22.628521+00:00", … }</pre>
+      <p class="expect"><b>Downgrade</b> (a cheaper plan, same length) looks the same: it starts when the current plan ends.</p></div>
+    <div class="case"><span class="lbl">Valid · <span class="tag">new</span> changing the main features of the same plan (on S2 · 1 month without the blocker, 153)</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>operation</th><th>Starts · costs</th></tr>
+        <tr><td>the same <code>groups</code> again</td><td><code>Renewal</code></td><td>when the term ends · 153; coupons allowed</td></tr>
+        <tr><td>no <code>groups</code> (blocker added back)</td><td><code>Upgrade</code></td><td>now · <code>ceil(26 × days left / 30)</code>, 26 on day one; no coupons</td></tr>
+        <tr><td><code>["StudyPlanner", "SpacedRepetition"]</code></td><td><code>Downgrade</code></td><td>when the term ends · 135</td></tr>
+        <tr><td><code>["StudyPlanner", "SpacedRepetition", "DistractionBlocker"]</code></td><td><code>Downgrade</code></td><td>when the term ends · 162. It costs more, but drops Mentor: an upgrade never takes a main feature away mid-term</td></tr>
+        <tr><td>S2 · 6 months (<code>18</code>), any <code>groups</code></td><td><code>Scheduled</code></td><td>when the term ends</td></tr>
+        <tr><td>during the grace days: the same plan, any <code>groups</code></td><td><code>Renewal</code></td><td>at once, with the new choice</td></tr>
+      </table></div></div>
+    <div class="case bad"><span class="lbl">Bad cases · <code>couponError</code> (200; the rest of the preview is the price without the coupon)</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>couponError</th><th>Show</th></tr>
+        <tr><td><code>"couponCode": "NO-SUCH-CODE"</code>, or a coupon turned off</td><td><code>coupon_invalid</code></td><td class="ar">الكوبون غير صحيح</td></tr>
+        <tr><td>a coupon whose <code>validFrom</code> is in the future</td><td><code>coupon_not_started</code></td><td class="ar">الكوبون لم يبدأ بعد</td></tr>
+        <tr><td>a coupon past its <code>validUntil</code></td><td><code>coupon_expired</code></td><td class="ar">انتهت صلاحية الكوبون</td></tr>
+        <tr><td>a coupon with all its uses taken</td><td><code>coupon_unavailable</code></td><td class="ar">نفدت مرات استخدام الكوبون</td></tr>
+        <tr><td>a coupon limited to other plans</td><td><code>coupon_not_applicable</code></td><td class="ar">الكوبون لا ينطبق على هذه الباقة</td></tr>
+        <tr><td>a coupon this user already used</td><td><code>coupon_already_used</code></td><td class="ar">استخدمت هذا الكوبون من قبل</td></tr>
+        <tr><td>a first-purchase coupon, user bought a paid plan before</td><td><code>coupon_first_purchase_only</code></td><td class="ar">الكوبون لأول عملية شراء فقط</td></tr>
+        <tr><td>any coupon on an <code>Upgrade</code></td><td><code>coupon_not_for_upgrades</code></td><td class="ar">لا يمكن استخدام كوبون عند الترقية</td></tr>
+        <tr><td><span class="tag">new</span> a coupon with <code>allowOnCustomized: false</code> and main features taken off. The whole plan (no <code>groups</code>) still takes it</td><td><code>coupon_not_for_customized</code></td><td class="ar">هذا الكوبون لا يُستخدم مع باقة حذفت منها مميزات</td></tr>
+      </table></div></div>
+    <div class="case bad"><span class="lbl">Bad cases · <code>blockedReason</code> (200; <code>operation</code> is null and amounts are 0)</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>blockedReason</th><th>Show</th></tr>
+        <tr><td><code>{ "bundleId": 999999 }</code>, a retired plan, Free or Guest</td><td><code>bundle_unavailable</code></td><td class="ar">هذه الباقة غير متاحة للشراء</td></tr>
+        <tr><td>a teacher plan from a non-teacher account</td><td><code>teacher_plan_only</code></td><td class="ar">باقات المدرسين متاحة لحسابات المدرسين فقط</td></tr>
+        <tr><td>anything but an upgrade while a plan is already waiting to start</td><td><code>already_scheduled</code></td><td class="ar">لديك باقة ستبدأ بعد انتهاء الحالية بالفعل</td></tr>
+        <tr><td>a different plan while the current one is in its grace days</td><td><code>renew_first</code></td><td class="ar">انتهت باقتك، جددها أولاً ثم غيّرها</td></tr>
+        <tr><td><span class="tag">new</span> <code>"groups": []</code>, or a main feature that plan can't drop (e.g. <code>["TrackingTables"]</code> on S2)</td><td><code>invalid_groups</code></td><td class="ar">اختر ميزة رئيسية واحدة على الأقل من المميزات المتاحة في هذه الباقة</td></tr>
+        <tr><td><span class="tag">new</span> <code>groups</code> for a plan sold whole (<code>customizable: false</code>, e.g. M1)</td><td><code>bundle_not_customizable</code></td><td class="ar">هذه الباقة تُشترى كاملة ولا يمكن اختيار مميزاتها</td></tr>
+      </table></div>
+      <pre class="code">{ "operation": null, "listPrice": 0, "discountPercent": 0, "discountAmount": 0, "amountDue": 0,
+  "walletBalance": 40.0, "suggestedRechargeAmount": 0, "couponError": null,
+  "blockedReason": "teacher_plan_only", "startsAt": null, "endsAt": null }</pre>
+      <p class="expect">A guest gets <span class="s b3">403</span> <code>registration_required</code> instead of a preview.</p></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">GET /api/bundles</span><span class="chip">GET /api/lookups/error-codes</span><span class="chip">POST /api/payment/recharge-wallet</span></div>
+    <ul class="notes">
+      <li><b>Confirm screen</b>: operation in words ("شراء", "تجديد", "ترقية", "تبدأ بعد انتهاء باقتك"), list price, discount, <code>amountDue</code>, when it starts and ends.</li>
+      <li>When <code>walletBalance &lt; amountDue</code>, the button becomes "اشحن <code>suggestedRechargeAmount</code> جنيه" and opens the top-up with that amount.</li>
+      <li>With <code>blockedReason</code>, disable the buy button.</li>
+      <li><span class="tag">new</span> Preview again on every change in Plan details' switches, and show <code>featuresDiscount</code> as its own line so the student sees the saving.</li>
+    </ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/purchase</span><span class="who">registered user</span></div>
+    <p class="brief">Buys the plan from the wallet, all or nothing: if anything fails, the balance and the coupon are untouched.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>bundleId</td><td>Required. The same one as the preview.</td></tr>
+      <tr><td>groups</td><td><span class="tag">new</span> Optional. The same main features as the preview; left out = the whole plan. The new subscription's <code>groups</code> echoes them.</td></tr>
+      <tr><td>couponCode</td><td>Optional. Checked again now: a coupon can stop working between preview and purchase.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · Purchase with a 100% coupon · <code>{ "bundleId": 32, "couponCode": "DOC100-56451" }</code></span>
+      <pre class="code">{ "success": true, "data": {
+  "operation": "Purchase",
+  "subscription": { "id": 151, "bundleId": 32, "bundleTitle": "Family · 1 month", "kind": "Paid",
+    "status": "Active", "startDate": "2026-11-04T14:06:22.628521+00:00",
+    "endDate": "2026-12-04T14:06:22.628521+00:00", "inGrace": false,
+    "graceEndsAt": "2026-12-07T14:06:22.628521+00:00",
+    "listPrice": 49.0, "discountAmount": 49.0, "pricePaid": 0.0, "couponCode": "DOC10056451" },
+  "amountCharged": 0.0, "walletBalance": 40.0 }, "error": null }</pre></div>
+    <div class="case"><span class="lbl">Valid · Renewal · <code>{ "bundleId": 32, "couponCode": "DOCONE-56451" }</code></span>
+      <pre class="code">{ "operation": "Renewal",
+  "subscription": { "id": 152, "bundleTitle": "Family · 1 month", "status": "Scheduled",
+    "startDate": "2026-12-04T14:06:22.628521+00:00", "endDate": "2027-01-03T14:06:22.628521+00:00", … },
+  "amountCharged": 0.0, "walletBalance": 40.0 }</pre>
+      <p class="expect">A Renewal, Downgrade or Scheduled purchase is paid now and shows as <code>status: "Scheduled"</code> until its day comes. An Upgrade replaces the current plan at once.</p></div>
+    <div class="case"><span class="lbl">Valid · <span class="tag">new</span> S2 · 1 month without the blocker, with a 100% coupon · <code>{ "bundleId": 17, "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"], "couponCode": "TS2-1104" }</code></span>
+      <pre class="code">{ "operation": "Purchase",
+  "subscription": { "bundleTitle": "Motqin · 1 month", "kind": "Paid", "status": "Active",
+    "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"],
+    "listPrice": 153.0, "discountAmount": 153.0, "pricePaid": 0.0, "couponCode": "TS21104", … },
+  "amountCharged": 0.0, "walletBalance": 0.0 }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases (400 with the code under <code>error</code>)</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>{ "bundleId": 32 }</code> with 40 EGP for a 49 EGP plan</td><td><span class="s b4">400</span> <code>{ "code": "insufficient_balance", "message": "Your wallet balance doesn't cover this.", "details": { "walletBalance": 40.0, "amountDue": 49.0 } }</code></td><td class="ar">رصيد المحفظة لا يكفي، اشحن المحفظة أولاً</td></tr>
+        <tr><td>an expired coupon</td><td><span class="s b4">400</span> <code>{ "code": "coupon_expired", "message": "This coupon can't be used here." }</code>. Every <code>coupon_*</code> code from the preview table comes back this way</td><td>that coupon's message</td></tr>
+        <tr><td>a teacher plan from a student</td><td><span class="s b4">400</span> <code>{ "code": "teacher_plan_only", "message": "Teacher plans are for teacher accounts." }</code></td><td class="ar">باقات المدرسين متاحة لحسابات المدرسين فقط</td></tr>
+        <tr><td>a second plan while one is waiting</td><td><span class="s b4">400</span> <code>{ "code": "already_scheduled", "message": "You already have a plan starting when this one ends.", "details": { "startsAt": "2026-12-04T14:06:22.628521+00:00" } }</code></td><td class="ar">لديك باقة ستبدأ بعد انتهاء الحالية بالفعل</td></tr>
+        <tr><td><code>{ "bundleId": 999999 }</code></td><td><span class="s b4">400</span> <code>bundle_unavailable</code></td><td class="ar">هذه الباقة غير متاحة للشراء</td></tr>
+        <tr><td>a different plan during grace</td><td><span class="s b4">400</span> <code>renew_first</code></td><td class="ar">انتهت باقتك، جددها أولاً ثم غيّرها</td></tr>
+        <tr><td><span class="tag">new</span> <code>"groups": []</code>, or a main feature the plan can't drop</td><td><span class="s b4">400</span> <code>{ "code": "invalid_groups", "message": "These can't be picked in this bundle: TrackingTables. …", "details": { "removable": ["StudyPlanner", "SpacedRepetition", "DistractionBlocker", "Mentor"] } }</code></td><td class="ar">اختر ميزة رئيسية واحدة على الأقل من المميزات المتاحة في هذه الباقة</td></tr>
+        <tr><td><span class="tag">new</span> <code>groups</code> for a plan sold whole</td><td><span class="s b4">400</span> <code>{ "code": "bundle_not_customizable", "message": "This bundle is sold whole: send no groups for it." }</code></td><td class="ar">هذه الباقة تُشترى كاملة ولا يمكن اختيار مميزاتها</td></tr>
+        <tr><td><span class="tag">new</span> a coupon with <code>allowOnCustomized: false</code> and main features taken off</td><td><span class="s b4">400</span> <code>{ "code": "coupon_not_for_customized", "message": "This coupon can't be used here." }</code></td><td class="ar">هذا الكوبون لا يُستخدم مع باقة حذفت منها مميزات</td></tr>
+        <tr><td>an unexpected server failure</td><td><span class="s b4">400</span> <code>purchase_failed</code></td><td class="ar">تعذر إتمام الشراء، رصيدك لم يتغير</td></tr>
+        <tr><td>a guest's token</td><td><span class="s b3">403</span> <code>registration_required</code> (top-level shape)</td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+      </table></div></div>
+    <ul class="notes">
+      <li>After success: refresh <code>GET /api/subscription/me</code> (new limits) and use <code>walletBalance</code> from the response.</li>
+      <li>On <code>insufficient_balance</code>, offer a top-up of <code>details.amountDue - details.walletBalance</code>, or the preview's <code>suggestedRechargeAmount</code>.</li>
+    </ul>
+  </article>
+</section>
+
+<!-- ===================================================================== partners -->
+<section class="part" id="partners">
+  <div class="ctl u"><span class="num">PartnersController · /api/partners</span><h2>Partner dashboard</h2><p>For a teacher or center whose account an admin linked to a partner record. Partners earn commission on sales made with their coupons or their plans.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/partners/me?from=&amp;to=</span><span class="who">teacher or above</span></div>
+    <p class="brief">The partner's own sales: totals, by month, by plan, by coupon, and the latest 50 sales.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Query</th><th>Meaning</th></tr>
+      <tr><td>from</td><td>Optional. Sales at or after this time, e.g. <code>2026-10-01T00:00:00+02:00</code> (encode <code>+</code> as <code>%2B</code>).</td></tr>
+      <tr><td>to</td><td>Optional. Sales <b>before</b> this time. For all of October send <code>to=2026-11-01T00:00:00+02:00</code>.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · a linked account (shape; a new partner has zeros and empty lists)</span>
+      <pre class="code">{ "success": true, "data": {
+  "partner": { "id": 2, "name": "Doc test partner 56451", "type": "Teacher", "contactPhone": "01000000555",
+               "commissionPercent": 12.5, "isActive": true, "linkedUserId": "…", "createdAt": "2026-11-04T14:06:43.6295454" },
+  "from": "2026-10-01T00:00:00+02:00", "to": "2026-12-01T00:00:00+02:00",
+  "sales": 3, "students": 3, "revenue": 160.00, "commission": 20.00,
+  "byMonth":  [ { "name": "2026-10", "count": 3, "revenue": 160.00, "commission": 20.00 } ],
+  "byBundle": [ { "name": "Plus · 1 month", "count": 3, "revenue": 160.00, "commission": 20.00 } ],
+  "byCode":   [ { "name": "MOHAMED20", "count": 2, "revenue": 160.00, "commission": 20.00 } ],
+  "recent":   [ { "studentName": "Ahmed Ali", "bundleTitle": "Plus · 1 month", "pricePaid": 80.00,
+                  "commission": 10.00, "couponCode": "MOHAMED20", "purchasedAt": "2026-10-14T09:30:00+00:00" } ] },
+  "error": null }</pre>
+      <p class="expect">The sales numbers above are an example; the partner fields and dates are real.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>a teacher (or admin) account not linked to a partner</td><td><span class="s b4">404</span> <code>{ "code": "not_a_partner", "message": "This account isn't linked to a partner." }</code></td><td class="ar">هذا الحساب غير مرتبط بأي شريك</td></tr>
+        <tr><td>a student's token</td><td><span class="s b3">403</span> empty body</td><td>hide the dashboard for students</td></tr>
+      </table></div></div>
+    <ul class="notes">
+      <li>Show it only to teacher accounts; on <code>not_a_partner</code>, hide the menu item.</li>
+      <li><code>commission</code> = <code>pricePaid × commissionPercent</code> at the time of each sale; <code>recent</code> shows the student's name only, never the phone.</li>
+    </ul>
+  </article>
+</section>
+
+<!-- ===================================================================== admin bundles -->
+<section class="part" id="admin-bundles">
+  <div class="ctl a"><span class="num">AdminBundlesController · /api/admin/bundles</span><h2>Admin · Bundles</h2><p>For the admin dashboard. Manager and Admin accounts only; anyone else gets 403 with an empty body. Edits to a paid plan reach new purchases only; edits to Free and Guest reach everyone on them at once.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/bundles</span><span class="who">manager</span></div>
+    <p class="brief">Every bundle: Guest, Free, all paid plans, hidden and retired ones too, each with all 20 features, and <span class="tag">new</span> <code>customizable</code>, <code>groupDiscounts</code> and <code>groups</code> as in the public list.</p>
+    <div class="case"><span class="lbl">Valid</span><pre class="code">{ "success": true, "data": [
+  { "id": 4, "title": "Guest", "kind": "Guest", "quotaPeriod": "Lifetime", "isHidden": true, … },
+  { "id": 5, "title": "Free", "kind": "Free", "quotaPeriod": "Monthly", … },
+  { "id": 14, "title": "Plus · 1 month", "kind": "Paid", "audience": "Student", "code": "S1-1M",
+    "price": 99.0, "durationDays": 30, "isHidden": false, "isActive": true,
+    "customizable": true, "groupDiscounts": { "StudyPlanner": 25, "SpacedRepetition": 30, "DistractionBlocker": 15, "Mentor": 10 },
+    "groups": [ … ], "features": [ … 20 … ] },
+  … ], "error": null }</pre></div>
+    <ul class="notes"><li>Filter by <code>audience</code> and <code>isActive</code> in the dashboard. Bundles with <code>code</code> come from the plan catalogue; edit those through the catalogue file.</li></ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/features</span><span class="who">manager</span></div>
+    <p class="brief">The feature catalogue: the 20 keys a bundle must state, how each is counted, and the app's own cap.</p>
+    <div class="case"><span class="lbl">Valid</span><pre class="code">{ "success": true, "data": [
+  { "feature": "StudySessions", "displayName": "Study sessions", "group": "StudyPlanner", "type": "Usage",
+    "checkedWhen": "Creating, starting or logging a session by hand",
+    "countedWhen": "The session finishes (end, confirm-completed or a manual log), once per session",
+    "givenBackWhen": "Never", "cap": null },
+  { "feature": "TrackingTables", "displayName": "Tables", "group": "TrackingTables", "type": "Allowance",
+    "checkedWhen": "Creating, restoring or importing a table", "countedWhen": "Each table the teacher has takes a slot",
+    "givenBackWhen": "Deleting it", "cap": 50 },
+  … ], "error": null }</pre></div>
+    <ul class="notes"><li>Build the bundle editor's rows from this list. <code>type: Access</code> rows get an on/off switch; Usage and Allowance rows get Off / Limited (number) / Unlimited; only Usage rows get rate-limit fields. <code>cap</code> is the most the app allows even on "Unlimited".</li></ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/bundles</span><span class="who">manager</span></div>
+    <p class="brief">Creates a paid plan.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>title</td><td>Required, 2–100 characters.</td></tr>
+      <tr><td>description</td><td>Optional, up to 1000.</td></tr>
+      <tr><td>price</td><td>EGP, 1 to 100,000.</td></tr>
+      <tr><td>durationDays</td><td>1 to 3650.</td></tr>
+      <tr><td>audience</td><td>Required: Student, Teacher or Mentor. Decides whose plans list shows it.</td></tr>
+      <tr><td>isHidden</td><td>true = not in the plans list; reachable by id (partner offers).</td></tr>
+      <tr><td>partnerId</td><td>Optional. The partner who earns commission on it (from <code>GET /api/admin/partners</code>).</td></tr>
+      <tr><td>code</td><td>Optional unique id, up to 20 characters. Leave empty; the catalogue uses codes.</td></tr>
+      <tr><td>features</td><td>Required: <b>every</b> one of the 20 keys once. Each: <code>feature</code>, <code>access</code> (Off / Limited / Unlimited), <code>limit</code> (Limited only, ≥ 1), and for Usage features optionally <code>rateLimitCount</code> + <code>rateLimitWindowMinutes</code> (both or neither) and <code>cooldownMinutes</code>. <code>Mentees</code> now counts on Student and Teacher plans too.</td></tr>
+      <tr><td>groupDiscounts</td><td><span class="tag">new</span> Optional. The main features students may take off, each with the % it takes off the price: <code>{ "StudyPlanner": 25, "SpacedRepetition": 30, "DistractionBlocker": 15, "Mentor": 10 }</code>. Left out = sold whole. Rules: paid plans only, at least two main features, each 5–90%, all but the smallest add up to 90% at most, and each must have features for the plan's audience.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid</span>
+      <div class="io">
+        <div><pre class="code">{ "title": "Doc test bundle 56451",
+  "description": "Made by the payments doc test; retired at once.",
+  "price": 59, "durationDays": 30, "isHidden": true,
+  "partnerId": null, "audience": "Student",
+  "features": [
+    { "feature": "StudySessions", "access": "Unlimited", "limit": null },
+    { "feature": "AiStudyPlanner", "access": "Limited", "limit": 2 },
+    { "feature": "PerformanceRange", "access": "Off", "limit": null },
+    … all 20 … ] }</pre></div>
+        <div><pre class="code">{ "success": true, "data": {
+  "id": 41, "title": "Doc test bundle 56451", "price": 59.0,
+  "durationDays": 30, "kind": "Paid", "audience": "Student",
+  "code": null, "quotaPeriod": "Monthly", "isHidden": true,
+  "isActive": true, "partnerId": null,
+  "features": [ … 20 … ] }, "error": null,
+  "message": "Bundle created." }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>"audience": null</code></td><td><span class="s b4">400</span> <code>{ "code": "audience_required", "message": "Say who the bundle is for: Student, Teacher or Mentor." }</code></td><td class="ar">حدد لمن هذه الباقة: طلاب أو مدرسين أو أولياء أمور</td></tr>
+        <tr><td>only 5 features</td><td><span class="s b4">400</span> <code>features_incomplete</code>, <code>details: { "missing": ["AiPdfQuestions", "CustomSubjects", …] }</code></td><td class="ar">يجب أن تحدد الباقة كل الميزات</td></tr>
+        <tr><td><code>{ "feature": "PerformanceRange", "access": "Limited", "limit": 3 }</code></td><td><span class="s b4">400</span> <code>{ "code": "invalid_access", "message": "PerformanceRange is only on or off: use Unlimited or Off." }</code></td><td class="ar">هذه الميزة تُفعّل أو تُغلق فقط ولا تقبل حداً رقمياً</td></tr>
+        <tr><td>a rate limit on <code>CustomSubjects</code> (an Allowance)</td><td><span class="s b4">400</span> <code>{ "code": "invalid_rate_limit", "message": "CustomSubjects: rate limits apply to counted uses only." }</code>. Also for a count without a window, or a cooldown without a rate limit</td><td class="ar">إعدادات حد الاستخدام غير صحيحة</td></tr>
+        <tr><td><code>{ "feature": "Teleport", … }</code></td><td><span class="s b4">400</span> <code>unknown_feature</code> (the message lists the valid keys)</td><td class="ar">ميزة غير معروفة</td></tr>
+        <tr><td>the same feature twice</td><td><span class="s b4">400</span> <code>duplicate_feature</code></td><td class="ar">الميزة مكررة في الباقة</td></tr>
+        <tr><td><code>"access": "Limited"</code> without <code>limit</code>, or a <code>limit</code> on Off/Unlimited</td><td><span class="s b4">400</span> <code>invalid_limit</code></td><td class="ar">الحد يجب أن يكون رقماً أكبر من صفر</td></tr>
+        <tr><td><code>"code": "S1-1M"</code></td><td><span class="s b4">400</span> <code>{ "code": "bundle_code_taken", "message": "Another bundle already has the code \"S1-1M\"." }</code></td><td class="ar">يوجد باقة أخرى بنفس الكود</td></tr>
+        <tr><td><code>"partnerId": 999999</code></td><td><span class="s b4">400</span> <code>invalid_partner</code></td><td class="ar">الشريك غير صحيح</td></tr>
+        <tr><td><code>"features": []</code></td><td><span class="s b4">400</span> <code>features_required</code></td><td class="ar">يجب إضافة ميزة واحدة على الأقل للباقة</td></tr>
+        <tr><td><span class="tag">new</span> <code>"groupDiscounts": { "StudyPlanner": 30 }</code></td><td><span class="s b4">400</span> <code>{ "code": "invalid_group_discounts", "message": "Give at least two main features a discount, or none: with one there's nothing to pick." }</code></td><td class="ar">خصومات المميزات الرئيسية في الباقة غير صحيحة</td></tr>
+        <tr><td><span class="tag">new</span> <code>{ "StudyPlanner": 50, "SpacedRepetition": 45, "DistractionBlocker": 30 }</code></td><td><span class="s b4">400</span> <code>invalid_group_discounts</code>: "Keeping only one main feature would take 95% off; the most is 90%."</td><td class="ar">خصومات المميزات الرئيسية في الباقة غير صحيحة</td></tr>
+        <tr><td><span class="tag">new</span> a discount under 5 or over 90, <code>TrackingTables</code> on a Student plan, or discounts on Free/Guest</td><td><span class="s b4">400</span> <code>invalid_group_discounts</code> (the message says which)</td><td class="ar">خصومات المميزات الرئيسية في الباقة غير صحيحة</td></tr>
+      </table></div></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">GET /api/admin/features</span><span class="chip">GET /api/admin/partners</span></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/admin/bundles/{id}</span><span class="who">manager</span></div>
+    <p class="brief">Edits a plan. Same body as create. Send <code>"features": null</code> to keep the features. For Free and Guest only the title, description and features change.</p>
+    <div class="case"><span class="lbl">Valid · new price, features kept</span>
+      <div class="io">
+        <div><pre class="code">{ "title": "Doc test bundle 56451", "description": "…",
+  "price": 69, "durationDays": 30, "isHidden": true,
+  "partnerId": null, "audience": "Student", "features": null }</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "id": 41, "price": 69.0, … },
+  "message": "Bundle updated. Existing subscribers keep what they bought." }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>/api/admin/bundles/999999</code></td><td><span class="s b4">404</span> <code>{ "code": "not_found", "message": "Bundle not found." }</code></td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+        <tr><td>any feature mistake</td><td>the same codes as create</td><td></td></tr>
+      </table></div></div>
+    <ul class="notes"><li>Leaving out <code>audience</code> or <code>code</code> keeps them.</li>
+      <li><span class="tag">new</span> <code>"groupDiscounts": null</code> (or left out) keeps the current discounts; <code>{}</code> sells the plan whole again. Like every paid-plan edit, it reaches new purchases only.</li></ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/admin/bundles/{id}/features</span><span class="who">manager</span></div>
+    <p class="brief">Replaces a plan's 20 feature settings. The body is the list itself. This is how Free and Guest are tuned: their new numbers reach everyone on them at once, keeping what was already used.</p>
+    <div class="case"><span class="lbl">Valid</span>
+      <div class="io">
+        <div><pre class="code">[ { "feature": "StudySessions", "access": "Unlimited", "limit": null },
+  { "feature": "AiImageQuestion", "access": "Limited", "limit": 25,
+    "rateLimitCount": 10, "rateLimitWindowMinutes": 60,
+    "cooldownMinutes": 30 },
+  … all 20 … ]</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "id": 41, …, "features": [ … ] },
+  "message": "Features updated." }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">The feature codes from create (<code>features_incomplete</code>, <code>invalid_access</code>, <code>invalid_limit</code>, <code>invalid_rate_limit</code>, <code>unknown_feature</code>, <code>duplicate_feature</code>), and 404 <code>not_found</code> for an unknown id.</p></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/bundles/{id}/deactivate</span><span class="who">manager</span></div>
+    <p class="brief">Retires a plan: nobody can buy it any more; current subscribers keep it until it ends. No body.</p>
+    <div class="case"><span class="lbl">Valid</span><pre class="code">{ "success": true, "data": { "id": 41, "isActive": false }, "error": null,
+  "message": "Bundle retired. Existing subscribers keep theirs." }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>the Free (or Guest) id</td><td><span class="s b4">400</span> <code>{ "code": "system_bundle", "message": "The Guest and Free bundles can't be retired." }</code></td><td class="ar">لا يمكن تعديل هذا الجزء من باقة النظام</td></tr>
+        <tr><td>an unknown id</td><td><span class="s b4">404</span> <code>not_found</code></td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+      </table></div></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/bundles/catalogue/apply?dryRun=true&amp;retireOthers=false</span><span class="who">manager</span></div>
+    <p class="brief">Loads the plan catalogue file (the 27 plans and the Free and Guest limits) into the database. A dry run, the default, only reports what would change. No body.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Query</th><th>Meaning</th></tr>
+      <tr><td>dryRun</td><td>Default <code>true</code>: report only. <code>false</code> = save.</td></tr>
+      <tr><td>retireOthers</td><td>Default <code>false</code>. <code>true</code> = stop sales of paid bundles the file doesn't list.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · dry run, everything already in place</span>
+      <pre class="code">{ "success": true, "data": {
+  "dryRun": true,
+  "systemBundles": [ { "code": "Free", "title": "Free", "bundleId": 5, "status": "Unchanged", "changes": [] }, … Guest … ],
+  "plans": [ { "code": "S1-1M", "title": "Plus · 1 month", "bundleId": 14, "status": "Unchanged", "changes": [] },
+             … 27 in all … ],
+  "notInCatalogue": [ { "bundleId": 6, "title": "Basic", "code": null, "isActive": true, "retired": false }, … ] },
+  "error": null, "message": "Dry run: nothing was saved." }</pre>
+      <p class="expect">After a change to the file, the entry reads <code>"status": "Updated", "changes": ["price: 179 → 199", "AiImageQuestion: 100 → 120"]</code>; a new plan reads <code>"status": "Created"</code>. <span class="tag">new</span> Discount changes read <code>"discounts: none → StudyPlanner 25%, SpacedRepetition 30%, DistractionBlocker 15%, Mentor 10%"</code>.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>a mistake in the catalogue file (e.g. a teacher feature on a student plan, a missing price)</td><td><span class="s b4">400</span> <code>{ "code": "invalid_catalogue", "message": "plan-catalogue.json: S2 is a Student plan but sets TrackingTables." }</code>. Nothing is saved</td><td class="ar">ملف الباقات غير صحيح</td></tr>
+      </table></div></div>
+    <ul class="notes"><li>In the dashboard: a "Check" button (dry run) that lists the changes, then "Apply".</li></ul>
+  </article>
+</section>
+
+<!-- ===================================================================== admin coupons -->
+<section class="part" id="admin-coupons">
+  <div class="ctl a"><span class="num">AdminCouponsController · /api/admin/coupons</span><h2>Admin · Coupons and vouchers</h2><p>Discount codes and batches of single-use vouchers. Manager and Admin only.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/coupons?active=&amp;batchId=&amp;partnerId=&amp;page=1&amp;pageSize=20</span><span class="who">manager</span></div>
+    <p class="brief">Coupons, newest first, with filters.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Query</th><th>Meaning</th></tr>
+      <tr><td>active</td><td>Optional true / false.</td></tr>
+      <tr><td>batchId</td><td>Optional: only the vouchers of one batch.</td></tr>
+      <tr><td>partnerId</td><td>Optional: only one partner's coupons.</td></tr>
+      <tr><td>page, pageSize</td><td>Default 1 and 20.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · <code>?active=true&amp;page=1&amp;pageSize=2</code></span>
+      <pre class="code">{ "success": true, "data": { "items": [
+  { "id": 68, "code": "3CSRMCJ6R9ZY", "discountPercent": 15, "maxRedemptions": 50, "redemptionCount": 0,
+    "validFrom": null, "validUntil": null, "firstPurchaseOnly": false, "isActive": true,
+    "allowOnCustomized": true,
+    "partnerId": null, "batchId": null, "bundleIds": [], "createdAt": "2026-11-04T14:06:07.8404794" },
+  { "id": 67, "code": "DOCFIRST56451", "discountPercent": 20, "maxRedemptions": null, "firstPurchaseOnly": true, … } ],
+  "total": 68, "page": 1, "pageSize": 2 }, "error": null }</pre></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/coupons</span><span class="who">manager</span></div>
+    <p class="brief">Creates a coupon.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>code</td><td>Optional, up to 50. Empty = a random 12-character code. Dashes and spaces are removed, letters made capital.</td></tr>
+      <tr><td>discountPercent</td><td>1 to 100. 100 = free.</td></tr>
+      <tr><td>maxRedemptions</td><td>Optional total uses (1 to 1,000,000); null = no limit. Each user can use a coupon once.</td></tr>
+      <tr><td>validFrom, validUntil</td><td>Optional times with offset, e.g. <code>2026-11-01T00:00:00+02:00</code>.</td></tr>
+      <tr><td>firstPurchaseOnly</td><td>Only users who never bought a paid plan.</td></tr>
+      <tr><td>isActive</td><td>Default true.</td></tr>
+      <tr><td>allowOnCustomized</td><td><span class="tag">new</span> Default true. <code>false</code> = refused (<code>coupon_not_for_customized</code>) when the student took main features off, so it can't stack with that discount; the whole plan still takes it. Coupons made before this update are <code>true</code>.</td></tr>
+      <tr><td>partnerId</td><td>Optional: the partner credited for sales made with it.</td></tr>
+      <tr><td>bundleIds</td><td>Plans it works on (ids from <code>GET /api/admin/bundles</code>); empty = every paid plan.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · a 100% coupon for two plans</span>
+      <div class="io">
+        <div><pre class="code">{ "code": "DOC100-56451", "discountPercent": 100,
+  "maxRedemptions": 5, "bundleIds": [32, 33],
+  "firstPurchaseOnly": false, "isActive": true }</pre></div>
+        <div><pre class="code">{ "success": true, "data": {
+  "id": 62, "code": "DOC10056451", "discountPercent": 100,
+  "maxRedemptions": 5, "redemptionCount": 0,
+  "validFrom": null, "validUntil": null,
+  "firstPurchaseOnly": false, "isActive": true, "allowOnCustomized": true,
+  "partnerId": null, "batchId": null, "bundleIds": [32, 33],
+  "createdAt": "2026-11-04T14:06:04.5413335Z" },
+  "error": null, "message": "Coupon created." }</pre></div>
+      </div></div>
+    <div class="case"><span class="lbl">Valid · a generated code · <code>{ "discountPercent": 15, "maxRedemptions": 50 }</code></span>
+      <pre class="code">{ "id": 68, "code": "3CSRMCJ6R9ZY", "discountPercent": 15, "maxRedemptions": 50, "bundleIds": [], … }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>an existing code</td><td><span class="s b4">400</span> <code>{ "code": "code_taken", "message": "A coupon with this code already exists." }</code></td><td class="ar">كود الكوبون مستخدم بالفعل</td></tr>
+        <tr><td><code>validUntil</code> before <code>validFrom</code></td><td><span class="s b4">400</span> <code>{ "code": "invalid_dates", "message": "The end date must be after the start date." }</code></td><td class="ar">تواريخ الصلاحية غير صحيحة</td></tr>
+        <tr><td><code>"bundleIds": [999999]</code> or Free's id</td><td><span class="s b4">400</span> <code>{ "code": "invalid_bundles", "message": "Coupons can only apply to existing paid bundles." }</code></td><td class="ar">بعض الباقات المختارة غير صحيحة</td></tr>
+        <tr><td><code>"partnerId": 999999</code></td><td><span class="s b4">400</span> <code>{ "code": "invalid_partner", "message": "Partner not found." }</code></td><td class="ar">الشريك غير صحيح</td></tr>
+        <tr><td><code>"discountPercent": 0</code></td><td><span class="s b4">400</span> <code>validation_error</code>, <code>details: { "DiscountPercent": ["The field DiscountPercent must be between 1 and 100."] }</code></td><td class="ar">بعض البيانات المدخلة غير صحيحة</td></tr>
+      </table></div></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">GET /api/admin/bundles</span><span class="chip">GET /api/admin/partners</span></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/admin/coupons/{id}</span><span class="who">manager</span></div>
+    <p class="brief">Edits a coupon: everything except its code. <b>Send every field</b>: what's left out goes back to its default (no dates, not first-purchase-only, every plan, <span class="tag">new</span> <code>allowOnCustomized: true</code>).</p>
+    <div class="case"><span class="lbl">Valid</span>
+      <div class="io">
+        <div><pre class="code">{ "discountPercent": 100, "maxRedemptions": 10,
+  "bundleIds": [32, 33], "isActive": true }</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "id": 62, "code": "DOC10056451",
+  "maxRedemptions": 10, "redemptionCount": 1, … },
+  "message": "Coupon updated." }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>/api/admin/coupons/999999</code></td><td><span class="s b4">404</span> <code>{ "code": "not_found", "message": "Coupon not found." }</code></td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+        <tr><td><code>maxRedemptions</code> below <code>redemptionCount</code></td><td><span class="s b4">400</span> <code>max_below_used</code></td><td class="ar">الحد الأقصى أقل من عدد مرات الاستخدام الحالية</td></tr>
+        <tr><td>bad dates, plans or partner</td><td>the same codes as create</td><td></td></tr>
+      </table></div></div>
+    <ul class="notes"><li>To turn a coupon off, send its current values with <code>"isActive": false</code>.</li></ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/coupons/batches</span><span class="who">manager</span></div>
+    <p class="brief">Generates N single-use vouchers, e.g. for a center or a parent who paid outside the app. The codes come back <b>only in this response</b>: show them with a copy button and an export.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>name</td><td>Required, 2–150, e.g. "Al-Nour Center - November".</td></tr>
+      <tr><td>count</td><td>1 to 5000.</td></tr>
+      <tr><td>discountPercent</td><td>Default 100.</td></tr>
+      <tr><td>bundleIds, validFrom, validUntil, partnerId</td><td>As for a coupon.</td></tr>
+      <tr><td>allowOnCustomized</td><td><span class="tag">new</span> As for a coupon, for every voucher in the batch. Default true.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid</span>
+      <div class="io">
+        <div><pre class="code">{ "name": "Doc test batch 56451", "count": 3,
+  "discountPercent": 100, "bundleIds": [32] }</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "id": 3, "name": "Doc test batch 56451",
+  "count": 3, "discountPercent": 100, "partnerId": null,
+  "createdAt": "2026-11-04T14:06:33.9495316Z",
+  "codes": ["93J4W4HRD5ZQ", "29PM4NRPRTMH", "2SKQRSDYKR2N"] },
+  "message": "3 vouchers generated." }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>{ "name": "x", "count": 0 }</code></td><td><span class="s b4">400</span> <code>validation_error</code>, <code>details: { "Name": ["… minimum length of 2 …"], "Count": ["The field Count must be between 1 and 5000."] }</code></td><td class="ar">بعض البيانات المدخلة غير صحيحة</td></tr>
+        <tr><td>bad plans, dates or partner</td><td><code>invalid_bundles</code> · <code>invalid_dates</code> · <code>invalid_partner</code></td><td></td></tr>
+      </table></div></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/coupons/{id}/usage</span><span class="who">manager</span></div>
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/coupons/batches/{id}/usage</span><span class="who">manager</span></div>
+    <p class="brief">Who used a coupon (or a batch's vouchers), on which plan, with the discount given and the revenue.</p>
+    <div class="case"><span class="lbl">Valid · a coupon</span>
+      <pre class="code">{ "success": true, "data": {
+  "coupon": { "id": 62, "code": "DOC10056451", "redemptionCount": 1, … },
+  "batchName": null, "codesInBatch": null,
+  "redemptions": 1, "distinctStudents": 1, "totalDiscount": 49.0, "revenue": 0.0,
+  "byBundle": [ { "name": "Family · 1 month", "count": 1, "revenue": 0.0, "commission": 0 } ],
+  "items": [ { "code": "DOC10056451", "userId": "2ce8f3aa-…", "studentName": "Pay Test U3",
+               "bundleId": 32, "bundleTitle": "Family · 1 month", "listPrice": 49.0,
+               "discountAmount": 49.0, "pricePaid": 0.0, "redeemedAt": "…" } ] }, "error": null }</pre></div>
+    <div class="case"><span class="lbl">Valid · a batch</span>
+      <pre class="code">{ "coupon": null, "batchName": "Doc test batch 56451", "codesInBatch": 3, "redemptions": 0,
+  "distinctStudents": 0, "totalDiscount": 0, "revenue": 0, "byBundle": [], "items": [] }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>an unknown coupon or batch id</td><td><span class="s b4">404</span> <code>{ "code": "not_found", "message": "Coupon not found." }</code> / <code>"Batch not found."</code></td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+      </table></div></div>
+  </article>
+</section>
+
+<!-- ===================================================================== admin partners -->
+<section class="part" id="admin-partners">
+  <div class="ctl a"><span class="num">AdminPartnersController · /api/admin/partners</span><h2>Admin · Partners</h2><p>Teachers and centers who sell Motqin and earn commission. Manager and Admin only.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/partners</span><span class="who">manager</span></div>
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/partners</span><span class="who">manager</span></div>
+    <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/admin/partners/{id}</span><span class="who">manager</span></div>
+    <p class="brief">List, create and edit partners. A partner is a record first; linking an account comes after.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>name</td><td>Required, 2–150.</td></tr>
+      <tr><td>type</td><td><code>Teacher</code> or <code>Center</code>.</td></tr>
+      <tr><td>contactPhone</td><td>Optional, up to 20.</td></tr>
+      <tr><td>commissionPercent</td><td>0 to 100. A new rate applies to later sales only.</td></tr>
+      <tr><td>isActive</td><td>Default true. An inactive partner earns nothing on new sales.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · create</span>
+      <div class="io">
+        <div><pre class="code">{ "name": "Doc test partner 56451", "type": "Teacher",
+  "contactPhone": "01000000555", "commissionPercent": 10,
+  "isActive": true }</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "id": 2, "name": "Doc test partner 56451",
+  "type": "Teacher", "contactPhone": "01000000555",
+  "commissionPercent": 10, "isActive": true, "linkedUserId": null,
+  "createdAt": "2026-11-04T14:06:43.6295454Z" },
+  "message": "Partner created." }</pre></div>
+      </div></div>
+    <div class="case"><span class="lbl">Valid · update (<code>"commissionPercent": 12.5</code>)</span>
+      <pre class="code">{ "success": true, "data": { "id": 2, "commissionPercent": 12.5, … },
+  "message": "Partner updated. A new rate applies to future sales only." }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>{ "name": "x", "commissionPercent": 150 }</code></td><td><span class="s b4">400</span> <code>validation_error</code>, <code>details: { "Name": […], "CommissionPercent": ["The field CommissionPercent must be between 0 and 100."] }</code></td><td class="ar">بعض البيانات المدخلة غير صحيحة</td></tr>
+        <tr><td>PUT <code>/api/admin/partners/999999</code></td><td><span class="s b4">404</span> <code>{ "code": "not_found", "message": "Partner not found." }</code></td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+      </table></div></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/admin/partners/{id}/user</span><span class="who">manager</span></div>
+    <p class="brief">Links the partner's own Motqin account so they can open their dashboard. That account becomes a Teacher if its role was lower; a Manager or Admin keeps theirs.</p>
+    <div class="table-wrap"><table class="params"><tr><th>Field</th><th>Meaning</th></tr><tr><td>phoneNumber</td><td>Required. The phone of an existing registered account (not a guest).</td></tr></table></div>
+    <div class="case"><span class="lbl">Valid</span>
+      <div class="io">
+        <div><pre class="code">{ "phoneNumber": "01012345678" }</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "id": 2, …, "linkedUserId": "c1d2…" },
+  "message": "Account linked." }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>a phone no registered account has</td><td><span class="s b4">404</span> <code>{ "code": "user_not_found", "message": "No registered account has this phone number." }</code></td><td class="ar">المستخدم غير موجود</td></tr>
+        <tr><td>an account already linked to another partner</td><td><span class="s b4">400</span> <code>already_linked</code></td><td class="ar">هذا الحساب مرتبط بشريك آخر</td></tr>
+        <tr><td><code>/api/admin/partners/999999/user</code></td><td><span class="s b4">404</span> <code>{ "code": "not_found", "message": "Partner not found." }</code></td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+      </table></div></div>
+    <ul class="notes"><li>Warn the admin in the dialog that the account becomes a teacher account.</li></ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/partners/{id}/report?from=&amp;to=</span><span class="who">manager</span></div>
+    <p class="brief">Any partner's dashboard: the same response as <code>GET /api/partners/me</code>.</p>
+    <div class="case"><span class="lbl">Valid · <code>/api/admin/partners/2/report?from=2026-10-01T00:00:00%2B02:00&amp;to=2026-12-01T00:00:00%2B02:00</code></span>
+      <pre class="code">{ "success": true, "data": { "partner": { "id": 2, "name": "Doc test partner 56451", … },
+  "from": "2026-10-01T00:00:00+02:00", "to": "2026-12-01T00:00:00+02:00",
+  "sales": 0, "students": 0, "revenue": 0, "commission": 0,
+  "byMonth": [], "byBundle": [], "byCode": [], "recent": [] }, "error": null }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">An unknown id: <span class="s b4">404</span> <code>not_found</code> "Partner not found."</p></div>
+  </article>
+</section>
+
+<!-- ===================================================================== admin users -->
+<section class="part" id="admin-users">
+  <div class="ctl a"><span class="num">AdminUsersController · /api/admin/admins</span><h2>Admin · Admins and roles</h2><p>Who can manage Motqin. <b>Admin accounts only</b> (a Manager gets 403).</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/admins</span><span class="who">admin</span></div>
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/admins</span><span class="who">admin</span></div>
+    <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/admin/admins/{userId}</span><span class="who">admin</span></div>
+    <p class="brief">List the admins, make a registered account an admin by phone, or remove an admin.</p>
+    <div class="table-wrap"><table class="params"><tr><th>Field</th><th>Meaning</th></tr><tr><td>phoneNumber</td><td>POST only: the account's phone.</td></tr><tr><td>userId</td><td>DELETE only: from the list.</td></tr></table></div>
+    <div class="case"><span class="lbl">Valid · list</span><pre class="code">{ "success": true, "data": [
+  { "userId": "362458c4-4ed1-48d0-8cf4-fb46c283f23e", "fullName": "أ. محمد سامي", "phoneNumber": "01094341573" } ],
+  "error": null }</pre>
+      <p class="expect">POST returns the same item with <code>"message": "Admin access granted."</code>; DELETE returns <code>{ "userId": "…" }</code> with <code>"Admin access removed."</code>. The name is an example.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>POST with a phone nobody has</td><td><span class="s b4">404</span> <code>{ "code": "user_not_found", "message": "No registered account has this phone number." }</code></td><td class="ar">المستخدم غير موجود</td></tr>
+        <tr><td>DELETE your own id</td><td><span class="s b4">400</span> <code>{ "code": "cannot_revoke_self", "message": "You can't remove your own admin access." }</code></td><td class="ar">لا يمكنك إزالة صلاحية المدير من حسابك</td></tr>
+        <tr><td>DELETE the only admin left</td><td><span class="s b4">400</span> <code>last_admin</code></td><td class="ar">يجب أن يبقى مدير واحد على الأقل</td></tr>
+        <tr><td>a Manager or student calling</td><td><span class="s b3">403</span> empty body</td><td>hide this screen</td></tr>
+      </table></div></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/admin/users/{userId}/role</span><span class="who">admin</span></div>
+    <p class="brief">Gives a user exactly one role. The user refreshes their token to see it.</p>
+    <div class="table-wrap"><table class="params"><tr><th>Field</th><th>Meaning</th></tr><tr><td>role</td><td>Required: <code>Student</code>, <code>Teacher</code>, <code>ParentOrMonitor</code>, <code>ContentManager</code>, <code>SupportModerator</code>, <code>Manager</code> or <code>Admin</code>. There's no lookup for these: keep the list in the app.</td></tr></table></div>
+    <div class="case"><span class="lbl">Valid</span>
+      <div class="io">
+        <div><pre class="code">{ "role": "Teacher" }</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "userId": "…", "fullName": "…",
+  "phoneNumber": "…", "role": "Teacher" },
+  "message": "Role set to Teacher." }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>your own id</td><td><span class="s b4">400</span> <code>{ "code": "cannot_change_self", "message": "You can't change your own role." }</code></td><td class="ar">لا يمكنك تغيير دور حسابك</td></tr>
+        <tr><td>an unknown id</td><td><span class="s b4">404</span> <code>{ "code": "user_not_found", "message": "User not found." }</code></td><td class="ar">المستخدم غير موجود</td></tr>
+        <tr><td>a guest's id</td><td><span class="s b4">400</span> <code>guest_account</code></td><td class="ar">يجب أن يسجل الزائر حساباً أولاً</td></tr>
+        <tr><td>taking Admin away from the last admin</td><td><span class="s b4">400</span> <code>last_admin</code></td><td class="ar">يجب أن يبقى مدير واحد على الأقل</td></tr>
+        <tr><td>a role name not in the list, e.g. <code>{ "role": "Owner" }</code></td><td><span class="s b4">400</span> <code>{ "code": "unknown_role", "message": "\"Owner\" isn't a role." }</code></td><td class="ar">الدور غير معروف</td></tr>
+        <tr><td>the role change fails on the server</td><td><span class="s b4">400</span> <code>role_change_failed</code></td><td class="ar">تعذر تغيير الدور</td></tr>
+      </table></div></div>
+  </article>
+</section>
+
+<!-- ===================================================================== admin payments -->
+<section class="part" id="admin-payments">
+  <div class="ctl a"><span class="num">AdminPaymentsController · /api/admin/payments</span><h2>Admin · Payments</h2><p>Manager and Admin only.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/payments/mismatches</span><span class="who">manager</span></div>
+    <p class="brief">Top-ups where Paymob reported a different amount from the one requested. Each was credited with what actually arrived; this list is for finance to check.</p>
+    <div class="case"><span class="lbl">Valid</span><pre class="code">{ "success": true, "data": [
+  { "transactionId": 33, "reference": "5562563-362458c4-639281138226428249",
+    "paymobTransactionId": "7700003", "userId": "362458c4-4ed1-48d0-8cf4-fb46c283f23e",
+    "requestedAmount": 30.0, "receivedAmount": 25.0, "paymentMethod": "card",
+    "createdAt": "2026-10-20T17:23:42.6428249" } ], "error": null }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">A student or teacher: <span class="s b3">403</span> empty body.</p></div>
+  </article>
+</section>
+
+<!-- ===================================================================== manual test -->
+<section class="part" id="test">
+  <div class="ctl t"><span class="num">Manual test</span><h2>Testing every payment endpoint</h2><p>In Swagger on the dev server, with two tabs: one signed in as the admin, one as the test student. Paste that tab's token into Authorize before its steps.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">What you need</span></div>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Item</th><th>Value</th></tr>
+      <tr><td>Admin</td><td><code>01094341573</code>: <code>POST /api/auth/test-phone-login</code> (no body). Admin passes every admin endpoint.</td></tr>
+      <tr><td>Student</td><td><code>01000000120</code> ("Pay Test U3"): <code>POST /api/auth/phone-login-request</code> <code>{ "phoneNumber": "01000000120" }</code>, then <code>POST /api/auth/phone-verify</code> with the "Debug Code" from the first message.</td></tr>
+      <tr><td>Second student</td><td><span class="tag">new</span> For the customisable-plan steps, a student still on Free: sign up a new test number the same way (e.g. <code>01000000130</code>; <code>phone-verify</code> answers <code>needsSignup</code>, then <code>POST /api/auth/phone-complete-signup</code> <code>{ "phoneNumber", "name", "region": 1 }</code>).</td></tr>
+      <tr><td>Guest</td><td><code>POST /api/auth/guest</code> with header <code>X-Device-Id: test-device-1</code>.</td></tr>
+      <tr><td>Plan ids (dev)</td><td>Family 1M <b>32</b> · Family 6M <b>33</b> · Mentor 1M <b>35</b> · Plus 1M <b>14</b> · Motqin 1M <b>17</b> · Motqin 6M <b>18</b> · Private 1M <b>23</b>. On another database, find them by <code>code</code> (M1-1M, M1-6M, M2-1M, S1-1M, S2-1M, S2-6M, T1-1M) in <code>GET /api/admin/bundles</code>.</td></tr>
+      <tr><td>Coupon codes</td><td>Pick a fresh suffix for each run (e.g. today's date) so <code>code_taken</code> doesn't stop you: <code>T100-1104</code>, <code>TONE-1104</code> …</td></tr>
+      <tr><td>Paymob</td><td>The dev server uses Paymob <b>test</b> keys; pay with the test card in the top-up step below. The wallet is credited by Paymob's server callback (it reaches the <b>hosted</b> server only), or by the server asking Paymob while the top-up is Pending. So a paid top-up turns Succeeded on a local server too.</td></tr>
+    </table></div>
+    <p class="tip warn">The purchase steps put the test student on <b>Family · 1 month</b> with a renewal waiting. To run them again from Free, use another registered test student. Linking a partner, granting admin and changing roles change real accounts: try those only on test accounts.</p>
+  </article>
+
+  <div class="flow"><ol>
+    <li class="stage">Lookups</li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/lookups/error-codes</span> · <span class="m get">GET</span><span class="path">/api/admin/features</span> (admin)</div>
+      <p class="expect"><b>200</b>: the error catalogue; 20 features. The same <code>/api/admin/features</code> with the student's token → <b>403</b>, empty body.</p></li>
+
+    <li class="stage">Bundles</li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/bundles?audience=Student</span> · <span class="path">?audience=Teacher</span> · <span class="path">?audience=Mentor</span> · <span class="path">?audience=Parent</span></div>
+      <p class="expect"><b>200</b> Free + 9 plans each, with 14 / 7 / 1 features. The S plans have <code>customizable: true</code>; on <code>S2-1M</code> the blocker group shows <code>discountPercent 15</code>, <code>saving 26</code>, and BlockerSessions <code>limitIfLeftOut 15</code>. Teacher and mentor plans have <code>customizable: false</code>. <code>Parent</code> → <b>400</b> <code>validation_error</code>.</p></li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/bundles</span> with the student's token, then the admin's</div>
+      <p class="expect">Student → the S plans; admin (teacher or above) → the T plans.</p></li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/bundles/14</span> · <span class="path">/api/bundles/999999</span></div>
+      <p class="expect"><b>200</b> Plus · 1 month with 20 features · <b>404</b> <code>not_found</code>.</p></li>
+
+    <li class="stage">Coupons for the purchase tests (admin)</li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/coupons</span>, one at a time</div>
+      <pre class="code">{ "code": "T100-1104",   "discountPercent": 100, "maxRedemptions": 5, "bundleIds": [32, 33] }
+{ "code": "TONE-1104",   "discountPercent": 100, "maxRedemptions": 1, "bundleIds": [32] }
+{ "code": "TOLD-1104",   "discountPercent": 20,  "validUntil": "2026-11-01T00:00:00Z" }
+{ "code": "TNEW-1104",   "discountPercent": 20,  "validFrom": "2027-01-01T00:00:00Z" }
+{ "code": "TS1-1104",    "discountPercent": 20,  "bundleIds": [14] }
+{ "code": "TFIRST-1104", "discountPercent": 20,  "firstPurchaseOnly": true }
+{ "discountPercent": 15, "maxRedemptions": 50 }
+{ "code": "T10-1104",     "discountPercent": 10 }
+{ "code": "TNOCUST-1104", "discountPercent": 10, "allowOnCustomized": false }
+{ "code": "TS2-1104",     "discountPercent": 100, "maxRedemptions": 5, "bundleIds": [17, 18] }</pre>
+      <p class="expect">Each <b>200</b>; codes come back without dashes (<code>T1001104</code>); the 7th gets a random 12-character code. <code>allowOnCustomized</code> is <code>true</code> on all but <code>TNOCUST-1104</code>. Write down the id of <code>T100-1104</code> as <b>C</b>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/coupons</span>, bad bodies</div>
+      <pre class="code">{ "code": "T100-1104", "discountPercent": 10 }                                                        → 400 code_taken
+{ "code": "TX-1104", "discountPercent": 10, "validFrom": "2026-12-10T00:00:00Z", "validUntil": "2026-12-01T00:00:00Z" } → 400 invalid_dates
+{ "code": "TY-1104", "discountPercent": 10, "bundleIds": [999999] }                                     → 400 invalid_bundles
+{ "code": "TZ-1104", "discountPercent": 10, "partnerId": 999999 }                                       → 400 invalid_partner
+{ "code": "TW-1104", "discountPercent": 0 }                                                             → 400 validation_error</pre></li>
+
+    <li class="stage">Wallet and top-up (student)</li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/wallet</span> · <span class="path">/api/wallet/transactions?page=1&amp;pageSize=3</span></div>
+      <p class="expect"><b>200</b>: the balance (40.0 on dev) and the last lines. With the guest's token → <b>403</b> <code>registration_required</code>; with no token → <b>401</b>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/payment/recharge-wallet</span>, one at a time <span class="tag">Card only · Fawry and mobile wallet not activated yet</span></div>
+      <pre class="code">{ "amount": 5 }                       → 400 amount_too_small (details.minimum 10)
+{ "amount": 10.555 }                  → 400 amount_invalid
+{ "amount": 50, "method": "kiosk" }   → 400 method_unavailable
+{ "amount": 50 }                      → 200 redirectUrl + reference</pre>
+      <p class="expect">Write down <code>reference</code> as <b>R</b>. On the hosted server, open <code>redirectUrl</code> in a browser and pay with one of Paymob's test credentials below. They work only with test keys (the dev server's); never use a real card.</p>
+      <div class="table-wrap"><table class="params">
+        <tr><th>Pay with</th><th>Enter on the Paymob checkout</th></tr>
+        <tr><td>Card (main)</td><td>Mastercard <code>5123 4567 8901 2346</code> · name <code>Test Account</code> · expiry <code>01/39</code> · CVV <code>123</code></td></tr>
+        <tr><td>Card (others)</td><td>Mastercard <code>5123 4500 0000 0008</code> or Visa <code>4111 1111 1111 1111</code>, with the same name, expiry and CVV</td></tr>
+        <tr><td>Mobile wallet</td><td><b>Not activated yet.</b> For later: number <code>01010101010</code> · MPIN <code>123456</code> · OTP <code>123456</code></td></tr>
+        <tr><td>Fawry (kiosk)</td><td><b>Not activated yet.</b> <code>"method": "kiosk"</code> returns <code>method_unavailable</code></td></tr>
+      </table></div>
+      <ol class="notes">
+        <li>Choose Card, enter the main card and pay. If a 3-D Secure or OTP page appears, confirm it: it's Paymob's simulator.</li>
+        <li>Paymob redirects to <code>/api/payment/client-callback</code> ("Payment Successful"). That page changes nothing; ignore it.</li>
+        <li>Paymob's server calls <code>/api/payment/server-callback</code> on the hosted server, which credits the wallet.</li>
+        <li>Go on to the next step: the status turns <code>Succeeded</code> with <code>receivedAmount</code> 50 and <code>paymentMethod</code> <code>card</code>.</li>
+      </ol>
+      <p class="tip warn">On a local server Paymob's callback can't arrive, but the status check asks Paymob itself, so a paid top-up still turns <b>Succeeded</b> within about 15 seconds. The checkout link expires after 1 hour; after that the status is <b>Expired</b> and you start a new top-up. Paymob lists no "declined" test card: to see <b>Failed</b> or <b>Expired</b>, cancel the checkout or let it expire. Source: <a href="https://developers.paymob.com/paymob-docs/need-help/setup-guides/test-credentials">Paymob test credentials</a>.</p></li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/payment/recharges/{R}</span> · <span class="path">/api/payment/recharges/NOT-A-REFERENCE</span></div>
+      <p class="expect"><b>200</b> <code>status: "Pending"</code> until you pay, then <code>"Succeeded"</code> with <code>receivedAmount</code>; then <code>GET /api/wallet</code> shows +50. Unknown reference → <b>404</b> <code>not_found</code>.</p></li>
+
+    <li class="stage">Subscription (student, on Free)</li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/subscription/me</span> · <span class="path">/api/subscription/history</span></div>
+      <p class="expect"><b>200</b>: current Free with 20 quotas; the history rows. With the guest's token, <code>me</code> shows <code>kind: "Guest"</code> and <code>lifetime: true</code>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/preview</span>, one at a time</div>
+      <pre class="code">{ "bundleId": 32 }                              → Purchase, amountDue 49, suggestedRechargeAmount 10
+{ "bundleId": 32, "couponCode": "T100-1104" }   → amountDue 0
+{ "bundleId": 32, "couponCode": "NO-SUCH" }     → couponError coupon_invalid
+{ "bundleId": 32, "couponCode": "TOLD-1104" }   → couponError coupon_expired
+{ "bundleId": 32, "couponCode": "TNEW-1104" }   → couponError coupon_not_started
+{ "bundleId": 32, "couponCode": "TS1-1104" }    → couponError coupon_not_applicable
+{ "bundleId": 32, "couponCode": "TFIRST-1104" } → couponError coupon_first_purchase_only (this student bought before)
+{ "bundleId": 23 }                              → blockedReason teacher_plan_only
+{ "bundleId": 999999 }                          → blockedReason bundle_unavailable</pre>
+      <p class="expect">All <b>200</b>. With the guest's token → <b>403</b> <code>registration_required</code>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/purchase</span>, bad ones first</div>
+      <pre class="code">{ "bundleId": 32 }                              → 400 insufficient_balance (details walletBalance 40, amountDue 49)
+{ "bundleId": 32, "couponCode": "TOLD-1104" }   → 400 coupon_expired
+{ "bundleId": 23 }                              → 400 teacher_plan_only
+{ "bundleId": 32, "couponCode": "T100-1104" }   → 200 Purchase, amountCharged 0, status Active</pre></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/preview</span> on the new plan</div>
+      <pre class="code">{ "bundleId": 32, "couponCode": "T100-1104" }   → Renewal, couponError coupon_already_used
+{ "bundleId": 33 }                              → Scheduled, starts when Family 1M ends
+{ "bundleId": 35 }                              → Upgrade, amountDue 150 (the difference for the days left)
+{ "bundleId": 35, "couponCode": "T100-1104" }   → Upgrade, couponError coupon_not_for_upgrades</pre></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/purchase</span> a renewal, then one too many</div>
+      <pre class="code">{ "bundleId": 32, "couponCode": "TONE-1104" }   → 200 Renewal, subscription status Scheduled
+{ "bundleId": 33 }  (preview)                   → blockedReason already_scheduled
+{ "bundleId": 33, "couponCode": "T100-1104" }   → 400 already_scheduled (details.startsAt)</pre></li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/subscription/me</span> · <span class="path">/api/wallet/transactions</span></div>
+      <p class="expect"><code>current</code> Family · 1 month (Active), <code>scheduled</code> Family · 1 month (Scheduled), Mentees limit 3. Two new lines of <code>0.0</code>: Subscribe and Renewal.</p></li>
+
+    <li class="stage"><span class="tag">new</span> Customisable plans (the second student, on Free)</li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/preview</span>, one at a time</div>
+      <pre class="code">{ "bundleId": 17, "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"] }
+      → Purchase, fullPrice 179, featuresDiscountPercent 15, featuresDiscount 26, listPrice 153
+{ "bundleId": 17, "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"], "couponCode": "T10-1104" }
+      → listPrice 153, discountAmount 15.30, amountDue 137.70
+{ "bundleId": 17, "groups": ["StudyPlanner"], "couponCode": "TNOCUST-1104" }
+      → listPrice 81, couponError coupon_not_for_customized
+{ "bundleId": 17, "couponCode": "TNOCUST-1104" }  → listPrice 179, amountDue 161.10, no couponError
+{ "bundleId": 17, "groups": [] }                  → blockedReason invalid_groups
+{ "bundleId": 17, "groups": ["TrackingTables"] }  → blockedReason invalid_groups
+{ "bundleId": 32, "groups": ["Mentor"] }          → blockedReason bundle_not_customizable</pre>
+      <p class="expect">All <b>200</b>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/purchase</span>, the bad one first</div>
+      <pre class="code">{ "bundleId": 17, "groups": ["StudyPlanner"], "couponCode": "TNOCUST-1104" }
+      → 400 coupon_not_for_customized (balance unchanged)
+{ "bundleId": 17, "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"], "couponCode": "TS2-1104" }
+      → 200 Purchase, subscription.groups the 3 kept, listPrice 153, amountCharged 0</pre></li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/subscription/me</span></div>
+      <p class="expect"><code>current.groups</code> the 3 kept. BlockerSessions <b>limit 15, included false</b> (Free has 30); BlockerSchedules <b>1</b>; AiImageQuestion <b>100, included true</b>; Mentees <b>3</b>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/preview</span> on the new plan</div>
+      <pre class="code">{ "bundleId": 17 }                                                      → Upgrade, amountDue 26 (blocker back)
+{ "bundleId": 17, "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"] }      → Renewal, 153
+{ "bundleId": 17, "groups": ["StudyPlanner", "SpacedRepetition"] }                → Downgrade, listPrice 135
+{ "bundleId": 17, "groups": ["StudyPlanner", "SpacedRepetition", "DistractionBlocker"] }
+                                                                        → Downgrade, listPrice 162 (drops Mentor)
+{ "bundleId": 18 }                                                      → Scheduled</pre></li>
+
+    <li class="stage">Coupons (admin, continued)</li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/coupons?active=true&amp;page=1&amp;pageSize=2</span></div>
+      <p class="expect"><b>200</b>, newest first, with <code>total</code>.</p></li>
+    <li><div class="ep-line"><span class="m put">PUT</span><span class="path">/api/admin/coupons/{C}</span> · <span class="path">/api/admin/coupons/999999</span></div>
+      <pre class="code">{ "discountPercent": 100, "maxRedemptions": 10, "bundleIds": [32, 33], "isActive": true }</pre>
+      <p class="expect"><b>200</b> with <code>redemptionCount: 1</code> and <code>allowOnCustomized: true</code> · <b>404</b> <code>not_found</code>.</p></li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/coupons/{C}/usage</span> · <span class="path">/api/admin/coupons/999999/usage</span></div>
+      <p class="expect"><b>200</b>: 1 redemption by Pay Test U3 on Family · 1 month, discount 49 · <b>404</b>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/coupons/batches</span></div>
+      <pre class="code">{ "name": "Test batch 1104", "count": 3, "discountPercent": 100, "bundleIds": [32] }   → 200, 3 codes; note the batch id B
+{ "name": "x", "count": 0 }                                                          → 400 validation_error (Name, Count)</pre></li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/coupons/batches/{B}/usage</span> · <span class="path">/batches/999999/usage</span></div>
+      <p class="expect"><b>200</b> <code>codesInBatch: 3</code>, <code>redemptions: 0</code> · <b>404</b>. Redeem one of the 3 codes with another test student and check again.</p></li>
+
+    <li class="stage">Bundles (admin)</li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/bundles</span></div>
+      <p class="expect"><b>200</b>: Guest, Free, the 27 catalogue plans and older ones. Copy Free's <code>features</code> into the next body, keeping only <code>feature</code>, <code>access</code> and <code>limit</code>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/bundles</span></div>
+      <pre class="code">{ "title": "Test bundle 1104", "description": "Manual test", "price": 59, "durationDays": 30,
+  "isHidden": true, "partnerId": null, "audience": "Student", "features": [ …Free's 20… ] }</pre>
+      <p class="expect"><b>200</b>; write down its id as <b>N</b>. Then try the same body with: <code>"audience": null</code> → <code>audience_required</code>; only 5 features → <code>features_incomplete</code>; PerformanceRange <code>Limited 3</code> → <code>invalid_access</code>; a rate limit on CustomSubjects → <code>invalid_rate_limit</code>; an extra <code>"Teleport"</code> → <code>unknown_feature</code>; <code>"code": "S1-1M"</code> → <code>bundle_code_taken</code>.</p></li>
+    <li><div class="ep-line"><span class="m put">PUT</span><span class="path">/api/admin/bundles/{N}</span> · <span class="m put">PUT</span><span class="path">/api/admin/bundles/{N}/features</span></div>
+      <p class="expect">The same body with <code>"price": 69, "features": null</code> → <b>200</b> price 69. Then the 20-item list with AiImageQuestion <code>Limited 25</code>, rate 10 / 60 min, 30 min wait → <b>200</b>. <code>PUT /api/admin/bundles/999999</code> → <b>404</b>.</p>
+      <p class="expect"><span class="tag">new</span> The bundle body again with <code>"groupDiscounts"</code>: <code>{ "StudyPlanner": 30 }</code> → <b>400</b> <code>invalid_group_discounts</code>; <code>{ "StudyPlanner": 50, "SpacedRepetition": 45, "DistractionBlocker": 30 }</code> → <b>400</b> <code>invalid_group_discounts</code>; <code>{ "StudyPlanner": 25, "SpacedRepetition": 30 }</code> → <b>200</b> <code>customizable: true</code>. Then <code>"groupDiscounts": {}</code> → <b>200</b> <code>customizable: false</code>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/bundles/{N}/deactivate</span> · <span class="path">/api/admin/bundles/5/deactivate</span></div>
+      <p class="expect"><b>200</b> <code>isActive: false</code> · Free (5) → <b>400</b> <code>system_bundle</code>.</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/bundles/catalogue/apply?dryRun=true</span></div>
+      <p class="expect"><b>200</b>: 27 plans and Free/Guest <code>Unchanged</code> (the discounts and Mentees of this update are already applied); <code>notInCatalogue</code> lists the older bundles and N. Don't send <code>dryRun=false</code> unless you mean to change the live plans.</p></li>
+
+    <li class="stage">Partners</li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/partners</span> · <span class="m get">GET</span><span class="path">/api/admin/partners</span></div>
+      <pre class="code">{ "name": "Test partner 1104", "type": "Teacher", "contactPhone": "01000000555", "commissionPercent": 10, "isActive": true }  → 200, note id P
+{ "name": "x", "commissionPercent": 150 }                                                                              → 400 validation_error</pre></li>
+    <li><div class="ep-line"><span class="m put">PUT</span><span class="path">/api/admin/partners/{P}</span> · <span class="m put">PUT</span><span class="path">/api/admin/partners/{P}/user</span></div>
+      <p class="expect">The same body with <code>"commissionPercent": 12.5</code> → <b>200</b>. Link <code>{ "phoneNumber": "01099999999" }</code> → <b>404</b> <code>user_not_found</code>. Linking a real phone makes that account a teacher; only use a spare test account. <code>/api/admin/partners/999999</code> → <b>404</b>.</p></li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/partners/{P}/report?from=2026-10-01T00:00:00%2B02:00&amp;to=2026-12-01T00:00:00%2B02:00</span></div>
+      <p class="expect"><b>200</b> with zeros. To see sales: create a coupon with <code>"partnerId": P</code>, buy with it as another test student, and run the report again.</p></li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/partners/me</span> (admin, then student)</div>
+      <p class="expect">Admin (not linked) → <b>404</b> <code>not_a_partner</code>; student → <b>403</b> empty body. A linked account → its dashboard.</p></li>
+
+    <li class="stage">Admins and roles (admin)</li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/admins</span></div>
+      <p class="expect"><b>200</b>: the admin list. Note your own <code>userId</code> as <b>U</b>. With the student's token → <b>403</b>.</p></li>
+    <li><div class="ep-line">bad cases</div>
+      <pre class="code">POST   /api/admin/admins                { "phoneNumber": "01099999999" }   → 404 user_not_found
+DELETE /api/admin/admins/{U}                                              → 400 cannot_revoke_self
+PUT    /api/admin/users/{U}/role        { "role": "Teacher" }             → 400 cannot_change_self
+PUT    /api/admin/users/00000000-0000-0000-0000-000000000000/role { "role": "Teacher" } → 404 user_not_found</pre>
+      <p class="expect">Granting admin or changing a role on a real account changes its access: only do it on a spare test account, and undo it after.</p></li>
+
+    <li class="stage">Payments (admin) and Paymob callbacks</li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/admin/payments/mismatches</span></div>
+      <p class="expect"><b>200</b>: top-ups where Paymob's amount differed (one on dev: requested 30, received 25).</p></li>
+    <li><div class="ep-line"><span class="m post">POST</span><span class="path">/api/payment/server-callback</span> · <span class="m get">GET</span><span class="path">/api/payment/client-callback</span></div>
+      <pre class="code">POST server-callback  {}                                                   → 400 "Invalid payload structure."
+POST server-callback?hmac=abc  { "type": "TRANSACTION", "obj": { "id": 1, "pending": false, "success": true,
+     "amount_cents": 5000, "order": { "id": 1, "merchant_order_id": "{R}" }, "source_data": { "type": "card" } } }
+                                                                           → 401 "Invalid HMAC"
+GET  client-callback  (no query)                                           → 400 "message = Missing expected field amount_cents."</pre>
+      <p class="expect">These prove the signature checks. A real credit comes from Paymob's callback or from the server's own check with Paymob.</p></li>
+
+    <li class="stage">Clean up</li>
+    <li><div class="ep-line">turn the test data off</div>
+      <p class="expect">For each test coupon (the new <code>T10-1104</code>, <code>TNOCUST-1104</code> and <code>TS2-1104</code> too), <code>PUT /api/admin/coupons/{id}</code> with its values, including <code>allowOnCustomized</code>, and <code>"isActive": false</code>. The test bundle N is already retired. <code>PUT /api/admin/partners/{P}</code> with <code>"isActive": false</code>. Nothing here deletes records; inactive ones stay listed.</p></li>
+  </ol></div>
+  <p class="foot">Bodies and responses captured on 4 November 2026 from the dev server on the shared database; the customisable-plan steps on 8 November 2026. The Paymob checkout link's keys are shortened.</p>
+</section>
+
+</div>
+
+</body></html>

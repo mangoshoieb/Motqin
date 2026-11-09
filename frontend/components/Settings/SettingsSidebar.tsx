@@ -19,17 +19,29 @@ import {
   GraduationCap,
   UserCheck,
   Handshake,
+  Wallet,
+  Gauge,
+  ReceiptText,
+  BadgePercent,
   type LucideIcon,
 } from "lucide-react";
 import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
+import { useAuth } from "@/app/(public)/context/auth.context";
+import { useAuthKind } from "@/app/hooks/useAuthKind";
+import { useMyPartnerReport } from "@/app/hooks/usePayments";
+import { isTeacherAccount } from "@/app/lib/payments";
 
 interface SettingsNavItem {
   label: string;
   href: string;
   icon: LucideIcon;
   external?: boolean; // navigates away from the settings shell entirely
-  // Shown only to some users (teachers, assistants).
-  show?: (access: { isTeacher: boolean; assists: boolean }) => boolean;
+  // Highlighted on this exact page only (its sub-pages have items of their own).
+  exact?: boolean;
+  // A small heading above the item, starting a section.
+  section?: string;
+  // Shown only to some users (teachers, assistants, partners).
+  show?: (access: { isTeacher: boolean; assists: boolean; isPartner: boolean }) => boolean;
 }
 
 const navItems: SettingsNavItem[] = [
@@ -55,7 +67,16 @@ const navItems: SettingsNavItem[] = [
     show: ({ assists }) => assists,
   },
   { label: "الإشعارات", href: "/settings/notifications", icon: Bell },
-  { label: "الاشتراك", href: "/subscription", icon: CreditCard, external: true },
+  { label: "نظرة عامة", href: "/settings/billing", icon: Wallet, exact: true, section: "الاشتراك والمحفظة" },
+  { label: "باقتي وحدودها", href: "/settings/billing/limits", icon: Gauge },
+  { label: "سجل المعاملات", href: "/settings/billing/transactions", icon: ReceiptText },
+  {
+    label: "مبيعاتي",
+    href: "/settings/sales",
+    icon: BadgePercent,
+    show: ({ isPartner }) => isPartner,
+  },
+  { label: "العروض والباقات", href: "/subscription", icon: CreditCard, external: true },
 ];
 
 // What's waiting on the user as a mentor: requests to answer, changes to
@@ -73,7 +94,12 @@ export const SettingsSidebar = () => {
   const pathname = usePathname();
   const menteesBadge = useMenteesBadge();
   const { isTeacher, links } = useTrackingAccess();
-  const access = { isTeacher, assists: links.length > 0 };
+  const { user } = useAuth();
+  // The sales page is for teacher accounts linked to a partner; the rest get
+  // not_a_partner (null here).
+  const partnerCheck = useAuthKind() === "user" && isTeacherAccount(user);
+  const { data: partner } = useMyPartnerReport("", "", partnerCheck);
+  const access = { isTeacher, assists: links.length > 0, isPartner: !!partner };
 
   return (
     <nav className="flex flex-col gap-1 rounded-2xl bg-white border border-zinc-200 p-3 dark:bg-zinc-900 dark:border-zinc-800">
@@ -83,12 +109,17 @@ export const SettingsSidebar = () => {
         const isActive =
           !item.external &&
           (pathname === item.href ||
-            (item.href !== "/settings" && pathname.startsWith(`${item.href}/`)));
+            (!item.exact && item.href !== "/settings" && pathname.startsWith(`${item.href}/`)));
         const badge = item.href === "/settings/mentees" ? menteesBadge : 0;
 
         return (
+          <div key={item.href} className="contents">
+          {item.section && (
+            <p className="mt-3 border-t border-zinc-100 px-4 pt-3 text-[11px] font-bold text-zinc-400 dark:border-zinc-800">
+              {item.section}
+            </p>
+          )}
           <Link
-            key={item.href}
             href={item.href}
             className={cn(
               "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition",
@@ -105,6 +136,7 @@ export const SettingsSidebar = () => {
               </span>
             )}
           </Link>
+          </div>
         );
       })}
     </nav>

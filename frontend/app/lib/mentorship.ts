@@ -21,8 +21,10 @@ export const formatDays = counted("يوم واحد", "يومان", "أيام", "
 
 // A change the mentor has to answer: a privilege the student switched off,
 // or a request to end the link.
-export const awaitsApproval = (link: Pick<Mentee, "removalRequested" | "endRequested">) =>
-  link.removalRequested.length > 0 || link.endRequested;
+// A paused mentor can't approve or reject: the student's changes apply
+// without them, so nothing waits on them.
+export const awaitsApproval = (link: Pick<Mentee, "removalRequested" | "endRequested" | "paused">) =>
+  !link.paused && (link.removalRequested.length > 0 || link.endRequested);
 
 export const hasAnyPrivilege = (privileges: MentorPrivileges) =>
   privileges.canViewPerformance || privileges.canViewBlocker || privileges.canLockBlocker;

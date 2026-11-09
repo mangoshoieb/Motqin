@@ -21,6 +21,7 @@ import {
 import { AuthGate, authReturnPath, useAuthGate } from "@/app/lib/auth-gate.store";
 import { GUEST_FREE_USES, guestFeatureLabel } from "@/app/lib/guest.store";
 import { useGuestLogin } from "@/app/hooks/useGuestLogin";
+import { featureLabel, formatDay } from "@/app/lib/payments";
 
 type GateAction = "signup" | "signin" | "subscribe";
 
@@ -126,6 +127,34 @@ const copyFor = (gate: AuthGate): GateCopy | null => {
         glow: "bg-fuchsia-300/40",
         primary: { label: "عرض خطط الاشتراك", action: "subscribe" },
       };
+
+    case "quota_exhausted": {
+      const feature = gate.feature ? featureLabel(gate.feature) : "";
+      return {
+        title: "استهلكت حد باقتك",
+        body: `${feature ? `استخدمت كل ${feature} المتاحة في باقتك. ` : "استخدمت الحد المتاح في باقتك لهذه الميزة. "}${
+          gate.resetsAt ? `يتجدد الحد في ${formatDay(gate.resetsAt)}، أو رقِّ باقتك الآن.` : "رقِّ باقتك لتحصل على المزيد."
+        }`,
+        icon: Timer,
+        header: "from-amber-500 via-orange-500 to-rose-500",
+        glow: "bg-yellow-200/40",
+        primary: { label: "اعرض العروض", action: "subscribe" },
+      };
+    }
+
+    case "not_in_plan": {
+      const feature = gate.feature ? featureLabel(gate.feature) : "";
+      return {
+        title: "ميزة غير متاحة في باقتك",
+        body: feature
+          ? `${feature} غير متاحة في باقتك الحالية. اعرض الباقات التي تشملها.`
+          : "هذه الميزة غير متاحة في باقتك الحالية. اعرض الباقات التي تشملها.",
+        icon: Crown,
+        header: "from-violet-600 via-purple-600 to-fuchsia-500",
+        glow: "bg-fuchsia-300/40",
+        primary: { label: "اعرض العروض", action: "subscribe" },
+      };
+    }
 
     case "save_progress":
       return {
@@ -248,7 +277,7 @@ export default function AuthGateDialog() {
     authReturnPath.set(`${pathname}${window.location.search}`);
     close();
     router.push(
-      action === "signup" ? "/sign-up" : action === "signin" ? "/sign-in" : "/subscription"
+      action === "signup" ? "/sign-up" : action === "signin" ? "/sign-in" : gate?.offersHref ?? "/subscription"
     );
   };
 

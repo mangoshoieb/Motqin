@@ -94,6 +94,8 @@ export interface StudySessionDto {
   // (breakStartTime), finished by PUT /{id}/break-end (breakEndTime, and
   // isBreakCompleted turns true).
   isBreakCompleted?: boolean;
+  // The student declined the extra minutes after this session.
+  ignoreAdditionalTime?: boolean;
   breakStartTime?: string | null;
   breakEndTime?: string | null;
   notes: string[];
@@ -110,6 +112,17 @@ export interface ActiveStudySessionDto {
   elapsedSeconds: number | null; // the session's, while it runs
   remainingSeconds: number | null;
   breakElapsedSeconds: number | null; // while on a break
+}
+
+// GET /study-session/additional-time (200): count up from additionalSeconds,
+// and stop showing after secondsUntilIgnored more seconds (2 hours after
+// endTime).
+export interface AdditionalTimeDto {
+  sessionId: number;
+  endTime: string; // UTC; a missed session's planned end
+  serverTimeUtc: string;
+  additionalSeconds: number;
+  secondsUntilIgnored: number;
 }
 
 export interface CreateStudySessionPayload {
@@ -547,6 +560,30 @@ export const studySessionsService = {
 
   // Credits extra minutes the user kept working after the session's timer
   // ran out; the backend adds them to the session's finished time.
+  // GET /study-session/additional-time — the server decides whether the
+  // extra-minutes timer shows (null on 204: a session or break is running,
+  // the minutes were added or ignored, or 2 hours have passed).
+  async getAdditionalTime(): Promise<AdditionalTimeDto | null> {
+    const response = await axiosInstance.get<AdditionalTimeDto | ApiEnvelope<AdditionalTimeDto> | "">(
+      API_ROUTES.STUDY_SESSIONS.ADDITIONAL_TIME,
+    );
+    if (response.status === 204 || !response.data) return null;
+    const body = unwrap(response.data as AdditionalTimeDto | ApiEnvelope<AdditionalTimeDto>);
+    return body?.sessionId ? body : null;
+  },
+
+  // The student declined the extra minutes; the timer never shows again for
+  // that session. No body.
+  async ignoreAdditionalTime(id: number): Promise<StudySessionDto> {
+    const { data } = await axiosInstance.put<
+      StudySessionDto | ApiEnvelope<StudySessionDto>
+    >(API_ROUTES.STUDY_SESSIONS.IGNORE_ADDITIONAL_TIME(id));
+
+    return unwrap(data);
+  },
+
+  // Adding the minutes also switches the extra-minutes timer off; the server
+  // accepts at most the minutes that really passed.
   async addTime(id: number, minutesToAdd: number): Promise<StudySessionDto> {
     const { data } = await axiosInstance.put<
       StudySessionDto | ApiEnvelope<StudySessionDto>

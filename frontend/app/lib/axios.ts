@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from "axios";
 import { toast } from "sonner";
 import { API_ROUTES } from "@/app/constants/planner.constants";
 import { authStorage } from "./auth-storage";
-import { getApiErrorMessage, getApiErrorStatus, getAuthGateError } from "./api-error";
+import { getApiErrorMessage, getApiErrorStatus, getAuthGateError, getPlanLimitError } from "./api-error";
 import { useAuthGate } from "./auth-gate.store";
 import { useGuestStore } from "./guest.store";
 
@@ -292,7 +292,30 @@ const readGuestHeaders = (response: AxiosResponse) => {
 
 // 403 registration_required / guest_limit_reached / subscription_required
 // open the signup-or-subscribe popup instead of reading as an error.
+// Screens that explain a plan limit inline, with their own link to the
+// plans (the parent-report dialog).
+const PLAN_PROMPT_SKIP = [/\/tracking-tables\/.*(prepare-report|\/reports\/)/];
+
+// 403 quota_exhausted / not_in_plan from any feature: offer the plans.
+const openPlanPromptFor = (error: unknown) => {
+  const planError = getPlanLimitError(error);
+  if (!planError || typeof window === "undefined") return false;
+  const url = axios.isAxiosError(error) ? error.config?.url ?? "" : "";
+  if (PLAN_PROMPT_SKIP.some((pattern) => pattern.test(url))) return false;
+
+  useAuthGate.getState().open({
+    kind: planError.code,
+    feature: planError.feature,
+    message: planError.message,
+    resetsAt: planError.resetsAt,
+    // Following students is sold in the mentor plans.
+    offersHref: planError.feature === "Mentees" ? "/subscription?audience=Mentor" : "/subscription",
+  });
+  return true;
+};
+
 const openAuthGateFor = (error: unknown) => {
+  if (openPlanPromptFor(error)) return true;
   const gateError = getAuthGateError(error);
   if (!gateError || typeof window === "undefined") return false;
 

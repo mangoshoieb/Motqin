@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, X } from "lucide-react";
+import { Check, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { useAnimatedNumber } from "@/app/hooks/useAnimatedNumber";
 import {
@@ -17,6 +17,7 @@ import {
   featureValueText,
   findFeature,
   formatMoney,
+  fromPrice,
   isFeatureOn,
   savingPercent,
 } from "@/app/lib/payments";
@@ -31,6 +32,7 @@ export function PlanCard({
   term,
   audience,
   isCurrent,
+  currentGroups,
   buyDisabled,
 }: {
   tier: string;
@@ -39,6 +41,8 @@ export function PlanCard({
   term: TermMonths;
   audience: BundleAudience;
   isCurrent: boolean;
+  // The main features the current plan kept: renewing keeps them.
+  currentGroups?: string[] | null;
   buyDisabled: boolean;
 }) {
   const meta = TIER_META[tier];
@@ -48,6 +52,8 @@ export function PlanCard({
   const saving = savingPercent(bundle.price, monthly?.price, term);
   const perUnit = PER_UNIT_FEATURE[audience];
   const unitLimit = perUnit ? findFeature(bundle, perUnit.feature)?.limit : null;
+  // "اشتراكك على كيفك": the lowest price the plan builder can reach.
+  const from = buyDisabled ? null : fromPrice(bundle);
 
   return (
     <div
@@ -103,6 +109,16 @@ export function PlanCard({
             ≈ {formatMoney(Math.round((perMonth / unitLimit) * 10) / 10)} ج.م {perUnit.label}
           </p>
         ) : null}
+        {from !== null && (
+          <p
+            className={cn(
+              "mt-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold",
+              highlighted ? "bg-white/15 text-white" : "bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
+            )}
+          >
+            <SlidersHorizontal size={13} /> اشتراكك على كيفك · تبدأ من {formatMoney(Math.ceil(from / term))} ج.م شهريًا
+          </p>
+        )}
       </div>
 
       {buyDisabled ? (
@@ -116,7 +132,7 @@ export function PlanCard({
         </span>
       ) : (
         <Link
-          href={`/subscription/checkout?bundleId=${bundle.id}`}
+          href={`/subscription/checkout?bundleId=${bundle.id}${isCurrent && currentGroups?.length ? `&groups=${currentGroups.join(",")}` : ""}`}
           className={cn(
             "mt-6 w-full rounded-full py-3 text-center font-semibold transition",
             highlighted
@@ -124,9 +140,19 @@ export function PlanCard({
               : "border border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40",
           )}
         >
-          {isCurrent ? "جدّد الخطة" : "اختر الخطة"}
+          {isCurrent ? "جدّد الخطة" : "اشترك"}
         </Link>
       )}
+      {/* The plan's full list; for a customisable plan, the plan builder. */}
+      <Link
+        href={`/subscription/plans/${bundle.id}`}
+        className={cn(
+          "mt-2 w-full rounded-full py-2 text-center text-sm font-semibold transition",
+          highlighted ? "text-blue-100 hover:bg-white/10" : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800",
+        )}
+      >
+        {from !== null ? "خصّص باقتك" : "التفاصيل"}
+      </Link>
 
       <ul className="mt-6 flex flex-col gap-5 text-sm">
         {CARD_FEATURES[audience].map((key) => {

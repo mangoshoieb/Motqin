@@ -37,7 +37,12 @@ export function TopUpDialog({
   const popupRef = useRef<Window | null>(null);
   const reported = useRef(false);
   const start = useStartRecharge();
-  const { data: recharge, refetch, isFetching } = useRecharge(checkout?.reference ?? null, checkout?.startedAt ?? 0);
+  const { data: recharge, refetch, isFetching, dataUpdatedAt } = useRecharge(
+    checkout?.reference ?? null,
+    checkout?.startedAt ?? 0,
+  );
+  // Still pending a minute after it started: the money comes when confirmed.
+  const waitedLong = !!checkout && dataUpdatedAt - checkout.startedAt > 60_000;
 
   const amount = parseAmount(text);
   const valid = amount !== null && amount >= RECHARGE_MIN;
@@ -70,7 +75,7 @@ export function TopUpDialog({
     if (recharge?.status !== "Succeeded" || reported.current) return;
     reported.current = true;
     popupRef.current?.close();
-    toast.success(`تم شحن المحفظة بمبلغ ${formatEgp(recharge.receivedAmount ?? recharge.requestedAmount)}`);
+    toast.success(`تم شحن محفظتك بمبلغ ${formatEgp(recharge.receivedAmount ?? recharge.requestedAmount)}`);
     onPaid?.();
   }, [recharge, onPaid]);
 
@@ -87,7 +92,7 @@ export function TopUpDialog({
             <>
               <CheckCircle2 size={52} className="text-emerald-500" />
               <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                تم شحن المحفظة بمبلغ {formatEgp(recharge?.receivedAmount ?? recharge?.requestedAmount ?? 0)}
+                تم شحن محفظتك بمبلغ {formatEgp(recharge?.receivedAmount ?? recharge?.requestedAmount ?? 0)}
               </p>
               <button type="button" onClick={onClose} className={cn(primaryButton, "mt-2 w-full")}>
                 تم
@@ -97,20 +102,21 @@ export function TopUpDialog({
             <>
               <XCircle size={52} className="text-rose-500" />
               <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                {status === "Failed" ? "لم تكتمل عملية الدفع" : "انتهت مهلة الدفع قبل إتمامه"}
+                {status === "Failed" ? "لم تتم عملية الدفع" : "انتهت مهلة الدفع"}
               </p>
               <p className="text-sm text-zinc-500">لم يُخصم شيء من رصيدك. يمكنك المحاولة مرة أخرى.</p>
               <button type="button" onClick={retry} className={cn(primaryButton, "mt-2 w-full")}>
-                <RotateCcw size={16} /> شحن جديد
+                <RotateCcw size={16} /> حاول مرة أخرى
               </button>
             </>
           ) : (
             <>
               <Loader2 size={44} className="animate-spin text-blue-600" />
-              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">أكمل الدفع في صفحة Paymob</p>
+              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">جارٍ تأكيد الدفع…</p>
               <p className="max-w-sm text-sm leading-6 text-zinc-500">
-                فتحنا صفحة الدفع في نافذة جديدة. بعد الدفع ارجع هنا، وسيظهر الرصيد خلال ثوانٍ. لا تعتمد على رسالة النجاح في
-                صفحة الدفع، الرصيد يُضاف فقط بعد تأكيد Paymob.
+                {waitedLong
+                  ? "سنضيف المبلغ لمحفظتك فور تأكيده. يمكنك إغلاق هذه النافذة والرجوع لاحقًا."
+                  : "أكمل الدفع في صفحة Paymob التي فُتحت في نافذة جديدة، ثم ارجع هنا. لا تعتمد على رسالة النجاح في صفحة الدفع، الرصيد يُضاف فقط بعد تأكيد Paymob."}
               </p>
               <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row">
                 <a href={checkout.url} target="_blank" rel="noopener noreferrer" className={cn(secondaryButton, "flex-1")}>
@@ -142,7 +148,7 @@ export function TopUpDialog({
           </button>
           <button type="button" onClick={() => void begin()} disabled={!valid || start.isPending} className={cn(primaryButton, "flex-1")}>
             {start.isPending ? <Loader2 size={16} className="animate-spin" /> : null}
-            {valid ? `ادفع ${formatEgp(amount!)}` : "ادفع"}
+            {valid ? `متابعة للدفع · ${formatEgp(amount!)}` : "متابعة للدفع"}
           </button>
         </>
       }

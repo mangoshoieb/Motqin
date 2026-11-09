@@ -2,8 +2,19 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { AlertTriangle, ArrowRight, Check, CheckCircle2, Loader2, ShieldCheck, Tag, Wallet, X } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Loader2,
+  ShieldCheck,
+  SlidersHorizontal,
+  Tag,
+  Wallet,
+  X,
+} from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import Skeleton from "@/components/ui/Skeleton";
 import { getApiErrorMessage, getCodedApiError } from "@/app/lib/api-error";
@@ -20,6 +31,7 @@ import {
 } from "@/app/constants/payment.constants";
 import {
   bundleName,
+  customPrice,
   durationLabel,
   featureLabel,
   featureValueText,
@@ -27,11 +39,15 @@ import {
   formatEgp,
   formatMoney,
   isFeatureOn,
+  leftOutText,
+  parseGroups,
   rateLimitText,
+  removableGroups,
   termOf,
   tierOf,
 } from "@/app/lib/payments";
 import { PurchaseResult } from "@/app/types/payment.types";
+import { KeptGroups } from "@/components/Payments/BillingBits";
 import { TopUpDialog } from "@/components/Payments/TopUpDialog";
 import { inputClass, primaryButton, secondaryButton } from "@/components/TrackingTables/ui";
 
@@ -39,15 +55,23 @@ import { inputClass, primaryButton, secondaryButton } from "@/components/Trackin
 const normalizeCoupon = (text: string) => text.replace(/[\s-]+/g, "").toUpperCase();
 
 const CheckoutContent = () => {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const bundleId = Number(searchParams.get("bundleId")) || null;
+  // The main features kept in the plan builder; none = the whole plan.
+  const groups = parseGroups(searchParams.get("groups"));
   const registered = useAuthKind() === "user";
 
   const { data: bundle, isLoading: bundleLoading, error: bundleError } = useBundle(bundleId);
   const { data: audienceBundles } = useBundles(bundle?.audience ?? "Student");
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState("");
-  const { data: preview, isFetching: previewing } = usePurchasePreview(bundleId, coupon, registered && !!bundle);
+  const {
+    data: preview,
+    isFetching: previewing,
+    refetch: refetchPreview,
+  } = usePurchasePreview(bundleId, coupon, groups, registered && !!bundle);
   const purchase = usePurchase();
   const [result, setResult] = useState<PurchaseResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,8 +109,14 @@ const CheckoutContent = () => {
   // The plan lists all 20 features; show its own audience's, as the list does.
   const ownKeys = new Set(audienceBundles?.find((b) => b.kind === "Free")?.features.map((f) => f.feature) ?? []);
   const features = bundle.features.filter((f) => ownKeys.size === 0 || ownKeys.has(f.feature));
+  // Main features taken off in the plan builder.
+  const removedGroups = groups ? removableGroups(bundle).map((g) => g.group).filter((g) => !groups.includes(g)) : [];
+  const removedFeature = (key: string) => removedGroups.includes(bundle.features.find((f) => f.feature === key)?.group ?? "");
 
   const couponError = preview?.couponError ? errorCodeMessage(preview.couponError) ?? preview.couponError : null;
+  const notForCustomized = preview?.couponError === "coupon_not_for_customized";
+  const wholePlan = () => router.replace(`${pathname}?bundleId=${bundle.id}`);
+  const builderHref = `/subscription/plans/${bundle.id}${groups ? `?groups=${groups.join(",")}` : ""}`;
   const blocked = preview?.blockedReason ? errorCodeMessage(preview.blockedReason) ?? preview.blockedReason : null;
   const short = preview ? Math.max(0, preview.amountDue - preview.walletBalance) : 0;
   // An upgrade charges only the difference for the days left.
@@ -100,7 +130,7 @@ const CheckoutContent = () => {
     setError(null);
     // A coupon the preview refused isn't sent: the purchase works without it.
     purchase.mutate(
-      { bundleId: bundle.id, coupon: coupon && !preview.couponError ? coupon : null },
+      { bundleId: bundle.id, coupon: coupon && !preview.couponError ? coupon : null, groups },
       {
         onSuccess: setResult,
         onError: (err) => {
@@ -109,6 +139,9 @@ const CheckoutContent = () => {
             const missing = coded.details.amountDue - (coded.details.walletBalance ?? 0);
             setTopUp(Math.max(RECHARGE_MIN, Math.ceil(missing)));
           }
+          // Something changed since the preview (a coupon ran out, say):
+          // show the new state.
+          void refetchPreview();
           setError(getApiErrorMessage(err));
         },
       },
@@ -133,12 +166,13 @@ const CheckoutContent = () => {
           <p className="mt-1 text-sm text-zinc-500">
             خُصم {formatEgp(result.amountCharged)} · رصيدك الآن {formatEgp(result.walletBalance)}
           </p>
+          <KeptGroups groups={result.subscription.groups} className="mt-3 justify-center" />
           <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-            <Link href="/subscription?tab=mine" className={cn(primaryButton, "flex-1")}>
-              اشتراكي
+            <Link href="/settings/billing/limits" className={cn(primaryButton, "flex-1")}>
+              حدود باقتي
             </Link>
-            <Link href="/" className={cn(secondaryButton, "flex-1")}>
-              الرئيسية
+            <Link href="/settings/billing" className={cn(secondaryButton, "flex-1")}>
+              المحفظة والاشتراك
             </Link>
           </div>
         </div>
@@ -165,6 +199,19 @@ const CheckoutContent = () => {
             </dl>
 
             {operation && <p className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">{operation.hint}</p>}
+
+            {removableGroups(bundle).length > 1 && (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {groups ? (
+                  <KeptGroups groups={groups} className="flex-1" />
+                ) : (
+                  <span className="flex-1 text-xs text-zinc-500">الباقة كاملة بكل مميزاتها</span>
+                )}
+                <Link href={builderHref} className="flex items-center gap-1 text-xs font-semibold text-violet-700 hover:underline dark:text-violet-300">
+                  <SlidersHorizontal size={13} /> {groups ? "تعديل المميزات" : "خصّص باقتك"}
+                </Link>
+              </div>
+            )}
 
             {/* Coupon */}
             {registered && (
@@ -207,6 +254,11 @@ const CheckoutContent = () => {
                   </form>
                 )}
                 {coupon && couponError && <p className="mt-1.5 text-xs text-rose-600">{couponError}</p>}
+                {coupon && notForCustomized && groups && (
+                  <button type="button" onClick={wholePlan} className="mt-1.5 text-xs font-semibold text-blue-600 hover:underline">
+                    اشترك في الباقة كاملة لتستخدم الكوبون
+                  </button>
+                )}
               </div>
             )}
 
@@ -216,9 +268,16 @@ const CheckoutContent = () => {
                   <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
                   <Row
                     label="السعر"
-                    value={formatEgp(preview.operation ? preview.listPrice : bundle.price)}
-                    strike={preview.discountAmount > 0 || credit > 0}
+                    value={formatEgp(preview.operation ? preview.fullPrice ?? preview.listPrice : bundle.price)}
+                    strike={preview.discountAmount > 0 || credit > 0 || (preview.featuresDiscount ?? 0) > 0}
                   />
+                  {(preview.featuresDiscount ?? 0) > 0 && (
+                    <Row
+                      label={`خصم المميزات المحذوفة (${preview.featuresDiscountPercent ?? 0}٪)`}
+                      value={`- ${formatEgp(preview.featuresDiscount!)}`}
+                      tone="good"
+                    />
+                  )}
                   {preview.discountAmount > 0 && (
                     <Row label={`الخصم (${preview.discountPercent}٪)`} value={`- ${formatEgp(preview.discountAmount)}`} tone="good" />
                   )}
@@ -312,13 +371,18 @@ const CheckoutContent = () => {
               {meta?.tagline ?? bundle.description}
             </p>
             <div className="mt-6 flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold tabular-nums">{formatMoney(Math.round(bundle.price / term))}</span>
+              <span className="text-3xl font-extrabold tabular-nums">
+                {formatMoney(Math.round(customPrice(bundle, removedGroups) / term))}
+              </span>
               <span className="text-sm">ج.م / شهرياً</span>
             </div>
 
             <ul className="mt-8 flex flex-col gap-4 text-sm">
               {features.map((feature) => {
-                const on = isFeatureOn(feature);
+                // A feature whose main feature was taken off keeps only its
+                // left-out allowance.
+                const removed = removedFeature(feature.feature);
+                const on = removed ? !!feature.accessIfLeftOut && feature.accessIfLeftOut !== "Off" : isFeatureOn(feature);
                 const rate = rateLimitText(feature);
                 return (
                   <li key={feature.feature} className={cn("flex items-start gap-2", !on && "opacity-50")}>
@@ -329,8 +393,15 @@ const CheckoutContent = () => {
                     )}
                     <span>
                       {featureLabel(feature.feature, feature.displayName)}
-                      {feature.type !== "Access" && <b> · {featureValueText(feature.type, feature.access, feature.limit)}</b>}
-                      {on && rate && (
+                      {removed ? (
+                        <b className={highlighted ? "text-amber-300" : "text-amber-700 dark:text-amber-400"}>
+                          {" "}
+                          · {leftOutText(feature) ?? "غير متاح"} (حذفتها)
+                        </b>
+                      ) : (
+                        feature.type !== "Access" && <b> · {featureValueText(feature.type, feature.access, feature.limit)}</b>
+                      )}
+                      {on && !removed && rate && (
                         <span className={cn("block text-xs", highlighted ? "text-blue-200" : "text-zinc-500")}>{rate}</span>
                       )}
                     </span>

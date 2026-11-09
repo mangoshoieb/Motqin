@@ -97,7 +97,7 @@ export const TIER_META: Record<string, { name: string; tagline: string }> = {
   T1: { name: "خصوصي", tagline: "لمدرس لديه مجموعات قليلة في البيت أو في سنتر صغير" },
   T2: { name: "سنتر", tagline: "لمدرس لديه عدة مجموعات في السنتر ومساعد أو اثنان" },
   T3: { name: "أكاديمية", tagline: "لكبار مدرسي الثانوية في أكثر من سنتر مع فريق مساعدين كامل" },
-  M1: { name: "أسرة", tagline: "لأولياء الأمور لمتابعة حتى 3 أبناء. متابعة ابن واحد مجانية دائمًا" },
+  M1: { name: "أسرة", tagline: "لأولياء الأمور لمتابعة حتى 3 أبناء" },
   M2: { name: "مرشد", tagline: "للمدرسين الخصوصيين والمرشدين لمتابعة حتى 15 طالبًا" },
   M3: { name: "مشرف", tagline: "للمدارس والسناتر والمشرفين لمتابعة حتى 100 طالب" },
 };
@@ -164,6 +164,21 @@ export const FEATURE_GROUP_LABELS: Record<string, string> = {
   Mentor: "الإشراف والمتابعة",
   TrackingTables: "جداول المتابعة",
 };
+
+// The main features in the order the catalogue lists them.
+export const MAIN_FEATURES = ["StudyPlanner", "SpacedRepetition", "DistractionBlocker", "TrackingTables", "Mentor"];
+
+// Which main features have features for each audience (group discounts may
+// only name these).
+export const AUDIENCE_GROUPS: Record<BundleAudience, string[]> = {
+  Student: ["StudyPlanner", "SpacedRepetition", "DistractionBlocker", "Mentor"],
+  Teacher: ["TrackingTables", "Mentor"],
+  Mentor: ["Mentor"],
+};
+
+// Admin limits on group discounts.
+export const GROUP_DISCOUNT_MIN = 5;
+export const GROUP_DISCOUNT_MAX = 90;
 
 // --- Subscription and wallet -----------------------------------------------
 
@@ -247,6 +262,13 @@ export const PAYMENT_ERROR_DEFAULTS: Record<string, string> = {
   guest_account: "يجب أن يسجل الزائر حساباً أولاً",
   unknown_role: "الدور غير معروف",
   role_change_failed: "تعذر تغيير الدور",
+  invalid_groups: "اختر ميزة رئيسية واحدة على الأقل من المميزات المتاحة في هذه الباقة",
+  bundle_not_customizable: "هذه الباقة تُشترى كاملة ولا يمكن اختيار مميزاتها",
+  coupon_not_for_customized: "هذا الكوبون لا يُستخدم مع باقة حذفت منها مميزات",
+  mentorship_paused: "المتابعة متوقفة لانتهاء باقتك، جددها لتتابع هذا الطالب مرة أخرى",
+  invalid_group_discounts: "خصومات المميزات الرئيسية في الباقة غير صحيحة",
+  quota_exhausted: "استهلكت الحد المتاح في باقتك، يتجدد في موعد التجديد أو قم بالترقية",
+  not_in_plan: "هذه الميزة غير متاحة في باقتك الحالية",
 };
 
 // Kept with every plan and period, per product spec.

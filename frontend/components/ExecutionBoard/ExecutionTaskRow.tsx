@@ -52,10 +52,8 @@ const formatClock = (totalSeconds: number) => {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
 
-// The overtime counter stops at 4 hours (see the board's overtimeSecondsFor).
-const OVERTIME_CAP_SECONDS = 4 * 60 * 60;
-
-// h:mm:ss once past an hour, mm:ss below — overtime can run to 4 hours.
+// h:mm:ss once past an hour, mm:ss below — the extra-minutes timer runs for
+// up to 2 hours.
 const formatLongClock = (totalSeconds: number) => {
   const hours = Math.floor(totalSeconds / 3600);
   if (hours === 0) return formatClock(totalSeconds);
@@ -563,17 +561,10 @@ export const ExecutionTaskRow = ({
                       انتهى وقت الجلسة — ما زلت تعمل؟ :
                     </span>
                     <span
-                      title={
-                        (session.overtimeSeconds ?? 0) >= OVERTIME_CAP_SECONDS
-                          ? "الحد الأقصى للوقت الإضافي 4 ساعات"
-                          : undefined
-                      }
+                      title="يختفي هذا العداد بعد ساعتين من انتهاء الجلسة"
                       className="shrink-0 text-xs font-bold tabular-nums text-amber-800 dark:text-amber-200"
                     >
                       +{formatLongClock(session.overtimeSeconds ?? 0)}
-                      {(session.overtimeSeconds ?? 0) >= OVERTIME_CAP_SECONDS && (
-                        <span className="font-normal"> (الحد الأقصى)</span>
-                      )}
                     </span>
                     <button
                       type="button"

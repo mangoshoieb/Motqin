@@ -26,26 +26,19 @@ import {
   sortSessionsByOrder,
   studySessionToExecutionSession,
 } from "@/app/lib/study-plan";
-import { clearSessionClock, elapsedSinceStart, parseServerDate, saveSessionClock } from "@/app/lib/session-clock";
+import { clearSessionClock, elapsedSinceStart, saveSessionClock } from "@/app/lib/session-clock";
 import { primeSessionAlerts } from "@/app/lib/session-alerts";
 import { toastApiError } from "@/app/lib/api-error";
 import { elapsedSecondsOf, useSessionTimerStore } from "@/app/lib/session-timer.store";
 import { API_ROUTES } from "@/app/constants/planner.constants";
 import { formatMinutes } from "@/app/lib/duration";
-import { ACTIVE_STUDY_SESSION_KEY, secondsNow, useActiveStudySession } from "@/app/hooks/useActiveStudySession";
-
-// The bonus counter stops here: past 4 hours it's no longer time worked on
-// the session.
-const MAX_OVERTIME_SECONDS = 4 * 60 * 60;
-
-// Seconds since the session ended (its endTime, UTC from the server), capped
-// at MAX_OVERTIME_SECONDS. Falls back to the last count when there's no
-// usable endTime.
-const overtimeSecondsFor = (session: ExecutionSession) => {
-  const endedAt = parseServerDate(session.endTime);
-  const seconds = endedAt === null ? session.overtimeSeconds ?? 0 : Math.floor((Date.now() - endedAt) / 1000);
-  return Math.min(MAX_OVERTIME_SECONDS, Math.max(0, seconds));
-};
+import {
+  ACTIVE_STUDY_SESSION_KEY,
+  ADDITIONAL_TIME_KEY,
+  secondsNow,
+  useActiveStudySession,
+  useAdditionalTime,
+} from "@/app/hooks/useActiveStudySession";
 
 const ExecutionBoardPage = () => {
   const params = useParams();
@@ -100,17 +93,9 @@ const ExecutionBoardPage = () => {
   if (data && data !== initializedFor) {
     setInitializedFor(data);
     setTasks(sortByPriority([...data.detail.dailyTasks, ...data.detail.revisionTasks]));
-    // A refetch (e.g. after a pause) replaces the list, but the overtime
-    // counter is local-only — carry it over for sessions that are still
-    // there, re-reading it against the server's endTime.
-    setSessions((previous) =>
-      data.detail.sessions.map((session) => {
-        const local = previous.find((s) => s.id === session.id);
-        if (!local?.overtimeRunning) return session;
-        const carried = { ...session, endTime: session.endTime ?? local.endTime, overtimeRunning: true };
-        return { ...carried, overtimeSeconds: overtimeSecondsFor(carried) };
-      }),
-    );
+    // The extra-minutes timer isn't part of a session's own state any more —
+    // it comes from GET /additional-time (see `extra` below).
+    setSessions(data.detail.sessions);
     // The break clock follows the server: a break started (break-start) but
     // not ended (break-end) is still running — after a reload or on another
     // device — and one the server shows as taken is over.
@@ -208,8 +193,8 @@ const ExecutionBoardPage = () => {
   );
 
   // The clock ran out (GlobalSessionTimer noticed, rang, and sent /end):
-  // show the session as completed here and start its overtime counter,
-  // which keeps running until the student saves or dismisses it.
+  // show the session as completed here. Its extra-minutes timer appears once
+  // GET /additional-time answers for it (GlobalSessionTimer asks after /end).
   const markSessionTimedOut = useCallback((sessionId: string) => {
     setSessions((prev) =>
       prev.map((s) =>
@@ -221,8 +206,6 @@ const ExecutionBoardPage = () => {
               endTime: new Date().toISOString(),
               elapsedSeconds: s.sessionDurationMinutes * 60,
               actualMinutes: s.sessionDurationMinutes,
-              overtimeRunning: true,
-              overtimeSeconds: 0,
             }
           : s,
       ),
@@ -254,27 +237,19 @@ const ExecutionBoardPage = () => {
     clock.clear();
   }, [sessions, data, isLoading, dayIndex, weekOffset]);
 
-  // Once a second: the break clock, overtime counters, and the running
+  // Wall clock, refreshed by the ticker below — what the extra-minutes timer
+  // counts against.
+  const [now, setNow] = useState(() => Date.now());
+
+  // Once a second: the break clock, the extra-minutes timer, and the running
   // session's elapsed time — which is read from the app-wide timer store
   // (GlobalSessionTimer keeps it going on every page, so the row here just
   // mirrors it).
   useEffect(() => {
     const interval = setInterval(() => {
+      setNow(Date.now());
       // The break clock, if one is running.
       setBreakTimer((prev) => (prev ? { ...prev, elapsedSeconds: prev.elapsedSeconds + 1 } : prev));
-
-      // Overtime counters run independently of the (single) active session.
-      // Read off the session's endTime each tick rather than counted up, so
-      // a throttled background tab or a refetch can't skew them.
-      if (sessionsRef.current.some((s) => s.overtimeRunning)) {
-        setSessions((prev) =>
-          prev.map((s) => {
-            if (!s.overtimeRunning) return s;
-            const seconds = overtimeSecondsFor(s);
-            return seconds === s.overtimeSeconds ? s : { ...s, overtimeSeconds: seconds };
-          }),
-        );
-      }
 
       const active = sessionsRef.current.find((s) => s.status === "active");
       if (!active) return;
@@ -309,18 +284,6 @@ const ExecutionBoardPage = () => {
     return () => clearInterval(interval);
   }, [markSessionTimedOut, runningSessionFor, dayIndex, weekOffset]);
 
-  // Each task's sessions, in orderInPlan order (see sortSessionsByOrder).
-  const sessionsByTaskId = useMemo(() => {
-    const map = new Map<string, ExecutionSession[]>();
-    for (const s of sessions) {
-      const list = map.get(s.taskId) ?? [];
-      list.push(s);
-      map.set(s.taskId, list);
-    }
-    for (const [taskId, list] of map) map.set(taskId, sortSessionsByOrder(list));
-    return map;
-  }, [sessions]);
-
   // Whether a session is running — on this board, or per GET /active (the
   // app was reopened, or it runs on another day or device). A session the
   // board already shows as finished doesn't count, in case /active is a
@@ -332,6 +295,34 @@ const ExecutionBoardPage = () => {
       !sessions.some(
         (s) => s.id === String(active.session.id) && (s.status === "completed" || s.status === "missed"),
       ));
+
+  // The extra-minutes timer (GET /additional-time): which session it belongs
+  // to and how far it has counted, from the server's figure plus the time
+  // since it was fetched. It disappears once the server's limit (2 hours
+  // after the session ended) is reached, and never while a session runs.
+  const { data: extra, dataUpdatedAt: extraFetchedAt } = useAdditionalTime();
+  const extraSeconds = extra ? secondsNow(extra.additionalSeconds, extraFetchedAt) : 0;
+  // `now` is the ticker's clock, so this re-reads every second.
+  const extraShowing =
+    !!extra && !sessionRunning && now - extraFetchedAt < extra.secondsUntilIgnored * 1000;
+  const extraSessionId = extraShowing ? String(extra.sessionId) : null;
+
+  // Each task's sessions, in orderInPlan order (see sortSessionsByOrder),
+  // with the extra-minutes timer put on the session it belongs to.
+  const sessionsByTaskId = useMemo(() => {
+    const map = new Map<string, ExecutionSession[]>();
+    for (const session of sessions) {
+      const s =
+        session.id === extraSessionId
+          ? { ...session, overtimeRunning: true, overtimeSeconds: extraSeconds }
+          : session;
+      const list = map.get(s.taskId) ?? [];
+      list.push(s);
+      map.set(s.taskId, list);
+    }
+    for (const [taskId, list] of map) map.set(taskId, sortSessionsByOrder(list));
+    return map;
+  }, [sessions, extraSessionId, extraSeconds]);
 
   // The one session on the whole board a break may follow — none while a
   // session is running (no break line or button then).
@@ -413,7 +404,9 @@ const ExecutionBoardPage = () => {
       const started = await studySessionsService.start(Number(sessionId));
       console.log("[SESSION START] response ←", started);
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
-      // Now running on the server — /active says so, and the break line hides.
+      // Now running on the server — /active says so, and the break line and
+      // any extra-minutes timer hide.
+      queryClient.invalidateQueries({ queryKey: ADDITIONAL_TIME_KEY });
       queryClient.invalidateQueries({ queryKey: ACTIVE_STUDY_SESSION_KEY });
     } catch (error) {
       setSessionStatus(sessionId, previous);
@@ -528,17 +521,27 @@ const ExecutionBoardPage = () => {
     }
   };
 
-  // Credits the overtime to the session on the server, then hides the counter.
+  // Hides the extra-minutes timer straight away; the server agrees once the
+  // request lands (its next answer is a 204). Returns how to bring it back if
+  // the request fails — by asking the server again, since putting the old
+  // answer back would restart its count from when it was fetched.
+  const hideExtra = () => {
+    queryClient.setQueryData(ADDITIONAL_TIME_KEY, null);
+    return () => queryClient.invalidateQueries({ queryKey: ADDITIONAL_TIME_KEY });
+  };
+
+  // Credits the extra minutes to the session (PUT add-time), which also
+  // switches the timer off. Whole minutes only: the server takes at most
+  // what really passed.
   const saveOvertime = async (sessionId: string) => {
-    const target = sessions.find((s) => s.id === sessionId);
-    if (!target?.overtimeRunning) return;
+    if (sessionId !== extraSessionId) return;
+    const minutesToAdd = Math.floor(extraSeconds / 60);
+    if (minutesToAdd < 1) {
+      toast.info("لم تمر دقيقة كاملة بعد");
+      return;
+    }
 
-    const minutesToAdd = Math.max(1, Math.round(overtimeSecondsFor(target) / 60));
-
-    setSessions((prev) =>
-      prev.map((s) => (s.id === sessionId ? { ...s, overtimeRunning: false } : s)),
-    );
-
+    const restore = hideExtra();
     try {
       await studySessionsService.addTime(Number(sessionId), minutesToAdd);
       setSessions((prev) =>
@@ -546,7 +549,6 @@ const ExecutionBoardPage = () => {
           s.id === sessionId
             ? {
                 ...s,
-                overtimeSeconds: 0,
                 sessionDurationMinutes: s.sessionDurationMinutes + minutesToAdd,
                 actualMinutes: s.actualMinutes + minutesToAdd,
                 elapsedSeconds: (s.elapsedSeconds ?? s.actualMinutes * 60) + minutesToAdd * 60,
@@ -555,22 +557,27 @@ const ExecutionBoardPage = () => {
         ),
       );
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
-      toast.success(`تمت إضافة ${minutesToAdd} دقيقة إلى الجلسة`);
-    } catch {
-      // Resume the counter so nothing the user worked is lost.
-      setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? { ...s, overtimeRunning: true } : s)),
-      );
-      toast.error("تعذر حفظ الوقت الإضافي");
+      queryClient.invalidateQueries({ queryKey: ADDITIONAL_TIME_KEY });
+      toast.success(`تمت إضافة ${formatMinutes(minutesToAdd)} إلى الجلسة`);
+    } catch (error) {
+      // Bring the timer back so nothing the student worked is lost.
+      restore();
+      toastApiError("تعذر حفظ الوقت الإضافي", error);
     }
   };
 
-  const dismissOvertime = (sessionId: string) =>
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === sessionId ? { ...s, overtimeRunning: false, overtimeSeconds: 0 } : s,
-      ),
-    );
+  // "Don't add them" — PUT ignore-additional-time; the timer never shows
+  // again for that session.
+  const dismissOvertime = async (sessionId: string) => {
+    const restore = hideExtra();
+    try {
+      await studySessionsService.ignoreAdditionalTime(Number(sessionId));
+      queryClient.invalidateQueries({ queryKey: ADDITIONAL_TIME_KEY });
+    } catch (error) {
+      restore();
+      toastApiError("تعذر تجاهل الوقت الإضافي", error);
+    }
+  };
 
   // Start a break after `sessionId`, optionally with time already on the
   // clock. Only the day's most recently finished session can be followed by
@@ -649,11 +656,14 @@ const ExecutionBoardPage = () => {
 
   // Spend the bonus as rest instead of saving it: the break clock starts
   // from where the bonus left off (3:20 of bonus → break already at 3:20).
-  const spendOvertimeAsBreak = (sessionId: string) => {
-    const target = sessionsRef.current.find((s) => s.id === sessionId);
-    if (!target?.overtimeRunning) return;
-    dismissOvertime(sessionId);
-    void startBreak(sessionId, overtimeSecondsFor(target));
+  // Starting the break switches the server's timer off by itself.
+  const spendOvertimeAsBreak = async (sessionId: string) => {
+    if (sessionId !== extraSessionId) return;
+    hideExtra();
+    await startBreak(sessionId, extraSeconds);
+    // Started or refused, the server's next answer decides whether the
+    // timer is still there.
+    queryClient.invalidateQueries({ queryKey: ADDITIONAL_TIME_KEY });
   };
 
   const toggleSession = (sessionId: string) => {
@@ -1000,8 +1010,8 @@ const ExecutionBoardPage = () => {
           onToggleSession={toggleSession}
           onConfirmMissedSession={(sessionId) => void confirmMissedSession(sessionId)}
           onSaveOvertime={(sessionId) => void saveOvertime(sessionId)}
-          onDismissOvertime={dismissOvertime}
-          onSpendOvertimeAsBreak={spendOvertimeAsBreak}
+          onDismissOvertime={(sessionId) => void dismissOvertime(sessionId)}
+          onSpendOvertimeAsBreak={(sessionId) => void spendOvertimeAsBreak(sessionId)}
           breakTimer={breakTimer}
           breakSessionId={breakSessionId}
           onStartBreak={(sessionId) => void startBreak(sessionId)}

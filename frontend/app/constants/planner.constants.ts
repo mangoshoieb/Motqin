@@ -191,6 +191,10 @@ export const API_ROUTES = {
     END: (id: string | number) => `/study-session/${id}/end`,
     PAUSE: (id: string | number) => `/study-session/${id}/pause`,
     ADD_TIME: (id: string | number) => `/study-session/${id}/add-time`,
+    // The extra-minutes timer after a session ends: whether to show it and
+    // from where (204 when not), and the "don't add them" answer.
+    ADDITIONAL_TIME: "/study-session/additional-time",
+    IGNORE_ADDITIONAL_TIME: (id: string | number) => `/study-session/${id}/ignore-additional-time`,
     // A session the backend marked Missed (app closed mid-session), kept by the user.
     CONFIRM_COMPLETED: (id: string | number) => `/study-session/${id}/confirm-completed`,
     BREAK_START:(id: string | number) => `/study-session/${id}/break-start`,

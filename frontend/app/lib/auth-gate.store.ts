@@ -14,6 +14,10 @@ export type AuthGateKind =
   | "guest_limit_reached"
   // A registered user hitting a paid feature.
   | "subscription_required"
+  // 403 quota_exhausted — the plan's limit for a feature is used up.
+  | "quota_exhausted"
+  // 403 not_in_plan — the plan doesn't include the feature.
+  | "not_in_plan"
   // Nudge to sign up so the guest's work isn't left on a trial account.
   | "save_progress";
 
@@ -23,6 +27,10 @@ export interface AuthGate {
   feature?: string;
   // Backend's own copy, shown when we have nothing better.
   message?: string;
+  // Plan-limit prompts: when the used-up limit comes back.
+  resetsAt?: string | null;
+  // Where "see offers" goes (e.g. the mentor plans for Mentees).
+  offersHref?: string;
 }
 
 interface AuthGateState {

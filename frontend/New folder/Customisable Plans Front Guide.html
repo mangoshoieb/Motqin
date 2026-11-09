@@ -1,0 +1,658 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Customisable Plans Front Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; a controller is a coloured band, each endpoint a card with brief, fields, good cases, bad cases, lookups and notes; the manual test closes the page - same family as the Payments, Tracking and Mentors guides */
+:root {
+  --bg: #f5f7f6;
+  --card: #ffffff;
+  --fg: #16211d;
+  --muted: #586560;
+  --line: #dbe3df;
+  --code-bg: #eef3f0;
+  --accent: #0f6b52;
+  --get: #12805c;  --get-bg: #e2f4ec;
+  --post: #2f5bd3; --post-bg: #e6edfd;
+  --put: #a66300;  --put-bg: #fcf0db;
+  --del: #c2364b;  --del-bg: #fce6e9;
+  --ok: #12805c;   --warn: #a66300;  --bad: #c2364b;
+  --u: #0f6b52;  --u-bg: #ddf1e8;
+  --a: #6a46c4;  --a-bg: #ede6fb;
+  --t: #3a7d2c;  --t-bg: #e7f3e2;
+  --new: #2f5bd3; --new-bg: #e6edfd;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+    --accent: #4fcf9f;
+    --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+    --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+    --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+    --new: #86a8ff; --new-bg: #1a2648;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+  --accent: #4fcf9f;
+  --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+  --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+  --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+  --new: #86a8ff; --new-bg: #1a2648;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 72px;
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 26px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ar { font-family: "IBM Plex Sans Arabic", var(--font-body); direction: rtl; unicode-bidi: isolate; }
+
+.hero { display: grid; gap: 12px; }
+.hero > p { max-width: 74ch; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 13.5px; padding: 5px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--fg); }
+.nav a.u { background: var(--u-bg); color: var(--u); border-color: transparent; }
+.nav a.a { background: var(--a-bg); color: var(--a); border-color: transparent; }
+.nav a.t { background: var(--t-bg); color: var(--t); border-color: transparent; }
+
+.part { display: grid; gap: 16px; }
+.ctl { display: grid; gap: 6px; padding: 16px 20px; border-radius: 14px; scroll-margin-top: 12px; }
+.ctl .num { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; }
+.ctl p { max-width: 74ch; }
+.ctl.u { background: var(--u-bg); } .ctl.u .num, .ctl.u h2 { color: var(--u); }
+.ctl.a { background: var(--a-bg); } .ctl.a .num, .ctl.a h2 { color: var(--a); }
+.ctl.t { background: var(--t-bg); } .ctl.t .num, .ctl.t h2 { color: var(--t); }
+.ctl.n { background: var(--code-bg); }
+
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; scroll-margin-top: 12px; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.put { background: var(--put-bg); color: var(--put); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; color: var(--warn); white-space: nowrap; }
+.tag.new { color: var(--new); }
+.tag.chg { color: var(--warn); }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--code-bg); color: var(--muted); }
+.brief { max-width: 78ch; }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 6px; align-content: start; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.5; }
+.case { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; min-width: 0; }
+.case > .lbl { color: var(--ok); }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td code { white-space: pre-wrap; }
+.params td:first-child { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+.num-c { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.s { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+.s.ok { background: var(--get-bg); color: var(--ok); }
+.s.b4 { background: var(--del-bg); color: var(--bad); }
+.s.b3 { background: var(--put-bg); color: var(--warn); }
+.bad > .lbl { color: var(--bad); }
+.dep { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dep span.chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--code-bg); border: 1px solid var(--line); }
+.notes { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+.tip.warn { border-left-color: var(--warn); }
+
+.flow ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+.flow li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; display: grid; gap: 8px; min-width: 0; }
+.flow li::before { content: counter(step); position: absolute; left: 14px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--t-bg); color: var(--t); font-family: var(--font-mono); font-weight: 600; font-size: 13px; display: grid; place-items: center; }
+.flow li.stage { counter-increment: none; background: none; border: 0; padding: 8px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--t); }
+.flow li.stage::before { content: none; }
+.expect { color: var(--muted); font-size: 14px; }
+.expect b { color: var(--fg); }
+.foot { color: var(--muted); font-size: 13px; }
+.pname { font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+.pname-ar { font-size: 16px; font-weight: 600; color: var(--muted); }
+@media (max-width: 520px) { .flow li { padding-left: 16px; padding-top: 50px; } .flow li.stage { padding-top: 8px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Motqin backend · payments update · for the front</span>
+  <h1>Customisable Plans Front Guide</h1>
+  <p><span class="ar">اشتراكك على كيفك</span>: a student can take main features off a bundle and pay less. This guide has only the endpoints that are new or changed for it, plus the two changes that came with it: coupons that can skip customised plans, and mentors whose students are paused when their plan no longer covers them. Everything else stays as in the Payments and Mentors guides.</p>
+  <nav class="nav" aria-label="Sections">
+    <a href="#summary">What changed</a>
+    <a href="#pages">Screens to update</a>
+    <a class="u" href="#bundles">Bundles</a>
+    <a class="u" href="#subscription">Subscription</a>
+    <a class="u" href="#mentor-side">Mentorship · mentor</a>
+    <a class="u" href="#student-side">Mentorship · student</a>
+    <a class="a" href="#admin-bundles">Admin · Bundles</a>
+    <a class="a" href="#admin-coupons">Admin · Coupons</a>
+    <a href="#errors">New error codes</a>
+    <a class="t" href="#test">Manual test</a>
+  </nav>
+</header>
+
+<!-- ===================================================================== summary -->
+<section class="part" id="summary">
+  <div class="ctl n"><span class="num">At a glance</span><h2>What changed</h2><p>Every change is additive: an app build that sends nothing new keeps buying whole bundles. The rows marked <span class="tag chg">changed</span> also behave differently for older builds.</p></div>
+  <article class="ep">
+    <div class="table-wrap"><table>
+      <tr><th>Endpoint</th><th></th><th>In short</th></tr>
+      <tr><td><span class="m get">GET</span> <a href="#ep-bundles"><code>/api/bundles</code></a> · <code>/{id}</code></td><td><span class="tag new">new fields</span></td><td><code>customizable</code>, <code>groupDiscounts</code>, <code>groups</code>, <code>accessIfLeftOut</code> / <code>limitIfLeftOut</code>. Mentees now on student and teacher plans; Free can't mentor.</td></tr>
+      <tr><td><span class="m post">POST</span> <a href="#ep-preview"><code>/api/subscription/preview</code></a></td><td><span class="tag new">new fields</span></td><td>Body takes <code>groups</code>. Response adds <code>fullPrice</code>, <code>featuresDiscountPercent</code>, <code>featuresDiscount</code>, <code>groups</code>; <code>listPrice</code> is after the feature discount.</td></tr>
+      <tr><td><span class="m post">POST</span> <a href="#ep-purchase"><code>/api/subscription/purchase</code></a></td><td><span class="tag new">new fields</span></td><td>Body takes <code>groups</code>; the subscription returned has <code>groups</code>.</td></tr>
+      <tr><td><span class="m get">GET</span> <a href="#ep-me"><code>/api/subscription/me</code></a> · <code>/history</code></td><td><span class="tag new">new fields</span></td><td><code>groups</code> on each subscription, <code>included</code> on each quota.</td></tr>
+      <tr><td><span class="m get">GET</span> <a href="#ep-mentees"><code>/api/mentorship/mentees</code></a> · <code>/{id}</code></td><td><span class="tag chg">changed</span></td><td><code>paused</code> on each student. A paused one has no data, and opening it answers <code>403 mentorship_paused</code>.</td></tr>
+      <tr><td><span class="m post">POST</span> <a href="#ep-accept"><code>/api/mentorship/{id}/accept</code></a></td><td><span class="tag chg">changed</span></td><td>Free users get <code>403 not_in_plan</code>.</td></tr>
+      <tr><td><span class="m post">POST</span> <a href="#ep-approve"><code>…/{id}/approve-change</code> · <code>reject-change</code></a></td><td><span class="tag chg">changed</span></td><td><code>403 mentorship_paused</code> on a paused student.</td></tr>
+      <tr><td><span class="m get">GET</span> <a href="#ep-my-mentors"><code>/api/mentorship/my-mentors</code></a></td><td><span class="tag chg">changed</span></td><td><code>paused</code> on each mentor; a paused mentor's lock doesn't apply.</td></tr>
+      <tr><td><span class="m put">PUT</span> <a href="#ep-privileges"><code>/api/mentorship/{id}/privileges</code></a></td><td><span class="tag chg">changed</span></td><td>Removals apply at once on a paused link. <code>lock_held_by_another_mentor</code> has new <code>details</code>.</td></tr>
+      <tr><td><span class="m post">POST</span> <a href="#ep-end"><code>/api/mentorship/{id}/end</code></a></td><td><span class="tag chg">changed</span></td><td>Ends at once on a paused link.</td></tr>
+      <tr><td><span class="m post">POST</span> <a href="#ep-unlock"><code>…/blocker-unlock/request</code> · <code>verify</code></a>, <span class="m put">PUT</span> <code>/api/distraction-blocker/…</code></td><td><span class="tag chg">changed</span></td><td>A paused mentor's lock doesn't apply.</td></tr>
+      <tr><td><span class="m post">POST</span> <span class="m put">PUT</span> <a href="#ep-admin-save"><code>/api/admin/bundles</code></a></td><td><span class="tag new">new fields</span></td><td><code>groupDiscounts</code>. Mentees can be set on student and teacher bundles.</td></tr>
+      <tr><td><span class="m post">POST</span> <a href="#ep-catalogue"><code>/api/admin/bundles/catalogue/apply</code></a></td><td><span class="tag chg">changed</span></td><td>Reports discount changes.</td></tr>
+      <tr><td><span class="m post">POST</span> <span class="m put">PUT</span> <a href="#ep-coupons"><code>/api/admin/coupons</code></a> · <code>/batches</code></td><td><span class="tag new">new fields</span></td><td><code>allowOnCustomized</code>.</td></tr>
+    </table></div>
+  </article>
+</section>
+
+<!-- ===================================================================== pages -->
+<section class="part" id="pages">
+  <div class="ctl n"><span class="num">Screens</span><h2>Screens to update</h2><p>No new page. These pages from the Payments and Mentors guides change.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="pname">Plan details</span><span class="ar pname-ar">تفاصيل الباقة</span><span class="tag chg">changed</span><span class="who">anyone</span></div>
+    <p class="brief">Becomes the plan builder for a bundle with <code>customizable: true</code>: the features grouped by main feature (<code>groups</code>), a switch on each removable one with its discount (<span class="ar">−15%</span>), what stays under a switched-off one, and a live price. <span class="ar">اشترك</span> opens Confirm subscription with the kept <code>groups</code>.</p>
+    <div class="dep"><span class="lbl">Calls</span><span class="chip">GET /api/bundles/{id}</span><span>Live price from the formula in the <a href="#ep-bundles">Bundles card</a>; the exact one comes from preview.</span></div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="pname">Offers</span><span class="ar pname-ar">العروض</span><span class="tag chg">changed</span><span class="who">anyone</span></div>
+    <p class="brief">On cards of customisable plans, add a <span class="ar">اشتراكك على كيفك</span> badge and "from X EGP", the price with every removable feature switched off but the cheapest one.</p>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="pname">Confirm subscription</span><span class="ar pname-ar">تأكيد الاشتراك</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">Sends <code>groups</code> with every preview and the purchase. Shows the price in steps: <code>fullPrice</code>, minus <code>featuresDiscount</code> (<span class="ar">خصم المميزات المحذوفة</span>), minus the coupon's <code>discountAmount</code>, = <code>amountDue</code>. On <code>couponError: coupon_not_for_customized</code>, offer <span class="ar">اشترك في الباقة كاملة</span>, which previews again with <code>groups: null</code>.</p>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="pname">My plan &amp; limits</span><span class="ar pname-ar">باقتي وحدودها</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">Lists the main features in the plan (<code>current.groups</code>, <code>null</code> = all). A quota with <code>included: false</code> gets "<span class="ar">حذفت هذه الميزة من باقتك</span>" and <span class="ar">أضفها</span>, which opens Confirm subscription for the same bundle with that feature added back (an <code>Upgrade</code>).</p>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="pname">My students · My mentors</span><span class="ar pname-ar">طلابي · متابعيّ</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">Paused links: greyed out, with <span class="ar">جدد باقتك لتتابع هذا الطالب مرة أخرى</span> on the mentor's side and <span class="ar">انتهت باقة متابعك</span> on the student's side. A Free user who taps <span class="ar">قبول</span> gets a plan-limit prompt to the mentor plans.</p>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="pname">Admin · Plans · Coupons</span><span class="tag chg">changed</span><span class="who">manager · admin</span></div>
+    <p class="brief">The plan editor gets a discount per main feature, shown above that main feature's limits. The coupon and voucher forms get a <span class="ar">يعمل مع الباقات المخصصة</span> switch.</p>
+  </article>
+</section>
+
+<!-- ===================================================================== bundles -->
+<section class="part" id="bundles">
+  <div class="ctl u"><span class="num">BundlesController · /api/bundles</span><h2>Bundles (plans)</h2><p>New fields that tell the app which main features a student may take off, what each is worth, and what's left without it.</p></div>
+
+  <article class="ep" id="ep-bundles">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/bundles?audience=</span><span class="tag new">new fields</span><span class="who">anyone</span></div>
+    <p class="brief">Same query and order as before. Each plan now says whether it can be customised and groups its features by main feature. <code>GET /api/bundles/{id}</code> returns the same new fields.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Response field</th><th>Meaning</th></tr>
+      <tr><td>customizable</td><td><code>true</code> when main features can be taken off. <code>false</code> for Free, Guest, teacher, mentor and hand-made plans: show them as before and send no <code>groups</code>.</td></tr>
+      <tr><td>groupDiscounts</td><td>% off the price for each removable main feature: <code>{ "StudyPlanner": 25, … }</code>. <code>{}</code> when not customisable.</td></tr>
+      <tr><td>groups[]</td><td>The features again, under their main feature, in catalogue order.</td></tr>
+      <tr><td>groups[].group</td><td><code>StudyPlanner</code> · <code>SpacedRepetition</code> · <code>DistractionBlocker</code> · <code>TrackingTables</code> · <code>Mentor</code></td></tr>
+      <tr><td>groups[].removable</td><td>The student may switch it off. <code>false</code>: always included.</td></tr>
+      <tr><td>groups[].discountPercent</td><td>% taken off when switched off; <code>null</code> when it can't be.</td></tr>
+      <tr><td>groups[].saving</td><td>EGP saved by switching off only this one, for this term; <code>null</code> when it can't be.</td></tr>
+      <tr><td>features[].accessIfLeftOut</td><td><code>Off</code> / <code>Limited</code> / <code>Unlimited</code> left when its main feature is switched off: half of Free, rounded up. <code>null</code> when it can't be switched off.</td></tr>
+      <tr><td>features[].limitIfLeftOut</td><td>The number for <code>Limited</code>, e.g. 15 blocking sessions a month (Free has 30).</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · <code>?audience=Student</code>, the S2 card (fields that didn't change left out)</span>
+      <pre class="code">{ "code": "S2-1M", "title": "Motqin · 1 month", "price": 179.0, "durationDays": 30,
+  "customizable": true,
+  "groupDiscounts": { "StudyPlanner": 25, "SpacedRepetition": 30, "DistractionBlocker": 15, "Mentor": 10 },
+  "groups": [
+    { "group": "StudyPlanner", "removable": true, "discountPercent": 25, "saving": 44, "features": [ … ] },
+    { "group": "SpacedRepetition", "removable": true, "discountPercent": 30, "saving": 53, "features": [ … ] },
+    { "group": "DistractionBlocker", "removable": true, "discountPercent": 15, "saving": 26,
+      "features": [
+        { "feature": "BlockerSchedules", "access": "Limited", "limit": 10,
+          "accessIfLeftOut": "Limited", "limitIfLeftOut": 1, … },
+        { "feature": "BlockerSessions", "access": "Unlimited", "limit": null,
+          "accessIfLeftOut": "Limited", "limitIfLeftOut": 15, … } ] },
+    { "group": "Mentor", "removable": true, "discountPercent": 10, "saving": 17,
+      "features": [
+        { "feature": "Mentors", "access": "Limited", "limit": 3, "accessIfLeftOut": "Limited", "limitIfLeftOut": 1, … },
+        { "feature": "Mentees", "access": "Limited", "limit": 3, "accessIfLeftOut": "Off", "limitIfLeftOut": null, … } ] } ],
+  "features": [ … the same 14 features, flat, as before … ] }</pre></div>
+    <div class="case"><span class="lbl">Valid · a teacher's or mentor's plans</span>
+      <p class="expect"><code>customizable: false</code>, <code>groupDiscounts: {}</code>, every group <code>removable: false</code>. Teacher plans now list <b>Mentees</b> too, under <code>Mentor</code>.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">None new.</p></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">POST /api/subscription/preview</span><span>the exact price for a choice, with a coupon.</span></div>
+    <ul class="notes">
+      <li><b>Live price</b> while the student switches: add up <code>discountPercent</code> of every switched-off group, then <code>ceil(price × (100 − total) / 100)</code>, and at least 1 EGP below <code>price</code> once anything is off. S2, 1 month: blocker off 153 · Mentor off 162 · planner off 135 · only the planner kept 81.</li>
+      <li>Build the switches from <code>groups</code> where <code>removable</code> is true; show the others as <span class="ar">مضمّنة دائماً</span>. Don't let the last one be switched off.</li>
+      <li>Under a switched-off group, show each feature's <code>accessIfLeftOut</code> / <code>limitIfLeftOut</code>, e.g. "<span class="ar">١٥ جلسة حجب شهرياً بدلاً من غير محدود</span>".</li>
+      <li><b>Mentees</b> (how many students a user can mentor) by plan: Free off · S1 1 · S2 3 · S3 5 · T1 2 · T2 5 · T3 10 · M1 3 · M2 15 · M3 100. M1's description no longer says "One child stays free".</li>
+    </ul>
+  </article>
+</section>
+
+<!-- ===================================================================== subscription -->
+<section class="part" id="subscription">
+  <div class="ctl u"><span class="num">SubscriptionController · /api/subscription</span><h2>Subscription</h2><p>Preview and purchase take the main features to keep. Prices now come in steps: the feature discount first, then the coupon.</p></div>
+
+  <article class="ep" id="ep-preview">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/preview</span><span class="tag new">new fields</span><span class="who">registered user</span></div>
+    <p class="brief">What buying this bundle with these main features would cost and do. Changes nothing. Still always answers 200, with problems in <code>blockedReason</code> or <code>couponError</code>.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>groups</td><td><span class="tag new">new</span> Optional. The main features to <b>keep</b>, from the bundle's removable <code>groups</code>, at least one. Left out or <code>null</code>: the whole bundle (sending all of them means the same).</td></tr>
+      <tr><td>→ fullPrice</td><td><span class="tag new">new</span> The bundle's price with everything in it.</td></tr>
+      <tr><td>→ featuresDiscountPercent<br>→ featuresDiscount</td><td><span class="tag new">new</span> % and EGP taken off for the features switched off.</td></tr>
+      <tr><td>→ groups</td><td><span class="tag new">new</span> The kept main features, sorted; <code>null</code> = the whole bundle.</td></tr>
+      <tr><td>→ listPrice</td><td><span class="tag chg">changed</span> After the feature discount, before the coupon. Equals <code>fullPrice</code> for a whole bundle.</td></tr>
+      <tr><td>→ discountPercent<br>→ discountAmount</td><td><span class="tag chg">changed</span> The coupon only, taken from <code>listPrice</code>.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · S2 without the blocker, coupon 10%, on Free</span>
+      <div class="io">
+        <div><pre class="code">{ "bundleId": 17,
+  "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"],
+  "couponCode": "E2E10" }</pre></div>
+        <div><pre class="code">{ "success": true, "data": {
+  "operation": "Purchase",
+  "fullPrice": 179.0,
+  "featuresDiscountPercent": 15,
+  "featuresDiscount": 26.0,
+  "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"],
+  "listPrice": 153.0,
+  "discountPercent": 10,
+  "discountAmount": 15.30,
+  "amountDue": 137.70,
+  "walletBalance": 0.0,
+  "suggestedRechargeAmount": 138,
+  "couponError": null, "blockedReason": null,
+  "startsAt": "2026-11-08T04:38:42+00:00",
+  "endsAt": "2026-12-08T04:38:42+00:00" }, "error": null }</pre></div>
+      </div></div>
+    <div class="case"><span class="lbl">Valid · what a change does, for a student on that plan (153)</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th><code>operation</code></th><th>Starts · costs</th></tr>
+        <tr><td>the same bundle and <code>groups</code></td><td><code>Renewal</code></td><td>when the term ends · 153; coupons allowed</td></tr>
+        <tr><td><code>groups: null</code> (blocker added back)</td><td><code>Upgrade</code></td><td>now · <code>ceil(26 × days left / 30)</code>, 26 on day one; no coupons</td></tr>
+        <tr><td><code>["StudyPlanner","SpacedRepetition"]</code></td><td><code>Downgrade</code></td><td>when the term ends · 135</td></tr>
+        <tr><td><code>["StudyPlanner","SpacedRepetition","DistractionBlocker"]</code></td><td><code>Downgrade</code></td><td>when the term ends · 162. Costs more, but drops Mentor: an upgrade never takes a feature away mid-term</td></tr>
+        <tr><td>S2 for 6 months, any <code>groups</code></td><td><code>Scheduled</code></td><td>when the term ends</td></tr>
+        <tr><td>during the grace days: the same bundle, any <code>groups</code></td><td><code>Renewal</code></td><td>now, with the new choice</td></tr>
+      </table></div></div>
+    <div class="case bad"><span class="lbl">Bad cases (still 200)</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>"groups": []</code></td><td><span class="s ok">200</span> <code>"blockedReason": "invalid_groups"</code></td><td class="ar">اختر ميزة رئيسية واحدة على الأقل من المميزات المتاحة في هذه الباقة</td></tr>
+        <tr><td><code>"groups": ["TrackingTables"]</code> on S2</td><td><span class="s ok">200</span> <code>"blockedReason": "invalid_groups"</code></td><td class="ar">اختر ميزة رئيسية واحدة على الأقل من المميزات المتاحة في هذه الباقة</td></tr>
+        <tr><td><code>"groups": ["Mentor"]</code> on M1 (sold whole)</td><td><span class="s ok">200</span> <code>"blockedReason": "bundle_not_customizable"</code></td><td class="ar">هذه الباقة تُشترى كاملة ولا يمكن اختيار مميزاتها</td></tr>
+        <tr><td><code>"groups": ["StudyPlanner"]</code> with a coupon that has <code>allowOnCustomized: false</code></td><td><span class="s ok">200</span> <code>"listPrice": 81.0, "couponError": "coupon_not_for_customized"</code></td><td class="ar">هذا الكوبون لا يُستخدم مع باقة حذفت منها مميزات</td></tr>
+        <tr><td>the same coupon, <code>"groups": null</code></td><td><span class="s ok">200</span> no error · 179 → <code>"amountDue": 161.10</code></td><td>(works on the whole bundle)</td></tr>
+      </table></div></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">GET /api/bundles/{id}</span><span>which <code>groups</code> are removable.</span></div>
+    <ul class="notes">
+      <li>Preview again on every switch change and coupon change, and before the purchase.</li>
+      <li>Show <code>featuresDiscount</code> as its own line (<span class="ar">خصم المميزات المحذوفة</span>) so the student sees what they saved.</li>
+    </ul>
+  </article>
+
+  <article class="ep" id="ep-purchase">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/purchase</span><span class="tag new">new fields</span><span class="who">registered user</span></div>
+    <p class="brief">The same body as preview, now with <code>groups</code>. Send exactly what the last preview had.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>groups</td><td><span class="tag new">new</span> As in preview.</td></tr>
+      <tr><td>→ subscription.groups</td><td><span class="tag new">new</span> The kept main features; <code>null</code> = the whole bundle.</td></tr>
+      <tr><td>→ subscription.listPrice</td><td><span class="tag chg">changed</span> After the feature discount, before the coupon.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · S2 without the blocker, with a 100% voucher</span>
+      <div class="io">
+        <div><pre class="code">{ "bundleId": 17,
+  "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"],
+  "couponCode": "Q7K2M9X4TB1A" }</pre></div>
+        <div><pre class="code">{ "success": true, "data": {
+  "operation": "Purchase",
+  "subscription": { "bundleTitle": "Motqin · 1 month", "kind": "Paid",
+    "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"],
+    "status": "Active", "listPrice": 153.0, "discountAmount": 153.0,
+    "pricePaid": 0.0, "couponCode": "Q7K2M9X4TB1A", … },
+  "amountCharged": 0.0, "walletBalance": 0.0 }, "error": null }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>"groups": []</code>, or a group the bundle can't drop</td><td><span class="s b4">400</span> <code>{ "code": "invalid_groups", "message": "These can't be picked in this bundle: TrackingTables. …", "details": { "removable": ["StudyPlanner", "SpacedRepetition", "DistractionBlocker", "Mentor"] } }</code></td><td class="ar">اختر ميزة رئيسية واحدة على الأقل من المميزات المتاحة في هذه الباقة</td></tr>
+        <tr><td><code>groups</code> on a plan sold whole</td><td><span class="s b4">400</span> <code>{ "code": "bundle_not_customizable", "message": "This bundle is sold whole: send no groups for it." }</code></td><td class="ar">هذه الباقة تُشترى كاملة ولا يمكن اختيار مميزاتها</td></tr>
+        <tr><td>a coupon with <code>allowOnCustomized: false</code> and features taken off</td><td><span class="s b4">400</span> <code>{ "code": "coupon_not_for_customized", "message": "This coupon can't be used here." }</code> · balance unchanged</td><td class="ar">هذا الكوبون لا يُستخدم مع باقة حذفت منها مميزات</td></tr>
+      </table></div></div>
+    <ul class="notes"><li>Subscription done can show "<span class="ar">باقتك تشمل</span>" + the kept groups from <code>subscription.groups</code>.</li></ul>
+  </article>
+
+  <article class="ep" id="ep-me">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/subscription/me</span><span class="tag new">new fields</span><span class="who">registered user · guest</span></div>
+    <p class="brief">The current plan and the quotas. Subscriptions carry the kept main features, and each quota says whether its main feature is in the plan. <code>GET /api/subscription/history</code> rows carry <code>groups</code> too.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Response field</th><th>Meaning</th></tr>
+      <tr><td>current.groups<br>scheduled.groups</td><td><span class="tag new">new</span> The kept main features; <code>null</code> = the whole bundle (always for Free and Guest).</td></tr>
+      <tr><td>quotas[].included</td><td><span class="tag new">new</span> <code>false</code>: the student took this feature's main feature off and has half of Free. Adding it back gives the plan's number.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · after buying S2 without the blocker</span>
+      <pre class="code">{ "success": true, "data": {
+  "current": { "bundleTitle": "Motqin · 1 month", "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"],
+               "listPrice": 153.0, "pricePaid": 0.0, … },
+  "scheduled": null,
+  "quotas": [
+    { "feature": "BlockerSessions", "group": "DistractionBlocker", "type": "Usage",
+      "access": "Limited", "limit": 15, "used": 0, "remaining": 15, "included": false, … },
+    { "feature": "BlockerSchedules", "group": "DistractionBlocker", "type": "Allowance",
+      "access": "Limited", "limit": 1, "used": 0, "remaining": 1, "included": false, … },
+    { "feature": "AiImageQuestion", "group": "SpacedRepetition", "type": "Usage",
+      "access": "Limited", "limit": 100, "used": 0, "remaining": 100, "included": true, … },
+    { "feature": "Mentees", "group": "Mentor", "type": "Allowance",
+      "access": "Limited", "limit": 3, "used": 0, "remaining": 3, "included": true, … },
+    … ] }, "error": null }</pre></div>
+    <div class="case"><span class="lbl">Valid · S2 bought without Mentor</span>
+      <p class="expect"><code>Mentees</code>: <b>access Off, included false</b> (Free can't mentor). <code>Mentors</code>: <b>limit 1, included false</b>.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">None new.</p></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">POST /api/subscription/preview</span><span>the same bundle with that main feature added back: answers <code>Upgrade</code> and the amount for the days left.</span></div>
+    <ul class="notes"><li>Group quotas by <code>group</code> and put a group whose quotas are <code>included: false</code> under <span class="ar">ميزات حذفتها</span>, with <span class="ar">أضفها</span>.</li></ul>
+  </article>
+</section>
+
+<!-- ===================================================================== mentorship · mentor -->
+<section class="part" id="mentor-side">
+  <div class="ctl u"><span class="num">MentorshipController · /api/mentorship · the mentor's side</span><h2>Mentorship · mentor</h2><p>A mentor now follows only as many students as their plan allows right now (Mentees), the oldest accepted first. The others are <b>paused</b>: nothing is deleted, and renewing brings them back. It happens when a paid plan ends and its grace days pass (Free allows none), or when a smaller plan starts.</p></div>
+
+  <article class="ep" id="ep-mentees">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/mentorship/mentees</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">Every active student, paused ones included. A paused student keeps name and photo but has no data.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Response field</th><th>Meaning</th></tr>
+      <tr><td>paused</td><td><span class="tag new">new</span> <code>true</code>: the mentor's plan doesn't cover this student now. <code>today</code>, <code>unlockCode</code> and <code>unlockCodeExpiresAt</code> are <code>null</code>.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · Sara on S1 (1 student) after M1 (3) ended</span>
+      <pre class="code">{ "success": true, "data": [
+  { "id": 61, "studentName": "E2E Ahmed (student)", "status": "Active", "paused": false,
+    "canViewBlocker": true, "canLockBlocker": true, "today": { … }, "respondedAt": "2026-11-08T04:38:31" },
+  { "id": 62, "studentName": "E2E Bassem (student)", "status": "Active", "paused": true,
+    "today": null, "unlockCode": null, "respondedAt": "2026-11-08T04:38:47" },
+  { "id": 63, "studentName": "E2E Camilia (student)", "status": "Active", "paused": true,
+    "today": null, "unlockCode": null, "respondedAt": "2026-11-08T04:38:48" } ], "error": null }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">None new.</p></div>
+    <ul class="notes">
+      <li>Grey out paused students, keep them at the end, and show <span class="ar">جدد باقتك لتتابع هذا الطالب مرة أخرى</span> with a link to the offers.</li>
+      <li>The app can't choose which students stay: the oldest accepted (<code>respondedAt</code>) are served first.</li>
+    </ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/mentorship/mentees/{id}</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">A student's details. Refused for a paused student.</p>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>the id of a paused student</td><td><span class="s b3">403</span> <code>{ "code": "mentorship_paused", "message": "Your plan doesn't cover this student now. Renew it to follow them again." }</code></td><td class="ar">المتابعة متوقفة لانتهاء باقتك، جددها لتتابع هذا الطالب مرة أخرى</td></tr>
+      </table></div></div>
+    <ul class="notes"><li>Don't open the details for <code>paused: true</code>; show the renew prompt instead.</li></ul>
+  </article>
+
+  <article class="ep" id="ep-accept">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/{id}/accept</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">Accepting a request now needs a plan with mentoring. Free has none, and neither does a student plan bought without Mentor.</p>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>a Free user, or a plan bought without Mentor</td><td><span class="s b3">403</span> <code>{ "code": "not_in_plan", "message": "This feature isn't included in your plan.", "details": { "feature": "Mentees", … } }</code></td><td class="ar">هذه الميزة غير متاحة في باقتك الحالية</td></tr>
+        <tr><td>the plan's students already reached (paused ones count)</td><td><span class="s b3">403</span> <code>{ "code": "quota_exhausted", "message": "You've reached your plan's limit for this. Delete one or upgrade.", "details": { "feature": "Mentees", "limit": 3, "used": 3, … } }</code></td><td class="ar">استهلكت الحد المتاح في باقتك، يتجدد في موعد التجديد أو قم بالترقية</td></tr>
+      </table></div></div>
+    <ul class="notes"><li>On <code>not_in_plan</code>, show the plan-limit prompt to the mentor plans (<code>GET /api/bundles?audience=Mentor</code>), or to a student plan with Mentor kept.</li></ul>
+  </article>
+
+  <article class="ep" id="ep-approve">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/{id}/approve-change</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">The same for <code>POST /api/mentorship/{id}/reject-change</code>. A paused mentor can't approve or reject: while paused, the student's own changes apply without them. <code>POST /api/mentorship/{id}/unlink-mentorship</code> still works on a paused student.</p>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>approve or reject on a paused student</td><td><span class="s b3">403</span> <code>{ "code": "mentorship_paused", … }</code></td><td class="ar">المتابعة متوقفة لانتهاء باقتك، جددها لتتابع هذا الطالب مرة أخرى</td></tr>
+      </table></div></div>
+    <ul class="notes"><li>Hide the approve and reject buttons on a paused student; keep <span class="ar">إلغاء المتابعة</span>.</li></ul>
+  </article>
+</section>
+
+<!-- ===================================================================== mentorship · student -->
+<section class="part" id="student-side">
+  <div class="ctl u"><span class="num">MentorshipController · /api/mentorship · the student's side</span><h2>Mentorship · student</h2><p>When a student's mentor is paused, the mentor sees nothing, their blocker lock stops applying, and the student no longer needs the mentor's approval to take privileges back or unlink.</p></div>
+
+  <article class="ep" id="ep-my-mentors">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/mentorship/my-mentors</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">Mentors and requests, with the blocker lock. <code>blockerLock</code> ignores a paused mentor's lock.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Response field</th><th>Meaning</th></tr>
+      <tr><td>mentors[].paused</td><td><span class="tag new">new</span> <code>true</code>: this mentor's plan doesn't cover the student now.</td></tr>
+      <tr><td>blockerLock.locked</td><td><span class="tag chg">changed</span> <code>false</code> when the mentor holding the lock is paused.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · Sara's plan ended, she held the lock</span>
+      <pre class="code">{ "success": true, "data": {
+  "mentors": [
+    { "id": 61, "mentorName": "E2E Sara (mentor)", "status": "Active", "paused": true,
+      "canViewPerformance": false, "canViewBlocker": true, "canLockBlocker": true,
+      "removalRequested": [], "endRequested": false, … } ],
+  "blockerLock": { "locked": false, "unlockedUntil": null, "codeExpiresAt": null } }, "error": null }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">None new.</p></div>
+    <ul class="notes">
+      <li>Show a paused mentor as <span class="ar">انتهت باقة متابعك</span>, and when <code>locked</code> is false, let the student edit the blocker and hide the unlock-code button.</li>
+      <li>Renewing brings the lock back: refetch this when the screen opens.</li>
+    </ul>
+  </article>
+
+  <article class="ep" id="ep-privileges">
+    <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/mentorship/{id}/privileges</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">The same body. On a paused link, a privilege taken back is removed at once instead of waiting in <code>removalRequested</code>; adding works as before and takes effect when the mentor renews.</p>
+    <div class="case"><span class="lbl">Example · what changed, in one case</span>
+      <p class="expect">Ahmed turns off "Sara can see my performance" by sending <code>canViewPerformance: false</code>.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Sara's plan</th><th>Response</th><th>What it means</th></tr>
+        <tr><td><b>Covers Ahmed</b> (as before)</td><td><code>"canViewPerformance": true</code><br><code>"removalRequested": ["ViewPerformance"]</code></td><td>Waiting: Sara still sees his performance until she approves.</td></tr>
+        <tr><td><b>Ended, Sara paused</b> (new)</td><td><code>"canViewPerformance": false</code><br><code>"removalRequested": []</code></td><td>Done at once: no approval needed.</td></tr>
+      </table></div>
+    </div>
+    <div class="case"><span class="lbl">Valid · taking performance back from paused Sara</span>
+      <div class="io">
+        <div><pre class="code">{ "canViewPerformance": false,
+  "canViewBlocker": true,
+  "canLockBlocker": true }</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "id": 61, "paused": true,
+  "canViewPerformance": false, "canViewBlocker": true, "canLockBlocker": true,
+  "removalRequested": [], … }, "error": null }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>canLockBlocker: true</code> while another mentor holds the lock</td><td><span class="s b4">400</span> <code>{ "code": "lock_held_by_another_mentor", "message": "Another mentor still holds the blocker lock. Their plan has ended, so you can take it back from them right away.", "details": { "holderId": 61, "holderPaused": true } }</code> · <code>details</code> is <span class="tag new">new</span></td><td class="ar">صلاحية قفل مانع التشتت ممنوحة لمتابع آخر بالفعل</td></tr>
+      </table></div></div>
+    <ul class="notes"><li>When <code>holderPaused</code> is true, offer <span class="ar">اسحب القفل من متابعك السابق</span>: a <code>PUT /api/mentorship/{holderId}/privileges</code> with <code>canLockBlocker: false</code> (applies at once), then grant the lock again.</li></ul>
+  </article>
+
+  <article class="ep" id="ep-end">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/{id}/end</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">On a paused link, unlinking ends it at once, even with privileges left. Otherwise as before (approval needed while privileges remain).</p>
+    <div class="case"><span class="lbl">Valid · Camilia unlinks paused Sara, who could see her performance</span>
+      <pre class="code">{ "success": true, "data": { "id": 63, "status": "Ended", "paused": false, "endRequested": false, … }, "error": null }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">None new.</p></div>
+    <ul class="notes"><li>A request sent before the pause stays pending in <code>endRequested</code> / <code>removalRequested</code>: show <span class="ar">أعد الإرسال</span>, since sending it again now applies at once.</li></ul>
+  </article>
+
+  <article class="ep" id="ep-unlock">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/mentorship/blocker-unlock/request</span><span class="tag chg">changed</span><span class="who">registered user</span></div>
+    <p class="brief">The same for <code>…/blocker-unlock/verify</code>. A paused mentor's lock doesn't count, so there's nothing to unlock. The blocker edits that check the lock (<code>PUT /api/distraction-blocker/settings</code>, <code>PUT</code> / <code>DELETE …/schedules/{id}</code>) are allowed again.</p>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>the only lock is a paused mentor's</td><td><span class="s b4">400</span> <code>{ "code": "blocker_not_locked", … }</code></td><td class="ar">إعدادات مانع التشتت غير مقفلة</td></tr>
+        <tr><td>a blocker edit while a served mentor holds the lock (as before)</td><td><span class="s b4">400</span> <code>{ "code": "blocker_locked", … }</code></td><td class="ar">إعدادات مانع التشتت مقفلة، اطلب الكود من متابعك</td></tr>
+      </table></div></div>
+  </article>
+</section>
+
+<!-- ===================================================================== admin bundles -->
+<section class="part" id="admin-bundles">
+  <div class="ctl a"><span class="num">AdminBundlesController · /api/admin/bundles</span><h2>Admin · Bundles</h2><p>A paid bundle can now list the main features students may take off, each with its discount.</p></div>
+
+  <article class="ep" id="ep-admin-save">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/bundles</span><span class="tag new">new fields</span><span class="who">manager · admin</span></div>
+    <p class="brief">Create, and <code>PUT /api/admin/bundles/{id}</code> to edit, take a new <code>groupDiscounts</code>. <code>GET /api/admin/bundles</code> returns it, with <code>customizable</code> and <code>groups</code> as in the public list.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>groupDiscounts</td><td><span class="tag new">new</span> Optional. <code>{ main feature: % off when taken off }</code>. On create, left out = sold whole. On update, left out (<code>null</code>) keeps the current ones and <code>{}</code> sells it whole again.</td></tr>
+      <tr><td>features</td><td><span class="tag chg">changed</span> <code>Mentees</code> may now be set on Student and Teacher bundles too, not only Mentor ones.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · turning S2 into a customisable plan</span>
+      <div class="io">
+        <div><pre class="code">PUT /api/admin/bundles/17
+{ "title": "Motqin · 1 month", "price": 179, "durationDays": 30,
+  "audience": "Student",
+  "groupDiscounts": { "StudyPlanner": 25, "SpacedRepetition": 30,
+                      "DistractionBlocker": 15, "Mentor": 10 } }</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "id": 17, "code": "S2-1M",
+  "customizable": true,
+  "groupDiscounts": { "StudyPlanner": 25, "SpacedRepetition": 30,
+                      "DistractionBlocker": 15, "Mentor": 10 },
+  "groups": [ … ], "features": [ … ] }, "error": null }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>one main feature only</td><td><span class="s b4">400</span> <code>{ "code": "invalid_group_discounts", "message": "Give at least two main features a discount, or none: with one there's nothing to pick." }</code></td><td class="ar" rowspan="5">خصومات المميزات الرئيسية في الباقة غير صحيحة</td></tr>
+        <tr><td>a discount under 5 or over 90</td><td><span class="s b4">400</span> <code>"StudyPlanner: a discount must be 5–90%."</code></td></tr>
+        <tr><td><code>{ "StudyPlanner": 50, "SpacedRepetition": 45, "DistractionBlocker": 30 }</code></td><td><span class="s b4">400</span> <code>"Keeping only one main feature would take 95% off; the most is 90%."</code></td></tr>
+        <tr><td><code>TrackingTables</code> on a Student bundle</td><td><span class="s b4">400</span> <code>"TrackingTables has nothing to sell on a Student plan."</code></td></tr>
+        <tr><td>discounts on Free or Guest</td><td><span class="s b4">400</span> <code>"Only paid bundles can have main features taken off."</code></td></tr>
+      </table></div></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">GET /api/admin/features</span><span>each feature's <code>group</code>, to show the limits under their main feature.</span></div>
+    <ul class="notes">
+      <li>In the editor, put each main feature's discount above its features, with a live check: all but the smallest discount may add up to 90% at most.</li>
+      <li>Like every paid-bundle edit, discounts reach new purchases only.</li>
+    </ul>
+  </article>
+
+  <article class="ep" id="ep-catalogue">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/bundles/catalogue/apply?dryRun=true</span><span class="tag chg">changed</span><span class="who">manager · admin</span></div>
+    <p class="brief">The report now lists discount changes beside price and feature changes.</p>
+    <div class="case"><span class="lbl">Valid · the dry run before applying this update</span>
+      <pre class="code">{ "systemBundles": [ { "code": "Free", "status": "Updated", "changes": [ "Mentees: 1 → off" ] }, … ],
+  "plans": [
+    { "code": "S2-1M", "status": "Updated",
+      "changes": [ "discounts: none → StudyPlanner 25%, SpacedRepetition 30%, DistractionBlocker 15%, Mentor 10%",
+                   "Mentees: 1 → 3" ] },
+    { "code": "T1-1M", "status": "Updated", "changes": [ "Mentees: 1 → 2" ] }, … ] }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>the file has a bad <code>groupDiscounts</code></td><td><span class="s b4">400</span> <code>{ "code": "invalid_catalogue", "message": "plan-catalogue.json: S2-1M: …" }</code></td><td class="ar">ملف الباقات غير صحيح</td></tr>
+      </table></div></div>
+  </article>
+</section>
+
+<!-- ===================================================================== admin coupons -->
+<section class="part" id="admin-coupons">
+  <div class="ctl a"><span class="num">AdminCouponsController · /api/admin/coupons</span><h2>Admin · Coupons</h2><p>Coupons and vouchers can refuse customised purchases, so they don't stack with the feature discount.</p></div>
+
+  <article class="ep" id="ep-coupons">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/admin/coupons</span><span class="tag new">new fields</span><span class="who">manager · admin</span></div>
+    <p class="brief">Also <code>PUT /api/admin/coupons/{id}</code> and <code>POST /api/admin/coupons/batches</code> (every voucher in the batch gets it). <code>GET /api/admin/coupons</code> returns it.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td>allowOnCustomized</td><td><span class="tag new">new</span> Default <code>true</code>. <code>false</code>: refused when the student took a main feature off (<code>coupon_not_for_customized</code>); the whole bundle still takes it. Existing coupons and vouchers are <code>true</code>.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid</span>
+      <div class="io">
+        <div><pre class="code">{ "code": "E2ENOCUST", "discountPercent": 10,
+  "allowOnCustomized": false }</pre></div>
+        <div><pre class="code">{ "success": true, "data": { "code": "E2ENOCUST", "discountPercent": 10,
+  "isActive": true, "allowOnCustomized": false, … }, "error": null }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span><p class="expect">None new.</p></div>
+    <ul class="notes">
+      <li><b>Update replaces every field:</b> always send the current <code>allowOnCustomized</code> on <code>PUT</code>. A form that leaves it out turns it back to <code>true</code>.</li>
+      <li>Show it in the coupon list as a column, e.g. <span class="ar">الباقات المخصصة: نعم / لا</span>.</li>
+    </ul>
+  </article>
+</section>
+
+<!-- ===================================================================== errors -->
+<section class="part" id="errors">
+  <div class="ctl n"><span class="num">Lookups</span><h2>New error codes</h2><p>All five are in <code>GET /api/lookups/error-codes</code>. Show the Arabic text by <code>code</code>.</p></div>
+  <article class="ep">
+    <div class="table-wrap"><table>
+      <tr><th>code</th><th>Status</th><th>Where</th><th>Show</th></tr>
+      <tr><td><code>invalid_groups</code></td><td><span class="s b4">400</span></td><td>purchase; preview's <code>blockedReason</code></td><td class="ar">اختر ميزة رئيسية واحدة على الأقل من المميزات المتاحة في هذه الباقة</td></tr>
+      <tr><td><code>bundle_not_customizable</code></td><td><span class="s b4">400</span></td><td>purchase; preview's <code>blockedReason</code></td><td class="ar">هذه الباقة تُشترى كاملة ولا يمكن اختيار مميزاتها</td></tr>
+      <tr><td><code>coupon_not_for_customized</code></td><td><span class="s b4">400</span></td><td>purchase; preview's <code>couponError</code></td><td class="ar">هذا الكوبون لا يُستخدم مع باقة حذفت منها مميزات</td></tr>
+      <tr><td><code>mentorship_paused</code></td><td><span class="s b3">403</span></td><td>mentee details, approve-change, reject-change</td><td class="ar">المتابعة متوقفة لانتهاء باقتك، جددها لتتابع هذا الطالب مرة أخرى</td></tr>
+      <tr><td><code>invalid_group_discounts</code></td><td><span class="s b4">400</span></td><td>admin bundle create and update</td><td class="ar">خصومات المميزات الرئيسية في الباقة غير صحيحة</td></tr>
+    </table></div>
+  </article>
+</section>
+
+<!-- ===================================================================== manual test -->
+<section class="part flow" id="test">
+  <div class="ctl t"><span class="num">Check it yourself</span><h2>Manual test</h2><p>The run that produced the bodies above, in order. Four registered accounts: <b>Ahmed</b> and <b>Bassem</b> (students), <b>Sara</b> (mentor), <b>Camilia</b> (a student on Free), and an admin for the coupons. A 100% voucher batch pays for the purchases.</p></div>
+  <ol>
+    <li class="stage">Plans and prices</li>
+    <li><p><code>GET /api/bundles?audience=Student</code></p><p class="expect">S2-1M: <b>customizable true</b>, blocker <b>15% · saving 26</b>, Mentor <b>10% · saving 17</b>, BlockerSessions <b>limitIfLeftOut 15</b>, Mentees <b>3 · accessIfLeftOut Off</b>.</p></li>
+    <li><p>Camilia previews S2 with <code>groups: ["StudyPlanner"]</code> and a coupon with <code>allowOnCustomized: false</code>.</p><p class="expect"><b>listPrice 81</b>, <b>couponError coupon_not_for_customized</b>. The same coupon with <code>groups: null</code>: <b>amountDue 161.10</b>.</p></li>
+    <li><p>Camilia previews with <code>groups: []</code>, with <code>["TrackingTables"]</code>, and M1 with <code>["Mentor"]</code>.</p><p class="expect"><b>invalid_groups</b>, <b>invalid_groups</b>, <b>bundle_not_customizable</b>.</p></li>
+    <li class="stage">Buying without a feature</li>
+    <li><p>Ahmed buys S2 with <code>["StudyPlanner","SpacedRepetition","Mentor"]</code> and a voucher, then <code>GET /api/subscription/me</code>.</p><p class="expect"><b>listPrice 153, amountCharged 0</b>. BlockerSessions <b>15, included false</b>; BlockerSchedules <b>1</b>; AiImageQuestion <b>100, included true</b>.</p></li>
+    <li><p>Ahmed previews: <code>groups: null</code> · the same groups with a 10% coupon · without Mentor · blocker in, Mentor out · S2-6M.</p><p class="expect"><b>Upgrade 26</b> · <b>Renewal 137.70</b> · <b>Downgrade 135</b> · <b>Downgrade 162</b> · <b>Scheduled</b>.</p></li>
+    <li><p>Bassem buys S2 without Mentor. Camilia asks Bassem to mentor her; Bassem accepts.</p><p class="expect">Bassem's Mentees <b>Off, included false</b>; accept <b>403 not_in_plan</b>.</p></li>
+    <li class="stage">Paused mentors</li>
+    <li><p>Ahmed (Free) links with Sara (Free) <i>before</i> the catalogue update, and gives her performance and the blocker lock. Apply the catalogue.</p><p class="expect">Sara's list: Ahmed <b>paused</b>. Ahmed's <code>blockerLock.locked</code> <b>false</b>. Sara opening Ahmed or approving: <b>403 mentorship_paused</b>. Ahmed taking performance back: <b>applied at once</b>.</p></li>
+    <li><p>Sara buys M1, then Bassem and Camilia link with her.</p><p class="expect">All three <b>served</b>; Ahmed's blocker <b>locked</b> again.</p></li>
+    <li><p>Sara buys S1 for 6 months (<b>Scheduled</b>). Move M1's end into the past so S1 starts.</p><p class="expect">S1 has 1 mentee: Ahmed (accepted first) <b>served</b>, Bassem and Camilia <b>paused</b>.</p></li>
+    <li><p>Move S1's end 4 days into the past (past the 3 grace days).</p><p class="expect">Sara on <b>Free</b>, all three <b>paused</b>. Camilia unlinks: <b>Ended at once</b>.</p></li>
+    <li><p>Sara buys M1 again.</p><p class="expect">Ahmed and Bassem <b>served</b>, Ahmed's lock applies again.</p></li>
+  </ol>
+  <p class="foot">Moving a plan's dates needs the database; on the dev server, ask the backend to do it for a test account.</p>
+</section>
+
+</div>
+
+</body></html>

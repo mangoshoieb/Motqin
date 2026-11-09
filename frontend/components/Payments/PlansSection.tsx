@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Info } from "lucide-react";
 import Skeleton from "@/components/ui/Skeleton";
 import { useAuth } from "@/app/(public)/context/auth.context";
@@ -26,9 +27,12 @@ const selectClasses =
 export function PlansSection() {
   const { user } = useAuth();
   const kind = useAuthKind();
-  // The account's own audience until the user picks one (the user loads
-  // after the first render).
-  const [picked, setAudience] = useState<BundleAudience | null>(null);
+  // A link can ask for an audience (?audience=Mentor from a plan-limit
+  // prompt); otherwise the account's own, until the user picks one (the
+  // user loads after the first render).
+  const searchParams = useSearchParams();
+  const requested = AUDIENCES.find((a) => a.value === searchParams.get("audience"))?.value ?? null;
+  const [picked, setAudience] = useState<BundleAudience | null>(requested);
   const audience = picked ?? audienceForUser(user);
   const [term, setTerm] = useState<TermMonths>(1);
   const { data: bundles, isLoading } = useBundles(audience);
@@ -97,6 +101,7 @@ export function PlansSection() {
                   term={term}
                   audience={audience}
                   isCurrent={bundle.id === currentId}
+                  currentGroups={subscription?.current.groups}
                   buyDisabled={teacherLocked}
                 />
               );

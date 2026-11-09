@@ -1,0 +1,168 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Session Extra Minutes API</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column, one card per endpoint (brief, request, good responses, bad responses) - same family as the Payments and Study Sessions guides */
+:root {
+  --bg: #f5f7f6; --card: #ffffff; --fg: #16211d; --muted: #586560; --line: #dbe3df; --code-bg: #eef3f0;
+  --accent: #0f6b52;
+  --get: #12805c; --get-bg: #e2f4ec; --put: #a66300; --put-bg: #fcf0db;
+  --ok: #12805c; --warn: #a66300; --bad: #c2364b; --bad-bg: #fce6e9; --ok-bg: #e2f4ec;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522; --accent: #4fcf9f;
+    --get: #4fd29a; --get-bg: #12312a; --put: #f3b14d; --put-bg: #3a2a10;
+    --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396; --bad-bg: #3f1a22; --ok-bg: #12312a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522; --accent: #4fcf9f;
+  --get: #4fd29a; --get-bg: #12312a; --put: #f3b14d; --put-bg: #3a2a10;
+  --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396; --bad-bg: #3f1a22; --ok-bg: #12312a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 900px; margin: 0 auto; display: grid; gap: 22px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(28px, 5vw, 38px); font-weight: 800; letter-spacing: -0.02em; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; }
+.hero { display: grid; gap: 10px; }
+.lede { max-width: 72ch; color: var(--muted); }
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; display: grid; gap: 14px; min-width: 0; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.put { background: var(--put-bg); color: var(--put); }
+.path { font-family: var(--font-mono); font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--code-bg); color: var(--muted); }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.lbl.good { color: var(--ok); } .lbl.bad { color: var(--bad); }
+.block { display: grid; gap: 8px; min-width: 0; border-top: 1px dashed var(--line); padding-top: 12px; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.5; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.s { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+.s.ok { background: var(--ok-bg); color: var(--ok); }
+.s.b4 { background: var(--bad-bg); color: var(--bad); }
+ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.foot { color: var(--muted); font-size: 13px; }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Motqin backend · study sessions · for the front</span>
+  <h1>Session Extra Minutes API</h1>
+</header>
+
+<article class="ep" id="get">
+  <div class="ep-line"><span class="m get">GET</span><span class="path">/api/study-session/additional-time</span><span class="who">registered user or guest</span></div>
+  <p><b>When to call:</b> every time the planner or session screen opens or the page is refreshed. The server decides whether the timer should show. <b>200</b>: show it, counting up from <code>additionalSeconds</code>, and hide it after <code>secondsUntilIgnored</code> seconds. <b>204</b>: show nothing.</p>
+  <div class="block">
+    <span class="lbl">Request</span>
+    <pre class="code">GET /api/study-session/additional-time
+Authorization: Bearer {token}</pre>
+    <p class="foot">No query, no body.</p>
+  </div>
+  <div class="block">
+    <span class="lbl good">Good · 200: show the timer</span>
+    <pre class="code">{
+  "sessionId": 831,
+  "endTime": "2026-11-07T17:18:18.0060109Z",
+  "serverTimeUtc": "2026-11-07T17:18:18.9198998Z",
+  "additionalSeconds": 0,
+  "secondsUntilIgnored": 7199
+}</pre>
+    <div class="table-wrap"><table>
+      <tr><th>Field</th><th>Meaning</th></tr>
+      <tr><td><code>sessionId</code></td><td>The session the minutes belong to. Use it for add-time or ignore.</td></tr>
+      <tr><td><code>endTime</code></td><td>When that session ended (UTC). For a missed session: its planned end.</td></tr>
+      <tr><td><code>serverTimeUtc</code></td><td>The server's clock, to correct a device with a wrong time.</td></tr>
+      <tr><td><code>additionalSeconds</code></td><td>Seconds since <code>endTime</code>. Start the timer from here.</td></tr>
+      <tr><td><code>secondsUntilIgnored</code></td><td>Seconds until the timer switches itself off, 2 hours after <code>endTime</code>.</td></tr>
+    </table></div>
+  </div>
+  <div class="block">
+    <span class="lbl good">Good · 204: show nothing (empty body)</span>
+    <ul>
+      <li>A session is running, or a break is running.</li>
+      <li>The student never ended a session, or the latest one is a manually logged session.</li>
+      <li>The latest ended session's minutes were already added (add-time) or dismissed (ignore).</li>
+      <li>A break was started after the latest session.</li>
+      <li>2 hours have passed since the latest session ended.</li>
+    </ul>
+  </div>
+  <div class="block">
+    <span class="lbl bad">Bad</span>
+    <div class="table-wrap"><table>
+      <tr><th>Send</th><th>Get</th></tr>
+      <tr><td>No token, or an expired one</td><td><span class="s b4">401</span> empty body. Refresh the token and retry.</td></tr>
+      <tr><td>A server error</td><td><span class="s b4">400</span> <code>{ "success": false, "message": "An error occurred while loading the extra minutes." }</code>. Show nothing.</td></tr>
+    </table></div>
+  </div>
+</article>
+
+<article class="ep" id="ignore">
+  <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/study-session/{id}/ignore-additional-time</span><span class="who">registered user or guest</span></div>
+  <p><b>When to call:</b> when the student says no to the extra minutes (closes the prompt or taps "don't add"). After it, the timer is never shown again for that session. To <b>add</b> the minutes instead, call <code>PUT /api/study-session/{id}/add-time</code> with <code>{ "minutesToAdd": n }</code>: that turns the timer off too, and accepts at most the minutes that really passed.</p>
+  <div class="block">
+    <span class="lbl">Request</span>
+    <pre class="code">PUT /api/study-session/831/ignore-additional-time
+Authorization: Bearer {token}</pre>
+    <p class="foot"><code>{id}</code> is <code>sessionId</code> from the GET. No body.</p>
+  </div>
+  <div class="block">
+    <span class="lbl good">Good · 200: the session, with <code>ignoreAdditionalTime: true</code></span>
+    <pre class="code">{
+  "id": 831,
+  "userID": "2ce8f3aa-534d-4cf1-8596-dcef0040a6b8",
+  "studyPlanId": 229,
+  "lessonID": null,
+  "description": "Algebra revision",
+  "goalCategoryId": null,
+  "durationInMinutes": 0,
+  "startTime": "2026-11-07T17:18:17.4797548",
+  "endTime": "2026-11-07T17:18:18.0060109",
+  "status": 2,
+  "orderInPlan": 1,
+  "isBreakCompleted": false,
+  "breakStartTime": null,
+  "breakEndTime": null,
+  "ignoreAdditionalTime": true,
+  "notes": null
+}</pre>
+    <p class="foot">Calling it again for the same session also answers 200, with the same body. The next GET answers 204.</p>
+  </div>
+  <div class="block">
+    <span class="lbl bad">Bad</span>
+    <div class="table-wrap"><table>
+      <tr><th>Send</th><th>Get</th></tr>
+      <tr><td>An id that doesn't exist, or another student's session</td><td><span class="s b4">404</span> <code>{ "success": false, "message": "Study session not found or unauthorized." }</code></td></tr>
+      <tr><td>An id that isn't a number, e.g. <code>/abc/ignore-additional-time</code></td><td><span class="s b4">404</span> empty body</td></tr>
+      <tr><td>No token, or an expired one</td><td><span class="s b4">401</span> empty body</td></tr>
+    </table></div>
+  </div>
+</article>
+
+<p class="foot">Responses captured on 7 November 2026 from the dev server. Every session response now also carries <code>ignoreAdditionalTime</code>.</p>
+
+</div>
+
+</body></html>

@@ -50,10 +50,11 @@ export const paymentService = {
   // --- Subscription ---
   getMySubscription: () => get<MySubscription>(R.MY_SUBSCRIPTION),
   listHistory: async () => list(await get<UserSubscription[]>(R.SUBSCRIPTION_HISTORY)),
-  preview: (bundleId: number, couponCode: string | null) =>
-    post<PurchasePreview>(R.PREVIEW, { bundleId, couponCode: couponCode || null }),
-  purchase: (bundleId: number, couponCode: string | null) =>
-    post<PurchaseResult>(R.PURCHASE, { bundleId, couponCode: couponCode || null }),
+  // groups: the main features to keep on a customisable plan; null = whole.
+  preview: (bundleId: number, couponCode: string | null, groups: string[] | null = null) =>
+    post<PurchasePreview>(R.PREVIEW, { bundleId, couponCode: couponCode || null, groups }),
+  purchase: (bundleId: number, couponCode: string | null, groups: string[] | null = null) =>
+    post<PurchaseResult>(R.PURCHASE, { bundleId, couponCode: couponCode || null, groups }),
 
   // --- Partner dashboard ---
   getMyPartnerReport: (from?: string, to?: string) =>

@@ -5,7 +5,7 @@ import { CheckCircle2, Loader2, PlusCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { getApiErrorMessage, getCodedApiError } from "@/app/lib/api-error";
-import { AUDIENCES } from "@/app/constants/payment.constants";
+import { AUDIENCE_GROUPS, AUDIENCES } from "@/app/constants/payment.constants";
 import { bundleName } from "@/app/lib/payments";
 import {
   useAdminPartners,
@@ -18,6 +18,13 @@ import { Bundle, BundleAudience, BundleFeatureInput, CatalogueEntry, CatalogueRe
 import { Modal, Segmented, inputClass, primaryButton, secondaryButton } from "@/components/TrackingTables/ui";
 import { ErrorBox, Field } from "./AdminHeader";
 import { FeaturesEditor, featuresProblem, toFeatureInputs } from "./FeaturesEditor";
+import {
+  GroupDiscountsEditor,
+  discountsFromDraft,
+  discountsProblem,
+  draftFromDiscounts,
+  type DiscountDraft,
+} from "./GroupDiscountsEditor";
 
 type SaveError = { message: string; extra?: string[] };
 
@@ -53,6 +60,7 @@ export function BundleInfoDialog({
   const [partnerId, setPartnerId] = useState(bundle?.partnerId ? String(bundle.partnerId) : "");
   const [code, setCode] = useState(bundle?.code ?? "");
   const [features, setFeatures] = useState<BundleFeatureInput[]>(() => toFeatureInputs(freeBundle?.features ?? []));
+  const [discounts, setDiscounts] = useState<DiscountDraft>(() => draftFromDiscounts(bundle?.groupDiscounts));
   const [error, setError] = useState<SaveError | null>(null);
   const { data: partners = [] } = useAdminPartners();
   const { data: catalogue = [] } = useFeatureCatalogue();
@@ -67,9 +75,8 @@ export function BundleInfoDialog({
         ? "السعر من 1 إلى 100,000 ج.م"
         : !system && !(Number.isInteger(daysNum) && daysNum >= 1 && daysNum <= 3650)
           ? "المدة من 1 إلى 3650 يوم"
-          : !bundle && catalogue.length
-            ? featuresProblem(catalogue, features)
-            : null;
+          : (!system && discountsProblem(discounts)) ||
+            (!bundle && catalogue.length ? featuresProblem(catalogue, features) : null);
 
   const submit = () => {
     if (problem || save.isPending) return;
@@ -87,6 +94,8 @@ export function BundleInfoDialog({
           partnerId: partnerId ? Number(partnerId) : null,
           code: code.trim() || null,
           features: bundle ? null : features,
+          // {} sells it whole; Free and Guest can't have any.
+          groupDiscounts: system ? null : discountsFromDraft(discounts),
         },
       },
       {
@@ -158,7 +167,17 @@ export function BundleInfoDialog({
               </div>
             </Field>
             <Field label="لمن الباقة">
-              <Segmented<BundleAudience> value={audience} onChange={setAudience} options={AUDIENCES} />
+              <Segmented<BundleAudience>
+                value={audience}
+                onChange={(next) => {
+                  setAudience(next);
+                  // Only main features with features for that audience can be discounted.
+                  setDiscounts((prev) =>
+                    Object.fromEntries(Object.entries(prev).filter(([group]) => AUDIENCE_GROUPS[next].includes(group))),
+                  );
+                }}
+                options={AUDIENCES}
+              />
             </Field>
             <Field label="الشريك" hint="الشريك الذي يحصل على عمولة مبيعاتها.">
               <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} className={inputClass}>
@@ -174,6 +193,13 @@ export function BundleInfoDialog({
               <input type="checkbox" checked={isHidden} onChange={(e) => setIsHidden(e.target.checked)} />
               مخفية: لا تظهر في قائمة الباقات، وتُفتح برابطها فقط (عروض الشركاء)
             </label>
+            <div className="sm:col-span-2">
+              <GroupDiscountsEditor
+                audience={audience}
+                value={discounts}
+                onChange={setDiscounts}
+              />
+            </div>
           </>
         )}
       </div>

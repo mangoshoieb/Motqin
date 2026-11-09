@@ -187,9 +187,7 @@ const MentorsSettingsPage = () => {
               <MentorCard
                 key={mentor.id}
                 mentor={mentor}
-                lockHolderName={
-                  lockHolder && lockHolder.id !== mentor.id ? lockHolder.mentorName : null
-                }
+                lockHolder={lockHolder && lockHolder.id !== mentor.id ? lockHolder : null}
               />
             ))}
           </ul>

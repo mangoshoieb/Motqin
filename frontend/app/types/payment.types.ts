@@ -39,6 +39,21 @@ export interface BundleFeature {
   rateLimitCount: number | null;
   rateLimitWindowMinutes: number | null;
   cooldownMinutes: number | null;
+  // What's kept if the feature's main feature is taken off (half of Free,
+  // rounded up); null when it can't be taken off.
+  accessIfLeftOut?: FeatureAccess | null;
+  limitIfLeftOut?: number | null;
+}
+
+// A main feature: the unit a student can take off a customisable plan.
+export type MainFeature = "StudyPlanner" | "SpacedRepetition" | "DistractionBlocker" | "TrackingTables" | "Mentor";
+
+export interface BundleGroup {
+  group: MainFeature | string;
+  removable: boolean;
+  discountPercent: number | null; // % off when taken off
+  saving: number | null; // EGP saved taking off only this one, for this term
+  features: BundleFeature[];
 }
 
 // GET /bundles, /bundles/{id}, /admin/bundles
@@ -56,6 +71,10 @@ export interface Bundle {
   isActive: boolean;
   partnerId: number | null;
   features: BundleFeature[];
+  // "اشتراكك على كيفك": true when main features can be taken off (S plans).
+  customizable?: boolean;
+  groupDiscounts?: Record<string, number>;
+  groups?: BundleGroup[];
 }
 
 // --- Wallet ------------------------------------------------------------------
@@ -119,10 +138,11 @@ export interface UserSubscription {
   endDate: string | null;
   inGrace: boolean;
   graceEndsAt: string | null;
-  listPrice: number;
+  listPrice: number; // after taking features off, before the coupon
   discountAmount: number;
   pricePaid: number;
   couponCode: string | null;
+  groups?: string[] | null; // main features kept; null = the whole plan
 }
 
 export interface Quota {
@@ -136,6 +156,8 @@ export interface Quota {
   remaining: number | null; // null = unlimited
   resetsAt: string | null;
   lifetime: boolean;
+  // false: its main feature was taken off the plan (half of Free is left).
+  included?: boolean;
 }
 
 // GET /subscription/me
@@ -148,8 +170,14 @@ export interface MySubscription {
 export type PurchaseOperation = "Purchase" | "Renewal" | "Upgrade" | "Downgrade" | "Scheduled";
 
 // POST /subscription/preview — always 200; problems in couponError / blockedReason.
+// The price comes in steps: fullPrice − featuresDiscount = listPrice, then
+// the coupon's discountAmount comes off listPrice.
 export interface PurchasePreview {
   operation: PurchaseOperation | null;
+  fullPrice?: number;
+  featuresDiscountPercent?: number;
+  featuresDiscount?: number;
+  groups?: string[] | null;
   listPrice: number;
   discountPercent: number;
   discountAmount: number;
@@ -249,6 +277,9 @@ export interface SaveBundleBody {
   partnerId: number | null;
   code: string | null;
   features: BundleFeatureInput[] | null; // null keeps them on edit
+  // Main features students may take off, with % off each. {} = sold whole;
+  // null (on edit) keeps the current ones.
+  groupDiscounts?: Record<string, number> | null;
 }
 
 export interface CatalogueEntry {
@@ -280,6 +311,8 @@ export interface Coupon {
   batchId: number | null;
   bundleIds: number[];
   createdAt: string;
+  // false: refused when the student took main features off.
+  allowOnCustomized?: boolean;
 }
 
 export interface SaveCouponBody {
@@ -292,6 +325,8 @@ export interface SaveCouponBody {
   isActive: boolean;
   partnerId: number | null;
   bundleIds: number[];
+  // Every field is replaced on update: always send it.
+  allowOnCustomized: boolean;
 }
 
 export interface CouponQuery {
@@ -310,6 +345,7 @@ export interface VoucherBatchBody {
   validFrom: string | null;
   validUntil: string | null;
   partnerId: number | null;
+  allowOnCustomized: boolean;
 }
 
 export interface VoucherBatch {

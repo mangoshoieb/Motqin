@@ -1,6 +1,12 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { paymentService as api } from "@/app/services/payment.service";
 import {
   RECHARGE_FAST_POLL_FOR_MS,
@@ -15,11 +21,12 @@ export const PAYMENT_KEYS = {
   bundles: (audience: BundleAudience) => ["payments", "bundles", audience] as const,
   bundle: (id: number) => ["payments", "bundle", id] as const,
   wallet: ["payments", "wallet"] as const,
-  transactions: (page: number) => ["payments", "wallet", "transactions", page] as const,
+  transactions: (page: number, pageSize: number) => ["payments", "wallet", "transactions", page, pageSize] as const,
   recharge: (reference: string) => ["payments", "recharge", reference] as const,
   subscription: ["payments", "subscription"] as const,
   history: ["payments", "subscription", "history"] as const,
-  preview: (bundleId: number, coupon: string) => ["payments", "preview", bundleId, coupon] as const,
+  preview: (bundleId: number, coupon: string, groups: string) => ["payments", "preview", bundleId, coupon, groups] as const,
+  transactionsAll: ["payments", "wallet", "transactions", "all"] as const,
   partner: (from: string, to: string) => ["payments", "partner", from, to] as const,
 };
 
@@ -47,12 +54,22 @@ export const useBundle = (id: number | null | undefined) =>
 export const useWallet = (enabled: boolean) =>
   useQuery({ queryKey: PAYMENT_KEYS.wallet, queryFn: api.getWallet, enabled });
 
-export const useTransactions = (page: number, enabled: boolean) =>
+export const useTransactions = (page: number, enabled: boolean, pageSize = WALLET_PAGE_SIZE) =>
   useQuery({
-    queryKey: PAYMENT_KEYS.transactions(page),
-    queryFn: () => api.listTransactions(page, WALLET_PAGE_SIZE),
+    queryKey: PAYMENT_KEYS.transactions(page, pageSize),
+    queryFn: () => api.listTransactions(page, pageSize),
     enabled,
     placeholderData: keepPreviousData,
+  });
+
+// The whole wallet history, a page at a time ("عرض المزيد").
+export const useAllTransactions = (enabled: boolean) =>
+  useInfiniteQuery({
+    queryKey: PAYMENT_KEYS.transactionsAll,
+    queryFn: ({ pageParam }) => api.listTransactions(pageParam, WALLET_PAGE_SIZE),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.page * last.pageSize < last.total ? last.page + 1 : undefined),
+    enabled,
   });
 
 // Errors are shown inside the top-up dialog.
@@ -91,11 +108,17 @@ export const useMySubscription = (enabled = true) =>
 export const useSubscriptionHistory = (enabled: boolean) =>
   useQuery({ queryKey: PAYMENT_KEYS.history, queryFn: api.listHistory, enabled });
 
-// Saves nothing, so it's read like a query; re-run with each coupon tried.
-export const usePurchasePreview = (bundleId: number | null, coupon: string, enabled: boolean) =>
+// Saves nothing, so it's read like a query; re-run with each coupon tried
+// and each change of the kept main features.
+export const usePurchasePreview = (
+  bundleId: number | null,
+  coupon: string,
+  groups: string[] | null,
+  enabled: boolean,
+) =>
   useQuery({
-    queryKey: PAYMENT_KEYS.preview(bundleId ?? 0, coupon),
-    queryFn: () => api.preview(bundleId!, coupon || null),
+    queryKey: PAYMENT_KEYS.preview(bundleId ?? 0, coupon, groups?.join(",") ?? ""),
+    queryFn: () => api.preview(bundleId!, coupon || null, groups),
     enabled: enabled && !!bundleId,
     placeholderData: keepPreviousData,
   });
@@ -103,8 +126,8 @@ export const usePurchasePreview = (bundleId: number | null, coupon: string, enab
 export const usePurchase = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ bundleId, coupon }: { bundleId: number; coupon: string | null }) =>
-      api.purchase(bundleId, coupon),
+    mutationFn: ({ bundleId, coupon, groups }: { bundleId: number; coupon: string | null; groups: string[] | null }) =>
+      api.purchase(bundleId, coupon, groups),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payments"] }),
   });
 };

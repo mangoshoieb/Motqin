@@ -28,6 +28,11 @@ interface MentorshipLink extends MentorPrivileges {
   endRequested: boolean;
   createdAt: string;
   respondedAt: string | null;
+  // The mentor's plan doesn't cover this student now (Free can't mentor, or
+  // more students than the plan's Mentees). Nothing is deleted; renewing
+  // brings it back. A paused link has no data, its lock doesn't apply, and
+  // the student's changes apply without approval.
+  paused?: boolean;
 }
 
 // ---- Student side ---------------------------------------------------------

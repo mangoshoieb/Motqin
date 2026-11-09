@@ -109,8 +109,8 @@ const menuItems = [
     icon: Settings,
   },
   {
-    label: "الاشتراك",
-    href: "/subscription",
+    label: "الاشتراك والمحفظة",
+    href: "/settings/billing",
     icon: CreditCard,
   },
   {

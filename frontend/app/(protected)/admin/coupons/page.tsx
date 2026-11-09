@@ -54,6 +54,8 @@ export default function AdminCouponsPage() {
           isActive: !coupon.isActive,
           partnerId: coupon.partnerId,
           bundleIds: coupon.bundleIds,
+          // Left out, it would go back to true.
+          allowOnCustomized: coupon.allowOnCustomized ?? true,
         },
       },
       {
@@ -178,6 +180,7 @@ export default function AdminCouponsPage() {
                     <div className="flex flex-wrap gap-1">
                       {c.isActive ? <Chip tone="green">مفعّل</Chip> : <Chip>موقوف</Chip>}
                       {c.firstPurchaseOnly && <Chip tone="blue">أول شراء</Chip>}
+                      {c.allowOnCustomized === false && <Chip tone="rose">ليس للباقات المخصصة</Chip>}
                       {c.batchId && (
                         <button type="button" onClick={() => resetPage(setBatchId)(c.batchId)}>
                           <Chip tone="amber">

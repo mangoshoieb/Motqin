@@ -136,6 +136,7 @@ export default function AdminBundlesPage() {
                       {bundle.kind !== "Paid" && <Chip tone="blue">نظام</Chip>}
                       {bundle.isActive ? <Chip tone="green">متاحة</Chip> : <Chip>موقوفة</Chip>}
                       {bundle.isHidden && bundle.kind === "Paid" && <Chip tone="amber">مخفية</Chip>}
+                      {bundle.customizable && <Chip tone="blue">على كيفك</Chip>}
                     </div>
                   </td>
                   <td className="px-3 py-3">

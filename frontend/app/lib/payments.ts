@@ -177,6 +177,49 @@ export const rateLimitText = (feature: Pick<BundleFeature, "rateLimitCount" | "r
 export const findFeature = (bundle: Bundle | null | undefined, key: string) =>
   bundle?.features.find((f) => f.feature === key);
 
+// --- Customisable plans ("اشتراكك على كيفك") ----------------------------------
+
+export const removableGroups = (bundle: Bundle | null | undefined) =>
+  bundle?.customizable ? (bundle.groups ?? []).filter((g) => g.removable && g.discountPercent) : [];
+
+// The price with some main features taken off: add up their discounts,
+// ceil(price × (100 − total) / 100), at least 1 EGP below the full price once
+// anything is off. The exact amount (with a coupon) comes from preview.
+export const customPrice = (bundle: Bundle, off: string[]) => {
+  const total = removableGroups(bundle)
+    .filter((g) => off.includes(g.group))
+    .reduce((sum, g) => sum + (g.discountPercent ?? 0), 0);
+  if (total === 0) return bundle.price;
+  return Math.min(bundle.price - 1, Math.ceil((bundle.price * (100 - total)) / 100));
+};
+
+// "تبدأ من": everything removable off except the cheapest one to keep.
+export const fromPrice = (bundle: Bundle) => {
+  const removable = removableGroups(bundle);
+  if (removable.length < 2) return null;
+  const cheapest = [...removable].sort((a, b) => (a.discountPercent ?? 0) - (b.discountPercent ?? 0))[0];
+  return customPrice(
+    bundle,
+    removable.filter((g) => g !== cheapest).map((g) => g.group),
+  );
+};
+
+// The groups to send: null when every removable one is kept (= the whole plan).
+export const keptGroupsParam = (bundle: Bundle, kept: string[]) => {
+  const removable = removableGroups(bundle).map((g) => g.group);
+  if (removable.length === 0 || removable.every((g) => kept.includes(g))) return null;
+  return removable.filter((g) => kept.includes(g));
+};
+
+export const parseGroups = (value: string | null) => (value ? value.split(",").filter(Boolean) : null);
+
+// "15 جلسة شهريًا بدلًا من بلا حدود" — what's left of a feature without its
+// main feature.
+export const leftOutText = (feature: BundleFeature) => {
+  if (!feature.accessIfLeftOut) return null;
+  return featureValueText(feature.type, feature.accessIfLeftOut, feature.limitIfLeftOut ?? null);
+};
+
 // --- Files ---------------------------------------------------------------------
 
 export const downloadText = (text: string, filename: string, type = "text/csv;charset=utf-8") => {
