@@ -52,6 +52,32 @@ export const questionService = {
     return response.data?.data ?? [];
   },
 
+  // Ignores a system question for this student: it leaves the customized
+  // list and session-questions, and stops counting toward the repetition.
+  async ignoreForUser(questionId: number): Promise<void> {
+    await axiosInstance.post(QUESTION_API_ROUTES.DELETE_FOR_USER, { questionId });
+  },
+
+  // Undoes ignoreForUser. `restored: false` (it wasn't ignored — e.g. a
+  // second tap) is still a success.
+  async restoreForUser(questionId: number): Promise<{ questionId: number; restored: boolean }> {
+    const response = await axiosInstance.post<
+      ApiEnvelope<{ questionId: number; restored: boolean } | null>
+    >(QUESTION_API_ROUTES.RESTORE_FOR_USER, { questionId });
+
+    return response.data?.data ?? { questionId, restored: false };
+  },
+
+  // The questions this student ignored in one lesson + category.
+  async getIgnored(lessonId: string | number, category: string): Promise<LessonInformation[]> {
+    const response = await axiosInstance.get<ApiEnvelope<LessonInformation[] | null>>(
+      QUESTION_API_ROUTES.IGNORED,
+      { params: { lessonId, category } }
+    );
+
+    return response.data?.data ?? [];
+  },
+
   // The endpoint is per category, so the whole lesson is one call per
   // category, merged.
   async getAllCustomizedInformation(lessonId: string | number): Promise<LessonInformation[]> {

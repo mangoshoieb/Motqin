@@ -96,6 +96,9 @@ interface Lesson {
     // Whether this student has already finished the question (sent by
     // /questions/customized-by-category-and-lesson).
     isFinished?: boolean;
+    // A question the student added themselves. Not sent yet — when it is,
+    // only the other (system) questions can be ignored.
+    isMine?: boolean;
   }
 
   // ---------------------------------------------------------------------

@@ -23,6 +23,13 @@ export const QUESTION_API_ROUTES = {
   // Query: LessonId, Category; BatchSize / Gap / Graduate are optional.
   // An empty list means the repetition is done.
   SESSION_QUESTIONS: "/questions/session-questions",
+  // Ignoring a system question for this student only, and undoing it.
+  // Body { questionId } (the informationID).
+  DELETE_FOR_USER: "/questions/delete-for-user",
+  RESTORE_FOR_USER: "/questions/restore-for-user",
+  // The questions this student ignored in one lesson + category — same row
+  // shape as the customized list. Query: lessonId, category.
+  IGNORED: "/questions/ignored",
   // multipart: Pdf (required), Notes, Language (QuestionLanguage). Answers
   // with the generated questions; nothing is saved server-side.
   FILL_QUESTIONS_FROM_PDF: "/ai/fill-questions-from-pdf",

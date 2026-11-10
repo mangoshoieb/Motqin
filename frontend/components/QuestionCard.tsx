@@ -1,11 +1,14 @@
 "use client";
 
-import { CheckCircle2, Circle, EyeOff, ImageIcon, Volume2 } from "lucide-react";
+import { CheckCircle2, Circle, ImageIcon, Volume2 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 
 interface QuestionCardProps {
   information: LessonInformation;
-  onHide: (id: number) => void;
+  // Ignores the question for this student. Left out for questions that
+  // can't be ignored (the student's own), which then show no button.
+  onIgnore?: (information: LessonInformation) => void;
+  isIgnoring?: boolean;
   // Opens the question's info card (title, explanation, image, audio).
   onOpen: (information: LessonInformation) => void;
 }
@@ -13,7 +16,7 @@ interface QuestionCardProps {
 // One question on the lesson page: its title and description, always shown.
 // The MCQ / fill-in-the-blank cards and their answers belong to the quiz
 // session, not this list — a click opens the info card instead.
-export const QuestionCard = ({ information, onHide, onOpen }: QuestionCardProps) => {
+export const QuestionCard = ({ information, onIgnore, isIgnoring, onOpen }: QuestionCardProps) => {
   const { infoCard, mcqCard } = information;
   const title = information.title || infoCard?.title || mcqCard?.text || "سؤال بدون عنوان";
   const description = infoCard?.explanation;
@@ -78,18 +81,19 @@ export const QuestionCard = ({ information, onHide, onOpen }: QuestionCardProps)
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onHide(information.informationID);
-        }}
-        title="تجاهل هذا السؤال"
-        aria-label="تجاهل هذا السؤال"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-      >
-        <EyeOff className="size-4" />
-      </button>
+      {onIgnore && (
+        <button
+          type="button"
+          disabled={isIgnoring}
+          onClick={(e) => {
+            e.stopPropagation();
+            onIgnore(information);
+          }}
+          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+        >
+          {isIgnoring ? "جاري التجاهل..." : "تجاهل هذا السؤال"}
+        </button>
+      )}
     </div>
   );
 };
