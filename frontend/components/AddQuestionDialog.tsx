@@ -21,6 +21,9 @@ interface AddQuestionDialogProps {
   defaultCategory: QuestionCategoryValue;
   // Appended after the lesson's existing questions.
   displayOrder: number;
+  // Start from a filled-in question (e.g. one the AI read from a photo)
+  // instead of an empty form.
+  initialDraft?: QuestionDraft;
   onCreated: (category: QuestionCategoryValue) => void;
   onCancel: () => void;
 }
@@ -32,13 +35,17 @@ export const AddQuestionDialog = ({
   lessonId,
   defaultCategory,
   displayOrder,
+  initialDraft,
   onCreated,
   onCancel,
 }: AddQuestionDialogProps) => {
   const addQuestion = useAddUserQuestion(String(lessonId));
-  const [draft, setDraft] = useState<QuestionDraft>(() => emptyQuestionDraft(defaultCategory));
-  // Errors only show once the student has tried to submit.
-  const [submitted, setSubmitted] = useState(false);
+  const [draft, setDraft] = useState<QuestionDraft>(
+    () => initialDraft ?? emptyQuestionDraft(defaultCategory)
+  );
+  // Errors only show once the student has tried to submit — or right away
+  // for a prefilled draft, so whatever the AI left out stands out.
+  const [submitted, setSubmitted] = useState(!!initialDraft);
 
   const errors = validateQuestionDraft(draft);
 
@@ -71,7 +78,9 @@ export const AddQuestionDialog = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-4 border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">إضافة سؤال</h2>
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+            {initialDraft ? "راجع السؤال قبل الحفظ" : "إضافة سؤال"}
+          </h2>
           <button
             type="button"
             onClick={onCancel}

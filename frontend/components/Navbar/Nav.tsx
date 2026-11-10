@@ -35,7 +35,7 @@ const Nav = () => {
   // First two words of the full name, e.g. "Amgad Mahmoud".
   const displayName = shortName(user?.fullName);
   return (
-    <nav className="w-full border-b border-zinc-200 bg-[var(--background)] transition-colors duration-300 dark:border-zinc-800">
+    <nav className="w-full border-b border-zinc-200 bg-[var(--background)] transition-colors duration-300 print:hidden dark:border-zinc-800">
       <div className="mx-auto h-16 max-w-7xl flex items-center px-3">
         {/* Left Section */}
         <div className="flex items-center justify-start">

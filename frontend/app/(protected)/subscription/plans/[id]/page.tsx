@@ -25,6 +25,8 @@ import {
 } from "@/app/lib/payments";
 import { Bundle, BundleFeature, BundleGroup } from "@/app/types/payment.types";
 import { Switch } from "@/components/ui/switch";
+import { AnimatedMoney } from "@/components/Payments/AnimatedMoney";
+import { MobilePriceBar } from "@/components/Payments/MobilePriceBar";
 
 // One plan's features by main feature. For a customisable plan it's the
 // plan builder: a switch on each main feature the student may take off, with
@@ -114,20 +116,20 @@ function Builder({ bundle, ownKeys, initialKept }: { bundle: Bundle; ownKeys: Se
           })}
         </div>
 
-        <aside className="flex flex-col gap-4 rounded-3xl border border-zinc-200 bg-white p-6 lg:sticky lg:top-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <aside className="hidden flex-col gap-4 rounded-3xl border border-zinc-200 bg-white p-6 lg:sticky lg:top-6 lg:flex dark:border-zinc-800 dark:bg-zinc-900">
           <p className="text-sm text-zinc-500">{bundle.audience ? `باقة ${AUDIENCE_LABELS[bundle.audience]}` : ""}</p>
           <div>
             {price < bundle.price && (
               <span className="block text-sm text-zinc-400 line-through">{formatMoney(bundle.price)} ج.م</span>
             )}
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-extrabold tabular-nums text-blue-950 dark:text-blue-100">{formatMoney(price)}</span>
+              <span className="text-4xl font-extrabold tabular-nums text-blue-950 dark:text-blue-100"><AnimatedMoney value={price} /></span>
               <span className="text-sm text-zinc-600 dark:text-zinc-300">ج.م · {durationLabel(bundle)}</span>
             </div>
-            {term > 1 && <p className="mt-1 text-xs text-zinc-500">≈ {formatMoney(Math.round(price / term))} ج.م شهريًا</p>}
+            {term > 1 && <p className="mt-1 text-xs text-zinc-500">≈ <AnimatedMoney value={Math.round(price / term)} /> ج.م شهريًا</p>}
             {price < bundle.price && (
               <p className="mt-2 text-sm font-semibold text-emerald-600">
-                وفّرت {formatMoney(bundle.price - price)} ج.م بحذف {off.length === 1 ? "ميزة" : `${off.length} مميزات`}
+                وفّرت <AnimatedMoney value={bundle.price - price} /> ج.م بحذف {off.length === 1 ? "ميزة" : `${off.length} مميزات`}
               </p>
             )}
           </div>
@@ -144,6 +146,18 @@ function Builder({ bundle, ownKeys, initialKept }: { bundle: Bundle; ownKeys: Se
           )}
         </aside>
       </div>
+
+      {/* Phones: the price and the button stay in reach while scrolling the features. */}
+      <div className="h-24 lg:hidden" />
+      <MobilePriceBar
+        price={<AnimatedMoney value={price} suffix=" ج.م" />}
+        note={price < bundle.price ? <>وفّرت <AnimatedMoney value={bundle.price - price} /> ج.م</> : durationLabel(bundle)}
+        action={
+          <Link href={href} className="rounded-full bg-blue-950 px-8 py-3 font-semibold text-white dark:bg-blue-100 dark:text-blue-950">
+            اشترك
+          </Link>
+        }
+      />
     </Shell>
   );
 }

@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import BentoGrid from "@/components/Home/BentoGrid";
 import MagicSection from "@/components/Home/MagicSection";
 import QuoteSection from "@/components/Home/QuoteSection";
+import { PlanReminder } from "@/components/Payments/PlanReminder";
 import Image from "next/image";
 import { useEffect } from "react";
 import { useAuth } from "./context/auth.context";
@@ -30,7 +31,12 @@ export default function Home() {
   return (
     <main className="home-ambient-bg min-h-screen w-full sm:items-start font-sans">
       {isAuthenticated ? (
-        <QuoteSection />
+        <>
+          <div className="px-4 pt-6 empty:hidden">
+            <PlanReminder className="mx-auto max-w-5xl" />
+          </div>
+          <QuoteSection />
+        </>
       ) : (
         <div className="relative w-full hero overflow-hidden min-h-screen">
           <div

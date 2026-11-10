@@ -51,10 +51,7 @@ const OffersContent = () => {
       </div>
 
       <div className="mx-auto mb-10 max-w-5xl text-center">
-        <h1 className="text-3xl font-extrabold text-blue-950 sm:text-4xl dark:text-blue-100">اختر خطة الاشتراك المناسبة لك</h1>
-        <p className="mt-3 text-zinc-500 dark:text-zinc-400">
-          جلسات المذاكرة والمراجعة بلا حدود في كل الخطط، والفرق في الذكاء الاصطناعي والمزايا المتقدمة
-        </p>
+        <h1 className="text-3xl font-extrabold text-blue-950 sm:text-4xl dark:text-blue-100">اشتراكك على كيفك</h1>
       </div>
 
       <PlansSection />

@@ -49,6 +49,8 @@ import {
 import { PurchaseResult } from "@/app/types/payment.types";
 import { KeptGroups } from "@/components/Payments/BillingBits";
 import { TopUpDialog } from "@/components/Payments/TopUpDialog";
+import { AnimatedMoney } from "@/components/Payments/AnimatedMoney";
+import { MobilePriceBar } from "@/components/Payments/MobilePriceBar";
 import { inputClass, primaryButton, secondaryButton } from "@/components/TrackingTables/ui";
 
 // Coupons are stored without dashes or spaces, in capitals.
@@ -268,27 +270,27 @@ const CheckoutContent = () => {
                   <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
                   <Row
                     label="السعر"
-                    value={formatEgp(preview.operation ? preview.fullPrice ?? preview.listPrice : bundle.price)}
+                    value={<AnimatedMoney value={preview.operation ? preview.fullPrice ?? preview.listPrice : bundle.price} suffix=" ج.م" />}
                     strike={preview.discountAmount > 0 || credit > 0 || (preview.featuresDiscount ?? 0) > 0}
                   />
                   {(preview.featuresDiscount ?? 0) > 0 && (
                     <Row
                       label={`خصم المميزات المحذوفة (${preview.featuresDiscountPercent ?? 0}٪)`}
-                      value={`- ${formatEgp(preview.featuresDiscount!)}`}
+                      value={<>- <AnimatedMoney value={preview.featuresDiscount!} suffix=" ج.م" /></>}
                       tone="good"
                     />
                   )}
                   {preview.discountAmount > 0 && (
-                    <Row label={`الخصم (${preview.discountPercent}٪)`} value={`- ${formatEgp(preview.discountAmount)}`} tone="good" />
+                    <Row label={`الخصم (${preview.discountPercent}٪)`} value={<>- <AnimatedMoney value={preview.discountAmount} suffix=" ج.م" /></>} tone="good" />
                   )}
                   {credit > 0 && (
-                    <Row label="رصيد الأيام المتبقية من باقتك" value={`- ${formatEgp(credit)}`} tone="good" />
+                    <Row label="رصيد الأيام المتبقية من باقتك" value={<>- <AnimatedMoney value={credit} suffix=" ج.م" /></>} tone="good" />
                   )}
                   <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
                   <div className="flex items-center justify-between text-base">
                     <dt className="font-bold text-zinc-900 dark:text-zinc-100">المطلوب دفعه</dt>
                     <dd className="text-xl font-extrabold tabular-nums text-blue-950 dark:text-blue-100">
-                      {formatEgp(preview.amountDue)}
+                      <AnimatedMoney value={preview.amountDue} suffix=" ج.م" />
                     </dd>
                   </div>
                   <div className="flex items-center justify-between text-zinc-500">
@@ -372,7 +374,7 @@ const CheckoutContent = () => {
             </p>
             <div className="mt-6 flex items-baseline gap-1">
               <span className="text-3xl font-extrabold tabular-nums">
-                {formatMoney(Math.round(customPrice(bundle, removedGroups) / term))}
+                <AnimatedMoney value={Math.round(customPrice(bundle, removedGroups) / term)} />
               </span>
               <span className="text-sm">ج.م / شهرياً</span>
             </div>
@@ -413,12 +415,45 @@ const CheckoutContent = () => {
         </div>
       </div>
 
+      {/* Phones: what's due and the next step stay in reach below the plan details. */}
+      {registered && preview && !blocked && (
+        <>
+          <div className="h-24 lg:hidden" />
+          <MobilePriceBar
+            price={<AnimatedMoney value={preview.amountDue} suffix=" ج.م" />}
+            note={short > 0 ? `ينقصك ${formatEgp(short)}` : `رصيدك ${formatEgp(preview.walletBalance)}`}
+            warn={short > 0}
+            action={
+              short > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setTopUp(Math.max(RECHARGE_MIN, preview.suggestedRechargeAmount || Math.ceil(short)))}
+                  className="rounded-full bg-blue-950 px-6 py-3 font-semibold text-white dark:bg-blue-100 dark:text-blue-950"
+                >
+                  اشحن المحفظة
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={buy}
+                  disabled={purchase.isPending || previewing}
+                  className="flex items-center gap-2 rounded-full bg-blue-950 px-6 py-3 font-semibold text-white disabled:opacity-50 dark:bg-blue-100 dark:text-blue-950"
+                >
+                  {purchase.isPending && <Loader2 size={16} className="animate-spin" />}
+                  {preview.amountDue === 0 ? "تفعيل الباقة" : "ادفع"}
+                </button>
+              )
+            }
+          />
+        </>
+      )}
+
       {topUp !== null && <TopUpDialog initialAmount={topUp} onClose={() => setTopUp(null)} onPaid={() => setError(null)} />}
     </Shell>
   );
 };
 
-function Row({ label, value, strike, tone }: { label: string; value: string; strike?: boolean; tone?: "good" }) {
+function Row({ label, value, strike, tone }: { label: string; value: React.ReactNode; strike?: boolean; tone?: "good" }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <dt className={cn("text-zinc-500 dark:text-zinc-400", tone === "good" && "text-emerald-600 dark:text-emerald-400")}>{label}</dt>

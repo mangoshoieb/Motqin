@@ -14,7 +14,9 @@ import { IgnoredQuestions } from "@/components/IgnoredQuestions";
 import { useIgnoreQuestion, useRestoreQuestion } from "@/app/hooks/useIgnoredQuestions";
 import { getApiErrorMessage } from "@/app/lib/api-error";
 import { AddQuestionDialog } from "@/components/AddQuestionDialog";
-import { AiQuestionsDialog } from "@/components/AiQuestionsDialog";
+import { AiQuestionsDialog, type GeneratedQuestion } from "@/components/AiQuestionsDialog";
+import { useAiQuestionsReviewStore } from "@/app/lib/ai-questions-review.store";
+import type { QuestionDraft } from "@/app/lib/question-draft";
 import { PdfQuestionsDialog } from "@/components/PdfQuestionsDialog";
 import { cn } from "@/app/lib/utils";
 import {
@@ -46,6 +48,9 @@ const LessonQuestionsPage = () => {
   );
   const [openInfo, setOpenInfo] = useState<LessonInformation | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  // A question the AI filled in from a photo, opened in the add popup.
+  const [prefilledDraft, setPrefilledDraft] = useState<QuestionDraft | null>(null);
+  const startReview = useAiQuestionsReviewStore((state) => state.start);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // "?ai=pdf" is how the lessons page hands over a lesson it just created
@@ -80,6 +85,34 @@ const LessonQuestionsPage = () => {
         }),
       onError: (error) => toast.error(getApiErrorMessage(error)),
     });
+
+  // One question from a photo opens prefilled in the add popup; several go
+  // to the review page, the same one the PDF flow uses.
+  const handleGeneratedFromImage = (generated: GeneratedQuestion[]) => {
+    setIsGenerating(false);
+    if (generated.length === 1) {
+      setPrefilledDraft(generated[0].draft);
+      setIsAdding(true);
+      return;
+    }
+    const stamp = Date.now();
+    startReview(
+      Number(lessonId),
+      generated.map(({ draft, pageNumber }, i) => ({
+        key: `${stamp}-${i}`,
+        draft,
+        pageNumber,
+        edited: false,
+        saveError: null,
+      }))
+    );
+    router.push(`/subjects/${subjectIdSlug}/${lessonId}/review-ai-questions`);
+  };
+
+  const closeAddDialog = () => {
+    setIsAdding(false);
+    setPrefilledDraft(null);
+  };
 
   const switchCategory = (value: CategoryValue) => {
     setActiveCategory(value);
@@ -232,19 +265,19 @@ const LessonQuestionsPage = () => {
           lessonId={Number(lessonId)}
           defaultCategory={activeCategory}
           displayOrder={nextDisplayOrder}
+          initialDraft={prefilledDraft ?? undefined}
           onCreated={(category) => {
-            setIsAdding(false);
+            closeAddDialog();
             // Show the tab the new question landed in.
             setActiveCategory(category);
           }}
-          onCancel={() => setIsAdding(false)}
+          onCancel={closeAddDialog}
         />
       )}
 
       {isGenerating && (
         <AiQuestionsDialog
-          lessonId={Number(lessonId)}
-          onDone={() => setIsGenerating(false)}
+          onGenerated={handleGeneratedFromImage}
           onCancel={() => setIsGenerating(false)}
         />
       )}

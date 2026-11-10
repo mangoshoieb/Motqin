@@ -5,7 +5,7 @@ import { cn } from "@/app/lib/utils";
 import { SessionCelebration } from "@/components/SessionCelebration";
 
 // Accuracy from which a finished session earns the badge instead of the check.
-const EXCELLENT_ACCURACY = 80;
+const EXCELLENT_ACCURACY = 90;
 
 interface SessionSummaryProps {
   summary: SummaryCard;

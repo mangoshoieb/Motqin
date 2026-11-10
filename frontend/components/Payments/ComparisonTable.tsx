@@ -1,8 +1,8 @@
 "use client";
 
-import { Check, Minus } from "lucide-react";
+import { Check, ChevronDown, Minus } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import { FEATURE_GROUP_LABELS, TIER_META, type TermMonths } from "@/app/constants/payment.constants";
+import { FEATURE_GROUP_LABELS, HIGHLIGHTED_TIERS, TIER_META, type TermMonths } from "@/app/constants/payment.constants";
 import {
   featureLabel,
   featureNote,
@@ -50,7 +50,51 @@ export function ComparisonTable({
   const pick = (bundle: Bundle | null | undefined, key: string) => bundle?.features.find((f) => f.feature === key);
 
   return (
-    <div className="overflow-x-auto rounded-3xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <>
+      {/* Phones: one card per plan instead of a sideways-scrolling table. */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {[{ tier: "Free", bundle: free ?? undefined }, ...columns].map(({ tier, bundle }) =>
+          bundle ? (
+            <details
+              key={tier}
+              open={HIGHLIGHTED_TIERS.includes(tier)}
+              className="group rounded-3xl border border-zinc-200 bg-white open:shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            >
+              <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-4">
+                <span className="flex-1 font-bold text-zinc-900 dark:text-zinc-100">
+                  {tier === "Free" ? "مجانية" : TIER_META[tier]?.name ?? tier}
+                </span>
+                <span className="text-sm text-zinc-500">
+                  {tier === "Free" ? "للجميع" : `${formatMoney(Math.round(bundle.price / term))} ج.م شهريًا`}
+                </span>
+                <ChevronDown size={18} className="text-zinc-400 transition group-open:rotate-180" />
+              </summary>
+              <div className="flex flex-col gap-4 border-t border-zinc-100 px-5 py-4 dark:border-zinc-800">
+                {groups.map(({ group, keys }) => (
+                  <div key={group}>
+                    <p className="mb-2 text-xs font-bold text-blue-900 dark:text-blue-300">{FEATURE_GROUP_LABELS[group] ?? group}</p>
+                    <ul className="flex flex-col gap-2 text-sm">
+                      {keys.map((key) => {
+                        const feature = pick(bundle, key);
+                        return (
+                          <li key={key} className="flex items-start justify-between gap-3">
+                            <span className="text-zinc-700 dark:text-zinc-300">{featureLabel(key, feature?.displayName)}</span>
+                            <span className="shrink-0 text-end">
+                              <ValueCell feature={feature} />
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null,
+        )}
+      </div>
+
+    <div className="hidden overflow-x-auto rounded-3xl border border-zinc-200 bg-white md:block dark:border-zinc-800 dark:bg-zinc-900">
       <table className="w-full min-w-[720px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-zinc-200 dark:border-zinc-800">
@@ -78,6 +122,7 @@ export function ComparisonTable({
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 
@@ -97,7 +142,7 @@ function GroupRows({
   return (
     <>
       <tr>
-        <td colSpan={columns.length + 2} className="bg-zinc-50/70 px-5 py-2 text-xs font-bold text-blue-900 dark:bg-zinc-950/30 dark:text-blue-300">
+        <td colSpan={columns.length + 2} className="bg-zinc-50/70 px-5 py-2 text-[16px] font-bold text-blue-900 dark:bg-zinc-950/30 dark:text-blue-300">
           {FEATURE_GROUP_LABELS[group] ?? group}
         </td>
       </tr>

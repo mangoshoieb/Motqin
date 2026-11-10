@@ -33,6 +33,9 @@ export const QUESTION_API_ROUTES = {
   // multipart: Pdf (required), Notes, Language (QuestionLanguage). Answers
   // with the generated questions; nothing is saved server-side.
   FILL_QUESTIONS_FROM_PDF: "/ai/fill-questions-from-pdf",
+  // multipart: image. The AI reads a photo (of a page, a question…) and
+  // fills in a question's fields; like the PDF one, nothing is saved.
+  FILL_QUESTION_FROM_IMAGE: "/ai/fill-question",
   // The Language choices above, with Arabic labels.
   INFORMATION_LANGUAGES: "/lookups/information-languages",
 } as const;

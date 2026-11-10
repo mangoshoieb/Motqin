@@ -10,6 +10,7 @@ import { useMySubscription, useTransactions, useWallet } from "@/app/hooks/usePa
 import { formatMoney } from "@/app/lib/payments";
 import { PlanSummaryCard, SettingsTitle, TransactionRow } from "@/components/Payments/BillingBits";
 import { TopUpDialog } from "@/components/Payments/TopUpDialog";
+import { PlanReminder } from "@/components/Payments/PlanReminder";
 import { SignUpToUse } from "@/components/Settings/Mentors/SignUpToUse";
 import { primaryButton } from "@/components/TrackingTables/ui";
 
@@ -28,6 +29,8 @@ export default function BillingOverviewPage() {
   return (
     <div className="flex flex-col gap-6">
       <SettingsTitle title="الاشتراك والمحفظة" subtitle="رصيدك وباقتك وآخر العمليات. تُدفع الباقات من رصيد المحفظة." />
+
+      <PlanReminder limitsOnly />
 
       {registered ? (
         <section className="flex flex-wrap items-center gap-6 rounded-2xl bg-gradient-to-br from-blue-950 to-indigo-900 p-7 text-white shadow-lg">

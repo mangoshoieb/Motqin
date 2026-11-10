@@ -37,6 +37,8 @@ export const useBundles = (audience: BundleAudience) =>
     queryKey: PAYMENT_KEYS.bundles(audience),
     queryFn: () => api.listBundles(audience),
     staleTime: 10 * 60_000,
+    // The previous audience's cards stay while the next one loads.
+    placeholderData: keepPreviousData,
   });
 
 export const useBundle = (id: number | null | undefined) =>
@@ -70,6 +72,22 @@ export const useAllTransactions = (enabled: boolean) =>
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page * last.pageSize < last.total ? last.page + 1 : undefined),
     enabled,
+  });
+
+// One wallet line, for its receipt. There's no endpoint for a single line,
+// so the history is read page by page until it turns up.
+export const useTransaction = (id: number | null, enabled: boolean) =>
+  useQuery({
+    queryKey: ["payments", "wallet", "transaction", id],
+    queryFn: async () => {
+      for (let page = 1; ; page++) {
+        const result = await api.listTransactions(page, 50);
+        const found = result.items.find((t) => t.id === id);
+        if (found) return found;
+        if (page * result.pageSize >= result.total || result.items.length === 0) return null;
+      }
+    },
+    enabled: enabled && !!id,
   });
 
 // Errors are shown inside the top-up dialog.

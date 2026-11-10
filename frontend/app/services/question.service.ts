@@ -131,20 +131,23 @@ export const questionService = {
     });
   },
 
-  // POST /uploads — the lesson material (a PDF or a photo of it) the AI
-  // generates questions from. Swagger documents the response as a bare
-  // object, so callers refetch the questions instead of reading it.
-  async uploadForAiQuestions(file: File): Promise<unknown> {
+  // The AI reads a photo and fills in a question — nothing is saved; the
+  // student checks it first. Swagger documents no response body, so a
+  // single question, a list, or { questions: [...] } are all accepted.
+  async generateFromImage(image: File): Promise<AiGeneratedQuestion[]> {
     const form = new FormData();
-    form.append("file", file);
+    form.append("image", await toJpegFile(image));
 
-    const response = await axiosInstance.post<ApiEnvelope<unknown>>(
-      API_ROUTES.UPLOADS.POST,
-      form,
-      { headers: { "Content-Type": undefined } }
-    );
+    const response = await axiosInstance.post<
+      ApiEnvelope<AiGeneratedQuestion | AiGeneratedQuestion[] | { questions?: AiGeneratedQuestion[] } | null>
+    >(QUESTION_API_ROUTES.FILL_QUESTION_FROM_IMAGE, form, {
+      headers: { "Content-Type": undefined },
+    });
 
-    return response.data?.data;
+    const data = response.data?.data;
+    if (Array.isArray(data)) return data;
+    if (data && "questions" in data && Array.isArray(data.questions)) return data.questions;
+    return data && typeof data === "object" ? [data as AiGeneratedQuestion] : [];
   },
 
   // The AI reads the PDF and answers with one question per piece of

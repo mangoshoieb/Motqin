@@ -2,34 +2,39 @@
 
 import { useState, type DragEvent } from "react";
 import { toast } from "sonner";
-import { FileText, Sparkles, UploadCloud, X } from "lucide-react";
-import { useGenerateAiQuestions } from "@/app/hooks/useAddQuestion";
+import { ImageIcon, Sparkles, UploadCloud, X } from "lucide-react";
+import { useGenerateQuestionFromImage } from "@/app/hooks/useAddQuestion";
+import type { QuestionDraft } from "@/app/lib/question-draft";
 import { getApiErrorMessage, isAuthGateError } from "@/app/lib/api-error";
 import { cn } from "@/app/lib/utils";
 
-// Lesson material the AI reads: a PDF or a photo of the pages.
-const ACCEPT = "application/pdf,image/*";
-const isAccepted = (file: File) =>
-  file.type === "application/pdf" || file.type.startsWith("image/");
+// A photo the AI reads (a textbook page, a worksheet question…).
+const ACCEPT = "image/*";
+const isAccepted = (file: File) => file.type.startsWith("image/");
+
+export interface GeneratedQuestion {
+  draft: QuestionDraft;
+  pageNumber: number | null;
+}
 
 interface AiQuestionsDialogProps {
-  lessonId: number;
-  onDone: () => void;
+  // The question(s) the AI filled in — not saved yet; the page lets the
+  // student check them first.
+  onGenerated: (generated: GeneratedQuestion[]) => void;
   onCancel: () => void;
 }
 
-// Upload lesson material to POST /uploads and let the AI turn it into
-// questions. The response carries nothing we render, so on success the
-// questions list is simply refetched.
-export const AiQuestionsDialog = ({ lessonId, onDone, onCancel }: AiQuestionsDialogProps) => {
-  const generate = useGenerateAiQuestions(String(lessonId));
+// Sends a photo to POST /ai/fill-question and hands back what the AI filled
+// in. Nothing is saved here.
+export const AiQuestionsDialog = ({ onGenerated, onCancel }: AiQuestionsDialogProps) => {
+  const generate = useGenerateQuestionFromImage();
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const pickFile = (picked: File | null | undefined) => {
     if (!picked) return;
     if (!isAccepted(picked)) {
-      toast.error("الملف غير مدعوم. اختر ملف PDF أو صورة.");
+      toast.error("الملف غير مدعوم. اختر صورة.");
       return;
     }
     setFile(picked);
@@ -44,9 +49,12 @@ export const AiQuestionsDialog = ({ lessonId, onDone, onCancel }: AiQuestionsDia
   const handleGenerate = () => {
     if (!file || generate.isPending) return;
     generate.mutate(file, {
-      onSuccess: () => {
-        toast.success("تم توليد الأسئلة بنجاح");
-        onDone();
+      onSuccess: (generated) => {
+        if (generated.length === 0) {
+          toast.error("لم نتمكن من استخراج سؤال من هذه الصورة. جرّب صورة أوضح.");
+          return;
+        }
+        onGenerated(generated);
       },
       // A guest/plan wall: the signup popup takes over, so step aside.
       onError: (error) =>
@@ -78,10 +86,10 @@ export const AiQuestionsDialog = ({ lessonId, onDone, onCancel }: AiQuestionsDia
             </span>
             <div>
               <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                توليد أسئلة بالذكاء الاصطناعي
+                إضافة سؤال من صورة
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                ارفع ملف الدرس وسيُنشئ الذكاء الاصطناعي الأسئلة لك.
+                ارفع صورة وسيملأ الذكاء الاصطناعي السؤال لك، ثم تراجعه قبل الحفظ.
               </p>
             </div>
           </div>
@@ -99,7 +107,7 @@ export const AiQuestionsDialog = ({ lessonId, onDone, onCancel }: AiQuestionsDia
         <div className="px-6 py-5">
           {file ? (
             <div className="flex items-center gap-3 rounded-2xl border border-indigo-200 bg-white/80 px-4 py-3 dark:border-indigo-900 dark:bg-zinc-900/60">
-              <FileText className="size-5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+              <ImageIcon className="size-5 shrink-0 text-indigo-600 dark:text-indigo-400" />
               <span className="flex-1 truncate text-sm text-zinc-800 dark:text-zinc-200" dir="auto">
                 {file.name}
               </span>
@@ -131,7 +139,7 @@ export const AiQuestionsDialog = ({ lessonId, onDone, onCancel }: AiQuestionsDia
             >
               <UploadCloud className="size-8 text-indigo-500" />
               <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                اسحب الملف هنا أو اضغط للاختيار
+                اسحب الصورة هنا أو اضغط للاختيار
               </span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">ركز على المعلومة التي تريدها</span>
               <input
@@ -155,7 +163,7 @@ export const AiQuestionsDialog = ({ lessonId, onDone, onCancel }: AiQuestionsDia
               <span className="absolute inset-y-0 -left-1/2 w-1/2 animate-shimmer bg-gradient-to-r from-transparent via-white/40 to-transparent" />
             )}
             <Sparkles className={cn("size-5", generate.isPending && "animate-spin")} />
-            {generate.isPending ? "جاري توليد الأسئلة..." : "توليد السؤال"}
+            {generate.isPending ? "جاري قراءة الصورة..." : "توليد السؤال"}
           </button>
         </div>
       </div>

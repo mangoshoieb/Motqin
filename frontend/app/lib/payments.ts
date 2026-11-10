@@ -30,6 +30,11 @@ export const isTeacherAccount = (user: RoleCarrier) => hasAnyRole(user, TEACHER_
 export const isManager = (user: RoleCarrier) => hasAnyRole(user, MANAGER_ROLES);
 export const isAdmin = (user: RoleCarrier) => hasAnyRole(user, ADMIN_ROLES);
 
+// Which plan tabs an account sees: admins all three; teachers their own and
+// the student plans; students and parents the student and parent plans.
+export const visibleAudiences = (user: RoleCarrier): BundleAudience[] =>
+  isManager(user) ? ["Student", "Teacher", "Mentor"] : isTeacherAccount(user) ? ["Teacher", "Student"] : ["Student", "Mentor"];
+
 // The plans an account sees first — the server's own default for /bundles.
 export const audienceForUser = (user: RoleCarrier): BundleAudience =>
   isTeacherAccount(user) ? "Teacher" : hasAnyRole(user, PARENT_ROLES) ? "Mentor" : "Student";

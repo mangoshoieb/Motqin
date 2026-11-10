@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Check, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import { useAnimatedNumber } from "@/app/hooks/useAnimatedNumber";
+import { AnimatedMoney } from "./AnimatedMoney";
 import {
   CARD_FEATURES,
   HIGHLIGHTED_TIERS,
@@ -16,7 +16,6 @@ import {
   featureLabel,
   featureValueText,
   findFeature,
-  formatMoney,
   fromPrice,
   isFeatureOn,
   savingPercent,
@@ -48,7 +47,6 @@ export function PlanCard({
   const meta = TIER_META[tier];
   const highlighted = HIGHLIGHTED_TIERS.includes(tier);
   const perMonth = Math.round(bundle.price / term);
-  const animatedPrice = useAnimatedNumber(perMonth);
   const saving = savingPercent(bundle.price, monthly?.price, term);
   const perUnit = PER_UNIT_FEATURE[audience];
   const unitLimit = perUnit ? findFeature(bundle, perUnit.feature)?.limit : null;
@@ -87,26 +85,23 @@ export function PlanCard({
       )}
 
       <h3 className="text-xl font-bold">{meta?.name ?? bundle.title}</h3>
-      <p className={cn("mt-1 min-h-10 text-sm", highlighted ? "text-blue-200" : "text-zinc-500 dark:text-zinc-400")}>
-        {meta?.tagline ?? bundle.description}
-      </p>
 
       <div className="mt-6">
         {saving > 0 && monthly && (
           <span className={cn("block text-sm line-through", highlighted ? "text-blue-300" : "text-zinc-400 dark:text-zinc-500")}>
-            {formatMoney(monthly.price)} ج.م
+<AnimatedMoney value={monthly.price} suffix=" ج.م" />
           </span>
         )}
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-extrabold tabular-nums">{formatMoney(animatedPrice)}</span>
+          <span className="text-4xl font-extrabold tabular-nums"><AnimatedMoney value={perMonth} /></span>
           <span className="text-sm">ج.م / شهرياً</span>
         </div>
         <p className={cn("mt-1 text-xs", highlighted ? "text-blue-200" : "text-zinc-500 dark:text-zinc-400")}>
-          يُدفع {formatMoney(bundle.price)} ج.م {TERM_EVERY[term]}
+          يُدفع <AnimatedMoney value={bundle.price} /> ج.م {TERM_EVERY[term]}
         </p>
         {perUnit && unitLimit ? (
           <p className={cn("mt-1 text-xs", highlighted ? "text-blue-200" : "text-zinc-500 dark:text-zinc-400")}>
-            ≈ {formatMoney(Math.round((perMonth / unitLimit) * 10) / 10)} ج.م {perUnit.label}
+            ≈ <AnimatedMoney value={Math.round((perMonth / unitLimit) * 10) / 10} /> ج.م {perUnit.label}
           </p>
         ) : null}
         {from !== null && (
@@ -116,7 +111,7 @@ export function PlanCard({
               highlighted ? "bg-white/15 text-white" : "bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
             )}
           >
-            <SlidersHorizontal size={13} /> اشتراكك على كيفك · تبدأ من {formatMoney(Math.ceil(from / term))} ج.م شهريًا
+            <SlidersHorizontal size={13} /> اشتراكك على كيفك · تبدأ من <AnimatedMoney value={Math.ceil(from / term)} /> ج.م شهريًا
           </p>
         )}
       </div>

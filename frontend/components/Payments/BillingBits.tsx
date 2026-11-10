@@ -3,7 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowDownLeft, ArrowUpRight, CalendarClock, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CalendarClock,
+  Loader2,
+  ReceiptText,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { toastApiError } from "@/app/lib/api-error";
@@ -180,6 +189,11 @@ export function TransactionRow({ transaction: t }: { transaction: WalletTransact
       </div>
       {t.status !== "Succeeded" && (
         <span className={cn("rounded-md px-2 py-0.5 text-[11px] font-bold", status.className)}>{status.label}</span>
+      )}
+      {t.status === "Succeeded" && (
+        <Link href={`/subscription/receipt/${t.id}`} className={ghostButton}>
+          <ReceiptText size={14} /> إيصال
+        </Link>
       )}
       {t.type === "Deposit" && t.status === "Pending" && t.reference && (
         <button type="button" onClick={() => void check()} disabled={checking} className={ghostButton}>

@@ -28,13 +28,13 @@ export const useGenerateQuestionsFromPdf = () =>
     },
   });
 
-export const useGenerateAiQuestions = (lessonId: string) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: questionService.uploadForAiQuestions,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: lessonInformationKey(lessonId) });
+// Same for a photo (POST /ai/fill-question): the generated question(s) come
+// back as drafts for the student to check before anything is saved.
+export const useGenerateQuestionFromImage = () =>
+  useMutation({
+    mutationFn: async (image: File) => {
+      const questions = await questionService.generateFromImage(image);
+      const drafts = await Promise.all(questions.map((q, i) => aiQuestionToDraft(q, i)));
+      return drafts.map((draft, i) => ({ draft, pageNumber: questions[i].pageNumber ?? null }));
     },
   });
-};

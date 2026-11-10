@@ -13,7 +13,7 @@ import {
   TERM_MONTHS,
   type TermMonths,
 } from "@/app/constants/payment.constants";
-import { audienceForUser, groupPlans, isTeacherAccount, savingPercent } from "@/app/lib/payments";
+import { audienceForUser, groupPlans, isTeacherAccount, savingPercent, visibleAudiences } from "@/app/lib/payments";
 import { BundleAudience } from "@/app/types/payment.types";
 import { Segmented } from "@/components/TrackingTables/ui";
 import { PlanCard } from "./PlanCard";
@@ -31,9 +31,14 @@ export function PlansSection() {
   // prompt); otherwise the account's own, until the user picks one (the
   // user loads after the first render).
   const searchParams = useSearchParams();
+  const allowed = visibleAudiences(user);
+  const tabs = AUDIENCES.filter((a) => allowed.includes(a.value));
   const requested = AUDIENCES.find((a) => a.value === searchParams.get("audience"))?.value ?? null;
   const [picked, setAudience] = useState<BundleAudience | null>(requested);
-  const audience = picked ?? audienceForUser(user);
+  // A tab this account doesn't see (an old link, or before the user loads)
+  // falls back to the account's own plans.
+  const own = audienceForUser(user);
+  const audience = picked && allowed.includes(picked) ? picked : allowed.includes(own) ? own : allowed[0];
   const [term, setTerm] = useState<TermMonths>(1);
   const { data: bundles, isLoading } = useBundles(audience);
   const { data: subscription } = useMySubscription(kind !== "none");
@@ -53,7 +58,7 @@ export function PlansSection() {
         <Segmented<BundleAudience>
           value={audience}
           onChange={setAudience}
-          options={AUDIENCES}
+          options={tabs}
           className="w-full"
         />
         <div className="flex flex-col gap-2">
@@ -89,12 +94,14 @@ export function PlansSection() {
       <div className="mx-auto mt-12 grid max-w-6xl grid-cols-1 items-start gap-6 md:grid-cols-3">
         {isLoading
           ? [0, 1, 2].map((i) => <Skeleton key={i} className="h-[30rem] rounded-3xl" />)
-          : tiers.map(({ tier, terms }) => {
+          : tiers.map(({ tier, terms }, index) => {
               const bundle = terms[term];
               if (!bundle) return null;
               return (
                 <PlanCard
-                  key={tier}
+                  // By position, so switching audience counts the prices
+                  // from the previous cards instead of redrawing them.
+                  key={index}
                   tier={tier}
                   bundle={bundle}
                   monthly={terms[1]}

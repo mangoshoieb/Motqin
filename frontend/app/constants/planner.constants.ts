@@ -173,11 +173,6 @@ export const API_ROUTES = {
     PLAN_WITH_AI: "/ai/plan-with-ai",
   },
 
-  // multipart/form-data with a single `file` part — the lesson material the
-  // AI generates questions from.
-  UPLOADS: {
-    POST: "/uploads",
-  },
   STUDY_SESSIONS: {
     CREATE: "/study-session/create",
     MANUALLY_COMPLETED: "/study-session/manually-completed-session",
