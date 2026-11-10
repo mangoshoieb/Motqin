@@ -9,6 +9,7 @@ import {
   endSession,
   getBlockProgress,
   getLessonProgress,
+  hasAnswered,
   init,
   restore,
   toSnapshot,
@@ -464,11 +465,32 @@ describe("getBlockProgress", () => {
 describe("getLessonProgress", () => {
   it("counts finished questions across the whole lesson", () => {
     let state = init(makeItems(2), { BATCH_SIZE: 1, GRADUATE: 1, GAP: 1 });
-    expect(getLessonProgress(state)).toEqual({ done: 0, total: 2 });
+    expect(getLessonProgress(state)).toEqual({ done: 0, total: 2, percent: 0 });
 
     state = apply(state, CONTINUE); // -> Test(A)
     state = apply(state, correct); // A finished
-    expect(getLessonProgress(state)).toEqual({ done: 1, total: 2 });
+    expect(getLessonProgress(state)).toEqual({ done: 1, total: 2, percent: 50 });
+  });
+
+  it("gives partial credit for a question on its way to graduating", () => {
+    let state = init(makeItems(1), { BATCH_SIZE: 1, GRADUATE: 3, GAP: 1 });
+    state = apply(state, CONTINUE); // -> Test(A)
+    state = apply(state, correct); // score 1 of 3, not finished yet
+
+    expect(getLessonProgress(state)).toEqual({ done: 0, total: 1, percent: 33 });
+  });
+});
+
+describe("hasAnswered", () => {
+  it("is false until the first answer", () => {
+    let state = init(makeItems(1), { BATCH_SIZE: 1, GRADUATE: 3, GAP: 1 });
+    expect(hasAnswered(state)).toBe(false);
+
+    state = apply(state, CONTINUE); // info card read, nothing answered
+    expect(hasAnswered(state)).toBe(false);
+
+    state = apply(state, wrong);
+    expect(hasAnswered(state)).toBe(true);
   });
 });
 

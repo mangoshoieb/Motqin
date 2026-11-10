@@ -13,7 +13,7 @@ import { QuizCard } from "@/components/QuizCard";
 import { PresentationCard } from "@/components/PresentationCard";
 import { FeedbackBanner } from "@/components/FeedbackBanner";
 import { SessionSummary } from "@/components/SessionSummary";
-import { BlockProgressSidebar } from "@/components/BlockProgressSidebar";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LessonProgressBar } from "@/components/LessonProgressBar";
 
 const QuizPageContent = () => {
@@ -39,8 +39,9 @@ const QuizPageContent = () => {
     isRepetitionDone,
     currentCard,
     cardKey,
-    blockProgress,
     lessonProgress,
+    hasAnswered,
+    isCompleted,
     feedback,
     continueCard,
     submitAnswer,
@@ -49,6 +50,28 @@ const QuizPageContent = () => {
 
   const [answer, setAnswer] = useState("");
   const restart = useRestartRepetition(lessonId);
+  const [confirmEnd, setConfirmEnd] = useState(false);
+
+  // Ending before the session is over keeps only the questions mastered so
+  // far — warn first, once there's something to lose.
+  const requestEnd = () => {
+    if (hasAnswered) setConfirmEnd(true);
+    else endSession();
+  };
+
+  const endConfirmation = confirmEnd && (
+    <ConfirmDialog
+      title="إنهاء الجلسة الآن؟"
+      message="لم تُكمل الجلسة بعد. إذا أنهيتها الآن فلن يُحفظ تقدمك في الأسئلة التي لم تُتقنها، ويُحفظ فقط ما أتقنته."
+      confirmLabel="إنهاء الجلسة"
+      cancelLabel="متابعة الجلسة"
+      onConfirm={() => {
+        setConfirmEnd(false);
+        endSession();
+      }}
+      onCancel={() => setConfirmEnd(false)}
+    />
+  );
 
   if (error) {
     return (
@@ -114,7 +137,7 @@ const QuizPageContent = () => {
           <div className="w-full max-w-xl flex justify-end mb-4">
             <button
               type="button"
-              onClick={endSession}
+              onClick={requestEnd}
               className="text-sm text-zinc-500 cursor-pointer hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 transition"
             >
               إنهاء الجلسة
@@ -127,7 +150,9 @@ const QuizPageContent = () => {
           summary={currentCard}
           backHref={lessonHref}
           onContinue={continueCard}
+          completed={isCompleted}
         />
+        {endConfirmation}
       </div>
     );
   }
@@ -140,20 +165,14 @@ const QuizPageContent = () => {
 
   return (
     <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 px-10 py-12">
-      <div className=" mx-auto flex flex-col-reverse lg:flex-row gap-10 items-start">
-        {blockProgress && (
-          <aside className="w-full lg:w-64 shrink-0 mt-9">
-            <BlockProgressSidebar progress={blockProgress} />
-          </aside>
-        )}
-
-        <div className="flex-1 w-full flex flex-col items-center">
+      <div className="mx-auto flex flex-col items-center">
+        <div className="w-full flex flex-col items-center">
           <div className="w-full max-w-2xl flex items-center gap-4 mb-4">
             {lessonProgress && <LessonProgressBar progress={lessonProgress} />}
 
             <button
               type="button"
-              onClick={endSession}
+              onClick={requestEnd}
               className="text-sm text-zinc-500 cursor-pointer hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 transition"
             >
               إنهاء الجلسة
@@ -198,6 +217,7 @@ const QuizPageContent = () => {
       </div>
 
       {feedback && <FeedbackBanner correct={feedback.correct} />}
+      {endConfirmation}
     </div>
   );
 };

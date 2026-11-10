@@ -8,8 +8,8 @@ import {
   apply,
   checkAnswer,
   endSession,
-  getBlockProgress,
   getLessonProgress,
+  hasAnswered,
   init,
   restore,
   toSnapshot,
@@ -234,8 +234,12 @@ export const useLessonSession = (
     // Changes with every card shown — even the same question twice in a row
     // — so the page can remount the card and drop its local UI state.
     cardKey: state ? `${state.currentCard.type}-${state.turn}-${state.currentBlock}` : null,
-    blockProgress: state ? getBlockProgress(state) : null,
     lessonProgress: state ? getLessonProgress(state) : null,
+    // Every question graduated: the session was finished rather than ended
+    // early — the summary celebrates only then.
+    isCompleted: !!state && state.payload.length > 0 && state.questions.every((q) => q.done),
+    // Ending early only matters once something was answered.
+    hasAnswered: state ? hasAnswered(state) : false,
     feedback,
     continueCard,
     submitAnswer,

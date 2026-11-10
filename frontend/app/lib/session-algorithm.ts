@@ -441,12 +441,28 @@ export function getBlockProgress(state: SessionState): BlockProgress {
   return { blockNumber: state.currentBlock + 1, totalBlocks: totalBlocks(state), items };
 }
 
-// For the progress bar: finished questions out of the whole lesson.
+// For the progress bar. `percent` follows the scores rather than only the
+// finished count: each question is worth GRADUATE points and earns one per
+// point of score (capped, and a graduated one is worth them all), so a
+// question halfway to graduating counts as half done. A wrong answer lowers
+// the score, and the bar with it — it tracks what's actually mastered.
 export function getLessonProgress(state: SessionState): LessonProgress {
+  const graduate = state.config.GRADUATE;
+  const total = state.questions.length;
+  const earned = state.questions.reduce(
+    (sum, q) => sum + (q.done ? graduate : Math.min(q.score, graduate)),
+    0
+  );
   return {
     done: state.questions.filter((q) => q.done).length,
-    total: state.questions.length,
+    total,
+    percent: total === 0 || graduate <= 0 ? 0 : Math.round((earned / (total * graduate)) * 100),
   };
+}
+
+// Whether the student has answered anything yet this session.
+export function hasAnswered(state: SessionState): boolean {
+  return state.stats.testCards + state.stats.fillerCards > 0;
 }
 
 // §6.2 Text normalization: trim, collapse internal whitespace runs.

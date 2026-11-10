@@ -155,6 +155,8 @@ declare global {
   interface LessonProgress {
     done: number;
     total: number;
+    // 0–100, from the questions' scores — see getLessonProgress.
+    percent: number;
   }
 
   type SessionEvent =

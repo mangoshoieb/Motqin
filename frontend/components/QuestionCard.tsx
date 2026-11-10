@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Circle, ImageIcon, Volume2 } from "lucide-react";
+import { CheckCircle2 , CircleArrowLeft, ImageIcon, Volume2 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 
 interface QuestionCardProps {
@@ -44,7 +44,7 @@ export const QuestionCard = ({ information, onIgnore, isIgnoring, onOpen }: Ques
       {finished ? (
         <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
       ) : (
-        <Circle className="mt-0.5 size-5 shrink-0 text-zinc-300 dark:text-zinc-600" />
+        <CircleArrowLeft className="mt-0.5 size-5 shrink-0 text-zinc-300 dark:text-zinc-600" />
       )}
 
       <div className="min-w-0 flex-1">
@@ -89,9 +89,9 @@ export const QuestionCard = ({ information, onIgnore, isIgnoring, onOpen }: Ques
             e.stopPropagation();
             onIgnore(information);
           }}
-          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-red-800 transition hover:bg-red-200 hover:text-zinc-800 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
         >
-          {isIgnoring ? "جاري التجاهل..." : "تجاهل هذا السؤال"}
+          {isIgnoring ? "جاري التجاهل..." : "تجاهل هذه المعلومة"}
         </button>
       )}
     </div>
