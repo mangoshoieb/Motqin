@@ -96,7 +96,7 @@ const QuizPageContent = () => {
           <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={lessonHref}
-              className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
+              className="px-6 py-2.5 rounded-full bg-blue-600 dark:bg-blue-700 text-white font-semibold transition hover:bg-blue-700 dark:hover:bg-blue-800"
             >
               العودة إلى الدرس
             </Link>
@@ -198,7 +198,7 @@ const QuizPageContent = () => {
               <button
                 type="button"
                 onClick={continueCard}
-                className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition"
+                className="px-6 py-2.5 rounded-full bg-blue-600 dark:bg-blue-700 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition"
               >
                 متابعة
               </button>
@@ -207,7 +207,7 @@ const QuizPageContent = () => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={!answer.trim()}
-                className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition disabled:opacity-40"
+                className="px-6 py-2.5 rounded-full bg-blue-600 dark:bg-blue-700 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition disabled:opacity-40"
               >
                 إرسال الإجابة
               </button>

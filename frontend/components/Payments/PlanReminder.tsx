@@ -121,7 +121,7 @@ export function PlanReminder({ className, limitsOnly }: { className?: string; li
         href={reminder.kind === "limits" ? "/subscription" : renewHref}
         className={cn(
           "rounded-full px-4 py-2 text-xs font-bold text-white",
-          urgent ? "bg-rose-600 hover:bg-rose-700" : "bg-amber-500 hover:bg-amber-600",
+          urgent ? "bg-rose-600 dark:bg-rose-700 hover:bg-rose-700 dark:hover:bg-rose-800" : "bg-amber-500 dark:bg-amber-700 hover:bg-amber-600 dark:hover:bg-amber-700",
         )}
       >
         {reminder.kind === "limits" ? "اعرض العروض" : "جدّد الآن"}

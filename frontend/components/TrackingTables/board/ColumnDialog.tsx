@@ -141,7 +141,7 @@ export function ColumnDialog({
                       : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600",
                   )}
                 >
-                  <Icon size={18} className={on ? "text-blue-600" : "text-zinc-400"} />
+                  <Icon size={18} className={on ? "text-blue-600 dark:text-blue-400" : "text-zinc-400"} />
                   <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{label}</span>
                   <span className="text-[11px] leading-4 text-zinc-500">{hint}</span>
                 </button>
@@ -160,7 +160,7 @@ export function ColumnDialog({
               onChange={(e) => setMaxScore(e.target.value)}
               className={cn(inputClass, "w-32 text-center")}
             />
-            {!scoreValid && <span className="text-xs text-rose-600">من 1 إلى {TRACKING_LIMITS.MAX_SCORE}</span>}
+            {!scoreValid && <span className="text-xs text-rose-600 dark:text-rose-400">من 1 إلى {TRACKING_LIMITS.MAX_SCORE}</span>}
           </label>
         )}
 

@@ -84,7 +84,7 @@ export function PartnerReportView({
                   <li key={m.name} className="grid grid-cols-[7rem_1fr_auto] items-center gap-3 text-sm">
                     <span className="text-zinc-600 dark:text-zinc-300">{monthName(m.name)}</span>
                     <span className="h-2.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                      <span className="block h-full rounded-full bg-blue-600" style={{ width: `${(m.revenue / maxMonth) * 100}%` }} />
+                      <span className="block h-full rounded-full bg-blue-600 dark:bg-blue-700" style={{ width: `${(m.revenue / maxMonth) * 100}%` }} />
                     </span>
                     <span className="tabular-nums text-zinc-900 dark:text-zinc-100">
                       {formatEgp(m.revenue)} <span className="text-xs text-zinc-500">· {m.count} عملية</span>
@@ -122,7 +122,7 @@ export function PartnerReportView({
                         {sale.couponCode ?? "—"}
                       </td>
                       <td className="py-2.5 text-end tabular-nums">{formatEgp(sale.pricePaid)}</td>
-                      <td className="py-2.5 text-end tabular-nums text-emerald-600">{formatEgp(sale.commission)}</td>
+                      <td className="py-2.5 text-end tabular-nums text-emerald-600 dark:text-emerald-400">{formatEgp(sale.commission)}</td>
                       <td className="py-2.5 text-end text-xs text-zinc-500">{formatDateTime(sale.purchasedAt)}</td>
                     </tr>
                   ))}
@@ -146,7 +146,7 @@ function Stat({ Icon, label, value, accent }: { Icon: typeof Receipt; label: str
           : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900",
       )}
     >
-      <Icon size={18} className={accent ? "text-emerald-600" : "text-zinc-400"} />
+      <Icon size={18} className={accent ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400"} />
       <p className="mt-2 text-xl font-extrabold tabular-nums text-zinc-900 dark:text-zinc-100">{value}</p>
       <p className="text-xs text-zinc-500">{label}</p>
     </div>
@@ -176,7 +176,7 @@ function LinesCard({ title, lines, code }: { title: string; lines: SalesLine[]; 
               </span>
               <span className="text-xs text-zinc-500">{line.count} عملية</span>
               <span className="w-24 text-end tabular-nums">{formatEgp(line.revenue)}</span>
-              <span className="w-20 text-end tabular-nums text-emerald-600">{formatEgp(line.commission)}</span>
+              <span className="w-20 text-end tabular-nums text-emerald-600 dark:text-emerald-400">{formatEgp(line.commission)}</span>
             </li>
           ))}
         </ul>

@@ -157,7 +157,7 @@ export function GoalPicker({
                   type="button"
                   onClick={submitNewGoal}
                   disabled={createGoal.isPending || !newTitle.trim()}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Plus size={16} />
                   {createGoal.isPending ? "جاري الحفظ..." : "حفظ الهدف"}

@@ -122,7 +122,7 @@ function BreakBar({
         onClick={onStop}
         className={cn(
           "flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold text-white",
-          overrun ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700",
+          overrun ? "bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-800" : "bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-700 dark:hover:bg-emerald-800",
         )}
       >
         <Check size={12} />
@@ -281,7 +281,7 @@ export const ExecutionTaskRow = ({
         )}
         <button type="button" onClick={() => onToggleComplete(task.id)} className="shrink-0">
           {task.completed ? (
-            <CheckSquare size={22} className="text-emerald-500" />
+            <CheckSquare size={22} className="text-emerald-500 dark:text-emerald-400" />
           ) : (
             <Square size={22} className="text-zinc-400" />
           )}
@@ -331,7 +331,7 @@ export const ExecutionTaskRow = ({
                 <button type="button" onClick={() => { setMenuOpen(false); onEdit?.(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700"><Pencil size={14} /> تعديل المهمة</button>
                 <button type="button" onClick={() => { setMenuOpen(false); openNotes(!hasNotes); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700"><StickyNote size={14} /> {hasNotes ? "الملاحظات" : "إضافة ملاحظة"}</button>
                 {!task.completed && onPostpone && <button type="button" onClick={() => { setMenuOpen(false); onPostpone(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700"><SkipForward size={14} /> إرسال إلى الغد</button>}
-                <button type="button" onClick={() => { setMenuOpen(false); onDelete?.(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"><Trash2 size={14} /> حذف المهمة</button>
+                <button type="button" onClick={() => { setMenuOpen(false); onDelete?.(task); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-right text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"><Trash2 size={14} /> حذف المهمة</button>
               </div>
             )}
           </div>
@@ -340,7 +340,7 @@ export const ExecutionTaskRow = ({
             <button
               type="button"
               onClick={() => onStartRevision?.(task)}
-              className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
+              className="px-4 py-2 rounded-full bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold hover:bg-blue-700 dark:hover:bg-blue-800 transition"
             >
               ابدأ المراجعة
             </button>
@@ -403,7 +403,7 @@ export const ExecutionTaskRow = ({
                   {session.status === "completed" ? (
                     <span className="flex shrink-0 items-center gap-1.5">
                       {/* Done — the "completed at" tag sits by the time. */}
-                      <CheckCircle2 size={16} className="text-emerald-500" aria-hidden />
+                      <CheckCircle2 size={16} className="text-emerald-500 dark:text-emerald-400" aria-hidden />
                       {/* The break after this session is on the record. */}
                       {session.breakCompleted && (
                         <span
@@ -424,7 +424,7 @@ export const ExecutionTaskRow = ({
                               event.stopPropagation();
                               onStartBreak?.(session.id);
                             }}
-                            className="flex size-6 items-center justify-center rounded-full text-amber-500 transition hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                            className="flex size-6 items-center justify-center rounded-full text-amber-500 dark:text-amber-400 transition hover:bg-amber-50 dark:hover:bg-amber-950/40"
                           >
                             <Coffee size={13} />
                           </button>
@@ -534,7 +534,7 @@ export const ExecutionTaskRow = ({
                       type="button"
                       onClick={() => onConfirmMissedSession?.(session.id)}
                       title="احتساب الجلسة كمكتملة"
-                      className="flex shrink-0 items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700"
+                      className="flex shrink-0 items-center gap-1 rounded-md bg-emerald-600 dark:bg-emerald-700 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 dark:hover:bg-emerald-800"
                     >
                       <Check size={12} />
                       تأكيد الإتمام
@@ -570,7 +570,7 @@ export const ExecutionTaskRow = ({
                       type="button"
                       onClick={() => onSaveOvertime?.(session.id)}
                       title="إضافة الوقت الإضافي إلى الجلسة"
-                      className="flex shrink-0 items-center gap-1 rounded-md bg-amber-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-amber-700"
+                      className="flex shrink-0 items-center gap-1 rounded-md bg-amber-600 dark:bg-amber-700 px-2 py-1 text-[11px] font-semibold text-white hover:bg-amber-700 dark:hover:bg-amber-800"
                     >
                       <Save size={12} />
                       حفظ
@@ -592,7 +592,7 @@ export const ExecutionTaskRow = ({
                       type="button"
                       onClick={() => onDismissOvertime?.(session.id)}
                       title="تجاهل"
-                      className="shrink-0 text-amber-500 hover:text-amber-800 dark:hover:text-amber-200"
+                      className="shrink-0 text-amber-500 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200"
                     >
                       <X size={14} />
                     </button>
@@ -646,7 +646,7 @@ export const ExecutionTaskRow = ({
                         <button
                           type="button"
                           onClick={() => saveDetails(session)}
-                          className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+                          className="flex items-center gap-1 rounded-lg bg-blue-600 dark:bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
                         >
                           <Save size={13} />
                           حفظ
@@ -754,7 +754,7 @@ export const ExecutionTaskRow = ({
                     setNoteEditing(false);
                     if (empty) setNotesOpen(false);
                   }}
-                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                  className="rounded-lg bg-blue-600 dark:bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-800"
                 >
                   حفظ
                 </button>
@@ -792,14 +792,14 @@ export const ExecutionTaskRow = ({
         className={cn(
           "absolute -bottom-4 left-4 z-10 flex size-9 items-center justify-center rounded-full border shadow-md transition hover:-translate-y-0.5 hover:shadow-lg",
           notesOpen
-            ? "border-blue-600 bg-blue-600 text-white"
-            : "border-zinc-200 bg-white text-blue-600 hover:border-blue-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-blue-400",
+            ? "border-blue-600 bg-blue-600 dark:bg-blue-700 text-white"
+            : "border-zinc-200 bg-white text-blue-600 hover:border-blue-300 dark:hover:border-blue-500/40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-blue-400",
         )}
       >
         <NotebookPen size={16} />
         {/* There are notes behind it. */}
         {hasNotes && !notesOpen && (
-          <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-amber-400 ring-2 ring-white dark:ring-zinc-900" />
+          <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-amber-400 dark:bg-amber-600 ring-2 ring-white dark:ring-zinc-900" />
         )}
       </button>
     </div>

@@ -21,7 +21,7 @@ import { useParams, useRouter } from "next/navigation";
 import { MotqinPreferencesLink } from "@/components/Settings/Motqin/MotqinPreferencesLink";
 
 const iconButtonClass =
-  "p-2 rounded-full bg-white/90 border border-zinc-200 text-zinc-500 transition hover:text-zinc-900 hover:bg-zinc-50";
+  "p-2 rounded-full bg-white/90 border border-zinc-200 dark:border-zinc-800 text-zinc-500 transition hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800";
 
 export const SubjectPage = () => {
   const params = useParams()
@@ -44,7 +44,7 @@ export const SubjectPage = () => {
 
   if (isLoading) return <div dir="rtl" className="p-10 text-zinc-500">جاري تحميل الدروس...</div>;
 
-  if (error) return <div dir="rtl" className="p-10 text-red-600">حدث خطأ ما، حاول مرة أخرى.</div>;
+  if (error) return <div dir="rtl" className="p-10 text-red-600 dark:text-red-400">حدث خطأ ما، حاول مرة أخرى.</div>;
 
   const handleCreate = (payload: CustomLessonPayload) =>
     createLesson.mutate(
@@ -103,13 +103,13 @@ export const SubjectPage = () => {
   return (
     <div dir="rtl" className="p-10 flex-col gap-10 ">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <h1 className="text-3xl text-blue-950 font-bold">{subject?.name ?? "الدروس"}</h1>
+        <h1 className="text-3xl text-blue-950 dark:text-blue-200 font-bold">{subject?.name ?? "الدروس"}</h1>
         <div className="flex flex-wrap items-center gap-3">
           <MotqinPreferencesLink />
           <button
             type="button"
             onClick={() => setIsAdding(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 dark:bg-blue-700 text-white font-semibold transition hover:bg-blue-700 dark:hover:bg-blue-800"
           >
             <Plus className="size-4" />
             إضافة درس
@@ -117,7 +117,7 @@ export const SubjectPage = () => {
           <button
             type="button"
             onClick={() => setIsAddingFromPdf(true)}
-            className="group relative inline-flex items-center gap-2 overflow-hidden px-5 py-2.5 rounded-full bg-gradient-to-l from-indigo-600 to-blue-400 text-white font-semibold shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
+            className="group relative inline-flex items-center gap-2 overflow-hidden px-5 py-2.5 rounded-full bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 text-white font-semibold shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
           >
             {/* Light sweep on hover */}
             <span className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
@@ -141,7 +141,7 @@ export const SubjectPage = () => {
           // system lessons are read-only.
           badge={
             lesson.isMine && (
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-semibold">
                 درسي
               </span>
             )
@@ -161,7 +161,7 @@ export const SubjectPage = () => {
                   type="button"
                   aria-label={`حذف ${lesson.title}`}
                   onClick={() => setDeleting(lesson)}
-                  className={`${iconButtonClass} hover:!text-red-600`}
+                  className={`${iconButtonClass} hover:!text-red-600 dark:text-red-400`}
                 >
                   <Trash2 className="size-4" />
                 </button>

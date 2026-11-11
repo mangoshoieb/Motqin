@@ -74,7 +74,7 @@ export const SchedulesSection = () => {
     <button
       type="button"
       onClick={() => setEditing("new")}
-      className="flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700"
+      className="flex items-center gap-1.5 rounded-full bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
     >
       <Plus size={16} />
       إضافة جدول
@@ -220,8 +220,8 @@ export const SchedulesSection = () => {
                         "rounded-lg px-2 py-1 text-[11px] font-semibold",
                         schedule.days.includes(day.value)
                           ? isPlan
-                            ? "bg-violet-600 text-white"
-                            : "bg-blue-600 text-white"
+                            ? "bg-violet-600 dark:bg-violet-700 text-white"
+                            : "bg-blue-600 dark:bg-blue-700 text-white"
                           : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500",
                       )}
                     >

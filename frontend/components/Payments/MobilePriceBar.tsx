@@ -21,7 +21,7 @@ export function MobilePriceBar({
       <div className="mx-auto flex max-w-xl items-center gap-4">
         <div className="min-w-0 flex-1">
           <p className="text-xl font-extrabold tabular-nums text-blue-950 dark:text-blue-100">{price}</p>
-          {note && <p className={`truncate text-xs ${warn ? "text-amber-600" : "text-emerald-600"}`}>{note}</p>}
+          {note && <p className={`truncate text-xs ${warn ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>{note}</p>}
         </div>
         {action}
       </div>

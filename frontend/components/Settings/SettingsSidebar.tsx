@@ -69,7 +69,7 @@ const navItems: SettingsNavItem[] = [
   { label: "الإشعارات", href: "/settings/notifications", icon: Bell },
   { label: "نظرة عامة", href: "/settings/billing", icon: Wallet, exact: true, section: "الاشتراك والمحفظة" },
   { label: "باقتي وحدودها", href: "/settings/billing/limits", icon: Gauge },
-  { label: "سجل المعاملات", href: "/settings/billing/transactions", icon: ReceiptText },
+  // { label: "سجل المعاملات", href: "/settings/billing/transactions", icon: ReceiptText },
   {
     label: "مبيعاتي",
     href: "/settings/sales",
@@ -131,7 +131,7 @@ export const SettingsSidebar = () => {
             <Icon size={18} />
             {item.label}
             {badge > 0 && (
-              <span className="ms-auto flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] font-bold text-white">
+              <span className="ms-auto flex min-w-5 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-700 px-1.5 text-[11px] font-bold text-white">
                 {badge}
               </span>
             )}

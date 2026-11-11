@@ -162,7 +162,7 @@ const HighlightCard = ({
     )}
   >
     <p className="flex items-center gap-1.5 text-xs font-bold text-zinc-500">
-      <Icon size={14} className={tone === "good" ? "text-emerald-600" : tone === "bad" ? "text-orange-600" : "text-blue-600"} />
+      <Icon size={14} className={tone === "good" ? "text-emerald-600 dark:text-emerald-400" : tone === "bad" ? "text-orange-600 dark:text-orange-400" : "text-blue-600 dark:text-blue-400"} />
       {title}
     </p>
     {children}
@@ -227,7 +227,7 @@ export function Highlights({
           {mostImproved && (
             <p className="flex items-center justify-between gap-2 text-sm">
               <span className="flex min-w-0 items-center gap-1.5 text-zinc-500">
-                <TrendingUp size={14} className="shrink-0 text-emerald-600" /> أكثر تحسنًا:
+                <TrendingUp size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" /> أكثر تحسنًا:
                 <span className="truncate font-semibold text-zinc-900 dark:text-zinc-100">{mostImproved.name}</span>
               </span>
               <span className="shrink-0 font-bold tabular-nums text-emerald-700 dark:text-emerald-400">{signed(mostImproved.value)}</span>
@@ -236,7 +236,7 @@ export function Highlights({
           {mostDeclined && (
             <p className="flex items-center justify-between gap-2 text-sm">
               <span className="flex min-w-0 items-center gap-1.5 text-zinc-500">
-                <TrendingDown size={14} className="shrink-0 text-orange-600" /> أكثر تراجعًا:
+                <TrendingDown size={14} className="shrink-0 text-orange-600 dark:text-orange-400" /> أكثر تراجعًا:
                 <span className="truncate font-semibold text-zinc-900 dark:text-zinc-100">{mostDeclined.name}</span>
               </span>
               <span className="shrink-0 font-bold tabular-nums text-orange-700 dark:text-orange-400">{signed(mostDeclined.value)}</span>

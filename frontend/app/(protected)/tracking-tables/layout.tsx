@@ -35,7 +35,7 @@ export default function TrackingTablesLayout({ children }: { children: React.Rea
           هذه الصفحة متاحة لحسابات المعلمين ومساعديهم. إذا كنت معلمًا تواصل مع الدعم لتفعيل حسابك، وإذا كنت
           مساعدًا اطلب من المعلم أن يضيفك برقم هاتفك.
         </p>
-        <Link href="/" className="mt-6 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700">
+        <Link href="/" className="mt-6 rounded-xl bg-blue-600 dark:bg-blue-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 dark:hover:bg-blue-800">
           العودة للرئيسية
         </Link>
       </div>

@@ -54,7 +54,7 @@ export const UnsavedChangesDialog = ({
           type="button"
           onClick={onDiscard}
           disabled={isSaving}
-          className="rounded-lg px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:hover:bg-red-950/30"
+          className="rounded-lg px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 transition hover:bg-red-50 disabled:opacity-60 dark:hover:bg-red-950/30"
         >
           الخروج دون حفظ
         </button>
@@ -63,7 +63,7 @@ export const UnsavedChangesDialog = ({
           autoFocus
           onClick={onSaveAndLeave}
           disabled={isSaving}
-          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving ? "جاري الحفظ..." : "حفظ ثم الخروج"}
         </button>

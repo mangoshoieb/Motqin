@@ -156,10 +156,10 @@ export const MyRankCard = ({
             className={cn(
               "h-full rounded-full bg-gradient-to-l transition-all duration-700",
               card.zone === "promotion"
-                ? "from-emerald-400 to-emerald-600"
+                ? "from-emerald-400 dark:from-emerald-600 to-emerald-600 dark:to-emerald-800"
                 : card.zone === "relegation"
-                  ? "from-red-400 to-red-600"
-                  : "from-blue-400 to-blue-600"
+                  ? "from-red-400 dark:from-red-600 to-red-600 dark:to-red-800"
+                  : "from-blue-400 dark:from-blue-600 to-blue-600 dark:to-blue-800"
             )}
             style={{ width: `${Math.round(zoneProgress * 100)}%` }}
           />
@@ -209,7 +209,7 @@ export const MyRankCard = ({
 
                 <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
                   <div
-                    className="h-full rounded-full bg-blue-500/70"
+                    className="h-full rounded-full bg-blue-500/70 dark:bg-blue-700/70"
                     style={{ width: `${Math.round(share * 100)}%` }}
                   />
                 </div>

@@ -150,7 +150,7 @@ export const ChallengeCard = ({ challenge, onJoin, isJoining }: ChallengeCardPro
             type="button"
             onClick={() => onJoin(challenge.competitionId)}
             disabled={isJoining}
-            className="rounded-full bg-blue-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-bold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isJoining ? "جارٍ الانضمام…" : "انضم للمسابقة"}
           </button>

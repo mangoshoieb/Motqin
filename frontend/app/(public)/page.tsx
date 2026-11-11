@@ -51,7 +51,7 @@ export default function Home() {
               height={50}
               priority
             />
-            <h1 className="text-4xl font-bold mr-5 text-blue-900">.أتقن تركيزك. أتقن مستقبلك</h1>
+            <h1 className="text-4xl font-bold mr-5 text-blue-900 dark:text-blue-200">.أتقن تركيزك. أتقن مستقبلك</h1>
             <div className="min-w-[30vw] mr-5 flex gap-15 items-end justify-end">
               <CustomButton
               title="دليل"

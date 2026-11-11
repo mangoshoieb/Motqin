@@ -36,7 +36,7 @@ export const STANDING_STYLE: Record<
     cell: "text-zinc-800 dark:text-zinc-200",
   },
   below: {
-    bar: "bg-orange-600",
+    bar: "bg-orange-600 dark:bg-orange-700",
     chip: "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
     cell: "bg-orange-50 text-orange-800 dark:bg-orange-500/10 dark:text-orange-200",
   },

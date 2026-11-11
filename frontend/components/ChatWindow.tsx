@@ -41,7 +41,7 @@ export const ChatWindow = ({ messages }: ChatWindowProps) => {
             className={cn(
               "max-w-xl px-4 py-3 rounded-2xl text-lg leading-relaxed whitespace-pre-line",
               msg.role === "user"
-                ? "bg-blue-600 text-white rounded-br-md"
+                ? "bg-blue-600 dark:bg-blue-700 text-white rounded-br-md"
                 : `
                   bg-[var(--assistant-bg)]
                   text-[var(--assistant-text)]

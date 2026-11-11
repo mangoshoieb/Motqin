@@ -106,7 +106,7 @@ export const SessionSummary = ({ summary, backHref, onContinue, completed = fals
       {summary.isLastBlock ? (
         <Link
           href={backHref}
-          className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition"
+          className="px-6 py-2.5 rounded-full bg-blue-600 dark:bg-blue-700 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition"
         >
           العودة إلى الدرس
         </Link>
@@ -114,7 +114,7 @@ export const SessionSummary = ({ summary, backHref, onContinue, completed = fals
         <button
           type="button"
           onClick={onContinue}
-          className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition"
+          className="px-6 py-2.5 rounded-full bg-blue-600 dark:bg-blue-700 text-white font-semibold hover:bg-blue-700 dark:hover:bg-blue-500 transition"
         >
           متابعة إلى المجموعة التالية
         </button>

@@ -23,7 +23,7 @@ export default function BentoGrid() {
         {/* AI Teacher - Vertical card */}
         <Link
           href="/subjects"
-          className="col-span-3 row-span-5 bg-violet-500 rounded-3xl"
+          className="col-span-3 row-span-5 bg-violet-500 dark:bg-violet-700 rounded-3xl"
         >
           <FeatureCard
             title="AI Teacher"
@@ -36,7 +36,7 @@ export default function BentoGrid() {
         {/* Competitions - Wide card */}
         <Link
           href="/competitions"
-          className="col-span-5 row-span-3 bg-amber-400 rounded-3xl"
+          className="col-span-5 row-span-3 bg-amber-400 dark:bg-amber-600 rounded-3xl"
         >
           <FeatureCard
             title="Competitions"
@@ -55,7 +55,7 @@ export default function BentoGrid() {
         {/* Quiz - Square card */}
         <Link
           href="/subjects"
-          className="col-span-2 row-span-3 bg-teal-500 rounded-3xl"
+          className="col-span-2 row-span-3 bg-teal-500 dark:bg-teal-700 rounded-3xl"
         >
           <FeatureCard
             title="Quiz"
@@ -72,7 +72,7 @@ export default function BentoGrid() {
           variant="focus"
           size="medium"
           stats={[{ label: "Minutes today", value: "45" }]}
-          className="col-span-3 row-span-2 bg-rose-400"
+          className="col-span-3 row-span-2 bg-rose-400 dark:bg-rose-600"
           // onClick={() => console.log("Navigate to Focus Mode")}
         />
       </div>

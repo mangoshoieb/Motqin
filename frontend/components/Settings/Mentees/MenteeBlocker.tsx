@@ -146,7 +146,7 @@ export const MenteeBlocker = ({ blocker }: { blocker: Blocker }) => {
                           className={cn(
                             "rounded-md px-1.5 py-0.5 text-[10px] font-semibold",
                             schedule.days.includes(day.value)
-                              ? "bg-blue-600 text-white"
+                              ? "bg-blue-600 dark:bg-blue-700 text-white"
                               : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500",
                           )}
                         >

@@ -40,7 +40,7 @@ function GuestUpgradeCard({ onNavigate }: { onNavigate: () => void }) {
     : [];
 
   return (
-    <div dir="rtl" className="m-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-4 text-white shadow-lg shadow-blue-600/20">
+    <div dir="rtl" className="m-3 rounded-2xl bg-gradient-to-br from-blue-600 dark:from-blue-800 to-indigo-600 dark:to-indigo-800 p-4 text-white shadow-lg shadow-blue-600/20">
       <div className="flex items-center gap-2 font-bold">
         <CloudUpload size={18} />
         احفظ تقدّمك
@@ -68,7 +68,7 @@ function GuestUpgradeCard({ onNavigate }: { onNavigate: () => void }) {
           authReturnPath.set(pathname);
           onNavigate();
         }}
-        className="mt-3 flex h-9 items-center justify-center rounded-xl bg-white text-sm font-bold text-blue-700 transition hover:bg-blue-50"
+        className="mt-3 flex h-9 items-center justify-center rounded-xl bg-white text-sm font-bold text-blue-700 transition hover:bg-blue-50 dark:hover:bg-blue-500/10"
       >
         إنشاء حساب مجاني
       </Link>
@@ -236,7 +236,7 @@ export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
 
         <div className="my-2 border-t border-zinc-200 dark:border-zinc-800" />
 
-        <button className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 sm:px-5 sm:py-3 text-red-600 transition hover:bg-red-100 dark:hover:bg-red-950/30"
+        <button className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 sm:px-5 sm:py-3 text-red-600 dark:text-red-400 transition hover:bg-red-100 dark:hover:bg-red-950/30"
         onClick={()=> logout()}>
           <LogOut size={19} />
           تسجيل الخروج

@@ -114,7 +114,7 @@ export const AddQuestionDialog = ({
           <button
             type="submit"
             disabled={addQuestion.isPending}
-            className="flex-1 rounded-full bg-blue-600 px-5 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 rounded-full bg-blue-600 dark:bg-blue-700 px-5 py-2.5 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {addQuestion.isPending ? "جاري الإضافة..." : "إضافة السؤال"}
           </button>

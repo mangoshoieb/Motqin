@@ -23,9 +23,9 @@ interface LessonCardProps {
 }
 
 const stateStyles: Record<LessonState, string> = {
-  start: "bg-emerald-100 text-emerald-700",
-  continue: "bg-blue-100 text-blue-700",
-  review: "bg-amber-100 text-amber-700",
+  start: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  continue: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400",
+  review: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400",
 };
 
 export const LessonCard = ({
@@ -61,20 +61,20 @@ console.log(name)
       href={href}
       className={cn(
         "relative block rounded-2xl p-6 pb-15",
-        "bg-white border border-zinc-200",
+        "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800",
         className
       )}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-xl font-bold text-zinc-900">{name}</h2>
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{name}</h2>
           {badge}
         </div>
 
         <span
           className={cn(
-            "px-3 py-1 rounded-full text-xs font-semibold capitalize bg-emerald-100 text-emerald-700",
+            "px-3 py-1 rounded-full text-xs font-semibold capitalize bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
             // stateStyles[state]
           )}
         >
@@ -127,9 +127,9 @@ console.log(name)
           className={cn(
             "flex items-center justify-center",
             "h-10 w-10 rounded-full",
-            "bg-blue-100 text-blue-700",
+            "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400",
             "transition-all duration-300",
-            "group-hover:bg-gradient-to-r group-hover:from-blue-500 group-hover:to-blue-700",
+            "group-hover:bg-gradient-to-r group-hover:from-blue-500 dark:group-hover:from-blue-700 group-hover:to-blue-700 dark:group-hover:to-blue-900",
             "group-hover:text-white"
           )}
         >

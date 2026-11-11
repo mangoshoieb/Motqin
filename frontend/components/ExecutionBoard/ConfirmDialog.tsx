@@ -61,7 +61,7 @@ export const ConfirmDialog = ({
           onClick={onConfirm}
           className={cn(
             "rounded-lg px-5 py-2 text-sm font-semibold text-white transition",
-            tone === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700",
+            tone === "danger" ? "bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-800" : "bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-800",
           )}
         >
           {confirmLabel}

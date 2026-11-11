@@ -73,7 +73,7 @@ export default function LimitsPage() {
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">الحدود</h2>
           {ownKeys.size > 0 && me.quotas.length > ownKeys.size && (
-            <button type="button" onClick={() => setShowAll((v) => !v)} className="text-sm font-semibold text-blue-600 hover:underline">
+            <button type="button" onClick={() => setShowAll((v) => !v)} className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">
               {showAll ? "حدود حسابي فقط" : "عرض كل الحدود"}
             </button>
           )}
@@ -101,7 +101,7 @@ export default function LimitsPage() {
                 {featureLabel(q.feature, q.displayName)}
               </span>
             ))}
-            <Link href="/subscription" className="ms-auto text-sm font-semibold text-blue-600 hover:underline">
+            <Link href="/subscription" className="ms-auto text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">
               اعرض العروض
             </Link>
           </div>
@@ -116,7 +116,7 @@ export default function LimitsPage() {
             {removed.map(([group, items]) => (
               <div key={group} className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-800/50">
                 <div className="flex flex-wrap items-center gap-3">
-                  <MinusCircle size={18} className="text-amber-600" />
+                  <MinusCircle size={18} className="text-amber-600 dark:text-amber-400" />
                   <p className="flex-1 font-bold text-zinc-900 dark:text-zinc-100">{FEATURE_GROUP_LABELS[group] ?? group}</p>
                   {current.kind === "Paid" && (
                     <Link href={addBackHref(group)} className={cn(primaryButton, "py-2")}>
@@ -168,9 +168,9 @@ function QuotaRow({ quota: q }: { quota: Quota }) {
   if (q.type === "Access") {
     return (
       <div className="flex items-center gap-3 rounded-2xl bg-zinc-50 px-4 py-3 dark:bg-zinc-800/50">
-        <Check size={18} className="text-emerald-600" />
+        <Check size={18} className="text-emerald-600 dark:text-emerald-400" />
         <span className="flex-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">{label}</span>
-        <span className="text-xs font-bold text-emerald-600">متاح</span>
+        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">متاح</span>
       </div>
     );
   }
@@ -182,7 +182,7 @@ function QuotaRow({ quota: q }: { quota: Quota }) {
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{label}</span>
         {unlimited ? (
-          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
+          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
             <InfinityIcon size={14} /> غير محدود
           </span>
         ) : (
@@ -195,7 +195,7 @@ function QuotaRow({ quota: q }: { quota: Quota }) {
         <>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
             <div
-              className={cn("h-full rounded-full", ratio >= 1 ? "bg-rose-500" : ratio >= 0.8 ? "bg-amber-500" : "bg-blue-600")}
+              className={cn("h-full rounded-full", ratio >= 1 ? "bg-rose-500 dark:bg-rose-700" : ratio >= 0.8 ? "bg-amber-500 dark:bg-amber-700" : "bg-blue-600 dark:bg-blue-700")}
               style={{ width: `${ratio * 100}%` }}
             />
           </div>

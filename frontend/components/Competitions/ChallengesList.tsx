@@ -49,7 +49,7 @@ export const ChallengesList = ({ challenges }: ChallengesListProps) => {
             className={cn(
               "rounded-full px-4 py-2 text-sm font-semibold transition",
               filter === f.value
-                ? "bg-blue-600 text-white shadow-sm"
+                ? "bg-blue-600 dark:bg-blue-700 text-white shadow-sm"
                 : "border border-zinc-300 text-zinc-600 hover:bg-white dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
             )}
           >

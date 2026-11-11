@@ -15,7 +15,7 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
   return (
     <div className={cn("w-full space-y-1")}>
       {label && (
-        <label className="text-sm font-semibold text-gray-600">
+        <label className="text-sm font-semibold text-gray-600 dark:text-zinc-400">
           {label}
         </label>
       )}
@@ -42,8 +42,8 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
             "w-full rounded-lg border px-3 py-3 text-sm mt-2",
             icon && "pl-10",
             type=== ' password' && "pr-10",
-            "border-gray-300",
-            "focus:border-blue-600 focus:ring-2 focus:ring-blue-100",
+            "border-gray-300 dark:border-zinc-700",
+            "focus:border-blue-600 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/30",
             "outline-none transition",
             className
           )}
@@ -55,14 +55,14 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
             type="button"
             
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300"
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         )}
       </div>
       {error && (
-          <p className="text-sm text-red-500">
+          <p className="text-sm text-red-500 dark:text-red-400">
             {error}
           </p>
         )}

@@ -152,7 +152,7 @@ export function CreateTableDialog({ onClose }: { onClose: () => void }) {
                   <span
                     className={cn(
                       "flex size-8 shrink-0 items-center justify-center rounded-lg",
-                      on ? "bg-blue-600 text-white" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800",
+                      on ? "bg-blue-600 dark:bg-blue-700 text-white" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800",
                     )}
                   >
                     <Icon size={16} />
@@ -164,7 +164,7 @@ export function CreateTableDialog({ onClose }: { onClose: () => void }) {
                       {column.maxScore ? ` من ${column.maxScore}` : ""}
                     </span>
                   </span>
-                  {on && <Check size={16} className="shrink-0 text-blue-600" />}
+                  {on && <Check size={16} className="shrink-0 text-blue-600 dark:text-blue-400" />}
                 </button>
               );
             })}

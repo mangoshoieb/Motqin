@@ -239,7 +239,7 @@ export const ScheduleDialog = ({ schedule, schedules, onClose }: ScheduleDialogP
                         selected
                           ? taken
                             ? "border-red-400 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300"
-                            : "border-blue-600 bg-blue-600 text-white"
+                            : "border-blue-600 bg-blue-600 dark:bg-blue-700 text-white"
                           : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800",
                         taken && !selected && "cursor-not-allowed line-through opacity-40",
                       )}
@@ -313,7 +313,7 @@ export const ScheduleDialog = ({ schedule, schedules, onClose }: ScheduleDialogP
             <button
               type="submit"
               disabled={saving || Boolean(validationError)}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "جاري الحفظ..." : schedule ? "حفظ التعديلات" : "إضافة الجدول"}
             </button>

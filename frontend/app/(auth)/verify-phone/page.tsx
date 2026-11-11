@@ -92,7 +92,7 @@ const VerifyPhone = () => {
     <main dir="rtl" className="min-h-screen flex bg-[var(--surface)]">
       {/* Form */}
       <section className="w-full lg:w-[40%] flex justify-center items-center p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-sm px-6 sm:px-8 py-8">
+        <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-sm px-6 sm:px-8 py-8">
           <h1 className="text-3xl font-bold text-right mb-4">
             تأكيد رقم الهاتف
           </h1>
@@ -130,7 +130,7 @@ const VerifyPhone = () => {
                 resendsRemaining <= 0 ||
                 !phoneNumber
               }
-              className="text-sm font-medium text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline transition-colors"
+              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline transition-colors"
             >
               {resendLabel}
             </button>
@@ -138,7 +138,7 @@ const VerifyPhone = () => {
             <button
               type="button"
               onClick={() => router.replace("/sign-in")}
-              className="flex items-center justify-center gap-2 text-gray-700 font-semibold hover:text-blue-600 transition-colors cursor-pointer"
+              className="flex items-center justify-center gap-2 text-gray-700 dark:text-zinc-300 font-semibold hover:text-blue-600 dark:hover:text-blue-300 transition-colors cursor-pointer"
             >
               <ArrowRight className="size-5" />
               <span>العودة إلى تسجيل الدخول</span>

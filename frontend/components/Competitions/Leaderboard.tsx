@@ -38,7 +38,7 @@ const MEDALS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
 const PODIUM_STYLE: Record<number, { block: string; ring: string; lift: string }> = {
   1: {
-    block: "from-amber-300 to-amber-500",
+    block: "from-amber-300 dark:from-amber-500 to-amber-500 dark:to-amber-700",
     ring: "ring-amber-400",
     lift: "sm:-translate-y-4",
   },
@@ -48,14 +48,14 @@ const PODIUM_STYLE: Record<number, { block: string; ring: string; lift: string }
     lift: "",
   },
   3: {
-    block: "from-orange-300 to-orange-500",
+    block: "from-orange-300 dark:from-orange-500 to-orange-500 dark:to-orange-700",
     ring: "ring-orange-300",
     lift: "",
   },
 };
 
 const YouChip = () => (
-  <span className="shrink-0 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white">
+  <span className="shrink-0 rounded-full bg-blue-600 dark:bg-blue-700 px-2 py-0.5 text-[10px] font-bold text-white">
     أنت
   </span>
 );
@@ -192,7 +192,7 @@ export const Leaderboard = ({
             className={cn(
               "flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold",
               me
-                ? "bg-blue-600 text-white"
+                ? "bg-blue-600 dark:bg-blue-700 text-white"
                 : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
             )}
           >
@@ -215,12 +215,12 @@ export const Leaderboard = ({
         </div>
       ) : isError ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-zinc-300 bg-white/60 px-4 py-10 text-center dark:border-zinc-700 dark:bg-zinc-900/60">
-          <AlertCircle size={28} className="text-red-500" />
+          <AlertCircle size={28} className="text-red-500 dark:text-red-400" />
           <p className="text-sm text-zinc-600 dark:text-zinc-300">تعذر تحميل الترتيب</p>
           <button
             type="button"
             onClick={onRetry}
-            className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700"
+            className="flex items-center gap-1.5 rounded-xl bg-blue-600 dark:bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 dark:hover:bg-blue-800"
           >
             <RotateCcw size={14} />
             إعادة المحاولة

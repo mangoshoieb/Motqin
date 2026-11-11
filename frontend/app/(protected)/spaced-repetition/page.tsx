@@ -40,25 +40,25 @@ const STATE = {
     label: "قادمة",
     card: "border-sky-200 border-s-sky-500 bg-sky-50 dark:border-sky-900/70 dark:border-s-sky-500 dark:bg-sky-950/30",
     chip: "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200",
-    button: "bg-sky-600 hover:bg-sky-700",
+    button: "bg-sky-600 dark:bg-sky-700 hover:bg-sky-700 dark:hover:bg-sky-800",
   },
   today: {
     label: "اليوم",
     card: "border-emerald-200 border-s-emerald-500 bg-emerald-50 dark:border-emerald-900/70 dark:border-s-emerald-500 dark:bg-emerald-950/30",
     chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200",
-    button: "bg-emerald-600 hover:bg-emerald-700",
+    button: "bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-700 dark:hover:bg-emerald-800",
   },
   completed: {
     label: "مكتملة",
     card: "border-orange-200 border-s-orange-500 bg-orange-50 dark:border-orange-900/70 dark:border-s-orange-500 dark:bg-orange-950/30",
     chip: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200",
-    button: "bg-orange-600 hover:bg-orange-700",
+    button: "bg-orange-600 dark:bg-orange-700 hover:bg-orange-700 dark:hover:bg-orange-800",
   },
   missed: {
     label: "فائتة",
     card: "border-red-200 border-s-red-500 bg-red-50 dark:border-red-900/70 dark:border-s-red-500 dark:bg-red-950/30",
     chip: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200",
-    button: "bg-red-600 hover:bg-red-700",
+    button: "bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-800",
   },
 } as const satisfies Record<ReviewTimelineState, Record<string, string>>;
 
@@ -191,7 +191,7 @@ function DaySection({
           className={cn(
             "whitespace-nowrap text-xs",
             isToday
-              ? "rounded-full bg-emerald-600 px-2 py-0.5 font-semibold text-white"
+              ? "rounded-full bg-emerald-600 dark:bg-emerald-700 px-2 py-0.5 font-semibold text-white"
               : "text-zinc-500 dark:text-zinc-400"
           )}
         >
@@ -306,7 +306,7 @@ export default function SpacedRepetitionTablePage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
               <h1 className="flex items-center gap-2 text-2xl font-bold text-blue-950 dark:text-blue-100">
-                <BrainCircuit className="size-7 text-violet-500" />
+                <BrainCircuit className="size-7 text-violet-500 dark:text-violet-400" />
                 جدول المراجعات المتباعدة
               </h1>
 
@@ -395,7 +395,7 @@ export default function SpacedRepetitionTablePage() {
           </div>
         ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-violet-100 bg-white p-10 text-center dark:border-violet-900/50 dark:bg-zinc-900">
-            <BrainCircuit className="size-8 text-violet-500" />
+            <BrainCircuit className="size-8 text-violet-500 dark:text-violet-400" />
             <p className="font-bold text-zinc-900 dark:text-zinc-100">لا توجد مراجعات متباعدة بعد</p>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               عندما تُنهي جلسة على أي درس، سنجدول مراجعاته هنا في الأوقات المناسبة لتثبيت المعلومة.

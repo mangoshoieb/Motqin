@@ -90,7 +90,7 @@ export function TopUpDialog({
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           {status === "Succeeded" ? (
             <>
-              <CheckCircle2 size={52} className="text-emerald-500" />
+              <CheckCircle2 size={52} className="text-emerald-500 dark:text-emerald-400" />
               <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                 تم شحن محفظتك بمبلغ {formatEgp(recharge?.receivedAmount ?? recharge?.requestedAmount ?? 0)}
               </p>
@@ -100,7 +100,7 @@ export function TopUpDialog({
             </>
           ) : status === "Failed" || status === "Expired" ? (
             <>
-              <XCircle size={52} className="text-rose-500" />
+              <XCircle size={52} className="text-rose-500 dark:text-rose-400" />
               <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                 {status === "Failed" ? "لم تتم عملية الدفع" : "انتهت مهلة الدفع"}
               </p>
@@ -111,7 +111,7 @@ export function TopUpDialog({
             </>
           ) : (
             <>
-              <Loader2 size={44} className="animate-spin text-blue-600" />
+              <Loader2 size={44} className="animate-spin text-blue-600 dark:text-blue-400" />
               <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">جارٍ تأكيد الدفع…</p>
               <p className="max-w-sm text-sm leading-6 text-zinc-500">
                 {waitedLong
@@ -164,7 +164,7 @@ export function TopUpDialog({
                 "rounded-xl border py-2.5 text-sm font-bold tabular-nums transition",
                 amount === preset
                   ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
-                  : "border-zinc-200 text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-200",
+                  : "border-zinc-200 text-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 dark:border-zinc-700 dark:text-zinc-200",
               )}
             >
               {formatMoney(preset)}
@@ -183,13 +183,13 @@ export function TopUpDialog({
             className={cn(inputClass, "text-center text-lg font-bold")}
           />
           {!valid && text.trim() !== "" && (
-            <span className="text-xs text-rose-600">أقل مبلغ للشحن {RECHARGE_MIN} ج.م، وبحد أقصى رقمين بعد العلامة العشرية.</span>
+            <span className="text-xs text-rose-600 dark:text-rose-400">أقل مبلغ للشحن {RECHARGE_MIN} ج.م، وبحد أقصى رقمين بعد العلامة العشرية.</span>
           )}
         </label>
 
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="flex items-center gap-3 rounded-2xl border border-blue-600 bg-blue-50 px-4 py-3 dark:bg-blue-500/10">
-            <CreditCard size={20} className="text-blue-600" />
+            <CreditCard size={20} className="text-blue-600 dark:text-blue-400" />
             <div>
               <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">بطاقة بنكية</p>
               <p className="text-xs text-zinc-500">فيزا أو ماستركارد</p>
@@ -204,7 +204,7 @@ export function TopUpDialog({
           </div>
         </div>
 
-        {error && <p className="text-sm text-rose-600">{error}</p>}
+        {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
       </div>
     </Modal>
   );

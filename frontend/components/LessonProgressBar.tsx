@@ -21,7 +21,7 @@ export const LessonProgressBar = ({ progress }: LessonProgressBarProps) => {
         className="flex-1 h-2 rounded-full bg-zinc-200 overflow-hidden dark:bg-zinc-800"
       >
         <div
-          className="h-full rounded-full bg-emerald-600 transition-[width] duration-400 ease-out"
+          className="h-full rounded-full bg-emerald-600 dark:bg-emerald-700 transition-[width] duration-400 ease-out"
           style={{ width: `${percent}%` }}
         />
       </div>

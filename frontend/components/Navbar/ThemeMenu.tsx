@@ -1,6 +1,7 @@
 "use client";
 
-import { Monitor, Moon, Sun, Check } from "lucide-react";
+import Link from "next/link";
+import { Monitor, Moon, Sun, Check, SlidersHorizontal } from "lucide-react";
 import { useTheme } from "next-themes";
 
 const themes = [
@@ -45,13 +46,20 @@ export default function ThemeSubMenu() {
               {selected && (
                 <Check
                   size={18}
-                  className="text-blue-600"
+                  className="text-blue-600 dark:text-blue-400"
                 />
               )}
             </button>
           );
         })}
       </div>
+      <Link
+        href="/settings/appearance"
+        className="flex items-center gap-3 border-t border-zinc-200 px-3 py-2.5 text-sm text-zinc-600 transition hover:bg-zinc-100 sm:px-4 sm:py-3 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
+      >
+        <SlidersHorizontal size={16} />
+        <span>خيارات المظهر</span>
+      </Link>
     </div>
   );
 }

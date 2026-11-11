@@ -44,7 +44,7 @@ export const CompetitionTabs = ({
         <span aria-hidden className="text-xl leading-none sm:text-lg">{tab.icon}</span>
         {tab.label}
         {tab.value === "challenges" && challengeCount ? (
-          <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+          <span className="rounded-full bg-blue-600 dark:bg-blue-700 px-1.5 py-0.5 text-[10px] font-bold text-white">
             {challengeCount}
           </span>
         ) : null}

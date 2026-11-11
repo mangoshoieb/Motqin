@@ -50,7 +50,7 @@ const MenteesSettingsPage = () => {
         <button
           type="button"
           onClick={() => void mentees.refetch()}
-          className="flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="flex items-center gap-1.5 rounded-full bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-800"
         >
           <RotateCcw size={14} />
           إعادة المحاولة
@@ -132,7 +132,7 @@ const MenteesSettingsPage = () => {
                     type="button"
                     onClick={() => void answer(request.id, request.studentName, true)}
                     disabled={busyId !== null}
-                    className="flex items-center gap-1 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                    className="flex items-center gap-1 rounded-full bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-50"
                   >
                     <Check size={15} />
                     {busyId === request.id ? "جاري..." : "قبول"}
@@ -179,7 +179,7 @@ const MenteesSettingsPage = () => {
                   ، فتوقفت متابعتهم. لم يُحذف شيء، وتعود
                   متابعتهم عند تجديد باقتك أو ترقيتها. الأقدم قبولًا يُتابَع أولًا.
                 </span>
-                <Link href="/subscription?audience=Mentor" className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-600">
+                <Link href="/subscription?audience=Mentor" className="rounded-full bg-amber-500 dark:bg-amber-700 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-600 dark:hover:bg-amber-700">
                   اعرض العروض
                 </Link>
               </li>
@@ -231,7 +231,7 @@ const MenteesSettingsPage = () => {
                   </div>
                   <ChevronLeft
                     size={18}
-                    className="shrink-0 text-zinc-400 transition group-hover:-translate-x-0.5 group-hover:text-blue-600"
+                    className="shrink-0 text-zinc-400 transition group-hover:-translate-x-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-300"
                   />
                 </Link>
                 {mentee.unlockCode && (

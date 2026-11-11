@@ -39,7 +39,7 @@ export const ConfirmDialog = ({
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 px-5 py-2.5 rounded-full bg-red-600 text-white font-semibold hover:bg-red-700 transition"
+            className="flex-1 px-5 py-2.5 rounded-full bg-red-600 dark:bg-red-700 text-white font-semibold hover:bg-red-700 dark:hover:bg-red-800 transition"
           >
             {confirmLabel}
           </button>

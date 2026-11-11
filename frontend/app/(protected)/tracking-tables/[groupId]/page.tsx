@@ -348,7 +348,7 @@ export default function TrackingTableBoardPage() {
               type="button"
               onClick={() => setDialog({ kind: "report", rowIds: null })}
               disabled={total === 0}
-              className={cn(primaryButton, "bg-emerald-600 hover:bg-emerald-700")}
+              className={cn(primaryButton, "bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-700 dark:hover:bg-emerald-800")}
             >
               <Send size={17} /> إرسال تقرير
             </button>

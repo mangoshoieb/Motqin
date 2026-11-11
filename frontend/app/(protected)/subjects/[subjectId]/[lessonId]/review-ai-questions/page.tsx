@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChevronsDownUp, ChevronsUpDown, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { useGetLessons } from "@/app/hooks/useGetLessons";
 import { lessonInformationKey } from "@/app/hooks/useGetLessonInformation";
@@ -24,7 +24,7 @@ import {
   QUESTION_CATEGORIES,
   type QuestionCategoryValue,
 } from "@/app/constants/question.constants";
-import { ReviewQuestionCard } from "@/components/ReviewQuestionCard";
+import { ReviewQuestionView } from "@/components/ReviewQuestionView";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type Filter = "all" | "invalid" | QuestionCategoryValue;
@@ -35,6 +35,9 @@ const questionsCount = (n: number) =>
 
 // Temporary page for AI-generated questions: the student checks and edits
 // them here, and only "save" writes them — one add-user-question call each.
+// One question at a time, as the info card the quiz will show; a sticky
+// strip of numbered chips (and the keyboard arrows) moves between them, so a
+// long batch never turns into a long scroll.
 // The batch lives in memory (useAiQuestionsReviewStore), so this page is
 // guarded against leaving while it still holds unsaved questions.
 const ReviewAiQuestionsPage = () => {
@@ -59,7 +62,11 @@ const ReviewAiQuestionsPage = () => {
   );
 
   const [filter, setFilter] = useState<Filter>("all");
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // The question on screen, and whether its editor is open — the editor
+  // stays open while moving on, for working through a batch.
+  const [currentKey, setCurrentKey] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const chipRefs = useRef(new Map<string, HTMLButtonElement>());
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   // Set on the way out, so the emptied batch doesn't flash the empty state.
@@ -94,36 +101,76 @@ const ReviewAiQuestionsPage = () => {
     })),
   ];
 
-  // Open one card on its own and bring it into view.
-  const focusCard = (key: string) => {
-    setExpanded(new Set([key]));
-    requestAnimationFrame(() =>
-      document
-        .getElementById(`ai-question-${key}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "start" })
-    );
+  // The current question, falling back to the first one in view (after a
+  // filter change, say).
+  const current = visible.find((item) => item.key === currentKey) ?? visible[0];
+  const currentIndex = current ? visible.indexOf(current) : -1;
+  const prevItem = currentIndex > 0 ? visible[currentIndex - 1] : undefined;
+  const nextItem = currentIndex >= 0 ? visible[currentIndex + 1] : undefined;
+
+  // Show a question, optionally with its editor open, and bring the view
+  // back to the top of the card if a long one was scrolled past.
+  const goTo = (key: string, options?: { openEditor?: boolean }) => {
+    setCurrentKey(key);
+    if (options?.openEditor) setEditorOpen(true);
+    requestAnimationFrame(() => {
+      const view = document.getElementById("ai-question-view");
+      if (view && view.getBoundingClientRect().top < 0) {
+        view.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
   };
 
-  const toggle = (key: string) =>
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+  // Keep the current chip in sight in the strip.
+  useEffect(() => {
+    if (!current) return;
+    chipRefs.current
+      .get(current.key)
+      ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [current]);
+
+  // Left / right arrow keys move between questions (in RTL, left is next),
+  // except while typing in a field.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable=true]")) return;
+      if (event.key === "ArrowLeft" && nextItem) goTo(nextItem.key);
+      else if (event.key === "ArrowRight" && prevItem) goTo(prevItem.key);
+      else return;
+      event.preventDefault();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   const handleRemove = (key: string) => {
+    // Land on the neighbour rather than jumping back to the first question.
+    const index = visible.findIndex((item) => item.key === key);
+    const neighbour = visible[index + 1] ?? visible[index - 1];
     const removed = remove(key);
     if (!removed) return;
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.delete(key);
-      return next;
-    });
+    setCurrentKey(neighbour?.key ?? null);
     toast("تم حذف السؤال", {
-      action: { label: "تراجع", onClick: () => insert(removed.item, removed.index) },
+      action: {
+        label: "تراجع",
+        onClick: () => {
+          insert(removed.item, removed.index);
+          setCurrentKey(removed.item.key);
+        },
+      },
     });
   };
+
+  const chipClass = (item: (typeof items)[number], isCurrent: boolean) =>
+    isCurrent
+      ? "border-blue-600 bg-blue-600 text-white dark:border-blue-700 dark:bg-blue-700"
+      : item.saveError || isInvalid(item.key)
+        ? "border-red-300 bg-red-50 text-red-700 hover:border-red-400 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
+        : item.edited
+          ? "border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-400 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
+          : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-blue-500/40";
 
   const discardAndLeave = (href: string) => {
     setIsLeaving(true);
@@ -137,7 +184,7 @@ const ReviewAiQuestionsPage = () => {
     if (invalidCount > 0) {
       const first = items.find((item) => isInvalid(item.key));
       setFilter("all");
-      if (first) focusCard(first.key);
+      if (first) goTo(first.key, { openEditor: true });
       toast.error(`${questionsCount(invalidCount)} بحاجة إلى تعديل قبل الحفظ.`);
       return;
     }
@@ -200,7 +247,7 @@ const ReviewAiQuestionsPage = () => {
         </p>
         <Link
           href={lessonHref}
-          className="rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700"
+          className="rounded-full bg-blue-600 dark:bg-blue-700 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
         >
           العودة إلى الدرس
         </Link>
@@ -215,7 +262,7 @@ const ReviewAiQuestionsPage = () => {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-bold text-blue-950 dark:text-blue-100">
-              <Sparkles className="size-6 text-indigo-500" />
+              <Sparkles className="size-6 text-indigo-500 dark:text-indigo-400" />
               مراجعة الأسئلة المولّدة
             </h1>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
@@ -228,32 +275,15 @@ const ReviewAiQuestionsPage = () => {
               )}
             </p>
             <p className="mt-1 text-xs text-zinc-400">
-              راجع الأسئلة وعدّلها كما تشاء، ثم احفظها لتُضاف إلى الدرس.
+              هكذا ستظهر كل معلومة في جلسة المراجعة. افتح الأسئلة تحت أي بطاقة لتعديلها، ثم احفظ لتُضاف إلى الدرس.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setExpanded(new Set(visible.map((item) => item.key)))}
-              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-            >
-              <ChevronsUpDown className="size-4" />
-              توسيع الكل
-            </button>
-            <button
-              type="button"
-              onClick={() => setExpanded(new Set())}
-              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-            >
-              <ChevronsDownUp className="size-4" />
-              طي الكل
-            </button>
-          </div>
         </div>
 
-        {/* Filters */}
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        {/* Navigator: filters + a chip per question — sticks while scrolling */}
+        <div className="sticky top-0 z-20 -mx-4 mb-6 border-b border-zinc-200 bg-zinc-100/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8 dark:border-zinc-800 dark:bg-zinc-950/95">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           {filters.map((f) => (
             <button
               key={f.value}
@@ -262,8 +292,8 @@ const ReviewAiQuestionsPage = () => {
               className={cn(
                 "rounded-full border px-4 py-1.5 text-sm font-medium transition",
                 filter === f.value
-                  ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                  ? "border-blue-600 bg-blue-600 dark:bg-blue-700 text-white"
+                  : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-300 dark:hover:border-blue-500/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
               )}
             >
               {f.label} <span className="tabular-nums opacity-80">{f.count}</span>
@@ -276,7 +306,7 @@ const ReviewAiQuestionsPage = () => {
               className={cn(
                 "rounded-full border px-4 py-1.5 text-sm font-medium transition",
                 filter === "invalid"
-                  ? "border-red-600 bg-red-600 text-white"
+                  ? "border-red-600 bg-red-600 dark:bg-red-700 text-white"
                   : "border-red-200 bg-white text-red-600 hover:border-red-400 dark:border-red-900 dark:bg-zinc-900 dark:text-red-400"
               )}
             >
@@ -288,33 +318,67 @@ const ReviewAiQuestionsPage = () => {
           )}
         </div>
 
-        {/* Questions */}
-        <div className="flex flex-col gap-3 pb-6">
-          {visible.length === 0 && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="الأسئلة">
+            {visible.map((item) => {
+              const isCurrent = item.key === current?.key;
+              return (
+                <button
+                  key={item.key}
+                  ref={(el) => {
+                    if (el) chipRefs.current.set(item.key, el);
+                    else chipRefs.current.delete(item.key);
+                  }}
+                  type="button"
+                  role="tab"
+                  aria-selected={isCurrent}
+                  onClick={() => goTo(item.key)}
+                  title={item.draft.title || item.draft.mcqText || undefined}
+                  className={cn(
+                    "flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border px-2 text-sm font-semibold tabular-nums transition",
+                    chipClass(item, isCurrent)
+                  )}
+                >
+                  {numberByKey.get(item.key)}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="flex items-center gap-1.5">
+              <span className="size-2.5 rounded-sm border border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/40" />
+              يحتاج تعديل
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="size-2.5 rounded-sm border border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40" />
+              معدّل
+            </span>
+            <span className="hidden sm:inline">استخدم الأسهم ← → للتنقل بين الأسئلة</span>
+          </div>
+        </div>
+
+        {/* The current question */}
+        <div className="pb-8">
+          {current ? (
+            <ReviewQuestionView
+              key={current.key}
+              item={current}
+              number={numberByKey.get(current.key) ?? currentIndex + 1}
+              total={items.length}
+              errors={errorsByKey.get(current.key) ?? {}}
+              editorOpen={editorOpen}
+              disabled={isSaving}
+              onToggleEditor={() => setEditorOpen((open) => !open)}
+              onChange={(patch) => updateDraft(current.key, patch)}
+              onRemove={() => handleRemove(current.key)}
+              onPrev={prevItem ? () => goTo(prevItem.key) : undefined}
+              onNext={nextItem ? () => goTo(nextItem.key) : undefined}
+            />
+          ) : (
             <p className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
               لا توجد أسئلة في هذا التصنيف.
             </p>
           )}
-
-          {visible.map((item, index) => {
-            const prev = visible[index - 1];
-            const next = visible[index + 1];
-            return (
-              <ReviewQuestionCard
-                key={item.key}
-                item={item}
-                number={numberByKey.get(item.key) ?? index + 1}
-                errors={errorsByKey.get(item.key) ?? {}}
-                expanded={expanded.has(item.key)}
-                disabled={isSaving}
-                onToggle={() => toggle(item.key)}
-                onChange={(patch) => updateDraft(item.key, patch)}
-                onRemove={() => handleRemove(item.key)}
-                onPrev={prev ? () => focusCard(prev.key) : undefined}
-                onNext={next ? () => focusCard(next.key) : undefined}
-              />
-            );
-          })}
         </div>
       </div>
 
@@ -329,7 +393,7 @@ const ReviewAiQuestionsPage = () => {
                 </p>
                 <div className="mt-1.5 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
                   <div
-                    className="h-full rounded-full bg-blue-600 transition-[width]"
+                    className="h-full rounded-full bg-blue-600 dark:bg-blue-700 transition-[width]"
                     style={{ width: `${(progress.done / progress.total) * 100}%` }}
                   />
                 </div>
@@ -350,7 +414,7 @@ const ReviewAiQuestionsPage = () => {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+            className="rounded-full bg-blue-600 dark:bg-blue-700 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-60"
           >
             {isSaving
               ? "جاري الحفظ..."

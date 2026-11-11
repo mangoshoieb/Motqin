@@ -56,7 +56,7 @@ export default function PlannerStepper({
               <span
                 className={cn(
                   "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold transition",
-                  isDone && "bg-gradient-to-l from-indigo-600 to-blue-400 text-white shadow-md shadow-indigo-500/25",
+                  isDone && "bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 text-white shadow-md shadow-indigo-500/25",
                   isCurrent &&
                     "bg-white text-blue-700 ring-2 ring-blue-600 ring-offset-2 ring-offset-white dark:bg-zinc-900 dark:text-blue-400 dark:ring-offset-zinc-900",
                   !isDone && !isCurrent && "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500",
@@ -91,7 +91,7 @@ export default function PlannerStepper({
                 className={cn(
                   "mt-[18px] h-0.5 w-6 shrink-0 rounded-full transition sm:w-12",
                   isDone
-                    ? "bg-gradient-to-l from-indigo-600 to-blue-400"
+                    ? "bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600"
                     : "bg-zinc-200 dark:bg-zinc-800",
                 )}
               />

@@ -12,11 +12,11 @@ import { ReportCounts, ReportMessageStatus } from "@/app/types/tracking-table.ty
 import { Modal, primaryButton, secondaryButton } from "../ui";
 
 const SEGMENTS: { key: keyof ReportCounts; status: ReportMessageStatus; bar: string }[] = [
-  { key: "sent", status: "Sent", bar: "bg-emerald-500" },
-  { key: "sending", status: "Sending", bar: "bg-indigo-500 animate-pulse" },
-  { key: "queued", status: "Queued", bar: "bg-blue-400" },
-  { key: "failed", status: "Failed", bar: "bg-rose-500" },
-  { key: "skipped", status: "Skipped", bar: "bg-amber-400" },
+  { key: "sent", status: "Sent", bar: "bg-emerald-500 dark:bg-emerald-700" },
+  { key: "sending", status: "Sending", bar: "bg-indigo-500 dark:bg-indigo-700 animate-pulse" },
+  { key: "queued", status: "Queued", bar: "bg-blue-400 dark:bg-blue-600" },
+  { key: "failed", status: "Failed", bar: "bg-rose-500 dark:bg-rose-700" },
+  { key: "skipped", status: "Skipped", bar: "bg-amber-400 dark:bg-amber-600" },
   { key: "cancelled", status: "Cancelled", bar: "bg-zinc-400" },
   { key: "draft", status: "Draft", bar: "bg-zinc-300" },
 ];
@@ -49,7 +49,7 @@ export function PlanNotice({ message }: { message: string }) {
     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
       <p className="font-semibold">{message}</p>
       <p className="mt-1 text-xs opacity-80">رسائل أولياء الأمور جزء من باقات المعلمين.</p>
-      <Link href="/subscription" className="mt-3 inline-flex rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600">
+      <Link href="/subscription" className="mt-3 inline-flex rounded-lg bg-amber-500 dark:bg-amber-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600 dark:hover:bg-amber-700">
         عرض الباقات
       </Link>
     </div>
@@ -92,7 +92,7 @@ export function ReportStatusView({ batchId }: { batchId: string }) {
             {report.template} · {report.groupName}
           </p>
           {active > 0 && (
-            <span className="flex items-center gap-1 text-xs font-semibold text-indigo-600">
+            <span className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
               <Loader2 size={12} className="animate-spin" /> جارٍ الإرسال
             </span>
           )}
@@ -115,7 +115,7 @@ export function ReportStatusView({ batchId }: { batchId: string }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">{m.student}</p>
                 {m.error ? (
-                  <p className="truncate text-xs text-rose-600">{m.error}</p>
+                  <p className="truncate text-xs text-rose-600 dark:text-rose-400">{m.error}</p>
                 ) : (
                   m.phone && (
                     <p dir="ltr" className="text-right text-xs tabular-nums text-zinc-500">
@@ -135,7 +135,7 @@ export function ReportStatusView({ batchId }: { batchId: string }) {
           type="button"
           onClick={() => stop.mutate(batchId)}
           disabled={stop.isPending}
-          className={cn(secondaryButton, "text-rose-600")}
+          className={cn(secondaryButton, "text-rose-600 dark:text-rose-400")}
         >
           <Ban size={16} /> إيقاف ما لم يُرسل بعد
         </button>
@@ -157,7 +157,7 @@ export function ReportStatusView({ batchId }: { batchId: string }) {
         (error.plan ? (
           <PlanNotice message={error.message} />
         ) : (
-          <p className="text-sm text-rose-600">{error.message}</p>
+          <p className="text-sm text-rose-600 dark:text-rose-400">{error.message}</p>
         ))}
     </div>
   );

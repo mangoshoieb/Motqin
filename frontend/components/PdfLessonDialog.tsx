@@ -40,7 +40,7 @@ export const PdfLessonDialog = ({ isPending = false, onSubmit, onCancel }: PdfLe
       >
         <div className="flex items-start justify-between gap-4 px-6 pt-6">
           <div className="flex items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 text-white shadow-lg shadow-indigo-500/30">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 text-white shadow-lg shadow-indigo-500/30">
               <FileText className="size-5" />
             </span>
             <div>
@@ -74,7 +74,7 @@ export const PdfLessonDialog = ({ isPending = false, onSubmit, onCancel }: PdfLe
               className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-zinc-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
             {title.length > 0 && tooShort && (
-              <span className="mt-1 block text-xs font-normal text-red-600">
+              <span className="mt-1 block text-xs font-normal text-red-600 dark:text-red-400">
                 يجب أن يتكون العنوان من حرفين على الأقل.
               </span>
             )}
@@ -93,7 +93,7 @@ export const PdfLessonDialog = ({ isPending = false, onSubmit, onCancel }: PdfLe
           <button
             type="submit"
             disabled={tooShort || isPending}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 px-6 py-3 font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 px-6 py-3 font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Sparkles className="size-5" />
             {isPending ? "جاري إنشاء الدرس..." : "التالي: رفع الملف"}

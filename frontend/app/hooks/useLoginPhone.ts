@@ -37,7 +37,7 @@ export function useLogInPhone() {
       console.error(error);
       toast.error("تعذر إرسال رمز التحقق", {
         description: otpErrorMessage(error),
-        className: "!bg-red-200/80 ",
+        className: "!bg-red-200/80 dark:bg-red-500/20 ",
       });
     },
   });

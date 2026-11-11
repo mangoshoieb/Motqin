@@ -56,7 +56,7 @@ const AssistantsSettingsPage = () => {
           <button
             type="button"
             onClick={() => void refetch()}
-            className="flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="flex items-center gap-1.5 rounded-full bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-800"
           >
             <RotateCcw size={14} />
             إعادة المحاولة
@@ -102,7 +102,7 @@ const AssistantsSettingsPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">مساعدو الجداول</h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            من يساعدك في <Link href="/tracking-tables" className="font-semibold text-blue-600 hover:underline">جداول المتابعة</Link>، وما يمكن لكل مساعد فعله.
+            من يساعدك في <Link href="/tracking-tables" className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">جداول المتابعة</Link>، وما يمكن لكل مساعد فعله.
           </p>
         </div>
         <button
@@ -110,7 +110,7 @@ const AssistantsSettingsPage = () => {
           onClick={() => setEditing("new")}
           disabled={atLimit}
           title={atLimit ? `الحد الأقصى ${MAX_ASSISTANTS} مساعدين` : undefined}
-          className="flex items-center gap-1.5 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-full bg-blue-600 dark:bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <UserPlus size={16} />
           إضافة مساعد

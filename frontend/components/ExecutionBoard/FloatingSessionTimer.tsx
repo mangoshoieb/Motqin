@@ -177,7 +177,7 @@ export const FloatingSessionTimer = ({
         )}
       >
         {finished ? (
-          <span className="flex size-[84px] shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/40">
+          <span className="flex size-[84px] shrink-0 items-center justify-center rounded-full bg-emerald-500 dark:bg-emerald-700 text-white shadow-lg shadow-emerald-500/40">
             <CheckCircle2 size={42} />
           </span>
         ) : (
@@ -206,7 +206,7 @@ export const FloatingSessionTimer = ({
                 className="stroke-blue-600 transition-[stroke-dashoffset] duration-1000 ease-linear"
               />
             </svg>
-            <span className="flex size-14 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700">
+            <span className="flex size-14 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-700 text-white transition hover:bg-blue-700 dark:hover:bg-blue-800">
               <Pause size={24} />
             </span>
           </button>
@@ -219,7 +219,7 @@ export const FloatingSessionTimer = ({
               finished ? "text-emerald-700 dark:text-emerald-300" : "text-zinc-500 dark:text-zinc-400",
             )}
           >
-            <Timer size={18} className={finished ? "text-emerald-600" : "text-blue-600"} />
+            <Timer size={18} className={finished ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"} />
             {finished ? "انتهت الجلسة — حان وقت الاستراحة" : "جلسة جارية"}
           </div>
           <div
@@ -258,7 +258,7 @@ export const FloatingSessionTimer = ({
             }}
             title="إغلاق"
             aria-label="إغلاق"
-            className="-me-1 self-start rounded-full p-1.5 text-emerald-700/70 transition hover:bg-emerald-100 hover:text-emerald-900 dark:text-emerald-300/70 dark:hover:bg-emerald-900/50"
+            className="-me-1 self-start rounded-full p-1.5 text-emerald-700/70 transition hover:bg-emerald-100 hover:text-emerald-900 dark:hover:text-emerald-300 dark:text-emerald-300/70 dark:hover:bg-emerald-900/50"
           >
             <X size={22} />
           </button>

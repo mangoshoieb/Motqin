@@ -117,7 +117,7 @@ export const MentorLockCard = () => {
             type="button"
             onClick={() => void handleRequest()}
             disabled={requestCode.isPending || secondsToRetry > 0}
-            className="flex items-center gap-2 rounded-full bg-amber-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center gap-2 rounded-full bg-amber-600 dark:bg-amber-700 px-5 py-2 text-sm font-bold text-white transition hover:bg-amber-700 dark:hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Send size={15} />
             {requestCode.isPending

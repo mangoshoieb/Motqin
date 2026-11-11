@@ -41,7 +41,7 @@ export const AchievementsGrid = ({ achievements }: AchievementsGridProps) => {
 
         <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
           <div
-            className="h-full rounded-full bg-gradient-to-l from-violet-400 to-violet-600 transition-all duration-700"
+            className="h-full rounded-full bg-gradient-to-l from-violet-400 dark:from-violet-600 to-violet-600 dark:to-violet-800 transition-all duration-700"
             style={{ width: `${Math.round((unlocked / achievements.length) * 100)}%` }}
           />
         </div>
@@ -134,7 +134,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
           <div
             className={cn(
               "h-full rounded-full transition-all duration-700",
-              isUnlocked ? "bg-violet-500" : "bg-zinc-400 dark:bg-zinc-600"
+              isUnlocked ? "bg-violet-500 dark:bg-violet-700" : "bg-zinc-400 dark:bg-zinc-600"
             )}
             style={{ width: `${Math.round(achievement.progress * 100)}%` }}
           />

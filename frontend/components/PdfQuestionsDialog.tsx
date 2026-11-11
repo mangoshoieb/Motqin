@@ -157,7 +157,7 @@ export const PdfQuestionsDialog = ({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 pt-6">
           <div className="flex items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 text-white shadow-lg shadow-indigo-500/30">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 text-white shadow-lg shadow-indigo-500/30">
               <Sparkles className={cn("size-5", isWorking && "animate-pulse")} />
             </span>
             <div>
@@ -189,7 +189,7 @@ export const PdfQuestionsDialog = ({
             <div className="relative flex size-20 items-center justify-center">
               <span className="absolute inset-0 animate-ping rounded-full bg-indigo-400/20" />
               <span className="absolute inset-2 animate-pulse rounded-full bg-indigo-400/20" />
-              <span className="relative flex size-14 items-center justify-center rounded-full bg-gradient-to-l from-indigo-600 to-blue-400 text-white shadow-lg shadow-indigo-500/30">
+              <span className="relative flex size-14 items-center justify-center rounded-full bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 text-white shadow-lg shadow-indigo-500/30">
                 <Sparkles className="size-6 animate-spin [animation-duration:3s]" />
               </span>
             </div>
@@ -204,7 +204,7 @@ export const PdfQuestionsDialog = ({
             <div className="w-full">
               <div className="h-2 w-full overflow-hidden rounded-full bg-indigo-100 dark:bg-indigo-950">
                 <div
-                  className="h-full rounded-full bg-gradient-to-l from-indigo-600 to-blue-400 transition-[width] duration-1000 ease-linear"
+                  className="h-full rounded-full bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 transition-[width] duration-1000 ease-linear"
                   style={{ width: `${isLeaving ? 100 : fakeProgress(elapsed)}%` }}
                 />
               </div>
@@ -228,7 +228,7 @@ export const PdfQuestionsDialog = ({
                     type="button"
                     onClick={() => setFile(null)}
                     aria-label="إزالة الملف"
-                    className="rounded-full p-1 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800"
+                    className="rounded-full p-1 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-200 dark:hover:bg-zinc-800"
                   >
                     <X className="size-4" />
                   </button>
@@ -248,7 +248,7 @@ export const PdfQuestionsDialog = ({
                       : "border-indigo-200 bg-white/60 hover:border-indigo-400 dark:border-indigo-900 dark:bg-zinc-900/40"
                   )}
                 >
-                  <UploadCloud className="size-8 text-indigo-500" />
+                  <UploadCloud className="size-8 text-indigo-500 dark:text-indigo-400" />
                   <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                     اسحب ملف PDF هنا أو اضغط للاختيار
                   </span>
@@ -310,7 +310,7 @@ export const PdfQuestionsDialog = ({
                 type="button"
                 onClick={handleGenerate}
                 disabled={!file}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 px-6 py-3 font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 px-6 py-3 font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Sparkles className="size-5" />
                 توليد الأسئلة

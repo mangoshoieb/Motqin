@@ -100,7 +100,7 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" dir="rtl">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
         <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-2"><BookOpen className="text-blue-600" size={20} /><h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{isEditing ? "تعديل المهمة" : "إضافة مهمة"}</h2></div>
+          <div className="flex items-center gap-2"><BookOpen className="text-blue-600 dark:text-blue-400" size={20} /><h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{isEditing ? "تعديل المهمة" : "إضافة مهمة"}</h2></div>
           <button type="button" onClick={onClose} title="إغلاق" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white"><X size={20} /></button>
         </div>
 
@@ -132,7 +132,7 @@ export const AddTaskDialog = ({ date, onCreated, onClose, task }: AddTaskDialogP
           />
         </div>
 
-        <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-700">إلغاء</button><button type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">{mutation.isPending ? "جاري الحفظ..." : isEditing ? "حفظ التعديل" : "إضافة المهمة"}</button></div>
+        <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-700">إلغاء</button><button type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending} className="rounded-lg bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60">{mutation.isPending ? "جاري الحفظ..." : isEditing ? "حفظ التعديل" : "إضافة المهمة"}</button></div>
       </div>
     </div>
   );

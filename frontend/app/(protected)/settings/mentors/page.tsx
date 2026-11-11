@@ -42,7 +42,7 @@ const MentorsSettingsPage = () => {
         <button
           type="button"
           onClick={() => void refetch()}
-          className="flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="flex items-center gap-1.5 rounded-full bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-800"
         >
           <RotateCcw size={14} />
           إعادة المحاولة
@@ -98,7 +98,7 @@ const MentorsSettingsPage = () => {
           </p>
           <Link
             href="/focus"
-            className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-violet-700 shadow-sm transition hover:bg-violet-100 dark:bg-violet-950 dark:text-violet-300"
+            className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-violet-700 shadow-sm transition hover:bg-violet-100 dark:hover:bg-violet-500/15 dark:bg-violet-950 dark:text-violet-300"
           >
             اطلب رمزًا لفتحها
           </Link>
@@ -152,7 +152,7 @@ const MentorsSettingsPage = () => {
           <button
             type="submit"
             disabled={atLimit || !phone.trim() || inviteMentor.isPending}
-            className="shrink-0 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="shrink-0 rounded-lg bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {inviteMentor.isPending ? "جاري الإرسال..." : "إرسال الدعوة"}
           </button>

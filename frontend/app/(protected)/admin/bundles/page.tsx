@@ -143,7 +143,7 @@ export default function AdminBundlesPage() {
                     <Dropdown
                       align="end"
                       trigger={
-                        <button type="button" aria-label="خيارات" className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800">
+                        <button type="button" aria-label="خيارات" className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-200 dark:hover:bg-zinc-800">
                           <MoreHorizontal size={18} />
                         </button>
                       }

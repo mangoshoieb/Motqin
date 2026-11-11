@@ -96,7 +96,7 @@ const GooglePhone = () => {
   return (
     <main dir="rtl" className="min-h-screen flex bg-[var(--surface)]">
       <section className="w-full lg:w-[40%] flex justify-center items-center p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-sm px-6 sm:px-8 py-8">
+        <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-sm px-6 sm:px-8 py-8">
           <div className="mb-4 flex items-center gap-2">
             <FcGoogle size={28} />
             <h1 className="text-3xl font-bold text-right">تأكيد رقم الهاتف</h1>
@@ -111,7 +111,7 @@ const GooglePhone = () => {
               </p>
               <Link
                 href="/sign-in"
-                className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
+                className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 dark:bg-blue-700 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
               >
                 <ArrowRight className="size-5" />
                 العودة إلى تسجيل الدخول
@@ -163,7 +163,7 @@ const GooglePhone = () => {
             >
               <p className="text-gray-500 text-sm sm:text-base leading-7">
                 أدخل الرمز المكوّن من 6 أرقام الذي أرسلناه عبر واتساب إلى{" "}
-                <span dir="ltr" className="font-semibold text-gray-700">
+                <span dir="ltr" className="font-semibold text-gray-700 dark:text-zinc-300">
                   {storedPhone}
                 </span>
                 .
@@ -191,7 +191,7 @@ const GooglePhone = () => {
                 type="button"
                 onClick={() => void sendCode(storedPhone)}
                 disabled={requestCode.isPending || cooldown > 0 || resendsRemaining <= 0}
-                className="text-sm font-medium text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline transition-colors"
+                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline transition-colors"
               >
                 {resendsRemaining <= 0
                   ? "تم استنفاد عدد المحاولات، حاول لاحقًا"
@@ -206,7 +206,7 @@ const GooglePhone = () => {
                   setCode("");
                   setError(null);
                 }}
-                className="text-sm font-semibold text-gray-700 transition-colors hover:text-blue-600"
+                className="text-sm font-semibold text-gray-700 dark:text-zinc-300 transition-colors hover:text-blue-600 dark:hover:text-blue-300"
               >
                 تغيير رقم الهاتف
               </button>

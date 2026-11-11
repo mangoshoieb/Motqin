@@ -209,7 +209,7 @@ function NextWeekTaskForm({
           type="button"
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
-          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="rounded-lg bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
           {mutation.isPending ? "جاري الحفظ..." : isEditing ? "حفظ التعديل" : "إضافة المهمة"}
         </button>
@@ -363,7 +363,7 @@ function NextWeekDayCard({
                       e.stopPropagation();
                       onEdit(item);
                     }}
-                    className="flex size-6 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-blue-600 dark:hover:bg-zinc-700"
+                    className="flex size-6 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-blue-600 dark:hover:text-blue-300 dark:hover:bg-zinc-700"
                   >
                     <Pencil size={13} />
                   </button>
@@ -374,7 +374,7 @@ function NextWeekDayCard({
                       e.stopPropagation();
                       onDelete(item);
                     }}
-                    className="flex size-6 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                    className="flex size-6 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:text-red-300 dark:hover:bg-red-950/40"
                   >
                     <Trash2 size={13} />
                   </button>
@@ -406,9 +406,9 @@ function NextWeekDayCard({
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-sm font-bold text-zinc-800 dark:text-zinc-100">
                     {editing ? (
-                      <Pencil size={16} className="text-blue-600" />
+                      <Pencil size={16} className="text-blue-600 dark:text-blue-400" />
                     ) : (
-                      <BookOpen size={16} className="text-blue-600" />
+                      <BookOpen size={16} className="text-blue-600 dark:text-blue-400" />
                     )}
                     {editing ? `تعديل: ${editing.title}` : "إضافة مهمة"}
                   </span>

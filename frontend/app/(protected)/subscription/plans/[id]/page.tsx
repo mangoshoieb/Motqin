@@ -128,7 +128,7 @@ function Builder({ bundle, ownKeys, initialKept }: { bundle: Bundle; ownKeys: Se
             </div>
             {term > 1 && <p className="mt-1 text-xs text-zinc-500">≈ <AnimatedMoney value={Math.round(price / term)} /> ج.م شهريًا</p>}
             {price < bundle.price && (
-              <p className="mt-2 text-sm font-semibold text-emerald-600">
+              <p className="mt-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                 وفّرت <AnimatedMoney value={bundle.price - price} /> ج.م بحذف {off.length === 1 ? "ميزة" : `${off.length} مميزات`}
               </p>
             )}

@@ -46,7 +46,7 @@ const SignIn = () => {
     >
       {/* Form */}
       <section className="w-full lg:w-[40%] h-[95vh] flex justify-center items-center p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
-        <div className="w-full h-full max-w-md bg-white rounded-3xl shadow-sm px-6 sm:px-8 py-8">
+        <div className="w-full h-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-sm px-6 sm:px-8 py-8">
           <h1 className="text-3xl font-bold text-right mb-6">تسجيل الدخول</h1>
 
           <form
@@ -74,8 +74,8 @@ const SignIn = () => {
             </div>
 
             <div className="flex justify-center gap-2 text-sm sm:text-base font-medium">
-              <span className="text-gray-600">ليس لديك حساب.</span>
-              <Link href="/sign-up" className="text-blue-600 hover:underline">
+              <span className="text-gray-600 dark:text-zinc-400">ليس لديك حساب.</span>
+              <Link href="/sign-up" className="text-blue-600 dark:text-blue-400 hover:underline">
                 إنشاء حساب
               </Link>
             </div>
@@ -110,7 +110,7 @@ const SignIn = () => {
                 type="button"
                 onClick={() => startGuest()}
                 disabled={isGuestPending}
-                className="text-sm font-semibold text-blue-600 hover:underline disabled:opacity-50"
+                className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
               >
                 جرّب التطبيق بدون حساب
               </button>

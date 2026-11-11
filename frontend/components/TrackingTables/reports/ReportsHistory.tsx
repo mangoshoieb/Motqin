@@ -27,7 +27,7 @@ export function ReportsHistory() {
   if (!reports?.length) {
     return (
       <div className="flex flex-col items-center rounded-3xl border-2 border-dashed border-zinc-300 bg-white px-6 py-14 text-center dark:border-zinc-700 dark:bg-zinc-900">
-        <span className="flex size-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15">
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/15">
           <MessageCircle size={26} />
         </span>
         <h2 className="mt-4 text-lg font-bold text-zinc-900 dark:text-zinc-100">لم ترسل تقارير بعد</h2>
@@ -50,7 +50,7 @@ export function ReportsHistory() {
                 onClick={() => setOpen(report.batchId)}
                 className="flex w-full items-center gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-start transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/15">
                   <MessageCircle size={20} />
                 </span>
                 <div className="min-w-0 flex-1">

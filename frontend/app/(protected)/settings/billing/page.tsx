@@ -48,7 +48,7 @@ export default function BillingOverviewPage() {
           <button
             type="button"
             onClick={() => setTopUp(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-blue-950 transition hover:bg-blue-50"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-blue-950 transition hover:bg-blue-50 dark:hover:bg-blue-500/10"
           >
             <Plus size={18} /> اشحن المحفظة
           </button>
@@ -63,7 +63,7 @@ export default function BillingOverviewPage() {
         href="/subscription"
         className="flex items-center gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-5 transition hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/30 dark:hover:bg-blue-950/50"
       >
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 dark:bg-blue-700 text-white">
           <Sparkles size={20} />
         </span>
         <div className="min-w-0 flex-1">
@@ -77,7 +77,7 @@ export default function BillingOverviewPage() {
         <section className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
             <h2 className="font-bold text-zinc-900 dark:text-zinc-100">آخر العمليات</h2>
-            <Link href="/settings/billing/transactions" className="text-sm font-semibold text-blue-600 hover:underline">
+            <Link href="/settings/billing/transactions" className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">
               عرض الكل
             </Link>
           </div>

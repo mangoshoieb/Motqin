@@ -37,7 +37,7 @@ export const QuestionCard = ({ information, onIgnore, isIgnoring, onOpen }: Ques
       className={cn(
         "flex cursor-pointer items-start gap-3 rounded-2xl border p-5 text-right transition hover:shadow-md dark:hover:shadow-none",
         finished
-          ? "border-emerald-200 bg-emerald-50/40 hover:border-emerald-300 dark:border-emerald-900/60 dark:bg-emerald-950/20"
+          ? "border-emerald-200 bg-emerald-50/40 hover:border-emerald-300 dark:hover:border-emerald-500/40 dark:border-emerald-900/60 dark:bg-emerald-950/20"
           : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
       )}
     >

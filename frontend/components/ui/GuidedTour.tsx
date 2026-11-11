@@ -179,7 +179,7 @@ export default function GuidedTour({ steps, open, onStepChange, onFinish, onSkip
                 type="button"
                 onClick={onSkip}
                 aria-label="إغلاق الشرح"
-                className="-m-1 flex size-7 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800"
+                className="-m-1 flex size-7 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:text-zinc-300 dark:hover:bg-zinc-800"
               >
                 <X size={15} />
               </button>
@@ -197,7 +197,7 @@ export default function GuidedTour({ steps, open, onStepChange, onFinish, onSkip
                     key={item.target}
                     className={cn(
                       "h-1.5 rounded-full transition-all",
-                      dot === index ? "w-5 bg-blue-600" : "w-1.5 bg-zinc-300 dark:bg-zinc-700",
+                      dot === index ? "w-5 bg-blue-600 dark:bg-blue-700" : "w-1.5 bg-zinc-300 dark:bg-zinc-700",
                     )}
                   />
                 ))}
@@ -216,7 +216,7 @@ export default function GuidedTour({ steps, open, onStepChange, onFinish, onSkip
                   type="button"
                   autoFocus
                   onClick={next}
-                  className="flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
+                  className="flex items-center gap-1 rounded-lg bg-blue-600 dark:bg-blue-700 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
                 >
                   {isLast ? "فهمت، لنبدأ" : "التالي"}
                   {!isLast && <ChevronLeft size={14} />}

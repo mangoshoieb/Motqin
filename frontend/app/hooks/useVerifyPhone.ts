@@ -33,7 +33,7 @@ export function useVerifyPhone() {
     onError: (error) => {
       console.error(error);
       toast.error(otpErrorMessage(error), {
-        className: "!bg-red-200/80 ",
+        className: "!bg-red-200/80 dark:bg-red-500/20 ",
       });
     },
   });

@@ -14,10 +14,10 @@ export interface TimelineStop {
 }
 
 export const STOP_COLOR: Record<ReviewTimelineState, string> = {
-  upcoming: "bg-sky-500",
-  today: "bg-emerald-500",
-  completed: "bg-orange-500",
-  missed: "bg-red-500",
+  upcoming: "bg-sky-500 dark:bg-sky-700",
+  today: "bg-emerald-500 dark:bg-emerald-700",
+  completed: "bg-orange-500 dark:bg-orange-700",
+  missed: "bg-red-500 dark:bg-red-700",
 };
 
 // How close (px) the "back to today" chip may come to the position label
@@ -208,7 +208,7 @@ export function ReviewTimelineScrubber({
           <button
             type="button"
             onClick={onBackToToday}
-            className="absolute start-7 z-10 inline-flex -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-md bg-emerald-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+            className="absolute start-7 z-10 inline-flex -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-md bg-emerald-600 dark:bg-emerald-700 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-emerald-700 dark:hover:bg-emerald-800"
             style={{ top: chipY }}
           >
             <Undo2 className="size-3" />

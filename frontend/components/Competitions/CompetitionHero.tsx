@@ -51,9 +51,9 @@ export const CompetitionHero = ({ card, promoteCount, memberCount, endsAt }: Com
           type="button"
           onClick={() => setShowScore(false)}
           aria-expanded={!showScore}
-          className="mb-5 flex w-full items-center gap-3 rounded-2xl border border-amber-200 bg-gradient-to-l from-amber-50 to-orange-50 px-4 py-3 text-right transition hover:border-amber-300 dark:border-amber-900/50 dark:from-amber-950/30 dark:to-orange-950/30"
+          className="mb-5 flex w-full items-center gap-3 rounded-2xl border border-amber-200 bg-gradient-to-l from-amber-50 to-orange-50 px-4 py-3 text-right transition hover:border-amber-300 dark:hover:border-amber-500/40 dark:border-amber-900/50 dark:from-amber-950/30 dark:to-orange-950/30"
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-300 to-orange-500 text-white" aria-hidden>
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-300 dark:from-amber-500 to-orange-500 dark:to-orange-700 text-white" aria-hidden>
             <Gift size={16} />
           </span>
           <span className="min-w-0 flex-1 truncate text-sm font-bold text-amber-900 dark:text-amber-200">

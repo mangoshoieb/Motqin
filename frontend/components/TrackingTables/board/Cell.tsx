@@ -255,11 +255,11 @@ function YesNoCell({ value, onChange }: { value: CellValue; onChange: (value: Ce
       title="اضغط للتغيير"
       className={cn(
         "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition",
-        value === true && "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300",
-        value === false && "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-300",
+        value === true && "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:hover:bg-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300",
+        value === false && "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:hover:bg-rose-500/20 dark:bg-rose-500/20 dark:text-rose-300",
         value !== true &&
           value !== false &&
-          "border border-dashed border-zinc-300 text-zinc-400 hover:border-zinc-400 hover:text-zinc-600 dark:border-zinc-700",
+          "border border-dashed border-zinc-300 text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-300 dark:border-zinc-700",
       )}
     >
       {value === true ? <Check size={14} /> : value === false ? <X size={14} /> : <Minus size={14} />}
@@ -318,7 +318,7 @@ function ChoiceCell({
           <span className={cn("rounded-md px-2 py-0.5 text-xs font-bold", choiceChipClass(options, option))}>
             {option}
           </span>
-          {option === value && <Check size={14} className="ms-auto text-blue-600" />}
+          {option === value && <Check size={14} className="ms-auto text-blue-600 dark:text-blue-400" />}
         </button>
       ))}
       {!isEmptyValue(value) && (

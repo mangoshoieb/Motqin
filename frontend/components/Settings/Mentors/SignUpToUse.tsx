@@ -17,7 +17,7 @@ export const SignUpToUse = ({ title, message }: SignUpToUseProps) => (
     <button
       type="button"
       onClick={() => useAuthGate.getState().open({ kind: "registration_required" })}
-      className="flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+      className="flex items-center gap-2 rounded-full bg-blue-600 dark:bg-blue-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
     >
       <UserPlus size={16} />
       إنشاء حساب

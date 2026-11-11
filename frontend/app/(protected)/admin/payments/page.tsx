@@ -23,7 +23,7 @@ export default function AdminPaymentsPage() {
         <Skeleton className="h-48 rounded-3xl" />
       ) : !mismatches?.length ? (
         <div className="flex flex-col items-center rounded-3xl border border-zinc-200 bg-white px-6 py-14 text-center dark:border-zinc-800 dark:bg-zinc-900">
-          <CheckCircle2 size={40} className="text-emerald-500" />
+          <CheckCircle2 size={40} className="text-emerald-500 dark:text-emerald-400" />
           <p className="mt-3 font-bold text-zinc-900 dark:text-zinc-100">لا توجد فروق</p>
           <p className="mt-1 text-sm text-zinc-500">كل عمليات الشحن وصل فيها المبلغ المطلوب.</p>
         </div>
@@ -54,7 +54,7 @@ export default function AdminPaymentsPage() {
                     {m.userId}
                   </td>
                   <td className="px-3 py-3 text-end tabular-nums">{formatEgp(m.requestedAmount)}</td>
-                  <td className="px-3 py-3 text-end font-bold tabular-nums text-rose-600">{formatEgp(m.receivedAmount)}</td>
+                  <td className="px-3 py-3 text-end font-bold tabular-nums text-rose-600 dark:text-rose-400">{formatEgp(m.receivedAmount)}</td>
                   <td className="px-3 py-3">{m.paymentMethod ? PAYMENT_METHOD_LABELS[m.paymentMethod] ?? m.paymentMethod : "—"}</td>
                   <td className="px-3 py-3 text-end text-xs text-zinc-500">{formatDateTime(m.createdAt)}</td>
                 </tr>

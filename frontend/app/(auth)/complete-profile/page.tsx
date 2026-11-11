@@ -51,12 +51,12 @@ export default function CompleteProfile() {
       {/* Form */}
 
       <section className="w-full flex justify-center  p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
-        <div className="w-full max-w-4xl flex flex-col gap-3 bg-white rounded-3xl shadow-sm px-6 sm:px-8 py-8">
+        <div className="w-full max-w-4xl flex flex-col gap-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-sm px-6 sm:px-8 py-8">
           <h1 className="text-3xl font-bold text-right">أكمل بياناتك</h1>
 
           <p className="text-gray-500 leading-8 ">
             لم يتبق سوى خطوة واحدة لإنشاء حسابك والبدء باستخدام
-            <span className="font-semibold text-black"> متقن</span>.
+            <span className="font-semibold text-black dark:text-white"> متقن</span>.
           </p>
 
           <form

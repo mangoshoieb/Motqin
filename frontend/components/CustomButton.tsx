@@ -17,12 +17,12 @@ const CustomButton = ({
     "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-md transition focus:outline-none focus:ring-2";
 
   const variants = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-200",
+    primary: "bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-800 focus:ring-blue-200 dark:focus:ring-blue-500/30",
     outline:
-      "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-200",
+      "border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 focus:ring-gray-200",
     google:
-      "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-200",
-    facebook: "bg-[#1877F2] text-white hover:bg-[#166FE5] focus:ring-blue-200",
+      "border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 focus:ring-gray-200",
+    facebook: "bg-[#1877F2] text-white hover:bg-[#166FE5] focus:ring-blue-200 dark:focus:ring-blue-500/30",
   };
 
   const content = (

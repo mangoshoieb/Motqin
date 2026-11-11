@@ -603,7 +603,7 @@ export default function GoalsSection({ onPlanned, onBack }: GoalsSectionProps) {
 
               <div className="relative flex flex-wrap items-start justify-between gap-3">
                 <div className="flex flex-1 flex-wrap items-center gap-2.5">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-700 text-white shadow-sm">
                     <BookOpen size={18} />
                   </span>
 
@@ -642,7 +642,7 @@ export default function GoalsSection({ onPlanned, onBack }: GoalsSectionProps) {
                 <button
                   type="button"
                   onClick={() => handleRemove(goal.id)}
-                  className="relative shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-white hover:text-red-500 dark:hover:bg-zinc-800"
+                  className="relative shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-white hover:text-red-500 dark:hover:text-red-300 dark:hover:bg-zinc-800"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -658,7 +658,7 @@ export default function GoalsSection({ onPlanned, onBack }: GoalsSectionProps) {
           type="button"
           disabled={goals.length === 0 || generatePlan.isPending}
           onClick={() => generatePlan.mutate(goals)}
-          className="flex w-[60%] m-auto items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+          className="flex w-[60%] m-auto items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         >
           {generatePlan.isPending ? (
             <RefreshCw size={20} className="animate-spin" />

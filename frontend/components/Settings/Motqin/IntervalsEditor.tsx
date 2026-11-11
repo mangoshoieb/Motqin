@@ -75,7 +75,7 @@ export const IntervalsEditor = ({ value, onChange, maxRepetitions, disabled }: I
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-200">
-                  <span className="flex size-5 items-center justify-center rounded-full bg-violet-600 text-[10px] text-white">
+                  <span className="flex size-5 items-center justify-center rounded-full bg-violet-600 dark:bg-violet-700 text-[10px] text-white">
                     {index + 1}
                   </span>
                   المراجعة {index + 1}
@@ -141,7 +141,7 @@ export const IntervalsEditor = ({ value, onChange, maxRepetitions, disabled }: I
       {lastDay > 0 && (
         <div className="px-3 pb-6 pt-2" aria-hidden>
           <div className="relative h-1.5 rounded-full bg-gradient-to-l from-violet-200 to-violet-500 dark:from-violet-900 dark:to-violet-500">
-            <span className="absolute -top-2 right-0 flex size-5 translate-x-1/2 items-center justify-center rounded-full bg-blue-600 text-white ring-4 ring-white dark:ring-zinc-900">
+            <span className="absolute -top-2 right-0 flex size-5 translate-x-1/2 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-700 text-white ring-4 ring-white dark:ring-zinc-900">
               <BookOpen size={11} />
             </span>
             <span className="absolute right-0 top-4 translate-x-1/2 whitespace-nowrap text-[10px] text-zinc-500 dark:text-zinc-400">
@@ -155,7 +155,7 @@ export const IntervalsEditor = ({ value, onChange, maxRepetitions, disabled }: I
                 style={{ right: `${8 + (day / lastDay) * 92}%` }}
                 className="absolute top-0"
               >
-                <span className="absolute -top-1.5 flex size-4 translate-x-1/2 items-center justify-center rounded-full bg-violet-600 text-[9px] font-bold text-white ring-2 ring-white dark:ring-zinc-900">
+                <span className="absolute -top-1.5 flex size-4 translate-x-1/2 items-center justify-center rounded-full bg-violet-600 dark:bg-violet-700 text-[9px] font-bold text-white ring-2 ring-white dark:ring-zinc-900">
                   {index + 1}
                 </span>
                 <span className="absolute top-4 translate-x-1/2 whitespace-nowrap text-[10px] font-semibold text-violet-700 dark:text-violet-300">

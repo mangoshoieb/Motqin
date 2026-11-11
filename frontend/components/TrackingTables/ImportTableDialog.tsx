@@ -144,7 +144,7 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
         }
       >
         <div className="flex flex-col items-center gap-2 text-center">
-          <CheckCircle2 size={44} className="text-emerald-500" />
+          <CheckCircle2 size={44} className="text-emerald-500 dark:text-emerald-400" />
           <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
             تم استيراد {result.rows} طالب و{result.columns} عمود
           </p>
@@ -283,7 +283,7 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
         {nameMissing && (
           <p className="mt-3 text-sm text-amber-700 dark:text-amber-400">اختر العمود الذي فيه اسم الطالب.</p>
         )}
-        {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
+        {error && <p className="mt-3 text-sm text-rose-600 dark:text-rose-400">{error}</p>}
       </Modal>
     );
   }
@@ -316,7 +316,7 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
             : "border-zinc-300 hover:border-blue-400 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/50",
         )}
       >
-        <span className="flex size-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15">
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/15">
           {previewImport.isPending ? <UploadCloud size={28} className="animate-pulse" /> : <FileSpreadsheet size={28} />}
         </span>
         <span className="font-bold text-zinc-900 dark:text-zinc-100">
@@ -334,7 +334,7 @@ export function ImportTableDialog({ onClose }: { onClose: () => void }) {
           e.target.value = "";
         }}
       />
-      {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
+      {error && <p className="mt-3 text-sm text-rose-600 dark:text-rose-400">{error}</p>}
     </Modal>
   );
 }

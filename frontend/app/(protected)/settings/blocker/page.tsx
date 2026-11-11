@@ -124,7 +124,7 @@ const BlockerSettingsPage = () => {
         <button
           type="button"
           onClick={() => void refetch()}
-          className="flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="flex items-center gap-1.5 rounded-full bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-800"
         >
           <RotateCcw size={14} />
           إعادة المحاولة
@@ -203,7 +203,7 @@ const BlockerSettingsPage = () => {
             title={
               isLocked ? "مقفلة من مشرفك" : isDirty ? undefined : "لا توجد تغييرات لحفظها"
             }
-            className="flex items-center gap-1.5 rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center gap-1.5 rounded-full bg-blue-600 dark:bg-blue-700 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLocked && <Lock size={15} />}
             {saving ? "جاري الحفظ..." : "حفظ الإعدادات"}

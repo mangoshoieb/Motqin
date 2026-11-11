@@ -69,7 +69,7 @@ export const StartQuizButton = ({
     <div ref={rootRef} className="relative">
       <div
         className={cn(
-          "inline-flex items-stretch overflow-hidden rounded-full bg-blue-600 text-white font-semibold",
+          "inline-flex items-stretch overflow-hidden rounded-full bg-blue-600 dark:bg-blue-700 text-white font-semibold",
           (disabled || busy) && "opacity-50 pointer-events-none"
         )}
       >

@@ -215,7 +215,7 @@ export function Grid(props: GridProps) {
                               </div>
                               {row.noParentMessages && (
                                 <span title="ولي الأمر لا يستقبل رسائل">
-                                  <BellOff size={14} className="shrink-0 text-amber-500" />
+                                  <BellOff size={14} className="shrink-0 text-amber-500 dark:text-amber-400" />
                                 </span>
                               )}
                               <RowMenu row={row} {...props} />
@@ -379,9 +379,9 @@ function HeaderCell({
             <span className="truncate">{field.label}</span>
             {sorted ? (
               sorted.desc ? (
-                <ArrowDown size={13} className="shrink-0 text-blue-600" />
+                <ArrowDown size={13} className="shrink-0 text-blue-600 dark:text-blue-400" />
               ) : (
-                <ArrowUp size={13} className="shrink-0 text-blue-600" />
+                <ArrowUp size={13} className="shrink-0 text-blue-600 dark:text-blue-400" />
               )
             ) : (
               <ChevronDown size={13} className="shrink-0 opacity-0 transition group-hover/head:opacity-60" />
@@ -484,7 +484,7 @@ function AddStudentRow({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="sticky start-0 flex h-11 items-center gap-2 px-4 text-sm font-semibold text-zinc-500 transition hover:text-blue-600"
+            className="sticky start-0 flex h-11 items-center gap-2 px-4 text-sm font-semibold text-zinc-500 transition hover:text-blue-600 dark:hover:text-blue-300"
           >
             <Plus size={16} /> إضافة طالب
           </button>
@@ -496,7 +496,7 @@ function AddStudentRow({
   return (
     <tr className="bg-blue-50/50 dark:bg-blue-950/30">
       <td className="sticky start-0 z-10 w-11 border-b border-zinc-100 bg-blue-50 text-center dark:border-zinc-800 dark:bg-blue-950">
-        <Plus size={16} className="mx-auto text-blue-600" />
+        <Plus size={16} className="mx-auto text-blue-600 dark:text-blue-400" />
       </td>
       {fields.map((field, index) => (
         <td
@@ -530,7 +530,7 @@ function AddStudentRow({
             type="button"
             onClick={save}
             disabled={!draft.name.trim() || addRow.isPending}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-blue-600 dark:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-50"
           >
             {addRow.isPending ? "..." : "إضافة"}
           </button>

@@ -241,7 +241,7 @@ const PlannerSettingsPage = () => {
             تفضيلات المخطط
           </h1>
 
-          {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+          {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
         </div>
      {/* Save */}
       <button
@@ -250,7 +250,7 @@ const PlannerSettingsPage = () => {
         // Nothing to save until a field differs from what's stored.
         disabled={isSaving || !isDirty}
         title={isDirty ? undefined : "لا توجد تغييرات لحفظها"}
-        className="self-start  rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="self-start  rounded-full bg-blue-600 dark:bg-blue-700 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSaving ? "جاري الحفظ..." : "حفظ التفضيلات"}
       </button>

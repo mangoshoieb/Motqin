@@ -190,7 +190,7 @@ export default function GoalsManager() {
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="flex items-center gap-1.5 rounded-xl bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
           >
             <Plus size={16} />
             إضافة هدف
@@ -216,7 +216,7 @@ export default function GoalsManager() {
               type="button"
               onClick={submitNew}
               disabled={createGoal.isPending || !newDraft.title.trim()}
-              className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {createGoal.isPending ? "جاري الحفظ..." : "حفظ الهدف"}
             </button>
@@ -231,12 +231,12 @@ export default function GoalsManager() {
           <Skeleton className="h-14 w-full" />
         </div>
       ) : isError ? (
-        <p className="text-sm text-red-500">تعذر تحميل الأهداف. حاول تحديث الصفحة.</p>
+        <p className="text-sm text-red-500 dark:text-red-400">تعذر تحميل الأهداف. حاول تحديث الصفحة.</p>
       ) : goals.length === 0 && !adding ? (
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="flex w-full flex-col items-center gap-2 rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-sm text-zinc-500 transition hover:border-blue-500 hover:text-blue-600 dark:border-zinc-700"
+          className="flex w-full flex-col items-center gap-2 rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-sm text-zinc-500 transition hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-300 dark:border-zinc-700"
         >
           <Target size={28} className="text-zinc-300 dark:text-zinc-600" />
           لا توجد أهداف بعد — أضف هدفك الأول لتربط به مهامك
@@ -273,7 +273,7 @@ export default function GoalsManager() {
                         type="button"
                         onClick={submitEdit}
                         disabled={updateGoal.isPending}
-                        className="flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                        className="flex items-center gap-1 rounded-xl bg-blue-600 dark:bg-blue-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-60"
                       >
                         <Check size={14} />
                         {updateGoal.isPending ? "جاري الحفظ..." : "حفظ"}

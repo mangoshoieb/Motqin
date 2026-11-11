@@ -1,26 +1,26 @@
 export const categoryStyles = {
   revision: {
-    dot: "bg-amber-500",
+    dot: "bg-amber-500 dark:bg-amber-700",
     border: "border-amber-500",
   },
 
   quiz: {
-    dot: "bg-violet-500",
+    dot: "bg-violet-500 dark:bg-violet-700",
     border: "border-violet-500",
   },
 
   lesson: {
-    dot: "bg-blue-500",
+    dot: "bg-blue-500 dark:bg-blue-700",
     border: "border-blue-500",
   },
 
   competition: {
-    dot: "bg-rose-500",
+    dot: "bg-rose-500 dark:bg-rose-700",
     border: "border-rose-500",
   },
 
   project: {
-    dot: "bg-emerald-500",
+    dot: "bg-emerald-500 dark:bg-emerald-700",
     border: "border-emerald-500",
   },
 
@@ -33,19 +33,19 @@ export const categoryStyles = {
 export const moodOptions = [
   {
     value: "ممتاز",
-    color: "bg-green-500",
+    color: "bg-green-500 dark:bg-green-700",
   },
   {
     value: "جيد",
-    color: "bg-blue-500",
+    color: "bg-blue-500 dark:bg-blue-700",
   },
   {
     value: "متوسط",
-    color: "bg-orange-500",
+    color: "bg-orange-500 dark:bg-orange-700",
   },
   {
     value: "خامل",
-    color: "bg-orange-700",
+    color: "bg-orange-700 dark:bg-orange-800",
   },
 ];
 

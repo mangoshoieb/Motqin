@@ -159,7 +159,7 @@ export function BundleInfoDialog({
                     key={d.days}
                     type="button"
                     onClick={() => setDays(String(d.days))}
-                    className={cn(secondaryButton, "px-3 py-2", Number(days) === d.days && "border-blue-600 text-blue-700")}
+                    className={cn(secondaryButton, "px-3 py-2", Number(days) === d.days && "border-blue-600 text-blue-700 dark:text-blue-400")}
                   >
                     {d.label}
                   </button>
@@ -320,7 +320,7 @@ export function CatalogueDialog({ onClose }: { onClose: () => void }) {
             <button type="button" onClick={() => setConfirming(false)} className={cn(secondaryButton, "flex-1")}>
               رجوع
             </button>
-            <button type="button" onClick={() => run(false)} disabled={apply.isPending} className={cn(primaryButton, "flex-1 bg-rose-600 hover:bg-rose-700")}>
+            <button type="button" onClick={() => run(false)} disabled={apply.isPending} className={cn(primaryButton, "flex-1 bg-rose-600 dark:bg-rose-700 hover:bg-rose-700 dark:hover:bg-rose-800")}>
               {apply.isPending ? "جارٍ التطبيق..." : "نعم، طبّق على الباقات الحية"}
             </button>
           </>
@@ -355,7 +355,7 @@ export function CatalogueDialog({ onClose }: { onClose: () => void }) {
       {report && (
         <div className="mt-5 flex flex-col gap-4">
           <p className="flex items-center gap-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-            {report.dryRun ? "نتيجة الفحص:" : <><CheckCircle2 size={16} className="text-emerald-600" /> تم الحفظ:</>}{" "}
+            {report.dryRun ? "نتيجة الفحص:" : <><CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" /> تم الحفظ:</>}{" "}
             {changed.length === 0 ? "كل شيء مطابق للملف" : `${changed.length} تغيير`}
           </p>
           {changed.length > 0 && (
@@ -388,7 +388,7 @@ function CatalogueRow({ entry }: { entry: CatalogueEntry }) {
   return (
     <li className="px-4 py-2.5">
       <p className="flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
-        {entry.status === "Created" && <PlusCircle size={14} className="text-emerald-600" />}
+        {entry.status === "Created" && <PlusCircle size={14} className="text-emerald-600 dark:text-emerald-400" />}
         <span dir="ltr" className="font-mono text-xs">{entry.code}</span> {entry.title}
         <span className="text-xs font-normal text-zinc-500">{entry.status === "Created" ? "جديدة" : "تحديث"}</span>
       </p>

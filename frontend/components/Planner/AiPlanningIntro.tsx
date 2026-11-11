@@ -55,7 +55,7 @@ export default function AiPlanningIntro({
       dir="rtl"
       className="mt-4 overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-blue-100 p-8 text-center shadow-md shadow-indigo-500/10 dark:border-indigo-900/50 dark:from-indigo-950/30 dark:via-zinc-900 dark:to-blue-950/40 md:p-12"
     >
-      <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 text-white shadow-lg shadow-indigo-500/30">
+      <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 text-white shadow-lg shadow-indigo-500/30">
         <Sparkles size={30} />
       </span>
 
@@ -80,7 +80,7 @@ export default function AiPlanningIntro({
       <button
         type="button"
         onClick={onStart}
-        className="mx-auto mt-8 flex items-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 to-blue-400 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
+        className="mx-auto mt-8 flex items-center gap-2 rounded-2xl bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
       >
         <Rocket size={20} />
         {hasPreferences ? "أكمل الرحلة" : "ابدأ الرحلة"}

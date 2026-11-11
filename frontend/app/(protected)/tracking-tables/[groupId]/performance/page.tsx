@@ -86,7 +86,7 @@ export default function PerformanceReportPage() {
       </Link>
 
       <header className="mt-3 flex items-center gap-3">
-        <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+        <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 dark:from-blue-700 to-indigo-600 dark:to-indigo-800 text-white shadow-lg">
           <BarChart3 size={24} />
         </span>
         <div className="min-w-0">
@@ -160,7 +160,7 @@ export default function PerformanceReportPage() {
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-semibold transition disabled:opacity-40",
                       on
-                        ? "border-blue-600 bg-blue-600 text-white"
+                        ? "border-blue-600 bg-blue-600 dark:bg-blue-700 text-white"
                         : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800",
                     )}
                   >

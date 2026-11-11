@@ -215,7 +215,7 @@ const LessonQuestionsPage = () => {
           <button
             type="button"
             onClick={() => setIsGenerating(true)}
-            className="group inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 font-semibold transition hover:border-indigo-300 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70"
+            className="group inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 font-semibold transition hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70"
           >
             <ImageIcon className="size-4" />
             اضافة سؤال من صورة
@@ -225,7 +225,7 @@ const LessonQuestionsPage = () => {
           <button
             type="button"
             onClick={() => setIsGeneratingFromPdf(true)}
-            className="group relative inline-flex items-center gap-1.5 overflow-hidden px-5 py-2.5 rounded-full bg-gradient-to-l from-indigo-600 to-blue-400 text-white font-semibold shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
+            className="group relative inline-flex items-center gap-1.5 overflow-hidden px-5 py-2.5 rounded-full bg-gradient-to-l from-indigo-600 dark:from-indigo-800 to-blue-400 dark:to-blue-600 text-white font-semibold shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
           >
             {/* Light sweep on hover */}
             <span className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />

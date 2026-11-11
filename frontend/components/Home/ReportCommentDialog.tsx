@@ -64,7 +64,7 @@ export default function ReportCommentDialog({ commentId, onClose, onReported }: 
       >
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-zinc-100">
-            <Flag size={18} className="text-amber-500" />
+            <Flag size={18} className="text-amber-500 dark:text-amber-400" />
             الإبلاغ عن تعليق
           </h2>
           <button
@@ -87,7 +87,7 @@ export default function ReportCommentDialog({ commentId, onClose, onReported }: 
                 "flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition",
                 reason === option
                   ? "border-amber-400 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200"
-                  : "border-zinc-200 text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300",
+                  : "border-zinc-200 text-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 dark:border-zinc-700 dark:text-zinc-300",
               )}
             >
               <input
@@ -124,7 +124,7 @@ export default function ReportCommentDialog({ commentId, onClose, onReported }: 
             type="button"
             onClick={submit}
             disabled={isPending || (reason === OTHER && !details.trim())}
-            className="flex-1 rounded-full bg-amber-500 px-5 py-2.5 font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex-1 rounded-full bg-amber-500 dark:bg-amber-700 px-5 py-2.5 font-semibold text-white transition hover:bg-amber-600 dark:hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isPending ? "جاري الإرسال..." : "إرسال البلاغ"}
           </button>

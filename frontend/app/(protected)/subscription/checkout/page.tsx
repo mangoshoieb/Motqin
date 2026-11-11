@@ -155,7 +155,7 @@ const CheckoutContent = () => {
     return (
       <Shell>
         <div className="mx-auto max-w-lg rounded-3xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
-          <CheckCircle2 size={56} className="mx-auto text-emerald-500" />
+          <CheckCircle2 size={56} className="mx-auto text-emerald-500 dark:text-emerald-400" />
           <h2 className="mt-4 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
             {result.operation === "Upgrade" ? "تمت الترقية" : result.operation === "Renewal" ? "تم التجديد" : "تم الاشتراك"}
           </h2>
@@ -255,9 +255,9 @@ const CheckoutContent = () => {
                     </button>
                   </form>
                 )}
-                {coupon && couponError && <p className="mt-1.5 text-xs text-rose-600">{couponError}</p>}
+                {coupon && couponError && <p className="mt-1.5 text-xs text-rose-600 dark:text-rose-400">{couponError}</p>}
                 {coupon && notForCustomized && groups && (
-                  <button type="button" onClick={wholePlan} className="mt-1.5 text-xs font-semibold text-blue-600 hover:underline">
+                  <button type="button" onClick={wholePlan} className="mt-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
                     اشترك في الباقة كاملة لتستخدم الكوبون
                   </button>
                 )}
@@ -313,7 +313,7 @@ const CheckoutContent = () => {
                 <AlertTriangle size={16} className="mt-0.5 shrink-0" /> {blocked}
               </p>
             )}
-            {error && <p className="mt-4 text-sm text-rose-600">{error}</p>}
+            {error && <p className="mt-4 text-sm text-rose-600 dark:text-rose-400">{error}</p>}
 
             {!registered ? (
               <div className="mt-6 rounded-2xl bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-500/10 dark:text-blue-200">
@@ -364,7 +364,7 @@ const CheckoutContent = () => {
             )}
           >
             {highlighted && (
-              <span className="absolute -top-3 right-6 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-zinc-900">
+              <span className="absolute -top-3 right-6 rounded-full bg-amber-400 dark:bg-amber-600 px-3 py-1 text-xs font-bold text-zinc-900">
                 الأكثر طلباً
               </span>
             )}

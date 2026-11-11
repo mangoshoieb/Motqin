@@ -96,7 +96,7 @@ export const AddCompletedSessionDialog = ({
       <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
         <div className="mb-1 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="text-emerald-600" size={20} />
+            <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" size={20} />
             <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">إضافة جلسة منتهية</h2>
           </div>
           <button
@@ -153,7 +153,7 @@ export const AddCompletedSessionDialog = ({
             type="button"
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
-            className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+            className="rounded-lg bg-emerald-600 dark:bg-emerald-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:hover:bg-emerald-800 disabled:opacity-60"
           >
             {mutation.isPending ? "جاري التسجيل..." : "تسجيل الجلسة"}
           </button>

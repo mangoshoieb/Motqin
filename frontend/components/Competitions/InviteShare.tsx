@@ -96,8 +96,8 @@ function CopyField({
         className={cn(
           "flex shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-xs font-bold transition disabled:opacity-50",
           copied
-            ? "bg-emerald-600 text-white"
-            : "bg-blue-600 text-white hover:bg-blue-700",
+            ? "bg-emerald-600 dark:bg-emerald-700 text-white"
+            : "bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-800",
         )}
       >
         {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -190,7 +190,7 @@ export const InviteSharePanel = () => {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-4">
         <div
-          className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-orange-500 text-white shadow-lg shadow-orange-500/30"
+          className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 dark:from-amber-500 to-orange-500 dark:to-orange-700 text-white shadow-lg shadow-orange-500/30"
           aria-hidden
         >
           <Gift size={28} />

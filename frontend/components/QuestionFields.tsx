@@ -18,7 +18,7 @@ const labelClass = "block text-sm font-medium text-zinc-700 dark:text-zinc-300";
 const hintClass = "mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400";
 const errorClass = "mt-1 block text-xs font-normal text-red-600 dark:text-red-400";
 
-const Required = () => <span className="text-red-500"> *</span>;
+const Required = () => <span className="text-red-500 dark:text-red-400"> *</span>;
 
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
   <fieldset className="flex flex-col gap-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
@@ -104,7 +104,7 @@ const FilePicker = ({
           {url && enlarged && (
             <ImageLightbox src={url} caption={file.name} onClose={() => setEnlarged(false)} />
           )}
-          <label className="cursor-pointer text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400">
+          <label className="cursor-pointer text-xs font-medium text-blue-600 hover:text-blue-700 dark:hover:text-blue-300 dark:text-blue-400">
             تغيير
             <input
               type="file"
@@ -123,7 +123,7 @@ const FilePicker = ({
           </button>
         </div>
       ) : (
-        <label className="mt-1 flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-2 text-sm font-normal text-zinc-500 transition hover:border-blue-400 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-400">
+        <label className="mt-1 flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-2 text-sm font-normal text-zinc-500 transition hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 dark:border-zinc-700 dark:text-zinc-400">
           {icon}
           اختر ملفًا
           <input
@@ -298,7 +298,7 @@ export const QuestionFields = ({
                   onClick={() => removeOption(index)}
                   disabled={draft.options.length <= MIN_OPTIONS}
                   aria-label={`حذف الخيار ${index + 1}`}
-                  className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-red-600 disabled:invisible dark:hover:bg-zinc-800"
+                  className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-red-600 dark:hover:text-red-300 disabled:invisible dark:hover:bg-zinc-800"
                 >
                   <X className="size-4" />
                 </button>
@@ -308,7 +308,7 @@ export const QuestionFields = ({
           <button
             type="button"
             onClick={() => onChange({ options: [...draft.options, ""] })}
-            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 dark:hover:text-blue-300 dark:text-blue-400"
           >
             <Plus className="size-4" />
             إضافة خيار
@@ -373,7 +373,7 @@ export const QuestionFields = ({
                       }
                       disabled={draft.correctTexts.length <= 1}
                       aria-label={`حذف الإجابة ${index + 1}`}
-                      className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-red-600 disabled:invisible dark:hover:bg-zinc-800"
+                      className="rounded-full p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-red-600 dark:hover:text-red-300 disabled:invisible dark:hover:bg-zinc-800"
                     >
                       <X className="size-4" />
                     </button>
@@ -383,7 +383,7 @@ export const QuestionFields = ({
               <button
                 type="button"
                 onClick={() => onChange({ correctTexts: [...draft.correctTexts, ""] })}
-                className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 dark:hover:text-blue-300 dark:text-blue-400"
               >
                 <Plus className="size-4" />
                 إضافة صيغة أخرى

@@ -129,10 +129,10 @@ export default function ReceiptPage() {
                       </tr>
                       {subscription && subscription.discountAmount > 0 && (
                         <tr>
-                          <td className="py-2 text-emerald-700">
+                          <td className="py-2 text-emerald-700 dark:text-emerald-400">
                             خصم{subscription.couponCode ? ` (كوبون ${subscription.couponCode})` : ""}
                           </td>
-                          <td className="py-2 text-end tabular-nums text-emerald-700">- {formatEgp(subscription.discountAmount)}</td>
+                          <td className="py-2 text-end tabular-nums text-emerald-700 dark:text-emerald-400">- {formatEgp(subscription.discountAmount)}</td>
                         </tr>
                       )}
                     </>

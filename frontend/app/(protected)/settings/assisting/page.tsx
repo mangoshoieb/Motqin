@@ -60,7 +60,7 @@ const AssistingSettingsPage = () => {
         {links.length > 0 && (
           <Link
             href="/tracking-tables"
-            className="flex items-center gap-1.5 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="flex items-center gap-1.5 rounded-full bg-blue-600 dark:bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
           >
             <Table2 size={16} />
             جداول المتابعة

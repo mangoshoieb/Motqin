@@ -78,7 +78,7 @@ export const LessonFormDialog = ({
             className={inputClass}
           />
           {lessonTitle.length > 0 && tooShort && (
-            <span className="mt-1 block text-xs font-normal text-red-600">
+            <span className="mt-1 block text-xs font-normal text-red-600 dark:text-red-400">
               يجب أن يتكون العنوان من حرفين على الأقل.
             </span>
           )}
@@ -95,7 +95,7 @@ export const LessonFormDialog = ({
           <button
             type="submit"
             disabled={tooShort || isPending}
-            className="flex-1 px-5 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-5 py-2.5 rounded-full bg-blue-600 dark:bg-blue-700 text-white font-semibold transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? "جاري الحفظ..." : submitLabel}
           </button>

@@ -69,8 +69,8 @@ export const ChatInput = ({ onSend }: ChatInputProps) => {
           onClick={handleSend}
           className="
             p-2 rounded-full
-            bg-blue-600 text-white
-            hover:bg-blue-700
+            bg-blue-600 dark:bg-blue-700 text-white
+            hover:bg-blue-700 dark:hover:bg-blue-800
             disabled:opacity-50
             transition-colors
           "

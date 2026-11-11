@@ -113,7 +113,7 @@ export default function TrackingTablesPage() {
           </div>
         ) : (tables?.length ?? 0) === 0 ? (
           <div className="flex flex-col items-center rounded-3xl border-2 border-dashed border-zinc-300 bg-white px-6 py-16 text-center dark:border-zinc-700 dark:bg-zinc-900">
-            <span className="flex size-16 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-600/25">
+            <span className="flex size-16 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-500 dark:from-blue-700 to-indigo-600 dark:to-indigo-800 text-white shadow-lg shadow-blue-600/25">
               <Table2 size={30} />
             </span>
             <h2 className="mt-5 text-xl font-bold text-zinc-900 dark:text-zinc-100">

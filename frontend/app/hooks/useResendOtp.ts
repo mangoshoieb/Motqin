@@ -25,7 +25,7 @@ export function useResendOtp() {
       if (retryAfter) setResendInfo(retryAfter, useAuthStore.getState().resendsRemaining);
 
       toast.error(otpErrorMessage(error), {
-        className: "!bg-red-200/80 ",
+        className: "!bg-red-200/80 dark:bg-red-500/20 ",
       });
     },
   });

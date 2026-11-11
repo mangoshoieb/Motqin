@@ -114,7 +114,7 @@ function LectureForm({
           type="button"
           onClick={onSubmit}
           disabled={pending}
-          className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-1 rounded-lg bg-blue-600 dark:bg-blue-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Check size={14} />
           {pending ? "جاري الحفظ..." : submitLabel}
@@ -294,7 +294,7 @@ export const CourseScheduleEditor = () => {
                         type="button"
                         title="تعديل"
                         onClick={() => openEdit(schedule)}
-                        className="text-zinc-400 transition hover:text-blue-600"
+                        className="text-zinc-400 transition hover:text-blue-600 dark:hover:text-blue-300"
                       >
                         <Pencil size={15} />
                       </button>
@@ -302,7 +302,7 @@ export const CourseScheduleEditor = () => {
                         type="button"
                         title="حذف"
                         onClick={() => deleteMutation.mutate(schedule.id)}
-                        className="text-zinc-400 transition hover:text-red-600"
+                        className="text-zinc-400 transition hover:text-red-600 dark:hover:text-red-300"
                       >
                         <Trash2 size={15} />
                       </button>

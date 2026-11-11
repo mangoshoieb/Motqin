@@ -194,7 +194,7 @@ export const AssistantFormDialog = ({ assistant, onClose, onExisting }: Assistan
                       <span
                         className={cn(
                           "flex size-4 shrink-0 items-center justify-center rounded border",
-                          on ? "border-blue-600 bg-blue-600 text-white" : "border-zinc-300 dark:border-zinc-600",
+                          on ? "border-blue-600 bg-blue-600 dark:bg-blue-700 text-white" : "border-zinc-300 dark:border-zinc-600",
                         )}
                       >
                         {on && <Check size={12} />}
@@ -248,7 +248,7 @@ export const AssistantFormDialog = ({ assistant, onClose, onExisting }: Assistan
                           <span
                             className={cn(
                               "flex size-4 shrink-0 items-center justify-center rounded border",
-                              on ? "border-blue-600 bg-blue-600 text-white" : "border-zinc-300 dark:border-zinc-600",
+                              on ? "border-blue-600 bg-blue-600 dark:bg-blue-700 text-white" : "border-zinc-300 dark:border-zinc-600",
                             )}
                           >
                             {on && <Check size={12} />}
@@ -286,7 +286,7 @@ export const AssistantFormDialog = ({ assistant, onClose, onExisting }: Assistan
             <button
               type="submit"
               disabled={saving || nothingChosen || (!assistant && !phone.trim())}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "جاري الحفظ..." : assistant ? "حفظ الصلاحيات" : "إضافة المساعد"}
             </button>

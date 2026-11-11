@@ -1,9 +1,10 @@
-import { Toaster } from "sonner";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cairo, Inter } from "next/font/google";
 
 import "./globals.css";
 import { Providers } from "./providers/providers";
+import AppToaster from "./providers/AppToaster";
+import { appearanceBootScript } from "./lib/appearance";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -36,10 +37,14 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="ar"
       suppressHydrationWarning
       className={cn("font-sans", inter.variable)}
     >
+      <head>
+        {/* Applies the saved text size / language before first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: appearanceBootScript }} />
+      </head>
       <body
         className={`${geistSans.variable} ${cairo.className} antialiased`}
         suppressHydrationWarning
@@ -47,25 +52,7 @@ export default function RootLayout({
         <main>
           <Providers>
             {children}
-            <Toaster
-              position="top-center"
-              richColors
-              expand
-              dir="rtl"
-              closeButton
-              toastOptions={{
-                classNames: {
-                  toast:
-                    "rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl max-w-[50vw]",
-                  title: "font-semibold text-[15px]",
-                  description: "text-sm",
-                  success: "bg-green-50 dark:bg-green-950",
-                  error: "bg-red-50 dark:bg-red-950",
-                  warning: "bg-yellow-50 dark:bg-yellow-950",
-                  info: "bg-blue-50 dark:bg-blue-950",
-                },
-              }}
-            />
+            <AppToaster />
           </Providers>
         </main>
       </body>

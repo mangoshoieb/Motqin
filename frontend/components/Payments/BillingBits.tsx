@@ -116,7 +116,7 @@ export function PlanSummaryCard({ me, showLimitsLink }: { me: MySubscription; sh
             <p className="font-bold">انتهت باقتك، وما زالت مزاياها متاحة حتى {formatDay(current.graceEndsAt)}</p>
             <p className="mt-0.5">جدّد الآن حتى لا تتوقف مزاياك. لتغيير الباقة يجب التجديد أولاً.</p>
           </div>
-          <Link href={renewHref} className={cn(primaryButton, "bg-amber-500 hover:bg-amber-600")}>
+          <Link href={renewHref} className={cn(primaryButton, "bg-amber-500 dark:bg-amber-700 hover:bg-amber-600 dark:hover:bg-amber-700")}>
             جدّد الآن
           </Link>
         </div>
@@ -173,7 +173,7 @@ export function TransactionRow({ transaction: t }: { transaction: WalletTransact
       <span
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-xl",
-          incoming ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800",
+          incoming ? "bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/15" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800",
         )}
       >
         {incoming ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}

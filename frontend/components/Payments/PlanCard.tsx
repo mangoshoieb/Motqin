@@ -64,14 +64,14 @@ export function PlanCard({
       )}
     >
       {highlighted && (
-        <span className="absolute -top-3 right-6 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-zinc-900">
+        <span className="absolute -top-3 right-6 rounded-full bg-amber-400 dark:bg-amber-600 px-3 py-1 text-xs font-bold text-zinc-900">
           الأكثر طلباً
         </span>
       )}
       {isCurrent && (
         <span
           className={cn(
-            "absolute -top-3 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white",
+            "absolute -top-3 rounded-full bg-emerald-500 dark:bg-emerald-700 px-3 py-1 text-xs font-bold text-white",
             highlighted ? "right-32" : "right-6",
           )}
         >
@@ -79,7 +79,7 @@ export function PlanCard({
         </span>
       )}
       {saving > 0 && (
-        <span className="absolute -top-3 left-6 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white">
+        <span className="absolute -top-3 left-6 rounded-full bg-emerald-500 dark:bg-emerald-700 px-3 py-1 text-xs font-bold text-white">
           وفّر {saving}٪
         </span>
       )}
@@ -120,7 +120,7 @@ export function PlanCard({
         <span
           className={cn(
             "mt-6 w-full cursor-not-allowed rounded-full py-3 text-center font-semibold opacity-50",
-            highlighted ? "bg-white text-blue-950" : "border border-blue-600 text-blue-600",
+            highlighted ? "bg-white text-blue-950" : "border border-blue-600 text-blue-600 dark:text-blue-400",
           )}
         >
           اختر الخطة
@@ -131,8 +131,8 @@ export function PlanCard({
           className={cn(
             "mt-6 w-full rounded-full py-3 text-center font-semibold transition",
             highlighted
-              ? "bg-white text-blue-950 hover:bg-blue-50"
-              : "border border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40",
+              ? "bg-white text-blue-950 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+              : "border border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40",
           )}
         >
           {isCurrent ? "جدّد الخطة" : "اشترك"}

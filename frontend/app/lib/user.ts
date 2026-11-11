@@ -7,12 +7,12 @@ export const shortName = (fullName?: string | null, fallback = "مستخدم") =
 };
 
 const AVATAR_COLORS = [
-  "bg-blue-500",
-  "bg-violet-500",
-  "bg-rose-500",
-  "bg-amber-500",
-  "bg-emerald-500",
-  "bg-teal-500",
+  "bg-blue-500 dark:bg-blue-700",
+  "bg-violet-500 dark:bg-violet-700",
+  "bg-rose-500 dark:bg-rose-700",
+  "bg-amber-500 dark:bg-amber-700",
+  "bg-emerald-500 dark:bg-emerald-700",
+  "bg-teal-500 dark:bg-teal-700",
 ];
 
 /** Stable colour for an initials avatar, picked from the seed (id or name). */

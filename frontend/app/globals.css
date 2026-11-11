@@ -313,6 +313,19 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Text size from Settings → Appearance (set on <html> by AppearanceSync and
+   the boot script in the root layout). Tailwind sizes are rem, so changing
+   the root size scales the whole interface. */
+html[data-text-size="sm"] {
+  font-size: 87.5%;
+}
+html[data-text-size="lg"] {
+  font-size: 112.5%;
+}
+html[data-text-size="xl"] {
+  font-size: 125%;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

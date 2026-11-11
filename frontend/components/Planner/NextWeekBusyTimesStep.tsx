@@ -132,7 +132,7 @@ export default function NextWeekBusyTimesStep({ onContinue }: NextWeekBusyTimesS
               "rounded-xl border px-3 py-1.5 text-xs font-semibold transition",
               draft.dayIndex === day.index
                 ? "border-blue-600 bg-blue-600/10 text-blue-700 dark:border-blue-500 dark:text-blue-300"
-                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300",
+                : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-600 dark:border-zinc-700 dark:text-zinc-300",
             )}
           >
             {day.dayName}
@@ -155,7 +155,7 @@ export default function NextWeekBusyTimesStep({ onContinue }: NextWeekBusyTimesS
               className={cn(
                 "rounded-md px-3 py-1.5 font-semibold transition",
                 draft.mode === mode
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? "bg-blue-600 dark:bg-blue-700 text-white shadow-sm"
                   : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200",
               )}
             >
@@ -215,7 +215,7 @@ export default function NextWeekBusyTimesStep({ onContinue }: NextWeekBusyTimesS
         type="button"
         onClick={() => addMutation.mutate()}
         disabled={addMutation.isPending}
-        className="mt-3 flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-3 flex items-center gap-1.5 rounded-lg bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Plus size={16} />
         {addMutation.isPending ? "جاري الحفظ..." : "إضافة وقت"}
@@ -242,7 +242,7 @@ export default function NextWeekBusyTimesStep({ onContinue }: NextWeekBusyTimesS
                 type="button"
                 title="حذف"
                 onClick={() => removeMutation.mutate(busy.id)}
-                className="text-zinc-400 transition hover:text-red-600"
+                className="text-zinc-400 transition hover:text-red-600 dark:hover:text-red-300"
               >
                 <Trash2 size={15} />
               </button>
@@ -255,7 +255,7 @@ export default function NextWeekBusyTimesStep({ onContinue }: NextWeekBusyTimesS
         <button
           type="button"
           onClick={onContinue}
-          className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+          className="flex items-center gap-1.5 rounded-xl bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
         >
           متابعة إلى الأهداف
           <ArrowLeft size={15} />

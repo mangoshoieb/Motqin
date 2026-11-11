@@ -67,7 +67,7 @@ export const LeagueRow = ({ member, zone }: LeagueRowProps) => {
 
         {member.streakDays > 0 && (
           <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-            <Flame size={12} className="text-orange-500" />
+            <Flame size={12} className="text-orange-500 dark:text-orange-400" />
             سلسلة {formatDays(member.streakDays)}
           </p>
         )}

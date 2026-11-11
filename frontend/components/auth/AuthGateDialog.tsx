@@ -38,7 +38,7 @@ interface GateCopy {
 }
 
 const PRIMARY_BTN =
-  "flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300";
+  "flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 dark:bg-blue-700 px-5 font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 dark:hover:bg-blue-800 active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300";
 const SECONDARY_BTN =
   "flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-5 font-semibold text-zinc-800 transition hover:bg-zinc-50 active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:focus-visible:ring-zinc-700";
 
@@ -67,7 +67,7 @@ const UsageMeter = () => (
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ delay: 0.25 + i * 0.12, duration: 0.35 }}
-          className="h-2 flex-1 origin-right rounded-full bg-gradient-to-l from-amber-400 to-orange-500"
+          className="h-2 flex-1 origin-right rounded-full bg-gradient-to-l from-amber-400 dark:from-amber-600 to-orange-500 dark:to-orange-700"
         />
       ))}
     </div>
@@ -76,7 +76,7 @@ const UsageMeter = () => (
 
 const Reassurance = () => (
   <p className="flex items-center justify-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-    <ShieldCheck size={14} className="text-emerald-500" />
+    <ShieldCheck size={14} className="text-emerald-500 dark:text-emerald-400" />
     التسجيل مجاني، وكل ما أنجزته كزائر ينتقل معك تلقائياً
   </p>
 );
@@ -88,8 +88,8 @@ const copyFor = (gate: AuthGate): GateCopy | null => {
         title: gate.message || "أنشئ حسابك للمتابعة",
         body: "هذه الميزة متاحة لأصحاب الحسابات فقط. التسجيل يستغرق أقل من دقيقة.",
         icon: LockKeyhole,
-        header: "from-blue-600 via-indigo-600 to-sky-500",
-        glow: "bg-sky-300/40",
+        header: "from-blue-600 dark:from-blue-800 via-indigo-600 dark:via-indigo-800 to-sky-500 dark:to-sky-700",
+        glow: "bg-sky-300/40 dark:bg-sky-500/15",
         primary: { label: "إنشاء حساب مجاني", action: "signup" },
         secondary: { label: "لدي حساب بالفعل", action: "signin" },
         extra: <Reassurance />,
@@ -103,8 +103,8 @@ const copyFor = (gate: AuthGate): GateCopy | null => {
           ? `استخدمت كل ${feature} المجانية. أنشئ حسابك لتكمل بلا حدود.`
           : "استخدمت كل محاولاتك المجانية لهذه الميزة. أنشئ حسابك لتكمل بلا حدود.",
         icon: Hourglass,
-        header: "from-amber-500 via-orange-500 to-rose-500",
-        glow: "bg-yellow-200/40",
+        header: "from-amber-500 dark:from-amber-700 via-orange-500 dark:via-orange-700 to-rose-500 dark:to-rose-700",
+        glow: "bg-yellow-200/40 dark:bg-yellow-500/15",
         primary: { label: "إنشاء حساب مجاني", action: "signup" },
         secondary: { label: "لدي حساب بالفعل", action: "signin" },
         extra: (
@@ -123,8 +123,8 @@ const copyFor = (gate: AuthGate): GateCopy | null => {
           gate.message ||
           "اشترك في متقن لتفتح هذه الميزة وتستمتع بالمعلم الذكي والمخطط الذكي بلا حدود.",
         icon: Crown,
-        header: "from-violet-600 via-purple-600 to-fuchsia-500",
-        glow: "bg-fuchsia-300/40",
+        header: "from-violet-600 dark:from-violet-800 via-purple-600 dark:via-purple-800 to-fuchsia-500 dark:to-fuchsia-700",
+        glow: "bg-fuchsia-300/40 dark:bg-fuchsia-500/15",
         primary: { label: "عرض خطط الاشتراك", action: "subscribe" },
       };
 
@@ -136,8 +136,8 @@ const copyFor = (gate: AuthGate): GateCopy | null => {
           gate.resetsAt ? `يتجدد الحد في ${formatDay(gate.resetsAt)}، أو رقِّ باقتك الآن.` : "رقِّ باقتك لتحصل على المزيد."
         }`,
         icon: Timer,
-        header: "from-amber-500 via-orange-500 to-rose-500",
-        glow: "bg-yellow-200/40",
+        header: "from-amber-500 dark:from-amber-700 via-orange-500 dark:via-orange-700 to-rose-500 dark:to-rose-700",
+        glow: "bg-yellow-200/40 dark:bg-yellow-500/15",
         primary: { label: "اعرض العروض", action: "subscribe" },
       };
     }
@@ -150,8 +150,8 @@ const copyFor = (gate: AuthGate): GateCopy | null => {
           ? `${feature} غير متاحة في باقتك الحالية. اعرض الباقات التي تشملها.`
           : "هذه الميزة غير متاحة في باقتك الحالية. اعرض الباقات التي تشملها.",
         icon: Crown,
-        header: "from-violet-600 via-purple-600 to-fuchsia-500",
-        glow: "bg-fuchsia-300/40",
+        header: "from-violet-600 dark:from-violet-800 via-purple-600 dark:via-purple-800 to-fuchsia-500 dark:to-fuchsia-700",
+        glow: "bg-fuchsia-300/40 dark:bg-fuchsia-500/15",
         primary: { label: "اعرض العروض", action: "subscribe" },
       };
     }
@@ -161,8 +161,8 @@ const copyFor = (gate: AuthGate): GateCopy | null => {
         title: "احفظ ما أنجزته",
         body: "أنت تستخدم متقن كزائر. أنشئ حسابك المجاني حتى تبقى خططك وموادك محفوظة على كل أجهزتك.",
         icon: CloudUpload,
-        header: "from-emerald-500 via-teal-500 to-cyan-500",
-        glow: "bg-emerald-200/40",
+        header: "from-emerald-500 dark:from-emerald-700 via-teal-500 dark:via-teal-700 to-cyan-500 dark:to-cyan-700",
+        glow: "bg-emerald-200/40 dark:bg-emerald-500/15",
         primary: { label: "إنشاء حساب مجاني", action: "signup" },
         secondary: { label: "لدي حساب بالفعل", action: "signin" },
         extra: <Reassurance />,
@@ -363,7 +363,7 @@ export default function AuthGateDialog() {
                     type="button"
                     disabled={isStartingGuest}
                     onClick={() => startGuest()}
-                    className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/60 font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50 disabled:cursor-wait disabled:opacity-70 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:border-blue-700"
+                    className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/60 font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:cursor-wait disabled:opacity-70 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:border-blue-700"
                   >
                     {isStartingGuest ? (
                       <Loader2 size={18} className="animate-spin" />

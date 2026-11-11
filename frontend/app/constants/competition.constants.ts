@@ -103,7 +103,7 @@ export const TIER_META: Record<
     label: "برونزي",
     icon: "🥉",
     accent: "text-amber-700 dark:text-amber-500",
-    ring: "from-amber-600/80 to-amber-800/80",
+    ring: "from-amber-600/80 dark:from-amber-800/80 to-amber-800/80",
     glow: "shadow-amber-700/20",
   },
   silver: {
@@ -117,21 +117,21 @@ export const TIER_META: Record<
     label: "ذهبي",
     icon: "🥇",
     accent: "text-yellow-600 dark:text-yellow-400",
-    ring: "from-yellow-400/80 to-amber-600/80",
+    ring: "from-yellow-400/80 dark:from-yellow-600/80 to-amber-600/80 dark:to-amber-800/80",
     glow: "shadow-yellow-500/25",
   },
   platinum: {
     label: "بلاتيني",
     icon: "💠",
     accent: "text-sky-600 dark:text-sky-400",
-    ring: "from-sky-400/80 to-cyan-600/80",
+    ring: "from-sky-400/80 dark:from-sky-600/80 to-cyan-600/80 dark:to-cyan-800/80",
     glow: "shadow-sky-500/25",
   },
   diamond: {
     label: "ألماسي",
     icon: "💎",
     accent: "text-violet-600 dark:text-violet-400",
-    ring: "from-violet-400/80 to-fuchsia-600/80",
+    ring: "from-violet-400/80 dark:from-violet-600/80 to-fuchsia-600/80 dark:to-fuchsia-800/80",
     glow: "shadow-violet-500/25",
   },
 };

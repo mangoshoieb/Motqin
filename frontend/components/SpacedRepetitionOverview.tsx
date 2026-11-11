@@ -31,22 +31,22 @@ const TONE = {
   missed: {
     panel: "border-amber-200 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20",
     icon: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-    count: "bg-amber-600 text-white",
-    chipOn: "border-amber-600 bg-amber-600 text-white",
+    count: "bg-amber-600 dark:bg-amber-700 text-white",
+    chipOn: "border-amber-600 bg-amber-600 dark:bg-amber-700 text-white",
     chipOff: "border-amber-200 bg-white text-amber-800 hover:border-amber-400 dark:border-amber-900 dark:bg-zinc-900 dark:text-amber-300",
     card: "border-amber-200 dark:border-amber-900/60",
     due: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200",
-    button: "bg-amber-600 hover:bg-amber-700",
+    button: "bg-amber-600 dark:bg-amber-700 hover:bg-amber-700 dark:hover:bg-amber-800",
   },
   coming: {
     panel: "border-sky-200 bg-sky-50/70 dark:border-sky-900/60 dark:bg-sky-950/20",
     icon: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
-    count: "bg-sky-600 text-white",
-    chipOn: "border-sky-600 bg-sky-600 text-white",
+    count: "bg-sky-600 dark:bg-sky-700 text-white",
+    chipOn: "border-sky-600 bg-sky-600 dark:bg-sky-700 text-white",
     chipOff: "border-sky-200 bg-white text-sky-800 hover:border-sky-400 dark:border-sky-900 dark:bg-zinc-900 dark:text-sky-300",
     card: "border-sky-200 dark:border-sky-900/60",
     due: "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200",
-    button: "bg-sky-600 hover:bg-sky-700",
+    button: "bg-sky-600 dark:bg-sky-700 hover:bg-sky-700 dark:hover:bg-sky-800",
   },
 } as const;
 
@@ -287,7 +287,7 @@ export const SpacedRepetitionOverview = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <h2 className="flex items-center gap-2 text-xl font-bold text-blue-950 dark:text-blue-100">
-            <BrainCircuit className="size-6 text-violet-500" />
+            <BrainCircuit className="size-6 text-violet-500 dark:text-violet-400" />
             المراجعات المتباعدة
           </h2>
 
@@ -354,7 +354,7 @@ export const SpacedRepetitionOverview = () => {
           empty={
             missed.length === 0 ? (
               <>
-                <PartyPopper className="size-6 text-amber-500" />
+                <PartyPopper className="size-6 text-amber-500 dark:text-amber-400" />
                 <p className="font-medium text-zinc-700 dark:text-zinc-200">لا توجد مراجعات فائتة هذا الأسبوع</p>
                 <p className="text-xs">أنت ملتزم بمواعيدك، استمر!</p>
               </>
@@ -377,7 +377,7 @@ export const SpacedRepetitionOverview = () => {
           onRangeChange={setComingRange}
           empty={
             <>
-              <CalendarClock className="size-6 text-sky-500" />
+              <CalendarClock className="size-6 text-sky-500 dark:text-sky-400" />
               <p>{comingEmpty}</p>
             </>
           }

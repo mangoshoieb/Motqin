@@ -59,7 +59,7 @@ export default function AboutPage() {
       <div className="max-w-7xl mx-auto">
 
         {/* Hero */}
-        <section className="bg-white rounded-3xl shadow-sm p-8 md:p-12 mb-10 text-center">
+        <section className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8 md:p-12 mb-10 text-center">
           <Image
             src="/متقن.svg"
             alt="متقن"
@@ -72,7 +72,7 @@ export default function AboutPage() {
             عن متقن
           </h1>
 
-          <p className="text-gray-600 text-lg leading-9 max-w-4xl mx-auto">
+          <p className="text-gray-600 dark:text-zinc-400 text-lg leading-9 max-w-4xl mx-auto">
             متقن هو منصة تعليمية ذكية تهدف إلى مساعدة الطلاب على الدراسة
             بفاعلية أكبر من خلال الذكاء الاصطناعي، وإدارة الوقت، وتعزيز
             التركيز، وتتبع الأداء الأكاديمي في مكان واحد.
@@ -82,25 +82,25 @@ export default function AboutPage() {
         {/* Statistics */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
 
-          <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 text-center shadow-sm">
             <h2 className="text-4xl mb-2">🧠</h2>
             <h3 className="font-bold text-xl">AI</h3>
             <p className="text-gray-500">معلم ذكي</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 text-center shadow-sm">
             <h2 className="text-4xl mb-2">📚</h2>
             <h3 className="font-bold text-xl">5+</h3>
             <p className="text-gray-500">أنظمة مترابطة</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 text-center shadow-sm">
             <h2 className="text-4xl mb-2">🎯</h2>
             <h3 className="font-bold text-xl">100%</h3>
             <p className="text-gray-500">التركيز على الطالب</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 text-center shadow-sm">
             <h2 className="text-4xl mb-2">⚡</h2>
             <h3 className="font-bold text-xl">24/7</h3>
             <p className="text-gray-500">متاح دائماً</p>
@@ -111,24 +111,24 @@ export default function AboutPage() {
         {/* Vision & Mission */}
         <section className="grid lg:grid-cols-2 gap-6 mb-10">
 
-          <div className="bg-white rounded-3xl shadow-sm p-8">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8">
             <h2 className="text-2xl font-bold mb-5">
               رؤيتنا
             </h2>
 
-            <p className="leading-9 text-gray-600">
+            <p className="leading-9 text-gray-600 dark:text-zinc-400">
               نسعى إلى بناء بيئة تعليمية حديثة تساعد الطلاب على تحقيق أفضل
               أداء أكاديمي من خلال دمج الذكاء الاصطناعي مع أحدث أساليب
               التعلم وإدارة الوقت.
             </p>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-sm p-8">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8">
             <h2 className="text-2xl font-bold mb-5">
               رسالتنا
             </h2>
 
-            <p className="leading-9 text-gray-600">
+            <p className="leading-9 text-gray-600 dark:text-zinc-400">
               تمكين الطلاب من التعلم بذكاء، وتنظيم الدراسة، وتقليل
               التشتت، وتحويل المذاكرة إلى تجربة أكثر متعة وإنتاجية.
             </p>
@@ -137,7 +137,7 @@ export default function AboutPage() {
         </section>
 
         {/* Features */}
-        <section className="bg-white rounded-3xl shadow-sm p-8 mb-10">
+        <section className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8 mb-10">
 
           <h2 className="text-3xl font-bold mb-8 text-center">
             لماذا متقن؟
@@ -158,7 +158,7 @@ export default function AboutPage() {
                   {feature.title}
                 </h3>
 
-                <p className="text-gray-600 leading-8">
+                <p className="text-gray-600 dark:text-zinc-400 leading-8">
                   {feature.description}
                 </p>
               </div>
@@ -169,13 +169,13 @@ export default function AboutPage() {
         </section>
 
         {/* Difference */}
-        <section className="bg-white rounded-3xl shadow-sm p-8 mb-10">
+        <section className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8 mb-10">
 
           <h2 className="text-3xl font-bold mb-6">
             لماذا يختلف متقن؟
           </h2>
 
-          <p className="leading-9 text-gray-600 text-lg">
+          <p className="leading-9 text-gray-600 dark:text-zinc-400 text-lg">
             معظم التطبيقات التعليمية تقدم أدوات منفصلة مثل التقويم أو
             الاختبارات أو الملاحظات، بينما يجمع متقن جميع هذه الأدوات في
             نظام واحد مترابط.
@@ -183,7 +183,7 @@ export default function AboutPage() {
 
           <br />
 
-          <p className="leading-9 text-gray-600 text-lg">
+          <p className="leading-9 text-gray-600 dark:text-zinc-400 text-lg">
             عند دراسة درس جديد يستطيع المعلم الذكي شرح المحتوى، ثم إنشاء
             اختبار مناسب، وبعدها يضيف المخطط الذكي مواعيد المراجعة
             تلقائياً، ويقوم نظام التركيز بمساعدتك على إتمام جلسة الدراسة
@@ -193,7 +193,7 @@ export default function AboutPage() {
         </section>
 
         {/* Timeline */}
-        <section className="bg-white rounded-3xl shadow-sm p-8 mb-10">
+        <section className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8 mb-10">
 
           <h2 className="text-3xl font-bold mb-10 text-center">
             كيف يعمل؟
@@ -211,7 +211,7 @@ export default function AboutPage() {
                 key={step}
                 className="border rounded-2xl p-6"
               >
-                <div className="text-3xl font-bold text-blue-600 mb-4">
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-4">
                   {index + 1}
                 </div>
 
@@ -226,7 +226,7 @@ export default function AboutPage() {
         </section>
 
         {/* Values */}
-        <section className="bg-white rounded-3xl shadow-sm p-8 mb-10">
+        <section className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8 mb-10">
 
           <h2 className="text-3xl font-bold mb-8 text-center">
             قيمنا
@@ -237,7 +237,7 @@ export default function AboutPage() {
             {values.map((value) => (
               <span
                 key={value}
-                className="px-6 py-3 rounded-full bg-blue-50 text-blue-700 font-semibold"
+                className="px-6 py-3 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold"
               >
                 {value}
               </span>
@@ -248,7 +248,7 @@ export default function AboutPage() {
         </section>
 
         {/* Technologies */}
-        <section className="bg-white rounded-3xl shadow-sm p-8 mb-10">
+        <section className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8 mb-10">
 
           <h2 className="text-3xl font-bold mb-8 text-center">
             التقنيات المستخدمة
@@ -270,7 +270,7 @@ export default function AboutPage() {
         </section>
 
         {/* Team */}
-        <section className="bg-white rounded-3xl shadow-sm p-8 mb-10">
+        <section className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8 mb-10">
 
           <h2 className="text-3xl font-bold mb-8 text-center">
             فريق العمل
@@ -288,7 +288,7 @@ export default function AboutPage() {
                 key={role}
                 className="border rounded-2xl p-6 text-center"
               >
-                <div className="w-20 h-20 rounded-full bg-gray-100 mx-auto mb-4 flex items-center justify-center text-3xl">
+                <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-zinc-800 mx-auto mb-4 flex items-center justify-center text-3xl">
                   👤
                 </div>
 
@@ -307,13 +307,13 @@ export default function AboutPage() {
         </section>
 
         {/* Contact */}
-        <section className="bg-white rounded-3xl shadow-sm p-8 text-center">
+        <section className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm p-8 text-center">
 
           <h2 className="text-3xl font-bold mb-6">
             تواصل معنا
           </h2>
 
-          <p className="text-gray-600 leading-9 max-w-3xl mx-auto">
+          <p className="text-gray-600 dark:text-zinc-400 leading-9 max-w-3xl mx-auto">
             إذا كانت لديك أي استفسارات أو اقتراحات لتحسين منصة متقن،
             يسعدنا التواصل معك والاستماع إلى آرائك.
           </p>

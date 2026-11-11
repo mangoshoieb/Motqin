@@ -95,7 +95,7 @@ function CommentBox({
       {remaining <= 50 && (
         <span
           className={`pointer-events-none absolute bottom-1 left-3 text-[10px] tabular-nums ${
-            remaining === 0 ? "text-red-500" : "text-zinc-400"
+            remaining === 0 ? "text-red-500 dark:text-red-400" : "text-zinc-400"
           }`}
         >
           {remaining}
@@ -181,7 +181,7 @@ function ReplyBox({
         onClick={submit}
         disabled={isPending || !text.trim()}
         title="إرسال الرد"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-700 text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Send size={14} />
       </button>
@@ -287,7 +287,7 @@ function CommentItem({
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={isUpdating}
-                className="text-blue-600 hover:text-blue-700 disabled:opacity-50 dark:text-blue-400"
+                className="text-blue-600 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50 dark:text-blue-400"
               >
                 <Send size={16} />
               </button>
@@ -479,7 +479,7 @@ export default function QuoteComments({
           type="button"
           onClick={handleSubmit}
           disabled={isPending || !newComment.trim()}
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-700 text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Send size={16} />
         </button>

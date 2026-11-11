@@ -62,7 +62,7 @@ function ReactionBar({
               className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition disabled:opacity-50 ${
                 isActive
                   ? "border-blue-600 bg-blue-600/10 text-blue-700 dark:border-blue-500 dark:bg-blue-500/10 dark:text-blue-300"
-                  : "border-zinc-300 text-zinc-600 hover:border-zinc-400 dark:border-zinc-600 dark:text-zinc-300"
+                  : "border-zinc-300 text-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-600 dark:border-zinc-600 dark:text-zinc-300"
               }`}
             >
               <span>{option.emoji}</span>
@@ -133,7 +133,7 @@ export default function QuoteSection() {
             </span>
           ) : null}
 
-          <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-md shadow-blue-500/30">
+          <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-700 text-white shadow-md shadow-blue-500/30">
             <QuoteIcon size={22} />
           </span>
 

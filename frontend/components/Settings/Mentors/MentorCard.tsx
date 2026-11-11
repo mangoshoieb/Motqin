@@ -202,7 +202,7 @@ export const MentorCard = ({ mentor, lockHolder }: MentorCardProps) => {
                 type="button"
                 onClick={resend}
                 disabled={busy}
-                className="rounded-full bg-white px-3 py-1 font-bold text-amber-800 shadow-sm hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-950 dark:text-amber-200"
+                className="rounded-full bg-white px-3 py-1 font-bold text-amber-800 shadow-sm hover:bg-amber-100 dark:hover:bg-amber-500/15 disabled:opacity-50 dark:bg-amber-950 dark:text-amber-200"
               >
                 أعد الإرسال
               </button>
@@ -240,7 +240,7 @@ export const MentorCard = ({ mentor, lockHolder }: MentorCardProps) => {
                         type="button"
                         onClick={() => void takeLockFromPaused()}
                         disabled={busy}
-                        className="mt-1 text-xs font-bold text-blue-600 hover:underline disabled:opacity-50"
+                        className="mt-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
                       >
                         القفل مع {lockHolderName} لكن باقة المتابعة انتهت. اسحب القفل وامنحه لـ {mentor.mentorName}
                       </button>

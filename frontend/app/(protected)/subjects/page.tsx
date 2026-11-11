@@ -20,7 +20,7 @@ const subjectHref = (subject: Subject) =>
   `/subjects/${subject.subjectID}-${subject.name.toLowerCase().replace(/\s+/g, "-")}`;
 
 const iconButtonClass =
-  "p-2 rounded-full bg-white/90 border border-zinc-200 text-zinc-500 transition hover:text-zinc-900 hover:bg-zinc-50";
+  "p-2 rounded-full bg-white/90 border border-zinc-200 dark:border-zinc-800 text-zinc-500 transition hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800";
 
 const SubjectsPage = () => {
   // Already ordered system subjects first, then the student's own.
@@ -70,7 +70,7 @@ const SubjectsPage = () => {
   };
 
   return (
-    <div dir="rtl" className="bg-zinc-100 min-h-screen flex flex-col gap-6 px-10">
+    <div dir="rtl" className="bg-zinc-100 dark:bg-zinc-800 min-h-screen flex flex-col gap-6 px-10">
       {/* Spaced-repetition reviews — missed and coming */}
       <div className="mx-5 px-7 pt-10">
         <SpacedRepetitionOverview />
@@ -78,13 +78,13 @@ const SubjectsPage = () => {
 
       {/* Header */}
       <div className="p-10 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl text-blue-950 font-bold">المواد الدراسية</h1>
+        <h1 className="text-3xl text-blue-950 dark:text-blue-200 font-bold">المواد الدراسية</h1>
         <div className="flex flex-wrap items-center gap-3">
           <MotqinPreferencesLink />
           <button
             type="button"
             onClick={() => setIsAdding(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-semibold transition hover:bg-blue-700"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 dark:bg-blue-700 text-white font-semibold transition hover:bg-blue-700 dark:hover:bg-blue-800"
           >
             <Plus className="size-4" />
             إضافة مادة
@@ -97,7 +97,7 @@ const SubjectsPage = () => {
         {isPending && <p className="text-zinc-500">جاري تحميل المواد...</p>}
 
         {isError && (
-          <p className="text-red-600">تعذّر تحميل المواد. حاول مرة أخرى.</p>
+          <p className="text-red-600 dark:text-red-400">تعذّر تحميل المواد. حاول مرة أخرى.</p>
         )}
 
         {subjects?.map((subject) => (
@@ -109,7 +109,7 @@ const SubjectsPage = () => {
             // curriculum (system) subjects are read-only.
             badge={
               subject.isMine && (
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-semibold">
                   مادتي
                 </span>
               )
@@ -129,7 +129,7 @@ const SubjectsPage = () => {
                     type="button"
                     aria-label={`حذف ${subject.name}`}
                     onClick={() => setDeleting(subject)}
-                    className={`${iconButtonClass} hover:!text-red-600`}
+                    className={`${iconButtonClass} hover:!text-red-600 dark:text-red-400`}
                   >
                     <Trash2 className="size-4" />
                   </button>

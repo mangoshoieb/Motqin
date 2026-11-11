@@ -36,7 +36,7 @@ export const SubjectCard = ({
       key={key}
       className={cn(
         "group relative rounded-2xl my-4 overflow-hidden",
-        "bg-white border border-zinc-200",
+        "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800",
         "transition-all duration-300",
         "hover:shadow-xl hover:-translate-y-1",
         className
@@ -46,7 +46,7 @@ export const SubjectCard = ({
         {/* Main content */}
         <div className="flex-1 p-10">
           <div className={cn("flex flex-wrap items-center gap-3", actions && "pe-20")}>
-            <h2 className="text-xl font-bold text-zinc-900">{title}</h2>
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{title}</h2>
             {badge}
           </div>
 
@@ -69,7 +69,7 @@ export const SubjectCard = ({
           {/* Animated background fill */}
           <div
             className={cn(
-              "absolute inset-0 bg-blue-600",
+              "absolute inset-0 bg-blue-600 dark:bg-blue-700",
               "origin-left rtl:origin-right scale-x-0",
               "transition-transform duration-700 ease-out",
               "group-hover:scale-x-100"

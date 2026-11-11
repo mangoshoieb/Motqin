@@ -126,7 +126,7 @@ function ReviewCard({ item, onStart }: { item: ReviewItem; onStart: (item: Revie
           onClick={() => onStart(item)}
           className={cn(
             "self-start rounded-full px-4 py-1.5 text-xs font-semibold text-white transition",
-            item.group === "missed" ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700",
+            item.group === "missed" ? "bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-800" : "bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-800",
           )}
         >
           ابدأ المراجعة
@@ -162,7 +162,7 @@ export const SpacedRepetitionColumn = ({ date }: SpacedRepetitionColumnProps) =>
     <section className="flex flex-col gap-3">
       <div className="flex min-h-10 items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-zinc-100">
-          <BrainCircuit size={20} className="text-violet-500" />
+          <BrainCircuit size={20} className="text-violet-500 dark:text-violet-400" />
           المراجعات المتباعدة
         </h2>
         {reviews.length > 0 && (
@@ -196,7 +196,7 @@ export const SpacedRepetitionColumn = ({ date }: SpacedRepetitionColumnProps) =>
         <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-zinc-300 bg-white/60 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/60">
           {isError ? (
             <>
-              <AlertCircle size={24} className="text-red-500" />
+              <AlertCircle size={24} className="text-red-500 dark:text-red-400" />
               <p className="text-sm text-zinc-600 dark:text-zinc-300">تعذر تحميل المراجعات</p>
             </>
           ) : (

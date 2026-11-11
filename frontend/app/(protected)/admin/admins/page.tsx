@@ -91,7 +91,7 @@ export default function AdminAdminsPage() {
                     type="button"
                     onClick={() => setRemoving(a)}
                     disabled={self || (admins?.length ?? 0) <= 1}
-                    className={cn(secondaryButton, "px-3 py-1.5 text-rose-600")}
+                    className={cn(secondaryButton, "px-3 py-1.5 text-rose-600 dark:text-rose-400")}
                   >
                     <UserMinus size={15} /> إزالة
                   </button>

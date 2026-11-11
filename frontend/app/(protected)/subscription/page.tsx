@@ -36,17 +36,17 @@ const OffersContent = () => {
         {registered && wallet && (
           <Link
             href="/settings/billing"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-200 dark:ring-zinc-800"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 dark:hover:bg-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:ring-zinc-800"
           >
-            <Wallet size={16} className="text-blue-600" />
+            <Wallet size={16} className="text-blue-600 dark:text-blue-400" />
             رصيدك <span className="tabular-nums">{formatEgp(wallet.balance)}</span>
           </Link>
         )}
         <Link
           href="/settings/billing/limits"
-          className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-200 dark:ring-zinc-800"
+          className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-50 dark:hover:bg-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:ring-zinc-800"
         >
-          <Settings2 size={16} className="text-blue-600" /> باقتي وحدودها
+          <Settings2 size={16} className="text-blue-600 dark:text-blue-400" /> باقتي وحدودها
         </Link>
       </div>
 

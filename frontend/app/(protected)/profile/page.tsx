@@ -186,7 +186,7 @@ export default function ProfilePage() {
                   )}
 
                   {/* Change Icon */}
-                  <div className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-lg transition group-hover:scale-110">
+                  <div className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-blue-600 dark:bg-blue-700 text-white shadow-lg transition group-hover:scale-110">
                     <Camera size={18} />
                   </div>
                 </div>
@@ -226,7 +226,7 @@ export default function ProfilePage() {
                 <button
                   onClick={handleSave}
                   disabled={isSavingProfile}
-                  className="rounded-xl bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-xl bg-blue-600 dark:bg-blue-700 px-5 py-2 text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSavingProfile ? "جاري الحفظ..." : "حفظ"}
                 </button>
@@ -243,7 +243,7 @@ export default function ProfilePage() {
               <Skeleton className="h-[52px] w-full" />
             </div>
           ) : isError ? (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-red-500 dark:text-red-400">
               تعذر تحميل بيانات الحساب. حاول تحديث الصفحة.
             </p>
           ) : (
@@ -293,7 +293,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={() => setShowBio(true)}
                   disabled={!isEditing}
-                  className="flex items-center gap-2 bg-blue-300/30 hover:bg-blue-300/50 rounded-xl border border-dashed border-zinc-300 px-4 py-3 text-zinc-500 transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-blue-300"
+                  className="flex items-center gap-2 bg-blue-300/30 dark:bg-blue-500/15 hover:bg-blue-300/50 dark:hover:bg-blue-500/20 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 px-4 py-3 text-zinc-500 transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-blue-300"
                 >
                   <span className="text-lg">+</span>
                   إضافة وصف

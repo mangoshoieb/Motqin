@@ -121,7 +121,7 @@ export function ReportDialog({
                 type="button"
                 onClick={send}
                 disabled={!consent || planBlocked || preview.ready === 0 || allow.isPending}
-                className={cn(primaryButton, "flex-1 bg-emerald-600 hover:bg-emerald-700")}
+                className={cn(primaryButton, "flex-1 bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-700 dark:hover:bg-emerald-800")}
               >
                 <MessageCircle size={17} />
                 {allow.isPending ? "جارٍ البدء..." : `إرسال ${formatNumber(preview.ready)} رسالة`}
@@ -135,12 +135,12 @@ export function ReportDialog({
         }
       >
         <div className="grid grid-cols-3 gap-2">
-          <Stat label="جاهزة" value={preview.ready} className="text-emerald-600" />
-          <Stat label="سيتم تخطيها" value={preview.skipped} className="text-amber-600" />
+          <Stat label="جاهزة" value={preview.ready} className="text-emerald-600 dark:text-emerald-400" />
+          <Stat label="سيتم تخطيها" value={preview.skipped} className="text-amber-600 dark:text-amber-400" />
           <Stat
             label="المتبقي في باقتك"
             value={q?.remaining ?? null}
-            className={planBlocked ? "text-rose-600" : "text-zinc-900 dark:text-zinc-100"}
+            className={planBlocked ? "text-rose-600 dark:text-rose-400" : "text-zinc-900 dark:text-zinc-100"}
           />
         </div>
 
@@ -197,7 +197,7 @@ export function ReportDialog({
           </p>
         )}
 
-        {error && <div className="mt-3">{error.plan ? <PlanNotice message={error.message} /> : <p className="text-sm text-rose-600">{error.message}</p>}</div>}
+        {error && <div className="mt-3">{error.plan ? <PlanNotice message={error.message} /> : <p className="text-sm text-rose-600 dark:text-rose-400">{error.message}</p>}</div>}
       </Modal>
     );
   }
@@ -243,11 +243,11 @@ export function ReportDialog({
               "rounded-2xl border p-3 text-start transition",
               templateKey === t.key
                 ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500 dark:bg-emerald-500/10"
-                : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700",
+                : "border-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600 dark:border-zinc-700",
             )}
           >
             <p className="flex items-center gap-1.5 text-sm font-bold text-zinc-900 dark:text-zinc-100">
-              {templateKey === t.key && <CheckCircle2 size={15} className="text-emerald-600" />}
+              {templateKey === t.key && <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400" />}
               {t.label}
             </p>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-500">{t.body}</p>
@@ -331,7 +331,7 @@ export function ReportDialog({
         </>
       )}
 
-      {error && <div className="mt-4">{error.plan ? <PlanNotice message={error.message} /> : <p className="text-sm text-rose-600">{error.message}</p>}</div>}
+      {error && <div className="mt-4">{error.plan ? <PlanNotice message={error.message} /> : <p className="text-sm text-rose-600 dark:text-rose-400">{error.message}</p>}</div>}
     </Modal>
   );
 }

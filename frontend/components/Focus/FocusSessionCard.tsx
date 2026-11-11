@@ -100,7 +100,7 @@ export const FocusSessionCard = () => {
                   className={cn(
                     "flex-1 rounded-xl border px-3 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50",
                     session.durationMinutes === minutes
-                      ? "border-blue-600 bg-blue-600 text-white"
+                      ? "border-blue-600 bg-blue-600 dark:bg-blue-700 text-white"
                       : "border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   )}
                 >
@@ -134,7 +134,7 @@ export const FocusSessionCard = () => {
                 <button
                   type="button"
                   onClick={session.start}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white transition hover:bg-blue-700"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 dark:bg-blue-700 px-5 py-3 font-bold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
                 >
                   <Play size={17} />
                   ابدأ الجلسة
@@ -156,7 +156,7 @@ export const FocusSessionCard = () => {
                 <button
                   type="button"
                   onClick={session.resume}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white transition hover:bg-blue-700"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 dark:bg-blue-700 px-5 py-3 font-bold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
                 >
                   <Play size={17} />
                   متابعة

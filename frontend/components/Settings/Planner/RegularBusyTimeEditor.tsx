@@ -224,7 +224,7 @@ export const RegularBusyTimeEditor = () => {
       </div>
 
       <div className="flex gap-2">
-        <button type="button" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"><Plus size={16} />{saveMutation.isPending ? "جاري الحفظ..." : editingId === null ? "إضافة وقت" : "حفظ التعديل"}</button>
+        <button type="button" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex items-center gap-2 rounded-lg bg-blue-600 dark:bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"><Plus size={16} />{saveMutation.isPending ? "جاري الحفظ..." : editingId === null ? "إضافة وقت" : "حفظ التعديل"}</button>
         {editingId !== null && <button type="button" onClick={() => { setDraft(emptyDraft); setEditingId(null); }} className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"><X size={16} />إلغاء</button>}
       </div>
 
@@ -232,7 +232,7 @@ export const RegularBusyTimeEditor = () => {
         <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">الأوقات المضافة</h3>
         {isPending && <p className="text-sm text-zinc-500">جاري التحميل...</p>}
         {!isPending && items.length === 0 && <p className="text-sm text-zinc-500 dark:text-zinc-400">لم تتم إضافة أوقات بعد.</p>}
-        {items.map((item) => <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700"><span className="truncate text-zinc-700 dark:text-zinc-300">{item.title} - {item.durationInMinutes !== undefined ? `${item.durationInMinutes} دقيقة` : `${item.startTime?.slice(0, 5)} إلى ${item.endTime?.slice(0, 5)}`}{item.isRepeated ? " - متكرر" : item.startDate ? ` - ${dayLabel(item.startDate)}` : ""}</span><span className="flex gap-2"><button type="button" title="تعديل" onClick={() => editBusyTime(item)} className="text-zinc-500 hover:text-blue-600"><Pencil size={16} /></button><button type="button" title="حذف" onClick={() => deleteMutation.mutate(item.id)} className="text-zinc-500 hover:text-red-600"><Trash2 size={16} /></button></span></div>)}
+        {items.map((item) => <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700"><span className="truncate text-zinc-700 dark:text-zinc-300">{item.title} - {item.durationInMinutes !== undefined ? `${item.durationInMinutes} دقيقة` : `${item.startTime?.slice(0, 5)} إلى ${item.endTime?.slice(0, 5)}`}{item.isRepeated ? " - متكرر" : item.startDate ? ` - ${dayLabel(item.startDate)}` : ""}</span><span className="flex gap-2"><button type="button" title="تعديل" onClick={() => editBusyTime(item)} className="text-zinc-500 hover:text-blue-600 dark:hover:text-blue-300"><Pencil size={16} /></button><button type="button" title="حذف" onClick={() => deleteMutation.mutate(item.id)} className="text-zinc-500 hover:text-red-600 dark:hover:text-red-300"><Trash2 size={16} /></button></span></div>)}
       </div>
     </div>
   );
