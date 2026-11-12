@@ -35,9 +35,9 @@ const questionsCount = (n: number) =>
 
 // Temporary page for AI-generated questions: the student checks and edits
 // them here, and only "save" writes them — one add-user-question call each.
-// One question at a time, as the info card the quiz will show; a sticky
-// strip of numbered chips (and the keyboard arrows) moves between them, so a
-// long batch never turns into a long scroll.
+// Every question is listed as the info card the quiz will show; a sticky
+// navigator beside the list (on the left) jumps to any of them and follows
+// the one being read.
 // The batch lives in memory (useAiQuestionsReviewStore), so this page is
 // guarded against leaving while it still holds unsaved questions.
 const ReviewAiQuestionsPage = () => {
@@ -62,11 +62,15 @@ const ReviewAiQuestionsPage = () => {
   );
 
   const [filter, setFilter] = useState<Filter>("all");
-  // The question on screen, and whether its editor is open — the editor
-  // stays open while moving on, for working through a batch.
-  const [currentKey, setCurrentKey] = useState<string | null>(null);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const chipRefs = useRef(new Map<string, HTMLButtonElement>());
+  // The card being read (followed while scrolling, or the last one jumped
+  // to), and which cards have their editor open.
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [openEditors, setOpenEditors] = useState<Set<string>>(new Set());
+  const navRef = useRef<HTMLDivElement>(null);
+  const navItemRefs = useRef(new Map<string, HTMLButtonElement>());
+  // While a jump's smooth scroll runs, the cards it passes shouldn't steal
+  // the highlight.
+  const followPausedUntil = useRef(0);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   // Set on the way out, so the emptied batch doesn't flash the empty state.
@@ -101,76 +105,106 @@ const ReviewAiQuestionsPage = () => {
     })),
   ];
 
-  // The current question, falling back to the first one in view (after a
-  // filter change, say).
-  const current = visible.find((item) => item.key === currentKey) ?? visible[0];
-  const currentIndex = current ? visible.indexOf(current) : -1;
-  const prevItem = currentIndex > 0 ? visible[currentIndex - 1] : undefined;
-  const nextItem = currentIndex >= 0 ? visible[currentIndex + 1] : undefined;
+  const active = visible.find((item) => item.key === activeKey) ?? visible[0];
+  const activeIndex = active ? visible.indexOf(active) : -1;
 
-  // Show a question, optionally with its editor open, and bring the view
-  // back to the top of the card if a long one was scrolled past.
-  const goTo = (key: string, options?: { openEditor?: boolean }) => {
-    setCurrentKey(key);
-    if (options?.openEditor) setEditorOpen(true);
-    requestAnimationFrame(() => {
-      const view = document.getElementById("ai-question-view");
-      if (view && view.getBoundingClientRect().top < 0) {
-        view.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+  const toggleEditor = (key: string, open?: boolean) =>
+    setOpenEditors((prev) => {
+      const next = new Set(prev);
+      if (open ?? !next.has(key)) next.add(key);
+      else next.delete(key);
+      return next;
     });
+
+  // Scroll a card to the top, optionally opening its editor.
+  const scrollToCard = (key: string, options?: { openEditor?: boolean }) => {
+    setActiveKey(key);
+    if (options?.openEditor) toggleEditor(key, true);
+    followPausedUntil.current = Date.now() + 800;
+    requestAnimationFrame(() =>
+      document
+        .getElementById(`ai-question-${key}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" })
+    );
   };
 
-  // Keep the current chip in sight in the strip.
+  // Follow the card being read: the one crossing a band near the top of
+  // the screen.
+  const visibleKeys = visible.map((item) => item.key).join(",");
   useEffect(() => {
-    if (!current) return;
-    chipRefs.current
-      .get(current.key)
-      ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [current]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (Date.now() < followPausedUntil.current) return;
+        const entry = entries.find((e) => e.isIntersecting);
+        const key = entry?.target.getAttribute("data-review-key");
+        if (key) setActiveKey(key);
+      },
+      { rootMargin: "-25% 0px -65% 0px" }
+    );
+    document.querySelectorAll("[data-review-key]").forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [visibleKeys]);
 
-  // Left / right arrow keys move between questions (in RTL, left is next),
-  // except while typing in a field.
+  // Keep the highlighted row in sight inside the navigator — scrolling the
+  // navigator only, never the page.
+  useEffect(() => {
+    const nav = navRef.current;
+    const row = active && navItemRefs.current.get(active.key);
+    if (!nav || !row) return;
+    const navBox = nav.getBoundingClientRect();
+    const rowBox = row.getBoundingClientRect();
+    if (getComputedStyle(nav).flexDirection === "column") {
+      if (rowBox.top < navBox.top || rowBox.bottom > navBox.bottom) {
+        nav.scrollBy({ top: rowBox.top - navBox.top - navBox.height / 2 + rowBox.height / 2, behavior: "smooth" });
+      }
+    } else if (rowBox.left < navBox.left || rowBox.right > navBox.right) {
+      nav.scrollBy({ left: rowBox.left - navBox.left - navBox.width / 2 + rowBox.width / 2, behavior: "smooth" });
+    }
+  }, [active]);
+
+  // Left / right arrow keys jump to the next / previous card (in RTL, left
+  // is next), except while typing in a field.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("input, textarea, select, [contenteditable=true]")) return;
-      if (event.key === "ArrowLeft" && nextItem) goTo(nextItem.key);
-      else if (event.key === "ArrowRight" && prevItem) goTo(prevItem.key);
-      else return;
+      const step = event.key === "ArrowLeft" ? 1 : event.key === "ArrowRight" ? -1 : 0;
+      const neighbour = step ? visible[activeIndex + step] : undefined;
+      if (!neighbour) return;
       event.preventDefault();
+      scrollToCard(neighbour.key);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   });
 
   const handleRemove = (key: string) => {
-    // Land on the neighbour rather than jumping back to the first question.
     const index = visible.findIndex((item) => item.key === key);
     const neighbour = visible[index + 1] ?? visible[index - 1];
     const removed = remove(key);
     if (!removed) return;
-    setCurrentKey(neighbour?.key ?? null);
+    if (key === activeKey) setActiveKey(neighbour?.key ?? null);
     toast("تم حذف السؤال", {
       action: {
         label: "تراجع",
         onClick: () => {
           insert(removed.item, removed.index);
-          setCurrentKey(removed.item.key);
+          scrollToCard(removed.item.key);
         },
       },
     });
   };
 
-  const chipClass = (item: (typeof items)[number], isCurrent: boolean) =>
-    isCurrent
+  // The number badge in a navigator row, by status.
+  const badgeClass = (item: (typeof items)[number], isActive: boolean) =>
+    isActive
       ? "border-blue-600 bg-blue-600 text-white dark:border-blue-700 dark:bg-blue-700"
       : item.saveError || isInvalid(item.key)
-        ? "border-red-300 bg-red-50 text-red-700 hover:border-red-400 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
+        ? "border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
         : item.edited
-          ? "border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-400 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
-          : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-blue-500/40";
+          ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
+          : "border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300";
 
   const discardAndLeave = (href: string) => {
     setIsLeaving(true);
@@ -184,7 +218,7 @@ const ReviewAiQuestionsPage = () => {
     if (invalidCount > 0) {
       const first = items.find((item) => isInvalid(item.key));
       setFilter("all");
-      if (first) goTo(first.key, { openEditor: true });
+      if (first) scrollToCard(first.key, { openEditor: true });
       toast.error(`${questionsCount(invalidCount)} بحاجة إلى تعديل قبل الحفظ.`);
       return;
     }
@@ -257,7 +291,7 @@ const ReviewAiQuestionsPage = () => {
 
   return (
     <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-8">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -275,116 +309,144 @@ const ReviewAiQuestionsPage = () => {
               )}
             </p>
             <p className="mt-1 text-xs text-zinc-400">
-              هكذا ستظهر كل معلومة في جلسة المراجعة. افتح الأسئلة تحت أي بطاقة لتعديلها، ثم احفظ لتُضاف إلى الدرس.
+              هكذا ستظهر كل معلومة في جلسة المراجعة. مرّر بين البطاقات أو انتقل إلى أي سؤال من القائمة، وافتح الأسئلة تحت أي بطاقة لتعديلها، ثم احفظ لتُضاف إلى الدرس.
             </p>
           </div>
 
         </div>
 
-        {/* Navigator: filters + a chip per question — sticks while scrolling */}
-        <div className="sticky top-0 z-20 -mx-4 mb-6 border-b border-zinc-200 bg-zinc-100/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8 dark:border-zinc-800 dark:bg-zinc-950/95">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          {filters.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setFilter(f.value)}
-              className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-medium transition",
-                filter === f.value
-                  ? "border-blue-600 bg-blue-600 dark:bg-blue-700 text-white"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-300 dark:hover:border-blue-500/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-              )}
-            >
-              {f.label} <span className="tabular-nums opacity-80">{f.count}</span>
-            </button>
-          ))}
-          {(invalidCount > 0 || filter === "invalid") && (
-            <button
-              type="button"
-              onClick={() => setFilter("invalid")}
-              className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-medium transition",
-                filter === "invalid"
-                  ? "border-red-600 bg-red-600 dark:bg-red-700 text-white"
-                  : "border-red-200 bg-white text-red-600 hover:border-red-400 dark:border-red-900 dark:bg-zinc-900 dark:text-red-400"
-              )}
-            >
-              تحتاج تعديل{" "}
-              <span className="tabular-nums opacity-80">
-                {items.filter((item) => isInvalid(item.key) || item.saveError).length}
-              </span>
-            </button>
-          )}
-        </div>
-
-          <div className="flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="الأسئلة">
-            {visible.map((item) => {
-              const isCurrent = item.key === current?.key;
-              return (
-                <button
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-8">
+          {/* Every question, as its info card */}
+          <div className="flex flex-col gap-12 pb-8">
+            {visible.length === 0 ? (
+              <p className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                لا توجد أسئلة في هذا التصنيف.
+              </p>
+            ) : (
+              visible.map((item) => (
+                <ReviewQuestionView
                   key={item.key}
-                  ref={(el) => {
-                    if (el) chipRefs.current.set(item.key, el);
-                    else chipRefs.current.delete(item.key);
-                  }}
+                  item={item}
+                  number={numberByKey.get(item.key) ?? 0}
+                  total={items.length}
+                  errors={errorsByKey.get(item.key) ?? {}}
+                  editorOpen={openEditors.has(item.key)}
+                  disabled={isSaving}
+                  onToggleEditor={() => toggleEditor(item.key)}
+                  onChange={(patch) => updateDraft(item.key, patch)}
+                  onRemove={() => handleRemove(item.key)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Navigator — on the left beside the list (a strip on top on
+              phones), sticking while the list scrolls */}
+          <aside className="order-first sticky top-0 z-20 -mx-4 flex flex-col gap-3 border-b border-zinc-200 bg-zinc-100/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:order-none lg:top-6 lg:mx-0 lg:max-h-[calc(100vh-8rem)] lg:rounded-2xl lg:border lg:bg-white lg:p-4 lg:backdrop-blur-none dark:border-zinc-800 dark:bg-zinc-950/95 lg:dark:bg-zinc-900">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {filters.map((f) => (
+                <button
+                  key={f.value}
                   type="button"
-                  role="tab"
-                  aria-selected={isCurrent}
-                  onClick={() => goTo(item.key)}
-                  title={item.draft.title || item.draft.mcqText || undefined}
+                  onClick={() => setFilter(f.value)}
                   className={cn(
-                    "flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border px-2 text-sm font-semibold tabular-nums transition",
-                    chipClass(item, isCurrent)
+                    "rounded-full border px-3 py-1 text-xs font-medium transition",
+                    filter === f.value
+                      ? "border-blue-600 bg-blue-600 dark:bg-blue-700 text-white"
+                      : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-300 dark:hover:border-blue-500/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
                   )}
                 >
-                  {numberByKey.get(item.key)}
+                  {f.label} <span className="tabular-nums opacity-80">{f.count}</span>
                 </button>
-              );
-            })}
-          </div>
+              ))}
+              {(invalidCount > 0 || filter === "invalid") && (
+                <button
+                  type="button"
+                  onClick={() => setFilter("invalid")}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-medium transition",
+                    filter === "invalid"
+                      ? "border-red-600 bg-red-600 dark:bg-red-700 text-white"
+                      : "border-red-200 bg-white text-red-600 hover:border-red-400 dark:border-red-900 dark:bg-zinc-900 dark:text-red-400"
+                  )}
+                >
+                  تحتاج تعديل{" "}
+                  <span className="tabular-nums opacity-80">
+                    {items.filter((item) => isInvalid(item.key) || item.saveError).length}
+                  </span>
+                </button>
+              )}
+            </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
-            <span className="flex items-center gap-1.5">
-              <span className="size-2.5 rounded-sm border border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/40" />
-              يحتاج تعديل
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-2.5 rounded-sm border border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40" />
-              معدّل
-            </span>
-            <span className="hidden sm:inline">استخدم الأسهم ← → للتنقل بين الأسئلة</span>
-          </div>
-        </div>
+            <div
+              ref={navRef}
+              role="tablist"
+              aria-label="الأسئلة"
+              aria-orientation="vertical"
+              className="flex gap-1.5 overflow-x-auto pb-1 lg:min-h-0 lg:flex-1 lg:flex-col lg:gap-1 lg:overflow-x-hidden lg:overflow-y-auto lg:pb-0"
+            >
+              {visible.map((item) => {
+                const isActive = item.key === active?.key;
+                const title = item.draft.title.trim() || item.draft.mcqText.trim() || "سؤال بدون عنوان";
+                return (
+                  <button
+                    key={item.key}
+                    ref={(el) => {
+                      if (el) navItemRefs.current.set(item.key, el);
+                      else navItemRefs.current.delete(item.key);
+                    }}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => scrollToCard(item.key)}
+                    title={title}
+                    className={cn(
+                      "flex shrink-0 items-center gap-2 rounded-lg text-start transition lg:w-full lg:px-2 lg:py-1.5",
+                      isActive
+                        ? "lg:bg-blue-50 dark:lg:bg-blue-950/40"
+                        : "lg:hover:bg-zinc-100 dark:lg:hover:bg-zinc-800"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border px-2 text-sm font-semibold tabular-nums lg:h-7 lg:min-w-7 lg:px-1.5 lg:text-xs",
+                        badgeClass(item, isActive)
+                      )}
+                    >
+                      {numberByKey.get(item.key)}
+                    </span>
+                    <span
+                      className={cn(
+                        "hidden min-w-0 flex-1 truncate text-sm lg:block",
+                        isActive ? "font-semibold text-blue-800 dark:text-blue-300" : "text-zinc-700 dark:text-zinc-300"
+                      )}
+                      dir="auto"
+                    >
+                      {title}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-        {/* The current question */}
-        <div className="pb-8">
-          {current ? (
-            <ReviewQuestionView
-              key={current.key}
-              item={current}
-              number={numberByKey.get(current.key) ?? currentIndex + 1}
-              total={items.length}
-              errors={errorsByKey.get(current.key) ?? {}}
-              editorOpen={editorOpen}
-              disabled={isSaving}
-              onToggleEditor={() => setEditorOpen((open) => !open)}
-              onChange={(patch) => updateDraft(current.key, patch)}
-              onRemove={() => handleRemove(current.key)}
-              onPrev={prevItem ? () => goTo(prevItem.key) : undefined}
-              onNext={nextItem ? () => goTo(nextItem.key) : undefined}
-            />
-          ) : (
-            <p className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-              لا توجد أسئلة في هذا التصنيف.
-            </p>
-          )}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 lg:border-t lg:border-zinc-100 lg:pt-3 dark:lg:border-zinc-800">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm border border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/40" />
+                يحتاج تعديل
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm border border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40" />
+                معدّل
+              </span>
+              <span className="hidden lg:inline">الأسهم ← → للتنقل</span>
+            </div>
+          </aside>
         </div>
       </div>
 
       {/* Save / cancel */}
       <div className="sticky bottom-0 z-30 border-t border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/95">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-3 px-4 py-3 sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-8">
           <div className="min-w-0 flex-1 text-sm text-zinc-500 dark:text-zinc-400">
             {progress ? (
               <div>

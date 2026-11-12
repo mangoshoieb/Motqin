@@ -4,7 +4,9 @@ import { Suspense, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { CheckCircle2, RotateCcw } from "lucide-react";
+import { CalendarClock, CheckCircle2, RotateCcw, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { formatReviewDate } from "@/app/lib/review-dates";
 import { useRestartRepetition } from "@/app/hooks/useRestartRepetition";
 import { getApiErrorMessage } from "@/app/lib/api-error";
 
@@ -16,7 +18,8 @@ import { SessionSummary } from "@/components/SessionSummary";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LessonProgressBar } from "@/components/LessonProgressBar";
 
-const QuizPageContent = () => {
+// onNextRound: start over with the round's next batch of questions.
+const QuizPageContent = ({ onNextRound }: { onNextRound: () => void }) => {
   const params = useParams();
   const searchParams = useSearchParams();
 
@@ -41,7 +44,8 @@ const QuizPageContent = () => {
     cardKey,
     lessonProgress,
     hasAnswered,
-    isCompleted,
+    timing,
+    outcome,
     feedback,
     continueCard,
     submitAnswer,
@@ -49,6 +53,16 @@ const QuizPageContent = () => {
   } = useLessonSession(lessonId, { category, subjectId });
 
   const [answer, setAnswer] = useState("");
+  const queryClient = useQueryClient();
+  // The "this review isn't due yet" note, until the student closes it.
+  const [earlyNoteClosed, setEarlyNoteClosed] = useState(false);
+
+  // The next batch: drop this one (it's cached for the whole visit), then
+  // remount the session so it starts afresh.
+  const startNextRound = () => {
+    queryClient.removeQueries({ queryKey: ["session-questions", lessonId] });
+    onNextRound();
+  };
   const restart = useRestartRepetition(lessonId);
   const [confirmEnd, setConfirmEnd] = useState(false);
 
@@ -150,7 +164,8 @@ const QuizPageContent = () => {
           summary={currentCard}
           backHref={lessonHref}
           onContinue={continueCard}
-          completed={isCompleted}
+          outcome={outcome}
+          onNextRound={startNextRound}
         />
         {endConfirmation}
       </div>
@@ -167,6 +182,28 @@ const QuizPageContent = () => {
     <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 px-10 py-12">
       <div className="mx-auto flex flex-col items-center">
         <div className="w-full flex flex-col items-center">
+          {/* Taken before its due day: finishing still completes the
+              sitting, but the review only counts from that day. */}
+          {timing?.isEarly && !earlyNoteClosed && (
+            <div className="w-full max-w-2xl mb-4 flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <CalendarClock className="mt-0.5 size-4 shrink-0" />
+              <p className="flex-1 leading-relaxed">
+                {timing.dueDate
+                  ? `هذه المراجعة موعدها ${formatReviewDate(timing.dueDate)}، وإنهاؤها الآن لن يُحسب حتى ذلك اليوم.`
+                  : "هذه المراجعة لم يحن موعدها بعد، وإنهاؤها الآن لن يُحسب حتى ذلك اليوم."}{" "}
+                يمكنك المتابعة للتدرّب.
+              </p>
+              <button
+                type="button"
+                onClick={() => setEarlyNoteClosed(true)}
+                aria-label="إغلاق"
+                className="rounded-full p-0.5 text-amber-700 transition hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/40"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          )}
+
           <div className="w-full max-w-2xl flex items-center gap-4 mb-4">
             {lessonProgress && <LessonProgressBar progress={lessonProgress} />}
 
@@ -223,6 +260,9 @@ const QuizPageContent = () => {
 };
 
 const QuizPage = () => {
+  // Bumped to start the round's next batch in a fresh session.
+  const [round, setRound] = useState(0);
+
   return (
     <Suspense
       fallback={
@@ -231,7 +271,7 @@ const QuizPage = () => {
         </div>
       }
     >
-      <QuizPageContent />
+      <QuizPageContent key={round} onNextRound={() => setRound((r) => r + 1)} />
     </Suspense>
   );
 };

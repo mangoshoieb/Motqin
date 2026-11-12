@@ -113,8 +113,6 @@ export const API_ROUTES = {
   SPACED_REPETITION: {
     START: "/spaced-repetition/start",
     END: "/spaced-repetition/end",
-    SET_PLAN: (sessionId: string | number) =>
-      `/spaced-repetition/set-plan/${sessionId}`,
     // The caller's plans whose next review falls in the window, soonest first.
     PLANS_FILTER: "/spaced-repetition/plans/filter",
     // Body { lessonId, category }: the current repetition starts over — its

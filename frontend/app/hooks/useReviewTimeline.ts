@@ -10,6 +10,7 @@ import {
   spacedRepetitionService,
 } from "../services/spaced-repetition.service";
 import { dateOnly } from "../lib/study-plan";
+import { localDayOf } from "../lib/review-dates";
 import { parseServerDate } from "../lib/session-clock";
 
 // Where a review sits relative to today, which is also its colour on the
@@ -127,9 +128,9 @@ function tasksOf(plan: SpacedRepetitionPlan, group: PlanGroup, today: string) {
   }
 
   if (group !== "completed") {
-    // The calendar day exactly as the server wrote it — the same day the
-    // filter windows use (see useReviewOverview).
-    const day = plan.nextReviewDate.slice(0, 10);
+    // The review's day in local time — the same day the filter windows use
+    // (see useReviewOverview).
+    const day = localDayOf(plan.nextReviewDate);
     const daysFromToday = daysBetween(today, day);
     const last = plan.previousSessions?.at(-1);
     tasks.push({

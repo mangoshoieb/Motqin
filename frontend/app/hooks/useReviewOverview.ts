@@ -9,10 +9,11 @@ import {
   spacedRepetitionService,
 } from "../services/spaced-repetition.service";
 import { dateOnly } from "../lib/study-plan";
+import { localDayOf } from "../lib/review-dates";
 
-// The subjects page only looks a week either way: missed reviews from the
-// last 7 days, coming ones for today or the next 7 days. Anything further
-// is on the full review table.
+// Every missed review (however long ago — it's still owed), and coming
+// ones for today or the next 7 days. Later ones are on the full review
+// table.
 export type ComingRange = "today" | "week";
 
 const WINDOW_DAYS = 7;
@@ -43,10 +44,11 @@ const addDays = (day: string, days: number) => {
 const daysBetween = (from: string, to: string) =>
   Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 
-// The calendar day of the review exactly as the server wrote it. The filter
-// windows are applied server-side on that same date, so converting to local
-// time first could move a review across midnight and out of its window.
-const reviewDayOf = (plan: SpacedRepetitionPlan) => plan.nextReviewDate.slice(0, 10);
+// The review's day in the student's local time. nextReviewDate is UTC, and
+// the filter now reads its date windows as days in the student's country,
+// so the local day is the one that matches (a review at 00:30 Cairo time is
+// 22:30 UTC the day before).
+const reviewDayOf = (plan: SpacedRepetitionPlan) => localDayOf(plan.nextReviewDate);
 
 const lastScoreOf = (plan: SpacedRepetitionPlan) => {
   const last = plan.previousSessions?.at(-1);
@@ -55,17 +57,17 @@ const lastScoreOf = (plan: SpacedRepetitionPlan) => {
     : undefined;
 };
 
-// Missed reviews from the last week (oldest first), and coming ones from
-// today on — each side its own request, so each has its own window.
+// All missed reviews up to today (most overdue first), and coming ones
+// from today on — each side its own request, so each has its own window.
 export const useReviewOverview = ({ comingRange }: { comingRange: ComingRange }) => {
   const today = dateOnly(new Date());
 
   const missedQuery = useQuery({
-    queryKey: ["spaced-repetition-plans", "missed", "week", today],
+    queryKey: ["spaced-repetition-plans", "missed", today],
     queryFn: () =>
+      // No startDate: a review missed weeks ago is still owed.
       spacedRepetitionService.filterPlans({
         status: SpacedRepetitionPlanStatus.Missed,
-        startDate: addDays(today, -WINDOW_DAYS),
         endDate: today,
       }),
   });

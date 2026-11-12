@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, ChevronDown, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { AlertCircle, ChevronDown, Trash2 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { QUESTION_CATEGORIES } from "@/app/constants/question.constants";
 import {
@@ -31,9 +31,6 @@ const FIELD_LABELS: Record<keyof QuestionDraftErrors, string> = {
   correctTexts: "الإجابات المقبولة",
 };
 
-const sideArrowClass =
-  "hidden size-11 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-900 disabled:invisible sm:flex dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100";
-
 interface ReviewQuestionViewProps {
   item: ReviewItem;
   // 1-based position in the whole batch, and the batch size.
@@ -45,8 +42,6 @@ interface ReviewQuestionViewProps {
   onToggleEditor: () => void;
   onChange: (patch: Partial<QuestionDraft>) => void;
   onRemove: () => void;
-  onPrev?: () => void;
-  onNext?: () => void;
 }
 
 // One AI-generated question on the review page, shown as the info card the
@@ -63,8 +58,6 @@ export const ReviewQuestionView = ({
   onToggleEditor,
   onChange,
   onRemove,
-  onPrev,
-  onNext,
 }: ReviewQuestionViewProps) => {
   const { draft } = item;
   const invalid = hasDraftErrors(errors);
@@ -73,7 +66,11 @@ export const ReviewQuestionView = ({
   const missing = (Object.keys(errors) as (keyof QuestionDraftErrors)[]).map((key) => FIELD_LABELS[key]);
 
   return (
-    <section id="ai-question-view" className="scroll-mt-44 flex flex-col gap-4">
+    <section
+      id={`ai-question-${item.key}`}
+      data-review-key={item.key}
+      className="scroll-mt-6 flex flex-col gap-4"
+    >
       {/* Where we are, and what this question is */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
@@ -118,43 +115,33 @@ export const ReviewQuestionView = ({
         </button>
       </div>
 
-      {/* The info card, between previous / next */}
-      <div className="flex items-center gap-3">
-        <button type="button" onClick={onPrev} disabled={!onPrev} aria-label="السؤال السابق" className={sideArrowClass}>
-          <ChevronRight className="size-5" />
-        </button>
+      {/* The info card */}
+      <div className="flex flex-col items-center">
+        <PresentationCard
+          item={{
+            title: draft.title.trim() || null,
+            description: draft.explanation.trim(),
+            imageUrl,
+            audioUrl,
+          }}
+          // The whole card, image included — no height limit here.
+          className="max-h-none max-w-none overflow-visible"
+        />
 
-        <div className="flex min-w-0 flex-1 flex-col items-center">
-          <PresentationCard
-            item={{
-              title: draft.title.trim() || null,
-              description: draft.explanation.trim(),
-              imageUrl,
-              audioUrl,
-            }}
-            // The whole card, image included — no height limit here.
-            className="max-h-none max-w-none overflow-visible"
-          />
-
-          {/* The arrow: opens the questions behind this card for editing */}
-          <button
-            type="button"
-            onClick={onToggleEditor}
-            aria-expanded={editorOpen}
-            className={cn(
-              "-mt-4 inline-flex items-center gap-2 rounded-full border bg-white px-5 py-2 text-sm font-semibold shadow-md transition dark:bg-zinc-900",
-              invalid && !editorOpen
-                ? "border-red-300 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40"
-                : "border-zinc-200 text-blue-700 hover:bg-blue-50 dark:border-zinc-700 dark:text-blue-300 dark:hover:bg-blue-950/40"
-            )}
-          >
-            {editorOpen ? "إخفاء الأسئلة" : "عرض الأسئلة وتعديلها"}
-            <ChevronDown className={cn("size-4 transition-transform", editorOpen && "rotate-180")} />
-          </button>
-        </div>
-
-        <button type="button" onClick={onNext} disabled={!onNext} aria-label="السؤال التالي" className={sideArrowClass}>
-          <ChevronLeft className="size-5" />
+        {/* The arrow: opens the questions behind this card for editing */}
+        <button
+          type="button"
+          onClick={onToggleEditor}
+          aria-expanded={editorOpen}
+          className={cn(
+            "-mt-4 inline-flex items-center gap-2 rounded-full border bg-white px-5 py-2 text-sm font-semibold shadow-md transition dark:bg-zinc-900",
+            invalid && !editorOpen
+              ? "border-red-300 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40"
+              : "border-zinc-200 text-blue-700 hover:bg-blue-50 dark:border-zinc-700 dark:text-blue-300 dark:hover:bg-blue-950/40"
+          )}
+        >
+          {editorOpen ? "إخفاء الأسئلة" : "عرض الأسئلة وتعديلها"}
+          <ChevronDown className={cn("size-4 transition-transform", editorOpen && "rotate-180")} />
         </button>
       </div>
 
@@ -184,27 +171,6 @@ export const ReviewQuestionView = ({
         </div>
       )}
 
-      {/* Previous / next under the card on phones, where the side arrows hide */}
-      <div className="flex items-center justify-between gap-3 sm:hidden">
-        <button
-          type="button"
-          onClick={onPrev}
-          disabled={!onPrev}
-          className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-600 disabled:invisible dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-        >
-          <ChevronRight className="size-4" />
-          السابق
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!onNext}
-          className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-600 disabled:invisible dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-        >
-          التالي
-          <ChevronLeft className="size-4" />
-        </button>
-      </div>
     </section>
   );
 };

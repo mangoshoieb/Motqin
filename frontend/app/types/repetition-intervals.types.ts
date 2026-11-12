@@ -13,6 +13,10 @@ export interface RepetitionIntervals {
   // The most reviews (entries) a list may have.
   maxRepetitions: number;
   subjects: SubjectRepetitionIntervals[];
+  // The student's plan includes their own intervals. When it doesn't, the
+  // system's apply everywhere and saving is refused (403 not_in_plan) — the
+  // saved lists stay, unused, until an upgrade.
+  customIntervalsAllowed: boolean;
 }
 
 export interface SubjectRepetitionIntervals {

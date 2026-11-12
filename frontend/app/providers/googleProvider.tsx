@@ -13,6 +13,7 @@ export default function GoogleProvider({
   return (
     <GoogleOAuthProvider
       clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}
+      locale="ar"
     >
       {children}
     </GoogleOAuthProvider>

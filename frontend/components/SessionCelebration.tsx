@@ -92,9 +92,16 @@ function CongratulationBadge() {
   );
 }
 
-export const SessionCelebration = ({ variant }: { variant: CelebrationVariant }) => (
+export const SessionCelebration = ({
+  variant,
+  confetti = true,
+}: {
+  variant: CelebrationVariant;
+  // Off for a finish that doesn't count yet (an early review).
+  confetti?: boolean;
+}) => (
   <div className="relative flex items-center justify-center">
-    <ConfettiBurst />
+    {confetti && <ConfettiBurst />}
     <div className="relative">
       {variant === "excellent" ? <CongratulationBadge /> : <AnimatedCheck />}
     </div>

@@ -259,8 +259,9 @@ export const SpacedRepetitionOverview = () => {
     );
   }
 
-  // Nothing this week either way (not merely filtered out): a short note
-  // instead of two empty panels. Older or later reviews are on the full table.
+  // Nothing missed and nothing due this week (not merely filtered out): a
+  // short note instead of two empty panels. Later reviews are on the full
+  // table.
   if (!isLoading && !isFiltered && missed.length === 0 && coming.length === 0) {
     return (
       <div className="flex items-center gap-4 rounded-2xl border border-violet-100 bg-gradient-to-l from-violet-50 to-white p-5 dark:border-violet-900/50 dark:from-violet-950/30 dark:to-zinc-900">
@@ -268,9 +269,9 @@ export const SpacedRepetitionOverview = () => {
           <BrainCircuit className="size-6" />
         </span>
         <div>
-          <p className="font-bold text-zinc-900 dark:text-zinc-100">لا توجد مراجعات متباعدة هذا الأسبوع</p>
+          <p className="font-bold text-zinc-900 dark:text-zinc-100">لا توجد مراجعات متباعدة الآن</p>
           <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
-            لا مراجعات فائتة خلال آخر 7 أيام ولا قادمة خلال الأيام السبعة القادمة. عندما تُنهي جلسة على أي درس، سنجدول مراجعاته هنا.
+            لا مراجعات فائتة ولا قادمة خلال الأيام السبعة القادمة. عندما تُنهي جلسة على أي درس، سنجدول مراجعاته هنا.
           </p>
         </div>
         <div className="ms-auto">
@@ -347,7 +348,7 @@ export const SpacedRepetitionOverview = () => {
           tone="missed"
           icon={<AlertTriangle className="size-5" />}
           title="مراجعات فائتة"
-          subtitle="خلال آخر 7 أيام، ابدأ بها أولًا"
+          subtitle="فات موعدها، ابدأ بها أولًا"
           items={shownMissed}
           total={missed.length}
           isLoading={isLoading}
@@ -355,7 +356,7 @@ export const SpacedRepetitionOverview = () => {
             missed.length === 0 ? (
               <>
                 <PartyPopper className="size-6 text-amber-500 dark:text-amber-400" />
-                <p className="font-medium text-zinc-700 dark:text-zinc-200">لا توجد مراجعات فائتة هذا الأسبوع</p>
+                <p className="font-medium text-zinc-700 dark:text-zinc-200">لا توجد مراجعات فائتة</p>
                 <p className="text-xs">أنت ملتزم بمواعيدك، استمر!</p>
               </>
             ) : (

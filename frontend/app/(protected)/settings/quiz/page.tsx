@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BrainCircuit, Info, Layers, Plus, RotateCcw, Save, Trash2, Undo2 } from "lucide-react";
+import Link from "next/link";
+import { BrainCircuit, Info, Layers, Lock, Plus, RotateCcw, Save, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { toastApiError } from "@/app/lib/api-error";
@@ -38,7 +39,7 @@ const formatReviewCount = (count: number) => {
 // What a pending confirmation would undo.
 type PendingReset = { kind: "default" } | { kind: "subject"; subjectId: number; subjectName: string };
 
-function Badge({ tone, children }: { tone: "custom" | "system" | "new"; children: React.ReactNode }) {
+function Badge({ tone, children }: { tone: "custom" | "system" | "new" | "inactive"; children: React.ReactNode }) {
   return (
     <span
       className={cn(
@@ -46,6 +47,7 @@ function Badge({ tone, children }: { tone: "custom" | "system" | "new"; children
         tone === "custom" && "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
         tone === "system" && "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
         tone === "new" && "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+        tone === "inactive" && "bg-zinc-100 text-zinc-500 line-through decoration-zinc-400/60 dark:bg-zinc-800 dark:text-zinc-400",
       )}
     >
       {children}
@@ -58,6 +60,7 @@ function CardActions({
   dirty,
   error,
   saving,
+  locked = false,
   onSave,
   onUndo,
   children,
@@ -65,6 +68,8 @@ function CardActions({
   dirty: boolean;
   error: string | null;
   saving: boolean;
+  // The plan doesn't include custom intervals — the server refuses saves.
+  locked?: boolean;
   onSave: () => void;
   onUndo: () => void;
   children?: React.ReactNode;
@@ -74,8 +79,8 @@ function CardActions({
       <button
         type="button"
         onClick={onSave}
-        disabled={!dirty || !!error || saving}
-        title={!dirty ? "لا توجد تغييرات لحفظها" : error ?? undefined}
+        disabled={locked || !dirty || !!error || saving}
+        title={locked ? "باقتك لا تشمل الفترات المخصصة" : !dirty ? "لا توجد تغييرات لحفظها" : error ?? undefined}
         className="flex items-center gap-1.5 rounded-full bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Save size={15} />
@@ -267,6 +272,10 @@ const MotqinSettingsPage = () => {
   }
 
   const hasOwnDefault = data.defaultIntervals !== null;
+  // The plan doesn't include the student's own intervals: the system's
+  // apply everywhere, saving is refused, and what's saved waits for an
+  // upgrade (removing it is still free).
+  const locked = !data.customIntervalsAllowed;
   const defaultValue = valueOf(DEFAULT_KEY);
 
   return (
@@ -322,6 +331,25 @@ const MotqinSettingsPage = () => {
         </div>
       </div>
 
+      {locked && (
+        <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+          <Lock size={18} className="mt-0.5 shrink-0" />
+          <div className="min-w-0 flex-1 leading-relaxed">
+            <p className="font-semibold">باقتك الحالية لا تشمل الفترات المخصصة</p>
+            <p className="mt-0.5">
+              لذلك تُطبَّق فترات النظام ({listLabel(data.systemIntervals)} يوم) على كل موادك. فتراتك
+              المحفوظة تبقى كما هي، وتعود للعمل عند الترقية.
+            </p>
+          </div>
+          <Link
+            href="/subscription"
+            className="shrink-0 rounded-full bg-amber-600 dark:bg-amber-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-700 dark:hover:bg-amber-800"
+          >
+            عرض الباقات
+          </Link>
+        </div>
+      )}
+
       {/* Default for every subject */}
       <section className="flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex flex-wrap items-start gap-3">
@@ -332,6 +360,7 @@ const MotqinSettingsPage = () => {
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-bold text-zinc-900 dark:text-zinc-100">الفترات الافتراضية</h2>
               {hasOwnDefault ? <Badge tone="custom">مخصصة</Badge> : <Badge tone="system">إعداد النظام</Badge>}
+              {locked && hasOwnDefault && <Badge tone="inactive">غير مطبّقة</Badge>}
             </div>
             <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
               {hasOwnDefault
@@ -345,13 +374,14 @@ const MotqinSettingsPage = () => {
           value={defaultValue}
           onChange={(next) => edit(DEFAULT_KEY, next)}
           maxRepetitions={maxRepetitions}
-          disabled={busyKey === DEFAULT_KEY}
+          disabled={locked || busyKey === DEFAULT_KEY}
         />
 
         <CardActions
           dirty={isDirty(DEFAULT_KEY)}
           error={intervalsError(defaultValue, maxRepetitions)}
           saving={busyKey === DEFAULT_KEY}
+          locked={locked}
           onSave={() => void saveDefault()}
           onUndo={() => dropEdit(DEFAULT_KEY)}
         >
@@ -387,7 +417,7 @@ const MotqinSettingsPage = () => {
             <select
               value={pickedSubject}
               onChange={(event) => setPickedSubject(event.target.value)}
-              disabled={customizable.length === 0}
+              disabled={locked || customizable.length === 0}
               aria-label="اختر مادة"
               className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-blue-400 disabled:opacity-60 sm:w-48 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
             >
@@ -403,7 +433,7 @@ const MotqinSettingsPage = () => {
             <button
               type="button"
               onClick={addSubject}
-              disabled={!pickedSubject}
+              disabled={locked || !pickedSubject}
               className="flex shrink-0 items-center gap-1 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
             >
               <Plus size={15} />
@@ -433,6 +463,7 @@ const MotqinSettingsPage = () => {
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-bold text-zinc-900 dark:text-zinc-100">{card.subjectName}</h3>
+                    {locked && !card.isNew && <Badge tone="inactive">غير مطبّقة</Badge>}
                     {card.isNew ? (
                       <Badge tone="new">جديدة — لم تُحفظ بعد</Badge>
                     ) : (
@@ -446,13 +477,14 @@ const MotqinSettingsPage = () => {
                     value={value}
                     onChange={(next) => edit(key, next)}
                     maxRepetitions={maxRepetitions}
-                    disabled={busyKey === key}
+                    disabled={locked || busyKey === key}
                   />
 
                   <CardActions
                     dirty={isDirty(key)}
                     error={intervalsError(value, maxRepetitions)}
                     saving={busyKey === key}
+                    locked={locked}
                     onSave={() => void saveSubject(card.subjectId, card.subjectName)}
                     onUndo={() => (card.isNew ? discardNew(card.subjectId) : dropEdit(key))}
                   >

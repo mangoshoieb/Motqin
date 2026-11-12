@@ -25,6 +25,8 @@ export const repetitionIntervalsService = {
       systemIntervals: body?.systemIntervals ?? [],
       maxRepetitions: body?.maxRepetitions ?? body?.systemIntervals?.length ?? 4,
       subjects: body?.subjects ?? [],
+      // An older backend without the field: assume allowed, as before.
+      customIntervalsAllowed: body?.customIntervalsAllowed ?? true,
     };
   },
 

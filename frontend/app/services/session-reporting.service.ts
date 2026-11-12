@@ -27,19 +27,14 @@ export const collectFinishedQuestionIds = (state: SessionState): number[] =>
     .filter((q) => q.done)
     .map((q) => state.payload[q.order].questionId);
 
-// True only when every question in the lesson graduated. Ending early via
-// the "إنهاء الجلسة" button leaves at least one unfinished, so this is
-// false there — which is the behavior the backend expects.
-export const isLessonCompleted = (state: SessionState): boolean =>
-  state.payload.length > 0 && state.questions.every((q) => q.done);
-
 export const sessionReportingService = {
-  // Called once, before the first card is shown.
+  // Called once, before the first card is shown. Hands back the session
+  // id /end needs, and whether this review is being taken before its day.
   async startSession(input: {
     subjectId: number;
     lessonId: number;
     category?: string | null;
-  }): Promise<number> {
+  }): Promise<{ sessionId: number; dueDate: string | null; isEarly: boolean }> {
     const payload: StartSessionDto = {
       subjectId: input.subjectId,
       lessonId: input.lessonId,
@@ -50,23 +45,29 @@ export const sessionReportingService = {
     const response = await spacedRepetitionService.startSession(payload);
     console.log("[START] response ←", response);
 
-    return response.sessionId;
+    return {
+      sessionId: response.sessionId,
+      dueDate: response.dueDate ?? null,
+      isEarly: !!response.isEarly,
+    };
   },
 
   // Called once, when the Summary card is reached — whether the lesson
-  // finished naturally or the student ended the session early.
-  async endSession(sessionId: number, state: SessionState): Promise<void> {
+  // finished naturally or the student ended the session early. Whether the
+  // lesson (and the review) is complete is the server's call: it answers
+  // with it, so nothing about that is sent.
+  async endSession(sessionId: number, state: SessionState): Promise<EndSessionResult> {
     const payload: EndSessionDto = {
       sessionId,
       ...toSessionScore(state.stats),
       endTime: new Date().toISOString(),
       finishedQuestionIds: collectFinishedQuestionIds(state),
-      lessonCompleted: isLessonCompleted(state),
     };
     console.log("[END] request →", payload);
     console.log("[END] stats →", state.stats);
 
-    await spacedRepetitionService.endSession(payload);
-    console.log("[END] done");
+    const result = await spacedRepetitionService.endSession(payload);
+    console.log("[END] response ←", result);
+    return result;
   },
 };

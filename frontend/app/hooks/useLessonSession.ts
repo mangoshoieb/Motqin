@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { questionService } from "../services/question.service";
 import { sessionReportingService } from "../services/session-reporting.service";
 import {
@@ -16,6 +16,14 @@ import {
 } from "../lib/session-algorithm";
 import { sessionStorageService } from "../lib/session-storage";
 import { DEFAULT_SESSION_CONFIG } from "../constants/session.constants";
+import { lessonInformationKey } from "./useGetLessonInformation";
+
+// How the sitting's /end went: still waiting on the server, its answer, or
+// a failure (the result then stays unknown).
+export type SessionOutcome =
+  | { status: "pending" }
+  | { status: "done"; result: EndSessionResult }
+  | { status: "failed" };
 
 const FEEDBACK_FLASH_MS = 1500;
 
@@ -158,6 +166,13 @@ export const useLessonSession = (
   // before start resolves, and the re-render is what re-runs the end
   // effect once the id finally lands.
   const [sessionId, setSessionId] = useState<number | null>(null);
+  // From /start: when this review is due, and whether today is before it —
+  // finishing early then completes the sitting without moving the plan.
+  const [timing, setTiming] = useState<{ dueDate: string | null; isEarly: boolean } | null>(null);
+  const [outcome, setOutcome] = useState<SessionOutcome | null>(null);
+  // /start failed, so there's no session to end and no outcome to wait for.
+  const [startFailed, setStartFailed] = useState(false);
+  const queryClient = useQueryClient();
   const startedRef = useRef(false);
   const reportedRef = useRef(false);
 
@@ -177,12 +192,16 @@ export const useLessonSession = (
         lessonId: numericLessonId,
         category: filters?.category ?? null,
       })
-      .then(setSessionId)
+      .then(({ sessionId: id, dueDate, isEarly }) => {
+        setSessionId(id);
+        setTiming({ dueDate, isEarly });
+      })
       .catch((err) => {
         // A failed start must not block the student from studying — the
         // session just goes unrecorded, and /end is skipped below since
         // there's no sessionId to send.
         console.error("[session-reporting] failed to start session:", err);
+        setStartFailed(true);
       });
   }, [state, numericSubjectId, numericLessonId, filters?.category]);
 
@@ -197,10 +216,20 @@ export const useLessonSession = (
 
     reportedRef.current = true;
 
-    sessionReportingService.endSession(sessionId, state).catch((err) => {
-      console.error("[session-reporting] failed to end session:", err);
-    });
-  }, [state, sessionId]);
+    sessionReportingService
+      .endSession(sessionId, state)
+      .then((result) => {
+        setOutcome({ status: "done", result });
+        // Finished marks and the review schedule may both have moved (or,
+        // when early, the questions were opened again).
+        queryClient.invalidateQueries({ queryKey: lessonInformationKey(lessonId) });
+        queryClient.invalidateQueries({ queryKey: ["spaced-repetition-plans"] });
+      })
+      .catch((err) => {
+        console.error("[session-reporting] failed to end session:", err);
+        setOutcome({ status: "failed" });
+      });
+  }, [state, sessionId, lessonId, queryClient]);
 
   const continueCard = () => {
     setState((prev) => (prev ? apply(prev, { type: "CONTINUE" }) : prev));
@@ -235,9 +264,17 @@ export const useLessonSession = (
     // — so the page can remount the card and drop its local UI state.
     cardKey: state ? `${state.currentCard.type}-${state.turn}-${state.currentBlock}` : null,
     lessonProgress: state ? getLessonProgress(state) : null,
-    // Every question graduated: the session was finished rather than ended
-    // early — the summary celebrates only then.
-    isCompleted: !!state && state.payload.length > 0 && state.questions.every((q) => q.done),
+    // /start's due date and isEarly (null until it answers, or if it failed).
+    timing,
+    // /end's answer — what the final summary says happened. Pending from
+    // the final summary until it lands; failed if there was no session.
+    outcome:
+      outcome ??
+      (state?.currentCard.type === "summary" && state.currentCard.isLastBlock
+        ? startFailed
+          ? ({ status: "failed" } as const)
+          : ({ status: "pending" } as const)
+        : null),
     // Ending early only matters once something was answered.
     hasAnswered: state ? hasAnswered(state) : false,
     feedback,

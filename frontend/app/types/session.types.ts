@@ -196,6 +196,12 @@ declare global {
   interface SessionResponseDto {
     id?: number;
     sessionId?: number;
+    // When this review is due (UTC); null on a first study, which has no
+    // plan yet.
+    dueDate?: string | null;
+    // Today is before the due day in the student's country: finishing every
+    // question now completes the sitting but doesn't move the plan.
+    isEarly?: boolean;
     // The endpoint may carry more fields we don't consume.
     [key: string]: unknown;
   }
@@ -211,6 +217,30 @@ declare global {
     totalQuestionsCount: number;
     endTime: string; // ISO 8601
     finishedQuestionIds: number[]; // graduated questions only
-    lessonCompleted: boolean; // false when the user ended the session early
+  }
+
+  // What /end answers. Finishing every question no longer always means the
+  // review counted — the screen has to follow these fields.
+  interface EndSessionResult {
+    sessionId?: number;
+    // Every question of the lesson + category is finished in this round.
+    lessonCompleted: boolean;
+    // Questions still to do in this round.
+    remainingQuestions: number;
+    // All finished, but before the due day: the plan did not move and the
+    // questions are open again for practice.
+    isEarly: boolean;
+    daysEarly: number;
+    daysLate: number;
+    // The review the plan is on now (the same one when early).
+    nextRepetitionNumber: number | null;
+    // The plan's real due date (UTC): unchanged when early, the new one when
+    // counted, null after the last review.
+    nextReviewDate: string | null;
+    // Where the new gap came from: subject, default, system, or
+    // systemPlanLimit (own intervals saved but not in the plan).
+    intervalsSource: string | null;
+    // The backend's own English summary — logged, not shown.
+    message?: string;
   }
 }

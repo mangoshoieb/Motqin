@@ -93,8 +93,9 @@ export const spacedRepetitionService = {
     return { items, total: body?.total ?? items.length };
   },
 
-  // Opens a session. The returned id is the handle every later call (end,
-  // set-plan) needs, so callers must hold on to it.
+  // Opens a session. The returned id is the handle /end needs, so callers
+  // must hold on to it. Also says when the review is due and whether today
+  // is still before that day (isEarly).
   //
   // Returns the raw body plus a guaranteed numeric `sessionId`. The live
   // endpoint names that field `id` — despite the DTO being called
@@ -124,9 +125,27 @@ export const spacedRepetitionService = {
     return { ...session, sessionId };
   },
 
-  // Closes the session opened by startSession. Returns 200 with no body.
-  async endSession(input: EndSessionDto): Promise<void> {
-    await axiosInstance.post(API_ROUTES.SPACED_REPETITION.END, input);
+  // Closes the session opened by startSession, and says whether it counted
+  // (see EndSessionResult). Missing fields default to "nothing happened".
+  async endSession(input: EndSessionDto): Promise<EndSessionResult> {
+    const response = await axiosInstance.post<
+      ApiEnvelope<Partial<EndSessionResult>> | Partial<EndSessionResult>
+    >(API_ROUTES.SPACED_REPETITION.END, input);
+
+    const envelope = response.data as { message?: string } | undefined;
+    const body = unwrap<Partial<EndSessionResult>>(response.data) ?? {};
+    return {
+      sessionId: body.sessionId,
+      lessonCompleted: !!body.lessonCompleted,
+      remainingQuestions: body.remainingQuestions ?? 0,
+      isEarly: !!body.isEarly,
+      daysEarly: body.daysEarly ?? 0,
+      daysLate: body.daysLate ?? 0,
+      nextRepetitionNumber: body.nextRepetitionNumber ?? null,
+      nextReviewDate: body.nextReviewDate ?? null,
+      intervalsSource: body.intervalsSource ?? null,
+      message: envelope?.message,
+    };
   },
 
   // Un-finishes every question of a lesson + category in the current
