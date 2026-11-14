@@ -2,7 +2,6 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
 import { Phone, User } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
 import Image from "next/image";
 import { useRef } from "react";
 import Link from "next/link";
@@ -53,25 +52,15 @@ const SignIn = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-6"
           >
-            <div className="relative w-full h-12">
-              <div className="absolute inset-0 opacity-0">
-                <GoogleSignIn
-                  onSuccess={(idToken) => {
-                    googleLogin({ idToken });
-                  }}
-                  onError={() => {
-                    console.log("Google Login Failed");
-                  }}
-                />
-              </div>
-
-              <CustomButton
-                title="المتابعة باستخدام جوجل"
-                leftIcon={<FcGoogle size={22} />}
-                variant="google"
-                className="w-full h-12 font-semibold"
-              />
-            </div>
+            <GoogleSignIn
+              text="continue_with"
+              onSuccess={(idToken) => {
+                googleLogin({ idToken });
+              }}
+              onError={() => {
+                console.log("Google Login Failed");
+              }}
+            />
 
             <div className="flex justify-center gap-2 text-sm sm:text-base font-medium">
               <span className="text-gray-600 dark:text-zinc-400">ليس لديك حساب.</span>

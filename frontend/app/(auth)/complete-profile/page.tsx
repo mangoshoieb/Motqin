@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { User, Globe } from "lucide-react";
+import { useEffect } from "react";
+import { User, Globe, Ticket } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,6 +16,7 @@ import { useCompleteProfile } from "@/app/hooks/useCompleteProfile";
 import { useAuthStore } from "@/app/lib/auth.store";
 import Skeleton from "@/components/ui/Skeleton";
 import RegionSelect from "@/components/RegionSelect";
+import { getInviterCode } from "@/app/lib/invite-code";
 
 type FormData = z.infer<typeof completeProfileSchema>;
 
@@ -29,10 +31,18 @@ export default function CompleteProfile() {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(completeProfileSchema),
   });
+
+  // The invite link's code, kept in sessionStorage — only readable in the
+  // browser, so it's filled in after mount.
+  useEffect(() => {
+    const code = getInviterCode();
+    if (code) setValue("inviterCode", code);
+  }, [setValue]);
 
   const onSubmit = (data: FormData) => {
     if (!phoneNumber) {
@@ -43,6 +53,8 @@ export default function CompleteProfile() {
       phoneNumber,
       name: data.name,
       region: data.region,
+      // "" when the student cleared it, so the stored code isn't sent.
+      inviterCode: data.inviterCode ?? "",
     });
   };
 
@@ -81,6 +93,16 @@ export default function CompleteProfile() {
                 />
               )}
             />
+            <CustomInput
+              label="كود الدعوة (اختياري)"
+              placeholder="مثال: 7595148B"
+              icon={<Ticket size={18} />}
+              dir="ltr"
+              autoComplete="off"
+              error={errors.inviterCode?.message}
+              {...register("inviterCode")}
+            />
+
 
             <Skeleton className="w-full h-[40vh]" />
 

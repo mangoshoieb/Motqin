@@ -320,7 +320,9 @@ export interface CoursesScheduleValidation {
   isComplete: boolean;
   totalSubjects: number;
   scheduledSubjectsCount: number;
-  missingSubjects: unknown[];
+  // System subjects of the student's grade with no class times yet (the
+  // student's own subjects never appear here).
+  missingSubjects: { subjectID: number; name: string }[];
 }
 
 export const courseSchedulesService = {

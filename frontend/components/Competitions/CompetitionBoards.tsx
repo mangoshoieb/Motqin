@@ -23,6 +23,13 @@ const studentView = (student: LeaderboardStudent) => ({
 
 const NOT_RANKED = `لست ضمن أول ${LEADERBOARD_SIZE} بعد`;
 
+// The boards list students only, so admins, teachers and parents never get a
+// row. Users whose roles aren't known yet get the usual text.
+const notRankedFor = (user: { role?: string | null; roles?: string[] } | null | undefined) => {
+  const roles = [...(user?.roles ?? []), ...(user?.role ? [user.role] : [])];
+  return roles.length > 0 && !roles.includes("Student") ? "المسابقات للطلاب فقط" : NOT_RANKED;
+};
+
 // مسابقة الاستمرارية — consecutive days logged in (GET /competition/streak/{n}).
 export const StreakBoard = () => {
   const { data: user } = useCurrentUser();
@@ -45,7 +52,7 @@ export const StreakBoard = () => {
       onRetry={() => void refetch()}
       currentUserId={user?.id}
       emptyText="لا توجد سلاسل بعد — سجّل دخولك يوميًا لتظهر هنا"
-      notRankedText={NOT_RANKED}
+      notRankedText={notRankedFor(user)}
     />
   );
 };
@@ -72,7 +79,7 @@ export const ReferralBoard = () => {
       onRetry={() => void refetch()}
       currentUserId={user?.id}
       emptyText="لم ينضم أحد بدعوة بعد — كن أول من يدعو أصدقاءه"
-      notRankedText={NOT_RANKED}
+      notRankedText={notRankedFor(user)}
     />
   );
 };
@@ -103,7 +110,7 @@ export const AchievementBoard = () => {
     <Leaderboard
       icon="📚"
       title="مسابقة الإنجاز"
-      description="الترتيب حسب وقت المذاكرة الفعلي هذا الأسبوع — يبدأ العدّ من جديد كل أسبوع."
+      description="الترتيب حسب وقت المذاكرة الفعلي هذا الأسبوع — يبدأ العدّ من جديد كل أسبوع. الجلسات المسجّلة يدويًا لا تُحتسب في المسابقة."
       extra={
         week && (
           <p className="mt-1.5 inline-flex rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
@@ -129,7 +136,7 @@ export const AchievementBoard = () => {
       onRetry={() => void refetch()}
       currentUserId={user?.id}
       emptyText="لم يذاكر أحد هذا الأسبوع بعد — ابدأ جلسة لتتصدر"
-      notRankedText={NOT_RANKED}
+      notRankedText={notRankedFor(user)}
     />
   );
 };

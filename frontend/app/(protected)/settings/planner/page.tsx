@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CalendarClock, GraduationCap } from "lucide-react";
+import { ArrowRight, CalendarClock, CheckCircle2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/app/lib/utils";
 
 import { usePlannerPreferences } from "@/app/hooks/usePlannerPreferences";
 import { useUnsavedChangesGuard } from "@/app/hooks/useUnsavedChangesGuard";
+import { useCoursesScheduleValidation } from "@/app/hooks/useCoursesSchedule";
+import { courseSchedulesService } from "@/app/services/motqin";
 import {
   PlannerPreferences,
   UnfinishedTaskPolicy,
@@ -96,6 +100,29 @@ const PlannerSettingsPage = () => {
   // "?return=/planner?tab=ai" — set by the AI-planning intro card so the
   // user lands back on it once their preferences are saved.
   const returnTo = searchParams.get("return");
+  // Only a path on this site is followed.
+  const safeReturn =
+    returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null;
+  const queryClient = useQueryClient();
+  // Whether every system subject of the student's grade has its class times
+  // — the AI planner can't start without them. Re-asked by the courses
+  // editor after every add or delete, so the chips below follow along.
+  const {
+    isComplete: coursesComplete,
+    isLoaded: coursesLoaded,
+    missingSubjects,
+  } = useCoursesScheduleValidation();
+
+  // The moment the last subject gets its class times, say so — once.
+  const wasCompleteRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!safeReturn || !coursesLoaded) return;
+    if (wasCompleteRef.current === false && coursesComplete) {
+      toast.success("اكتملت مواعيد الدروس — اضغط حفظ للعودة إلى المخطط الذكي");
+    }
+    wasCompleteRef.current = coursesComplete;
+  }, [safeReturn, coursesLoaded, coursesComplete]);
+
   const {
     preferences,
     hasPreferences,
@@ -206,9 +233,40 @@ const PlannerSettingsPage = () => {
     }
   };
 
+  // Saves what changed, then — when opened from the AI planner — goes back
+  // there, but only once the class times are complete; otherwise it points
+  // at what's still missing.
   const saveAndReturn = async () => {
-    if ((await handleSave()) && returnTo && returnTo.startsWith("/")) router.push(returnTo);
+    if (isDirty && !(await handleSave())) return;
+    if (!safeReturn) return;
+
+    // Ask again rather than trust a cached answer: it decides where we go.
+    const validation = await queryClient
+      .fetchQuery({
+        queryKey: ["courses-schedule-validation"],
+        queryFn: () => courseSchedulesService.validate(),
+        staleTime: 0,
+      })
+      .catch(() => null);
+    if (!validation) {
+      toast.error("تعذر التحقق من مواعيد الدروس، حاول مرة أخرى.");
+      return;
+    }
+    if (!validation.isComplete) {
+      const names = validation.missingSubjects.map((subject) => subject.name).join("، ");
+      toast.error(names ? `أضف مواعيد الدروس لـ: ${names} أولًا` : "أكمل مواعيد دروسك الأسبوعية أولًا");
+      setBusyTab("courses");
+      document
+        .querySelector('[data-tour="lessons"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    router.push(safeReturn);
   };
+
+  // With a way back, saving is also how the student returns — so it stays
+  // clickable with nothing changed, once there are preferences to keep.
+  const canSave = isDirty || (Boolean(safeReturn) && hasPreferences);
 
   return (
     <div className="flex flex-col gap-6">
@@ -243,17 +301,31 @@ const PlannerSettingsPage = () => {
 
           {error && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{error}</p>}
         </div>
-     {/* Save */}
-      <button
-        type="button"
-        onClick={saveAndReturn}
-        // Nothing to save until a field differs from what's stored.
-        disabled={isSaving || !isDirty}
-        title={isDirty ? undefined : "لا توجد تغييرات لحفظها"}
-        className="self-start  rounded-full bg-blue-600 dark:bg-blue-700 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isSaving ? "جاري الحفظ..." : "حفظ التفضيلات"}
-      </button>
+      <div className="flex flex-wrap items-center gap-2 self-start">
+        {/* Back to the AI planner without saving (the unsaved-changes
+            dialog still catches edits left behind). */}
+        {safeReturn && (
+          <Link
+            href={safeReturn}
+            className="flex items-center gap-1.5 rounded-full border border-zinc-200 px-5 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-white dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            <ArrowRight size={16} />
+            رجوع إلى المخطط الذكي
+          </Link>
+        )}
+        {/* Save */}
+        <button
+          type="button"
+          onClick={saveAndReturn}
+          // Nothing to save until a field differs from what's stored —
+          // unless saving is also the way back to the AI planner.
+          disabled={isSaving || !canSave}
+          title={canSave ? undefined : "لا توجد تغييرات لحفظها"}
+          className="rounded-full bg-blue-600 dark:bg-blue-700 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSaving ? "جاري الحفظ..." : safeReturn ? "حفظ والعودة إلى المخطط الذكي" : "حفظ التفضيلات"}
+        </button>
+      </div>
       </div>
 
       {/* Main Preferences */}
@@ -443,6 +515,31 @@ const PlannerSettingsPage = () => {
         <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
           {BUSY_TABS.find((tab) => tab.value === busyTab)?.description}
         </p>
+
+        {/* From the AI planner: which subjects still need class times. A
+            chip drops off as each one is added (and comes back on delete). */}
+        {safeReturn && busyTab === "courses" && coursesLoaded && (
+          coursesComplete ? (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+              <CheckCircle2 size={16} className="shrink-0" />
+              اكتملت مواعيد الدروس — اضغط «حفظ والعودة إلى المخطط الذكي» بالأعلى
+            </div>
+          ) : (
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 dark:border-amber-900/50 dark:bg-amber-950/30">
+              <span className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                بقي أن تضيف مواعيد الدروس لـ:
+              </span>
+              {missingSubjects.map((subject) => (
+                <span
+                  key={subject.subjectID}
+                  className="rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-800"
+                >
+                  {subject.name}
+                </span>
+              ))}
+            </div>
+          )
+        )}
 
         {busyTab === "courses" ? <CourseScheduleEditor /> : <RegularBusyTimeEditor />}
       </div>

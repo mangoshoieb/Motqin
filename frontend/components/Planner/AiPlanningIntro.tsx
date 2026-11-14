@@ -26,6 +26,8 @@ interface AiPlanningIntroProps {
   coursesScheduled?: boolean;
   /** How many subjects are still missing theirs, for the hint below. */
   missingCoursesCount?: number;
+  /** Their names, when the server sent them — named in the hint. */
+  missingSubjectNames?: string[];
   onStart: () => void;
 }
 
@@ -37,6 +39,7 @@ export default function AiPlanningIntro({
   hasPreferences,
   coursesScheduled = true,
   missingCoursesCount = 0,
+  missingSubjectNames = [],
   onStart,
 }: AiPlanningIntroProps) {
   // The preferences are saved but the lessons aren't — the one case the
@@ -45,7 +48,9 @@ export default function AiPlanningIntro({
   const hint = !hasPreferences
     ? "وقت النوم، ساعات الدراسة، مدة الجلسة، وأوقاتك المشغولة"
     : needsCourses
-      ? missingCoursesCount > 0
+      ? missingSubjectNames.length > 0
+        ? `بقي أن تضيف مواعيد الدروس لـ: ${missingSubjectNames.join("، ")}`
+        : missingCoursesCount > 0
         ? `بقي أن تضيف مواعيد الدروس لـ ${missingCoursesCount} من موادك`
         : "بقي أن تضيف مواعيد دروسك الأسبوعية"
       : "تفضيلاتك جاهزة — تابع بإضافة أوقاتك المشغولة ثم أهدافك";

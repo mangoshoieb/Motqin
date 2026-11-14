@@ -11,7 +11,7 @@ import { courseSchedulesService } from "@/app/services/motqin";
  * until this comes back complete.
  */
 export function useCoursesScheduleValidation() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ["courses-schedule-validation"],
     queryFn: () => courseSchedulesService.validate(),
     staleTime: 5 * 60 * 1000,
@@ -24,6 +24,11 @@ export function useCoursesScheduleValidation() {
     totalSubjects: data?.totalSubjects ?? 0,
     scheduledSubjectsCount: data?.scheduledSubjectsCount ?? 0,
     missingCount: Math.max(0, (data?.totalSubjects ?? 0) - (data?.scheduledSubjectsCount ?? 0)),
+    missingSubjects: data?.missingSubjects ?? [],
+    // Loaded at least once — so `isComplete` is the server's answer, not
+    // the optimistic default.
+    isLoaded: data !== undefined,
     isLoading,
+    isFetching,
   };
 }

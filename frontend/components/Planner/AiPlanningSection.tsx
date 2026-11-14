@@ -30,8 +30,12 @@ export default function AiPlanningSection({ onPlanned }: AiPlanningSectionProps)
   const { hasPreferences, isLoading } = usePlannerPreferences();
   // The planner also needs to know when the user's lessons are, or it has
   // no idea which hours of the week are already taken.
-  const { isComplete: coursesScheduled, missingCount, isLoading: coursesLoading } =
-    useCoursesScheduleValidation();
+  const {
+    isComplete: coursesScheduled,
+    missingCount,
+    missingSubjects,
+    isLoading: coursesLoading,
+  } = useCoursesScheduleValidation();
   const [stage, setStage] = useState<"intro" | "busy" | "goals">("intro");
 
   if (isLoading || coursesLoading) {
@@ -76,6 +80,7 @@ export default function AiPlanningSection({ onPlanned }: AiPlanningSectionProps)
           hasPreferences={hasPreferences}
           coursesScheduled={coursesScheduled}
           missingCoursesCount={missingCount}
+          missingSubjectNames={missingSubjects.map((subject) => subject.name)}
           onStart={() => (setupDone ? setStage("busy") : router.push(setupHref))}
         />
       )}

@@ -9,6 +9,7 @@ import {
   OtpSentResponse,
 } from "../types/auth.types";
 import { authStorage } from "../lib/auth-storage";
+import { withInviterCode } from "../lib/invite-code";
 
 // const refreshToken = authStorage.getRefreshToken();
 
@@ -28,7 +29,7 @@ export const authService = {
   async googleLogin(body: GoogleLoginRequest): Promise<GoogleLoginResponse> {
     const { data } = await axiosInstance.post<GoogleLoginResponse>(
       API_ROUTES.AUTH.GOOGLE,
-      body
+      withInviterCode(body)
     );
 
     return data;
@@ -49,7 +50,7 @@ export const authService = {
   async googlePhoneVerify(body: GooglePhoneVerifyRequest): Promise<GoogleLoginResponse> {
     const { data } = await axiosInstance.post<GoogleLoginResponse>(
       API_ROUTES.AUTH.GOOGLE_PHONE_VERIFY,
-      body
+      withInviterCode(body)
     );
 
     return data;
@@ -86,7 +87,7 @@ export const authService = {
   ): Promise<CompleteProfileResponse> {
     const { data } = await axiosInstance.post<CompleteProfileResponse>(
       API_ROUTES.AUTH.COMPLETE_PROFILE,
-      body
+      withInviterCode(body)
     );
 
     return data;

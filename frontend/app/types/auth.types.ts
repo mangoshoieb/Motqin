@@ -1,5 +1,7 @@
 export interface GoogleLoginRequest {
   idToken: string;
+  // Competition invite code; only counts when this creates a new account.
+  inviterCode?: string;
 }
 
 // POST /auth/google/phone-request — step 2 of a Google sign-up.
@@ -11,6 +13,7 @@ export interface GooglePhoneRequest {
 // POST /auth/google/phone-verify — step 3; signs in with the same token pair.
 export interface GooglePhoneVerifyRequest extends GooglePhoneRequest {
   code: string;
+  inviterCode?: string;
 }
 
 // The phone-request endpoints all answer with the resend limits.
@@ -129,6 +132,7 @@ declare global {
     phoneNumber: string;
     name: string;
     region: number;
+    inviterCode?: string;
   }
 
   export interface CompleteProfileResponse {

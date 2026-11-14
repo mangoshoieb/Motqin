@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, ChevronLeft, ChevronRight, PencilRuler, RefreshCw, Sparkles } from "lucide-react";
@@ -47,6 +47,13 @@ const Planner = () => {
   // The day whose "إضافة مهمة" opened the dialog (null = closed).
   const [addTaskDate, setAddTaskDate] = useState<string | null>(null);
 
+  // Arriving with "?tab=ai" (back from the planner preferences): glide down
+  // to the AI planning card and light it up for a moment, so the student
+  // lands where they left off rather than at the top of the page.
+  const planningRef = useRef<HTMLElement>(null);
+  const [highlightPlanning, setHighlightPlanning] = useState(false);
+  const scrolledToPlanning = useRef(false);
+
 
   // The top board shows the current week by default and can page back
   // through earlier weeks (weekOffset ≤ 0); next week lives in the
@@ -72,6 +79,26 @@ const Planner = () => {
       }),
     placeholderData: (previous) => previous,
   });
+
+  // Waits for the week board above to load (it decides where the card ends
+  // up), then gives the layout a beat to settle before scrolling — smoothly,
+  // so it reads as moving down the page rather than a jump.
+  useEffect(() => {
+    if (scrolledToPlanning.current || isLoading || searchParams.get("tab") !== "ai") return;
+    let fadeTimer: number | undefined;
+    // Marked done only once it has actually scrolled, so a re-run of this
+    // effect before then reschedules instead of skipping it.
+    const scrollTimer = window.setTimeout(() => {
+      scrolledToPlanning.current = true;
+      planningRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setHighlightPlanning(true);
+      fadeTimer = window.setTimeout(() => setHighlightPlanning(false), 2200);
+    }, 350);
+    return () => {
+      window.clearTimeout(scrollTimer);
+      if (fadeTimer) window.clearTimeout(fadeTimer);
+    };
+  }, [isLoading, searchParams]);
 
   const weekTitle = isCurrentWeek
     ? "الأسبوع الحالي"
@@ -326,7 +353,13 @@ const Planner = () => {
         )}
 
         {/* Planning next week: AI-generated from goals, or built by hand day by day. */}
-        <section className="mt-10">
+        <section
+          ref={planningRef}
+          className={cn(
+            "mt-10 scroll-mt-6 rounded-3xl transition-shadow duration-700",
+            highlightPlanning && "shadow-[0_0_0_4px_rgba(59,130,246,0.35)] dark:shadow-[0_0_0_4px_rgba(59,130,246,0.25)]",
+          )}
+        >
           <div className="mb-4 flex items-baseline gap-2">
             <CalendarDays
               className="text-blue-600 dark:text-blue-400"

@@ -34,4 +34,7 @@ export const completeProfileSchema = z.object({
     .number({ error: "يرجى اختيار المحافظة" })
     .int()
     .min(1, "يرجى اختيار المحافظة"),
+
+  // Competition invite code, optional — prefilled from the invite link.
+  inviterCode: z.string().max(32).optional(),
 });

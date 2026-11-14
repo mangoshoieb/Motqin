@@ -1,0 +1,253 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Competitions Front Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root {
+  --bg: #f5f7f6; --card: #ffffff; --fg: #16211d; --muted: #586560; --line: #dbe3df; --code-bg: #eef3f0;
+  --accent: #0f6b52;
+  --get: #12805c; --get-bg: #e2f4ec; --post: #2f5bd3; --post-bg: #e6edfd;
+  --ok: #12805c; --warn: #a66300; --warn-bg: #fcf0db; --bad: #c2364b; --bad-bg: #fce6e9;
+  --u: #0f6b52; --u-bg: #ddf1e8; --a: #6a46c4; --a-bg: #ede6fb; --t: #3a7d2c; --t-bg: #e7f3e2;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+    --accent: #4fcf9f; --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --ok: #4fd29a; --warn: #f3b14d; --warn-bg: #3a2a10; --bad: #ff8396; --bad-bg: #3f1a22;
+    --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+  --accent: #4fcf9f; --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --ok: #4fd29a; --warn: #f3b14d; --warn-bg: #3a2a10; --bad: #ff8396; --bad-bg: #3f1a22;
+  --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6; padding: 32px 16px 72px; }
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 24px; font-weight: 800; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 12.5px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.ar { font-family: "IBM Plex Sans Arabic", var(--font-body); direction: rtl; unicode-bidi: isolate; }
+.hero { display: grid; gap: 10px; }
+.date { color: var(--muted); font-family: var(--font-mono); font-size: 13px; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 13.5px; padding: 5px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--fg); }
+.part { display: grid; gap: 14px; scroll-margin-top: 12px; }
+.ctl { display: grid; gap: 6px; padding: 14px 20px; border-radius: 14px; }
+.ctl p { max-width: 78ch; }
+.ctl.u { background: var(--u-bg); } .ctl.u h2, .ctl.u .num { color: var(--u); }
+.ctl.a { background: var(--a-bg); } .ctl.a h2, .ctl.a .num { color: var(--a); }
+.ctl.t { background: var(--t-bg); } .ctl.t h2, .ctl.t .num { color: var(--t); }
+.ctl.n { background: var(--code-bg); }
+.num { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; }
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--code-bg); color: var(--muted); }
+.pri { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 9px; border-radius: 999px; }
+.pri.must { background: var(--bad-bg); color: var(--bad); }
+.pri.should { background: var(--warn-bg); color: var(--warn); }
+.pri.info { background: var(--get-bg); color: var(--ok); }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.5; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td:first-child { white-space: nowrap; }
+.notes { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+.tip.warn { border-left-color: var(--warn); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Competitions Front Guide</h1>
+  <p class="date">12 Nov 2026 · what the front must change on <code>/competitions</code> and signup · backend commits 7f789b9, 25ac2cf, 9c3355f, d197ed3</p>
+  <nav class="nav" aria-label="Sections">
+    <a href="#summary">Summary</a>
+    <a href="#referral">1 · Send the invite code</a>
+    <a href="#link">2 · Invite link</a>
+    <a href="#boards">3 · Leaderboards</a>
+    <a href="#card">4 · Weekly points card</a>
+    <a href="#cleanup">5 · Cleanup</a>
+    <a href="#check">Check after</a>
+  </nav>
+</header>
+
+<!-- ================ summary -->
+<section class="part" id="summary">
+  <div class="ctl n"><span class="num">Start here</span><h2>Summary</h2></div>
+  <article class="ep">
+    <div class="table-wrap"><table>
+      <tr><th>#</th><th>Change</th><th>Priority</th><th>APIs</th></tr>
+      <tr><td><a href="#referral">1</a></td><td>Carry <code>inviterCode</code> from the invite link through signup and send it. Today no signup sends it, so <b>no referral is ever recorded</b> and the referral board is empty.</td><td><span class="pri must">must</span></td><td><code>phone-complete-signup</code> · <code>google</code> · <code>google/phone-verify</code></td></tr>
+      <tr><td><a href="#link">2</a></td><td>Share a link that opens <i>this</i> site's signup.</td><td><span class="pri should">should</span></td><td><code>competition/my-invite</code></td></tr>
+      <tr><td><a href="#boards">3</a></td><td>The boards' rules changed on the server. Only small text changes are needed; nothing breaks.</td><td><span class="pri info">small</span></td><td><code>competition/streak|referral|achievement/{n}</code></td></tr>
+      <tr><td><a href="#card">4</a></td><td>The weekly points card is hard-coded mock data. Hide it or mark it <span class="ar">قريبًا</span>.</td><td><span class="pri should">should</span></td><td>none</td></tr>
+      <tr><td><a href="#cleanup">5</a></td><td>Fix hydration error #418.</td><td><span class="pri should">should</span></td><td>none</td></tr>
+    </table></div>
+    <p class="tip">Every route below is under <code>https://motqin-demo-2.runasp.net/api</code>. The backend changes are committed but not deployed yet; items 1, 2, 4 and 5 don't depend on them.</p>
+  </article>
+</section>
+
+<!-- ================ 1 referral -->
+<section class="part" id="referral">
+  <div class="ctl u"><span class="num">1 · must</span><h2>Send the invite code at signup</h2><p>The backend already accepts <code>inviterCode</code> on every signup endpoint. The site never reads it from the link and never sends it. In the test, a friend who signed up from A's link got no inviter, and A's count stayed 0.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">What to build</span></div>
+    <ol class="steps">
+      <li><b>Read it on arrival.</b> On <code>/sign-up</code> and <code>/sign-in</code>, if the URL has <code>?inviterCode=…</code>, save it: <code>sessionStorage.setItem("inviterCode", code)</code>. It must survive the move to <code>/verify-phone</code>, the profile form and Google's redirect.</li>
+      <li><b>Show it.</b> On the profile step of a <i>new</i> account, add an optional field <span class="ar">كود الدعوة (اختياري)</span>, prefilled from storage, editable, <code>dir="ltr"</code>. People who got the code by voice or chat type it here.</li>
+      <li><b>Send it</b> in the body of the request that creates the account (the three endpoints below). Send it as typed: the server trims it, uppercases it and drops spaces, <code>-</code> and <code>_</code>.</li>
+      <li><b>Clear it</b> from storage after the account is created.</li>
+    </ol>
+    <ul class="notes">
+      <li>An unknown code is <b>ignored without an error</b>: the signup still succeeds. Don't block signup on it.</li>
+      <li>It only counts for a brand-new account, or a guest finishing signup. Sending it on a sign-in to an existing account does nothing.</li>
+    </ul>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/phone-complete-signup</span><span class="who">after phone-verify says NeedsSignup</span></div>
+    <p class="brief">The phone path: <code>phone-login-request</code> → <code>phone-verify</code> (answers <code>NeedsSignup: true</code> for a new number) → this call, which creates the account.</p>
+    <div class="io">
+      <div><span class="lbl">Send</span><pre class="code">{
+  "phoneNumber": "01012345678",
+  "name": "عبدالله",
+  "region": …,                // as the form sends it today
+  "inviterCode": "7595148B"   // new: from storage or the field
+}</pre></div>
+      <div><span class="lbl">Get</span><pre class="code">{ "message": "Account creation complete.",
+  "token": { "token": "…", "refreshToken": "…", "expiresAt": "…" } }</pre></div>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/google</span><span class="who">Google, step 1</span></div>
+    <div class="io">
+      <div><span class="lbl">Send</span><pre class="code">{ "idToken": "&lt;Google ID token&gt;",
+  "inviterCode": "7595148B" }   // new</pre></div>
+      <div><span class="lbl">Notes</span><p>For an existing Google account this signs in, and the code is ignored. For a new one the flow continues to <code>google/phone-request</code>; keep the code in storage for step 3.</p></div>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/auth/google/phone-verify</span><span class="who">Google, step 3: creates the account</span></div>
+    <div class="io">
+      <div><span class="lbl">Send</span><pre class="code">{ "idToken": "&lt;same Google ID token&gt;",
+  "phoneNumber": "01012345678",
+  "code": "123456",
+  "inviterCode": "7595148B" }   // new</pre></div>
+      <div><span class="lbl">Notes</span><p>This is the call that links the inviter for Google signups. Step 2, <code>google/phone-request</code>, takes no code.</p></div>
+    </div>
+  </article>
+</section>
+
+<!-- ================ 2 link -->
+<section class="part" id="link">
+  <div class="ctl u"><span class="num">2 · should</span><h2>Share a link to this site</h2><p><code>inviteLink</code> currently comes back as <code>https://motqin.app/signup?inviterCode=…</code>. That's a server setting the backend will change per environment. Until then, the invite card shares a link to a different site.</p></div>
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/competition/my-invite</span><span class="who">signed-in student</span></div>
+    <div class="io">
+      <div><span class="lbl">Get</span><pre class="code">{ "success": true, "data": {
+  "invitationCode": "7595148B",
+  "inviteLink": "https://motqin.app/signup?inviterCode=7595148B",
+  "invitedCount": 0 } }</pre></div>
+      <div><span class="lbl">Do</span><p>Build the shared link from the code and your own origin, and use <code>inviteLink</code> only as a fallback:</p><pre class="code">const link = `${location.origin}/sign-up?inviterCode=${invitationCode}`;</pre></div>
+    </div>
+    <ul class="notes">
+      <li>A guest gets <code>403 registration_required</code>: show <span class="ar">أنشئ حسابك لتحصل على كود دعوة</span> in place of the code and keep the share buttons hidden. Today they're just disabled and empty.</li>
+      <li><code>invitedCount</code> only grows once item 1 ships.</li>
+    </ul>
+  </article>
+</section>
+
+<!-- ================ 3 boards -->
+<section class="part" id="boards">
+  <div class="ctl t"><span class="num">3 · small</span><h2>Leaderboards: what changed on the server</h2><p>Same three endpoints, same response fields. The rules for who appears and what counts changed. The table shows what the front should adjust.</p></div>
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/competition/streak/{n}</span><span class="m get">GET</span><span class="path">/referral/{n}</span><span class="m get">GET</span><span class="path">/achievement/{n}</span><span class="who">anyone</span></div>
+    <div class="table-wrap"><table>
+      <tr><th>Change</th><th>Effect</th><th>Front</th></tr>
+      <tr><td>Students only</td><td>Admins, teachers, parents and guests no longer appear on any board.</td><td>For a signed-in non-student, replace <span class="ar">لست ضمن أول 50 بعد</span> with <span class="ar">المسابقات للطلاب فقط</span>.</td></tr>
+      <tr><td>Streaks from the last 30 days</td><td>A streak whose last sign-in is older than 30 days is left off the board.</td><td>Nothing.</td></tr>
+      <tr><td>Streak is saved on phone sign-in</td><td>Streaks now grow for phone users, and a new account starts at 1.</td><td>Nothing.</td></tr>
+      <tr><td><code>longestStreak</code> is real</td><td>It's at least <code>currentStreak</code> now.</td><td>You can drop <code>Math.max(longestStreak, currentStreak)</code>; keeping it is harmless.</td></tr>
+      <tr><td>Manual sessions don't count</td><td>Only sessions timed in the app count on 🏅. Logged sessions (<span class="ar">سجّل وقتًا ذاكرته خارج التطبيق</span>) still count in the student's own stats.</td><td>Add to the 🏅 description: <span class="ar">الجلسات المسجّلة يدويًا لا تُحتسب في المسابقة.</span></td></tr>
+      <tr><td>Week in Cairo time</td><td><code>weekStart</code> / <code>weekEnd</code> are Cairo calendar days sent as midnight <code>Z</code>, e.g. <code>2026-11-08T00:00:00Z</code> – <code>2026-11-15T00:00:00Z</code>.</td><td>Keep formatting them with <code>timeZone: "UTC"</code>, as today.</td></tr>
+      <tr><td>Stable ties</td><td>Equal values are ordered by latest sign-in, then name.</td><td>Nothing.</td></tr>
+    </table></div>
+  </article>
+</section>
+
+<!-- ================ 4 card -->
+<section class="part" id="card">
+  <div class="ctl a"><span class="num">4 · should</span><h2>Weekly points card</h2><p>The <span class="ar">نقاطك هذا الأسبوع</span> face (gold league, #6 of 30, 1,755 points, the breakdown, a 7-day streak) is hard-coded in the page and calls no API. It also showed a 7-day streak to a student whose real streak was 1, and its text says every point comes from real study.</p></div>
+  <article class="ep">
+    <ul class="notes">
+      <li>Hide the points face and the <span class="ar">نقاطك هذا الأسبوع</span> bar until there's an API for it, and keep the invite card open on its own.</li>
+      <li>Or keep it, with a <span class="ar">قريبًا</span> badge and the numbers blurred, so nobody reads them as theirs.</li>
+    </ul>
+  </article>
+</section>
+
+<!-- ================ 5 cleanup -->
+<section class="part" id="cleanup">
+  <div class="ctl n"><span class="num">5 · should</span><h2>Cleanup</h2></div>
+  <article class="ep">
+    <ul class="notes">
+      <li><b>Hydration error #418</b> on every page load, with the header flashing the signed-out state. Something renders differently on the server than in the browser, most likely the user or the date in the header. Render it after mount.</li>
+    </ul>
+  </article>
+</section>
+
+<!-- ================ check -->
+<section class="part" id="check">
+  <div class="ctl n"><span class="num">After deploying</span><h2>Check</h2></div>
+  <article class="ep">
+    <ol class="steps">
+      <li>Open <code>/sign-up?inviterCode=&lt;your code&gt;</code>, sign up a new number. The profile step shows the code. Afterwards your invite card shows <span class="ar">صديق واحد</span> and you appear on ⚔️.</li>
+      <li>Same with Google, from the same kind of link.</li>
+      <li>Copy the invite link: it starts with this site's address.</li>
+      <li>Sign in by phone on two days in a row: 🏆 shows 2.</li>
+      <li>Log a session on the planner with <span class="ar">سجّل وقتًا ذاكرته خارج التطبيق</span>: 🏅 doesn't change.</li>
+      <li>Sign in as an admin or teacher: no row, and <span class="ar">المسابقات للطلاب فقط</span>.</li>
+      <li>The console shows no hydration error #418.</li>
+    </ol>
+  </article>
+</section>
+
+</div>
+</body>
+</html>
+
+</body></html>

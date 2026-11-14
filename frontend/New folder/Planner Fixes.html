@@ -1,0 +1,294 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Planner Fixes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column of fix cards (same family as the Payments Front Guide); each card: what the student sees now, what to build, the calls with real bodies */
+:root {
+  --bg: #f5f7f6; --card: #ffffff; --fg: #16211d; --muted: #586560; --line: #dbe3df; --code-bg: #eef3f0;
+  --accent: #0f6b52;
+  --get: #12805c;  --get-bg: #e2f4ec;
+  --post: #2f5bd3; --post-bg: #e6edfd;
+  --put: #a66300;  --put-bg: #fcf0db;
+  --del: #c2364b;  --del-bg: #fce6e9;
+  --ok: #12805c; --warn: #a66300; --bad: #c2364b;
+  --be: #6a46c4; --be-bg: #ede6fb;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+    --accent: #4fcf9f;
+    --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+    --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+    --be: #b69bff; --be-bg: #261d40;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+  --accent: #4fcf9f;
+  --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+  --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+  --be: #b69bff; --be-bg: #261d40;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 72px;
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 22px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 21px; font-weight: 800; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+.ar { font-family: "IBM Plex Sans Arabic", var(--font-body); direction: rtl; unicode-bidi: isolate; }
+.date { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.hero { display: grid; gap: 6px; }
+
+.fix { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; scroll-margin-top: 12px; }
+.fix-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+.num { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; color: var(--accent); }
+.be { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; background: var(--be-bg); color: var(--be); }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.now { color: var(--muted); max-width: 80ch; }
+.now b { color: var(--fg); }
+.do { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 86ch; }
+.do li::marker { color: var(--accent); }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.put { background: var(--put-bg); color: var(--put); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.path { font-family: var(--font-mono); font-size: 13.5px; font-weight: 600; overflow-wrap: anywhere; }
+.call { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; min-width: 0; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 6px; align-content: start; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.5; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.s { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+.s.ok { background: var(--get-bg); color: var(--ok); }
+.s.b4 { background: var(--del-bg); color: var(--bad); }
+.tip { font-size: 14px; border-left: 3px solid var(--warn); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; max-width: 86ch; }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <h1>Planner Fixes</h1>
+  <span class="date">12 Nov 2026</span>
+</header>
+
+<!-- ================================================================ 1 -->
+<section class="fix" id="fix-1">
+  <div class="fix-head"><span class="num">Fix 1</span><h2>AI planner: getting to preferences and class times, and back</h2></div>
+  <p class="now"><b>Now:</b> after the last class time is added, <span class="ar">حفظ التفضيلات</span> stays disabled, so the <code>return</code> link is never used and the student has no way back. The AI card says "<span class="ar">بقي أن تضيف مواعيد الدروس لـ 2 من موادك</span>" without naming them. Back on <code>/planner?tab=ai</code>, the page stays at the top, far above the AI card.</p>
+  <span class="lbl">Build</span>
+  <ul class="do">
+    <li><b>AI card:</b> name the missing subjects from <code>missingSubjects</code>: "<span class="ar">بقي أن تضيف مواعيد الدروس لـ: العلوم، اللغة الإنجليزية</span>".</li>
+    <li><b>Settings page opened with <code>return</code></b> (<code>/settings/planner?tab=courses&amp;return=…</code>): on the courses tab, show a <span class="ar">رجوع إلى المخطط الذكي</span> button that goes to <code>return</code>, and the missing subjects as chips above the form.</li>
+    <li>After <b>each</b> class time is added or deleted, call <code>validate-courses-schedule</code> again. Remove the subject's chip (or add it back on delete). When <code>isComplete</code> turns <code>true</code>, show the toast "<span class="ar">اكتملت مواعيد الدروس</span>" and go to <code>return</code>.</li>
+    <li>Without <code>return</code> (a normal settings visit) nothing of this shows.</li>
+    <li><b>Planner page:</b> when the URL has <code>tab=ai</code>, scroll the AI card into view once the page has loaded, and highlight it briefly.</li>
+  </ul>
+  <div class="call">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/user-preferences/planner/validate-courses-schedule</span></div>
+    <pre class="code">{ "success": true, "message": "…", "errors": null, "data": {
+  "isComplete": false, "totalSubjects": 8, "scheduledSubjectsCount": 6,
+  "missingSubjects": [
+    { "subjectID": 12, "name": "العلوم", "country": …, "educationalStage": …, "gradeLevel": … },
+    { "subjectID": 15, "name": "اللغة الإنجليزية", … } ] } }</pre>
+    <p class="now">Only the system subjects of the student's grade count. Subjects the student made themselves never appear here.</p>
+  </div>
+</section>
+
+<!-- ================================================================ 2 -->
+<section class="fix" id="fix-2">
+  <div class="fix-head"><span class="num">Fix 2</span><h2>One week start everywhere</h2><span class="be">changed responses</span></div>
+  <p class="now"><b>Now:</b> the site's "next week" always starts on Sunday, while the server planned from the student's own week start (Saturday for everyone). On Wednesday 11 Nov the AI put tasks on Saturday 14, which the site treats as this week, so they were missing from the next-week board.</p>
+  <span class="lbl">Build</span>
+  <ul class="do">
+    <li>The next-week board and the busy-times step follow <code>startOfWeek</code> from <code>planner/basic</code>. Or load the board with <code>GET /api/study-plan/filter?Duration=NextWeek</code>, which already uses it.</li>
+    <li>After <code>plan-with-ai</code>, show the week it planned from <code>weekStart</code> / <code>weekEnd</code>.</li>
+    <li><b>Preferences page:</b> hide "<span class="ar">عند عدم إنهاء مهمة</span>" for now, and put a "<span class="ar">بداية الأسبوع</span>" choice in its place (Sunday … Saturday).</li>
+  </ul>
+  <p class="tip">Every student's week start was set to <b>Sunday (0)</b> on 12 Nov, and Sunday is the default for new preferences.</p>
+  <div class="call">
+    <div class="ep-line"><span class="m get">GET</span><span class="m post">POST</span><span class="m put">PUT</span><span class="path">/api/user-preferences/planner/basic</span></div>
+    <div class="io">
+      <div><span class="lbl">New field <code>startOfWeek</code></span>
+        <pre class="code">{ "minWorkHours": 3, "maxWorkHours": 7,
+  "startSleepTime": "23:00:00", "endSleepTime": "09:00:00",
+  "pomodoroWorkingMinutes": 45, "pomodoroBreakMinutes": 10,
+  "planFailureDecision": 3,
+  "startOfWeek": 0 }</pre></div>
+      <div><span class="lbl">Rules</span>
+        <ul class="do">
+          <li><code>0</code> = Sunday … <code>6</code> = Saturday.</li>
+          <li>POST / PUT: optional. Left out, the saved value stays (Sunday for new preferences).</li>
+          <li>Outside 0–6: <span class="s b4">400</span> "StartOfWeek must be between 0 (Sunday) and 6 (Saturday)."</li>
+          <li><b>POST and PUT now answer with this same object</b> under <code>data</code>, like GET. They used to return the whole database row (<code>id</code>, <code>userId</code>, blocker settings…). If anything read those fields, read them from GET or the other endpoints instead.</li>
+        </ul></div>
+    </div>
+  </div>
+  <div class="call">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/AI/plan-with-ai</span></div>
+    <pre class="code">{ "success": true, "data": {
+  "brief": "…",
+  "weekStart": "2026-11-15", "weekEnd": "2026-11-21",
+  "planList": { "items": [ … ], "total": 4 } } }</pre>
+  </div>
+</section>
+
+<!-- ================================================================ 3 -->
+<section class="fix" id="fix-3">
+  <div class="fix-head"><span class="num">Fix 3</span><h2>AI planner step 2: busy times are forgotten</h2><span class="be">new endpoint</span></div>
+  <p class="now"><b>Now:</b> a busy time added in step 2 (<span class="ar">الأوقات المشغولة</span>) is saved, but it disappears from the list after going to step 3 and back, so the student adds it again and the AI gets it twice.</p>
+  <span class="lbl">Build</span>
+  <ul class="do">
+    <li>Every time step 2 opens, load next week's busy times from the server and list them, each with edit and delete. Times added on an earlier visit show too.</li>
+    <li><code>from</code> / <code>to</code> = the first and last day of next week, by the student's <code>startOfWeek</code> (<a href="#fix-2">Fix 2</a>).</li>
+    <li>Edit with <code>PUT /api/user-preferences/planner/busytime/{id}</code> and delete with <code>DELETE /api/user-preferences/planner/busytime/{id}</code>, then reload the list.</li>
+  </ul>
+  <div class="call">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/user-preferences/planner/busytime?from=2026-11-15&amp;to=2026-11-21</span></div>
+    <p class="now">Busy times without a subject (class times are not included) that touch the range: one-off ones that start in it and repeated ones whose dates overlap it. One-off first, then repeated. Dates are <code>yyyy-MM-dd</code>, both days included, at most 31 days.</p>
+    <pre class="code">{ "success": true, "message": "Busy times retrieved successfully.", "errors": null, "data": [
+  { "id": 54, "startTime": "2026-11-17T16:00:00", "endTime": "2026-11-17T20:00:00",
+    "dayOfWeek": null, "durationInMinutes": 240, "isRepeated": false,
+    "startDate": null, "endDate": null, "subjectId": null, "title": "رحلة" } ] }</pre>
+    <div class="table-wrap"><table>
+      <tr><th>Send</th><th>Get</th></tr>
+      <tr><td><code>to</code> before <code>from</code></td><td><span class="s b4">400</span> <code>{ "success": false, "message": "'to' must be on or after 'from'." }</code></td></tr>
+      <tr><td>more than 31 days</td><td><span class="s b4">400</span> <code>{ "success": false, "message": "The range cannot be longer than 31 days." }</code></td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ================================================================ 4 -->
+<section class="fix" id="fix-4">
+  <div class="fix-head"><span class="num">Fix 4</span><h2>AI planner step 3: goals</h2></div>
+  <p class="now"><b>Now:</b> a goal can be split across days (<span class="ar">تقسيم المهام (عدد الأيام)</span>) with a day and minutes per part, but the request has no day field, so the chosen days are lost, and the list shows totals that don't match the parts.</p>
+  <span class="lbl">Build</span>
+  <ul class="do">
+    <li>Remove splitting a goal across days. One goal is one item in the request.</li>
+    <li>Rebuild the goals view as shown in the <b>WhatsApp video</b> about setting goals for the AI planner.</li>
+    <li>Check the minutes before sending: more than 0 and at most 720. Show an error on the goal and don't send until it's fixed.</li>
+  </ul>
+  <p class="tip">The server no longer fails on bad minutes: a goal with 0 or less, or more than 720, is saved as 60 minutes. That is only a guard. The front's check is the real one.</p>
+</section>
+
+<!-- ================================================================ 5 -->
+<section class="fix" id="fix-5">
+  <div class="fix-head"><span class="num">Fix 5</span><h2>Show the AI summary</h2></div>
+  <p class="now"><b>Now:</b> <code>brief</code> from <code>plan-with-ai</code> is not shown anywhere.</p>
+  <ul class="do">
+    <li>Show <code>brief</code> in the result step. It is Markdown: one short paragraph, then up to 3 bullets (<code>- …</code>).</li>
+    <li>The summary no longer mentions days or dates (the AI is told not to), so it can't disagree with the tasks. The days come from the tasks themselves.</li>
+  </ul>
+</section>
+
+<!-- ================================================================ 6 -->
+<section class="fix" id="fix-6">
+  <div class="fix-head"><span class="num">Fix 6</span><h2>Saving one note wipes the others</h2></div>
+  <p class="now"><b>Now:</b> a task had three notes (two from the student and "Importance : high" from the AI planner). Editing one on the execution board and saving left a single note on the server: <code>&lt;p&gt;…&lt;/p&gt;</code>.</p>
+  <ul class="do">
+    <li><code>PUT /api/study-plan/{id}</code> replaces the whole <code>userNotes</code> list with what it gets. Always send the full list, with only the edited note changed (or one removed / added).</li>
+    <li>Save notes as <b>plain text</b>, like every other screen. No HTML.</li>
+    <li>The AI planner's notes, including "Importance : …", stay on the task. The student can keep or delete them.</li>
+  </ul>
+  <pre class="code">PUT /api/study-plan/242
+{ "userNotes": [ "راجع الأمثلة", "حل التمارين صفحة 40", "Importance : high" ] }</pre>
+</section>
+
+<!-- ================================================================ 7 -->
+<section class="fix" id="fix-7">
+  <div class="fix-head"><span class="num">Fix 7</span><h2>Sessions: start and add</h2><span class="be">changed rules</span></div>
+  <ul class="do">
+    <li><b>Only upcoming sessions start.</b> Don't show "start" on a completed, missed or manually completed session. A missed one gets <span class="ar">تأكيد الإتمام</span> (<code>PUT /api/study-session/{id}/confirm-completed</code>). More study gets a new session.</li>
+    <li><b>Adding a session to a completed task reopens the task</b>: it becomes in progress (task dated today) or upcoming (a later day). Refresh the board header and the task's status after adding.</li>
+    <li>Adding a session to a task that doesn't exist, or isn't the student's, now fails with 404 instead of making a new task.</li>
+  </ul>
+  <div class="call">
+    <div class="table-wrap"><table>
+      <tr><th>Call</th><th>Send</th><th>Get</th><th>Show</th></tr>
+      <tr><td><span class="m put">PUT</span> <code>/api/study-session/{id}/start</code></td><td>a session that isn't upcoming</td><td><span class="s b4">400</span> <code>{ "success": false, "message": "Only upcoming sessions can be started." }</code></td><td class="ar">لا يمكن بدء جلسة منتهية</td></tr>
+      <tr><td><span class="m post">POST</span> <code>/api/study-session/create</code></td><td><code>studyPlanId</code> missing or someone else's</td><td><span class="s b4">404</span> <code>{ "success": false, "data": null, "error": { "code": "plan_not_found", "message": "Study plan not found." } }</code></td><td class="ar">المهمة غير موجودة</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ================================================================ 8 -->
+<section class="fix" id="fix-8">
+  <div class="fix-head"><span class="num">Fix 8</span><h2>Deleting a task</h2></div>
+  <p class="now"><b>Now:</b> a task was deleted while one of its sessions was running, and the floating timer kept counting down to the finish card.</p>
+  <ul class="do">
+    <li><b>The confirmation must say that all the work on the task goes with it:</b> every session, the finished ones included. Their minutes drop out of the student's performance and the competition. For example: "<span class="ar">سيتم حذف المهمة وكل جلساتها، بما فيها الجلسات المكتملة، ولن تُحتسب دقائقها في أدائك أو في المسابقة.</span>"</li>
+    <li>Deleting a task with a running session is allowed: the server deletes it together with its sessions. If the floating timer belongs to that task, stop and clear it right after the delete.</li>
+    <li>Any session call that answers 404 means the session is gone: stop and clear the timer.</li>
+  </ul>
+  <div class="call">
+    <div class="table-wrap"><table>
+      <tr><th>Call</th><th>Get</th></tr>
+      <tr><td><span class="m del">DELETE</span> <code>/api/study-plan/{id}</code></td><td><span class="s ok">204</span> deleted, with all its sessions</td></tr>
+      <tr><td>a task that doesn't exist, or isn't the student's</td><td><span class="s b4">404</span> <code>{ "success": false, "data": null, "error": { "code": "plan_not_found", "message": "Study plan not found." } }</code> (it was a 500 before). Show <span class="ar">المهمة غير موجودة</span>.</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ================================================================ 9 -->
+<section class="fix" id="fix-9">
+  <div class="fix-head"><span class="num">Fix 9</span><h2>Task form: minutes and dates</h2><span class="be">changed rules</span></div>
+  <ul class="do">
+    <li>Minutes: 1 to 720. Check it in the form.</li>
+    <li>A task can't be moved to a past day. Disable past days in the date picker when editing, as when creating. Saving a task with its own date unchanged still works, even when that date has passed (so an old task can still get notes).</li>
+  </ul>
+  <div class="table-wrap"><table>
+    <tr><th>Call</th><th>Send</th><th>Get</th></tr>
+    <tr><td><span class="m post">POST</span> <code>/api/study-plan/create</code></td><td><code>durationInMinutes</code> 0 or 721</td><td><span class="s b4">400</span> <code>{ "success": false, "message": "DurationInMinutes must be between 1 and 720." }</code></td></tr>
+    <tr><td><span class="m put">PUT</span> <code>/api/study-plan/{id}</code></td><td><code>date</code> = yesterday</td><td><span class="s b4">400</span> <code>{ "message": "Cannot plan for previous days" }</code></td></tr>
+  </table></div>
+</section>
+
+<!-- ================================================================ 10 -->
+<section class="fix" id="fix-10">
+  <div class="fix-head"><span class="num">Fix 10</span><h2>Class times</h2><span class="be">changed response</span></div>
+  <ul class="do">
+    <li><b>Send the time as typed.</b> 10:00 Cairo is sent as <code>2026-11-12T10:00:00</code>, with no <code>Z</code> and no conversion to UTC. Today it is converted, so 10:00–11:00 is saved as 08:00–09:00 and the AI is told the class is two hours earlier. Show what comes back as it is, with no conversion.</li>
+    <li><b>Show the subject's name from the response</b> (<code>subjectName</code>), not a lookup in the student's subject list. That lookup is what shows "<span class="ar">مادة 4</span>".</li>
+    <li>The list now holds only class times for the student's current grade and for subjects they made themselves. Class times left from another grade are hidden, and the AI no longer plans around them.</li>
+  </ul>
+  <div class="call">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/user-preferences/planner/courses-schedules</span></div>
+    <pre class="code">{ "success": true, "message": "Courses schedule retrieved successfully.", "errors": null, "data": [
+  { "id": 53, "subjectId": 10, "subjectName": "الرياضيات",
+    "startTime": "2026-11-12T10:00:00", "endTime": "2026-11-12T11:00:00" } ] }</pre>
+  </div>
+</section>
+
+<!-- ================================================================ 11 -->
+<section class="fix" id="fix-11">
+  <div class="fix-head"><span class="num">Fix 11</span><h2>Smaller site fixes</h2></div>
+  <div class="table-wrap"><table>
+    <tr><th>Where</th><th>Now</th><th>Do</th></tr>
+    <tr><td><b>Execution board</b></td><td>React hydration error <code>#418</code> on every load: the HTML from the server doesn't match what the browser renders, so React throws it away and redraws the page.</td><td>Look for anything rendered from the clock or the time zone on the server: <code>new Date()</code>, <code>toLocaleString</code>, "today", relative times (<span class="ar">منذ 5 دقائق</span>), timer values. Render those only in the browser, in a <code>useEffect</code> after mount or with a client-only component, and show a placeholder until then. In dev mode React names the element that differs.</td></tr>
+    <tr><td><b>Task form, lesson task</b></td><td>With no subject, lesson or title, it shows "<span class="ar">العنوان مطلوب.</span>". A lesson task doesn't use a title (it becomes "<span class="ar">درس</span> {subject}"), so the right message never comes first.</td><td>For a lesson task, check the subject first and show "<span class="ar">يرجى اختيار المادة او العنوان</span>". Don't ask for a title on its own.</td></tr>
+  </table></div>
+</section>
+
+</div>
+
+</body></html>

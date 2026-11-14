@@ -15,6 +15,7 @@ import {
 } from "@/app/types/competition.types";
 import { LEADERBOARD_SIZE } from "@/app/constants/competition.constants";
 import { competitionService } from "@/app/services/competition.service";
+import { useAuthKind } from "@/app/hooks/useAuthKind";
 
 // Mock for now — the backend has the Competition/CompetitionEntry models but
 // no CompetitionsController yet. Each queryFn below is the single seam to
@@ -47,11 +48,16 @@ async function fetchAchievements(): Promise<Achievement[]> {
 
 // --- Live endpoints -------------------------------------------------------
 
-export const useMyInvite = () =>
-  useQuery({
+// Guests get 403 registration_required here (it would pop the signup
+// dialog), so it's only fetched for signed-up students.
+export const useMyInvite = () => {
+  const registered = useAuthKind() === "user";
+  return useQuery({
     queryKey: ["competitions", "my-invite"],
     queryFn: competitionService.getMyInvite,
+    enabled: registered,
   });
+};
 
 export const useStreakLeaders = (n = LEADERBOARD_SIZE) =>
   useQuery({

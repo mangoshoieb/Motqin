@@ -28,7 +28,7 @@ export default function CompetitionsPage() {
             المسابقات والصدارة
           </h1>
           <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
-            نقاطك تأتي من مذاكرتك الفعلية — مهام مخططك، دقائق تركيزك، ودقة اختباراتك.
+            تنافس مع زملائك في الاستمرارية، ودعوة الأصدقاء، ووقت المذاكرة الفعلي.
           </p>
         </header>
 
@@ -37,12 +37,7 @@ export default function CompetitionsPage() {
         {cardLoading || !card || !league ? (
           <Skeleton className="h-56 w-full rounded-3xl" />
         ) : (
-          <CompetitionHero
-            card={card}
-            promoteCount={league.promoteCount}
-            memberCount={league.members.length}
-            endsAt={league.endsAt}
-          />
+          <CompetitionHero card={card} memberCount={league.members.length} />
         )}
 
         <div className="my-6">

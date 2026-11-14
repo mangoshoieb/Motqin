@@ -8,6 +8,8 @@ import type { IconType } from "react-icons";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { useMyInvite } from "@/app/hooks/useCompetitions";
+import { useAuthKind } from "@/app/hooks/useAuthKind";
+import { useAuthGate } from "@/app/lib/auth-gate.store";
 
 export const INVITE_HEADLINE = "قم بإفادة أصدقائك واربح جوائز تصل إلى 1000 جنيه";
 
@@ -21,15 +23,24 @@ const useOrigin = () =>
   );
 
 // The student's invite code and link (GET /competition/my-invite), and how
-// many friends have joined with it. A link the backend sends as a path is
-// made absolute so it works once pasted elsewhere.
+// many friends have joined with it. The link is built from the code and this
+// site's own address, so it opens this deployment's signup; the server's
+// inviteLink (a fixed domain, for now) is only a fallback.
 export const useInvite = () => {
   const { data: invite } = useMyInvite();
   const origin = useOrigin();
+  const code = invite?.invitationCode ?? "";
   const rawLink = invite?.inviteLink ?? "";
-  const link = rawLink.startsWith("/") ? (origin ? `${origin}${rawLink}` : "") : rawLink;
+  const link =
+    code && origin
+      ? `${origin}/sign-up?inviterCode=${encodeURIComponent(code)}`
+      : rawLink.startsWith("/")
+        ? origin
+          ? `${origin}${rawLink}`
+          : ""
+        : rawLink;
   return {
-    code: invite?.invitationCode ?? "",
+    code,
     link,
     invitedCount: invite?.invitedCount ?? null,
   };
@@ -185,6 +196,9 @@ const share = async (target: ShareTarget, label: string, link: string, code: str
 // share targets underneath.
 export const InviteSharePanel = () => {
   const { code, link, invitedCount } = useInvite();
+  // Guests have no invite code (my-invite answers 403 registration_required).
+  const isGuest = useAuthKind() === "guest";
+  const openGate = useAuthGate((state) => state.open);
 
   return (
     <div className="flex flex-col gap-4">
@@ -219,7 +233,21 @@ export const InviteSharePanel = () => {
           </div>
         )}
       </div>
+      {isGuest && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-zinc-300 px-4 py-3.5 dark:border-zinc-700">
+          <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">أنشئ حسابك لتحصل على كود دعوة</p>
+          <button
+            type="button"
+            onClick={() => openGate({ kind: "registration_required" })}
+            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+          >
+            إنشاء حساب
+          </button>
+        </div>
+      )}
 
+      {!isGuest && (
+      <>
       {/* Line 1: the link and the code */}
       <div className="flex flex-col gap-2 sm:flex-row">
         <CopyField
@@ -257,6 +285,8 @@ export const InviteSharePanel = () => {
           </button>
         ))}
       </div>
+      </>
+      )}
     </div>
   );
 };
