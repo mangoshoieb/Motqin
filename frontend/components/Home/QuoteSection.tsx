@@ -12,9 +12,73 @@ import {
   useRemoveQuoteReaction,
 } from "@/app/hooks/useQuoteReaction";
 import { reactionOptions } from "@/app/constants/quote.constants";
-import { ReactionType } from "@/app/types/quote.types";
+import { AcademicDay, ReactionType } from "@/app/types/quote.types";
 import Skeleton from "@/components/ui/Skeleton";
 import QuoteComments from "./QuoteComments";
+
+// Today as "YYYY-MM-DD" in Cairo, the timezone the backend counts days in.
+const cairoToday = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(new Date());
+
+// Arabic counted noun: يوم واحد / يومان / 3–10 أيام / 11+ يومًا.
+const daysLabel = (n: number) =>
+  n === 1 ? "يوم واحد" : n === 2 ? "يومان" : n >= 3 && n <= 10 ? `${n} أيام` : `${n} يومًا`;
+
+// "Day N of the school year" plus a progress bar of the year, with a tick
+// at its midpoint. Hidden when there's no calendar for the student, before
+// the year starts, and once it's over.
+function AcademicDayProgress({ day }: { day: AcademicDay | null | undefined }) {
+  if (!day || !day.dayNumber || day.endDate < cairoToday()) return null;
+
+  const total = Math.max(day.totalDays, 1);
+  const percent = Math.min(100, Math.max(0, (day.dayNumber / total) * 100));
+  const pastHalf = day.dayNumber >= total / 2;
+
+  return (
+    <div dir="rtl" className="mx-auto mb-6 w-full max-w-sm">
+      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs font-bold">
+        <span className="flex items-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+          <CalendarDays size={14} />
+          اليوم {day.dayNumber} من العام الدراسي
+        </span>
+        <span className="text-zinc-500 dark:text-zinc-400">
+          {day.daysRemaining === 0
+            ? "آخر يوم في العام الدراسي"
+            : `باقي ${daysLabel(day.daysRemaining)}`}
+        </span>
+      </div>
+
+      <div
+        role="progressbar"
+        aria-label="التقدم في العام الدراسي"
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-valuenow={day.dayNumber}
+        aria-valuetext={`مضى ${daysLabel(day.dayNumber)} من ${daysLabel(total)}`}
+        className="relative mt-3 h-2 rounded-full bg-zinc-100 dark:bg-zinc-800"
+      >
+        {/* Fills from the right (start of the year in RTL). */}
+        <div
+          className="absolute inset-y-0 start-0 rounded-full bg-gradient-to-l from-blue-400 to-blue-600 transition-[width] duration-700 dark:from-blue-600 dark:to-blue-500"
+          style={{ width: `${percent}%` }}
+        />
+        {/* Mid-year mark. */}
+        <span
+          aria-hidden
+          className={`absolute -top-1 left-1/2 h-4 w-1 -translate-x-1/2 rounded-full ring-2 ring-white dark:ring-zinc-900 ${
+            pastHalf ? "bg-blue-700 dark:bg-blue-400" : "bg-zinc-400 dark:bg-zinc-500"
+          }`}
+        />
+      </div>
+
+      <div className="relative mt-1.5 flex justify-between text-[10px] text-zinc-400">
+        <span>مضى {daysLabel(day.dayNumber)}</span>
+        <span className="absolute left-1/2 -translate-x-1/2">منتصف العام</span>
+        <span>{Math.round(percent)}%</span>
+      </div>
+    </div>
+  );
+}
 
 function ReactionBar({
   quoteId,
@@ -123,15 +187,7 @@ export default function QuoteSection() {
         </div>
       ) : (
         <div className="w-full max-w-2xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 md:p-10">
-          {educationalDay?.dayNum ? (
-            <span
-              dir="rtl"
-              className="mx-auto mb-5 flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
-            >
-              <CalendarDays size={14} />
-              اليوم {educationalDay.dayNum} من العام الدراسي
-            </span>
-          ) : null}
+          <AcademicDayProgress day={educationalDay} />
 
           <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-700 text-white shadow-md shadow-blue-500/30">
             <QuoteIcon size={22} />

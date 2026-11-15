@@ -13,5 +13,9 @@ export function useTodayQuote() {
     queryKey: QUOTE_TODAY_QUERY_KEY,
     queryFn: quoteService.getTodayQuote,
     enabled: isAuthenticated,
+    // The hub (and its midnight ReceiveNewDay) only connects while there's a
+    // quote; on a day without one, refetching on focus picks up a quote
+    // scheduled later.
+    refetchOnWindowFocus: true,
   });
 }

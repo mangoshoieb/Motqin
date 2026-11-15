@@ -17,8 +17,7 @@ const Footer = () => {
               priority
             />
             <p className="text-[var(--input-text)] leading-7 text-sm">
-              متقن منصة تعليمية تساعد الطلاب على التركيز، الفهم العميق،
-              وتتبع التقدم الأكاديمي من خلال نظام متكامل يجمع بين الذكاء الاصطناعي والانضباط الذاتي.
+             المكان الأنسب لزيادة انتاجيتك وتحسين اداءك.
             </p>
           </div>
 
@@ -32,7 +31,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/planner" className="hover:text-[var(--assistant-text)] transition">
+                <Link href="/planner/today" className="hover:text-[var(--assistant-text)] transition">
                   المخطط الدراسي
                 </Link>
               </li>

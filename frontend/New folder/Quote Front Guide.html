@@ -1,0 +1,256 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Quote Front Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column of numbered change blocks, each a tinted header then white endpoint cards (same family as the other Motqin front guides). */
+:root {
+  --bg: #f5f7f6; --card: #ffffff; --fg: #16211d; --muted: #586560; --line: #dbe3df; --code-bg: #eef3f0;
+  --accent: #0f6b52;
+  --get: #12805c; --get-bg: #e2f4ec; --post: #2f5bd3; --post-bg: #e6edfd; --del: #c2364b; --del-bg: #fce6e9;
+  --ok: #12805c; --warn: #a66300; --warn-bg: #fcf0db; --bad: #c2364b; --bad-bg: #fce6e9;
+  --u: #0f6b52; --u-bg: #ddf1e8; --a: #6a46c4; --a-bg: #ede6fb; --t: #3a7d2c; --t-bg: #e7f3e2;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+    --accent: #4fcf9f; --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648; --del: #ff8396; --del-bg: #3f1a22;
+    --ok: #4fd29a; --warn: #f3b14d; --warn-bg: #3a2a10; --bad: #ff8396; --bad-bg: #3f1a22;
+    --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+  --accent: #4fcf9f; --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648; --del: #ff8396; --del-bg: #3f1a22;
+  --ok: #4fd29a; --warn: #f3b14d; --warn-bg: #3a2a10; --bad: #ff8396; --bad-bg: #3f1a22;
+  --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-block: 32px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 24px; font-weight: 800; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 12.5px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ar { font-family: "IBM Plex Sans Arabic", var(--font-body); direction: rtl; unicode-bidi: isolate; }
+.hero { display: grid; gap: 10px; }
+.date { color: var(--muted); font-family: var(--font-mono); font-size: 13px; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 13.5px; padding: 5px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--fg); }
+.part { display: grid; gap: 14px; scroll-margin-top: 12px; }
+.ctl { display: grid; gap: 6px; padding: 14px 20px; border-radius: 14px; }
+.ctl p { max-width: 78ch; }
+.ctl.u { background: var(--u-bg); } .ctl.u h2, .ctl.u .num { color: var(--u); }
+.ctl.a { background: var(--a-bg); } .ctl.a h2, .ctl.a .num { color: var(--a); }
+.ctl.t { background: var(--t-bg); } .ctl.t h2, .ctl.t .num { color: var(--t); }
+.ctl.n { background: var(--code-bg); }
+.num { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; }
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.m.hub { background: var(--a-bg); color: var(--a); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--code-bg); color: var(--muted); }
+.pri { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.pri.must { background: var(--bad-bg); color: var(--bad); }
+.pri.should { background: var(--warn-bg); color: var(--warn); }
+.pri.info { background: var(--get-bg); color: var(--ok); }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.5; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td:first-child { white-space: nowrap; }
+td.num-col { font-variant-numeric: tabular-nums; }
+.notes { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+.tip.warn { border-left-color: var(--warn); }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <h1>Quote Front Guide</h1>
+  <p class="date">14 Nov 2026</p>
+  <nav class="nav" aria-label="Sections">
+    <a href="#badge">1 · Day badge</a>
+    <a href="#errors">2 · Error toasts</a>
+    <a href="#delete">3 · Thread delete</a>
+    <a href="#live">4 · Live events</a>
+    <a href="#check">Check after</a>
+  </nav>
+</header>
+
+<!-- ================ 1 badge -->
+<section class="part" id="badge">
+  <div class="ctl u"><span class="num">1 · must</span><h2>Day badge from the student's school year</h2></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/quotes/academic-day</span><span class="who">any signed-in user, guests too</span></div>
+    <div class="io">
+      <div><span class="lbl">Get · 3rd secondary on 14 Nov 2026</span><pre class="code">{ "success": true,
+  "message": "Academic day retrieved successfully.",
+  "data": {
+    "stage": 3, "grade": 3,
+    "startDate": "2026-08-01",
+    "endDate": "2027-07-21",     // last day of the final exams
+    "totalDays": 355,
+    "dayNumber": 106,            // today included; 0 before startDate
+    "daysRemaining": 249         // days left after today
+  } }</pre></div>
+      <div><span class="lbl">Get · no calendar for this stage and grade</span><pre class="code">{ "success": true,
+  "message": "No school-year calendar for this stage and grade.",
+  "data": null }</pre>
+      <span class="lbl">Years set today</span>
+      <div class="table-wrap"><table>
+        <tr><th>Stage · grade</th><th>Start</th><th>End</th></tr>
+        <tr><td>Secondary · 2nd (Baccalaureate)</td><td class="num-col">2026-08-01</td><td class="num-col">2027-06-22</td></tr>
+        <tr><td>Secondary · 3rd</td><td class="num-col">2026-08-01</td><td class="num-col">2027-07-21</td></tr>
+        <tr><td>University (all grades)</td><td class="num-col">2026-09-19</td><td class="num-col">2027-06-15</td></tr>
+      </table></div></div>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">What to change</span></div>
+    <ol class="steps">
+      <li>In the quote service, point <code>getEducationalDay</code> at <code>/quotes/academic-day</code> (drop <code>/admin/quotes/educational-day</code>). Keep the query key <code>["quote","educational-day"]</code> or rename it; item 4 invalidates it at midnight.</li>
+      <li>The field is now <code>dayNumber</code>, not <code>dayNum</code>. Show <span class="ar">اليوم 106 من العام الدراسي</span>.</li>
+      <li>Next to it, add the days left: <span class="ar">باقي 249 يومًا</span>. On the last day (<code>daysRemaining</code> 0) show <span class="ar">آخر يوم في العام الدراسي</span>.</li>
+      <li>Hide the badge when <code>data</code> is <code>null</code>, when <code>dayNumber</code> is 0 (the year hasn't started), or when <code>endDate</code> is before today (the year is over).</li>
+    </ol>
+  </article>
+</section>
+
+<!-- ================ 2 errors -->
+<section class="part" id="errors">
+  <div class="ctl u"><span class="num">2 · should</span><h2>Error toasts from the code</h2></div>
+
+  <article class="ep">
+    <div class="io">
+      <div><span class="lbl">Error body (all quote endpoints)</span><pre class="code">// 400 / 403 / 404
+{ "success": false,
+  "data": null,
+  "error": {
+    "code": "comment_too_long",
+    "message": "A comment can be at most 300 characters."
+  } }</pre></div>
+      <div><span class="lbl">Do</span><pre class="code">onError: err =&gt; {
+  const code = err?.response?.data?.error?.code;
+  toast.error(errorCodeMessage(code) ?? "تعذر إتمام العملية، حاول مرة أخرى");
+}</pre><p>Add it to the mutations for adding a comment (box and reply), editing, deleting, and reacting. The reaction ones already roll back; add the toast after the rollback.</p></div>
+    </div>
+    <div class="table-wrap"><table>
+      <tr><th>Code</th><th>Status</th><th>When</th><th>Toast (from the catalogue)</th></tr>
+      <tr><td><code>comment_required</code></td><td>400</td><td>Empty or spaces-only text.</td><td class="ar">اكتب تعليقك أولاً</td></tr>
+      <tr><td><code>comment_too_long</code></td><td>400</td><td>Over 300 characters after trimming.</td><td class="ar">التعليق أطول من 300 حرف</td></tr>
+      <tr><td><code>parent_comment_deleted</code></td><td>400</td><td>Replying to a comment that was deleted by its author or an admin (see item 4).</td><td class="ar">تم حذف هذا التعليق، لا يمكن الرد عليه</td></tr>
+      <tr><td><code>invalid_parent_comment</code></td><td>400</td><td>Replying with a parent id that doesn't exist or is on another quote.</td><td class="ar">لا يمكن الرد على هذا التعليق</td></tr>
+      <tr><td><code>comment_not_found</code></td><td>404</td><td>Editing or deleting a comment that is already gone.</td><td class="ar">التعليق غير موجود أو تم حذفه</td></tr>
+      <tr><td><code>not_comment_owner</code></td><td>403</td><td>Editing or deleting someone else's comment.</td><td class="ar">لا يمكنك تعديل تعليق شخص آخر</td></tr>
+      <tr><td><code>quote_not_found</code></td><td>404</td><td>The quote was deleted while the card was open.</td><td class="ar">الاقتباس غير موجود</td></tr>
+      <tr><td><code>quote_not_published</code></td><td>400</td><td>Commenting on or reacting to a quote whose day hasn't come.</td><td class="ar">هذا الاقتباس لم يُنشر بعد</td></tr>
+      <tr><td><code>invalid_reaction</code></td><td>400</td><td>A reaction type outside 1–5. The card only sends 1–5.</td><td class="ar">نوع التفاعل غير صحيح</td></tr>
+      <tr><td><code>registration_required</code></td><td>403</td><td>A guest comments or reacts (unchanged).</td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+    </table></div>
+    <p class="tip">On <code>comment_not_found</code> or <code>quote_not_found</code>, also invalidate <code>["quote","today"]</code> so the card drops what's gone.</p>
+  </article>
+</section>
+
+<!-- ================ 3 delete -->
+<section class="part" id="delete">
+  <div class="ctl a"><span class="num">3 · should</span><h2>Deleting a comment deletes its thread</h2></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m del">DELETE</span><span class="path">/api/quotes/comment/{id}</span><span class="who">the comment's author</span></div>
+    <div class="io">
+      <div><span class="lbl">Get</span><pre class="code">{ "success": true,
+  "message": "Comment deleted successfully.",
+  "data": {
+    "commentId": 129,
+    "quoteId": 19,
+    "deletedIds": [129, 130, 132, 131]   // new: the comment + its replies
+  } }</pre></div>
+      <div><span class="lbl">Hub · <code>ReceiveCommentDelete</code></span><pre class="code">{ "commentId": 129, "quoteId": 19,
+  "deletedIds": [129, 130, 132, 131] }   // new field</pre></div>
+    </div>
+    <ol class="steps">
+      <li><b>Dialog text.</b> When the comment has replies, change the message to <span class="ar">سيتم حذف هذا التعليق وكل الردود عليه. لا يمكن التراجع عن هذا الإجراء.</span> Keep the current text when it has none.</li>
+      <li><b>Remove by the list.</b> In the <code>ReceiveCommentDelete</code> handler, remove every id in <code>deletedIds</code> from the tree. Today's handler removes the node with its nested replies, which gives the same result; the list also covers replies the card shows flattened.</li>
+    </ol>
+  </article>
+</section>
+
+<!-- ================ 4 live -->
+<section class="part" id="live">
+  <div class="ctl t"><span class="num">4 · should</span><h2>Live events</h2><p>A new hub event at midnight, and a reply to a comment that was deleted meanwhile.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m hub">HUB</span><span class="path">ReceiveNewDay</span><span class="who">new · sent to everyone at 00:00 Cairo time</span></div>
+    <div class="io">
+      <div><span class="lbl">Payload</span><pre class="code">{ "date": "2026-11-15" }</pre></div>
+      <div><span class="lbl">Do</span><pre class="code">s.on("ReceiveNewDay", () =&gt; {
+  n.invalidateQueries({ queryKey: ["quote", "today"] });
+  n.invalidateQueries({ queryKey: ["quote", "educational-day"] });
+});</pre></div>
+    </div>
+    <p class="tip warn">The card only connects to the hub while it has a quote. On a day with no quote, refetch today's quote when the window regains focus so a quote scheduled later still appears.</p>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/quotes/comment</span><span class="who">reply to a deleted comment</span></div>
+    <p>Handle a reply to a comment that was deleted (by an admin or its author) while the card was open: tell the student it's deleted.</p>
+    <div class="io">
+      <div><span class="lbl">Get · 400</span><pre class="code">{ "success": false, "data": null,
+  "error": {
+    "code": "parent_comment_deleted",
+    "message": "This comment was deleted, so it can't be replied to."
+  } }</pre></div>
+      <div><span class="lbl">Do (in the reply box)</span><pre class="code">onError: err =&gt; {
+  if (err?.response?.data?.error?.code === "parent_comment_deleted") {
+    toast.error(errorCodeMessage("parent_comment_deleted"));
+    // "تم حذف هذا التعليق، لا يمكن الرد عليه"
+    onDone();                                            // close the reply box
+    qc.invalidateQueries({ queryKey: ["quote", "today"] }); // drop the deleted comment
+  }
+}</pre></div>
+    </div>
+  </article>
+</section>
+
+<!-- ================ check -->
+<section class="part" id="check">
+  <div class="ctl n"><span class="num">After deploying</span><h2>Check</h2></div>
+  <article class="ep">
+    <ol class="steps">
+      <li>As a 3rd-secondary student, the badge shows <span class="ar">اليوم N من العام الدراسي</span> and the days left. Network: <code>/quotes/academic-day</code> 200, no call to <code>/admin/quotes/educational-day</code>.</li>
+      <li>As a student whose stage has no calendar (for example primary), no badge and no error.</li>
+      <li>Paste a 301-character comment through the API or devtools: the card shows <span class="ar">التعليق أطول من 300 حرف</span>.</li>
+      <li>Open the card in two tabs, delete a comment in one: the other tab shows it gone. Deleting it again from the stale tab shows <span class="ar">التعليق غير موجود أو تم حذفه</span>.</li>
+      <li>Delete a comment that has replies: the dialog warns about the replies, the whole thread disappears, and the header drops by the thread's size.</li>
+      <li>Leave the card open past midnight Cairo time: the quote and the badge change without a reload.</li>
+    </ol>
+  </article>
+</section>
+
+</div>
+
+</body></html>

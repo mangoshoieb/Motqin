@@ -3,7 +3,8 @@ import { QUOTE_API_ROUTES } from "../constants/quote.constants";
 import {
   CreateCommentInput,
   DailyQuote,
-  EducationalDay,
+  AcademicDay,
+  CommentDeleteResult,
   QuoteComment,
   QuoteMyStats,
   QuoteReactionInput,
@@ -38,8 +39,9 @@ export const quoteService = {
     return unwrap<QuoteComment>(data);
   },
 
-  async deleteComment(id: number): Promise<void> {
-    await axiosInstance.delete(QUOTE_API_ROUTES.COMMENT_BY_ID(id));
+  async deleteComment(id: number): Promise<CommentDeleteResult | null> {
+    const { data } = await axiosInstance.delete(QUOTE_API_ROUTES.COMMENT_BY_ID(id));
+    return (data as { data?: CommentDeleteResult | null })?.data ?? null;
   },
 
   async reportComment(input: ReportCommentInput): Promise<void> {
@@ -60,9 +62,10 @@ export const quoteService = {
     return Array.isArray(body) ? body : body?.reactions ?? [];
   },
 
-  async getEducationalDay(): Promise<EducationalDay> {
-    const { data } = await axiosInstance.get(QUOTE_API_ROUTES.EDUCATIONAL_DAY);
-    return unwrap<EducationalDay>(data);
+  // null when there's no school-year calendar for the student's stage/grade.
+  async getEducationalDay(): Promise<AcademicDay | null> {
+    const { data } = await axiosInstance.get(QUOTE_API_ROUTES.ACADEMIC_DAY);
+    return (data as { data?: AcademicDay | null })?.data ?? null;
   },
 
   async getMyStats(): Promise<QuoteMyStats> {

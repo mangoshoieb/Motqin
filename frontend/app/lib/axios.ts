@@ -294,7 +294,12 @@ const readGuestHeaders = (response: AxiosResponse) => {
 // open the signup-or-subscribe popup instead of reading as an error.
 // Screens that explain a plan limit inline, with their own link to the
 // plans (the parent-report dialog).
-const PLAN_PROMPT_SKIP = [/\/tracking-tables\/.*(prepare-report|\/reports\/)/];
+// The planner's week performance falls back to its own numbers when the plan
+// lacks PerformanceRange, so it never pops the plans dialog on page load.
+const PLAN_PROMPT_SKIP = [
+  /\/tracking-tables\/.*(prepare-report|\/reports\/)/,
+  /\/study-plan\/user-performance-by-range/,
+];
 
 // 403 quota_exhausted / not_in_plan from any feature: offer the plans.
 const openPlanPromptFor = (error: unknown) => {

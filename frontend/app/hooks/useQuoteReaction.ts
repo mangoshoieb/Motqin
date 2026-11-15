@@ -9,6 +9,7 @@ import {
   ReactionType,
 } from "../types/quote.types";
 import { QUOTE_TODAY_QUERY_KEY } from "./useTodayQuote";
+import { toastQuoteError } from "../lib/quote-errors";
 
 export const quoteReactionsKey = (quoteId: number) => ["quote", quoteId, "reactions"] as const;
 
@@ -77,9 +78,10 @@ export function useAddQuoteReaction(currentUserId?: string | null) {
       );
       return { previousReactions, previousToday };
     },
-    onError: (_error, { quoteId }, context) => {
+    onError: (error, { quoteId }, context) => {
       queryClient.setQueryData(quoteReactionsKey(quoteId), context?.previousReactions);
       queryClient.setQueryData(QUOTE_TODAY_QUERY_KEY, context?.previousToday);
+      toastQuoteError(error, queryClient);
     },
     onSettled: (_data, _error, { quoteId }) => {
       queryClient.invalidateQueries({ queryKey: quoteReactionsKey(quoteId) });
@@ -118,9 +120,10 @@ export function useRemoveQuoteReaction(currentUserId?: string | null) {
       );
       return { previousReactions, previousToday };
     },
-    onError: (_error, quoteId, context) => {
+    onError: (error, quoteId, context) => {
       queryClient.setQueryData(quoteReactionsKey(quoteId), context?.previousReactions);
       queryClient.setQueryData(QUOTE_TODAY_QUERY_KEY, context?.previousToday);
+      toastQuoteError(error, queryClient);
     },
     onSettled: (_data, _error, quoteId) => {
       queryClient.invalidateQueries({ queryKey: quoteReactionsKey(quoteId) });

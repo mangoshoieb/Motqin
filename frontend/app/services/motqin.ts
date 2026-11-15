@@ -223,6 +223,25 @@ export interface StudyPlanFilterResponse {
   total: number;
 }
 
+// GET /study-plan/user-performance-by-range — one entry per calendar day
+// (date: yyyy-MM-dd), plus the range totals.
+export interface UserPerformanceDay {
+  date: string;
+  completedPlansCount: number;
+  completedSessionsCount: number;
+  productiveMinutes: number;
+}
+
+export interface UserPerformanceRange {
+  startDate: string;
+  endDate: string;
+  days: UserPerformanceDay[] | null;
+  totalCompletedPlansCount: number;
+  totalCompletedSessionsCount: number;
+  totalProductiveMinutes: number;
+  activeDaysCount: number;
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -414,6 +433,16 @@ export const studyPlansService = {
     );
 
     return unwrap(data) ?? { items: [], total: 0 };
+  },
+
+  // A plan feature (PerformanceRange): 403 not_in_plan when the plan has it off.
+  async performanceByRange(startDate: string, endDate: string): Promise<UserPerformanceRange> {
+    const { data } = await axiosInstance.get<UserPerformanceRange | ApiEnvelope<UserPerformanceRange>>(
+      API_ROUTES.STUDY_PLANS.PERFORMANCE_BY_RANGE,
+      { params: { startDate, endDate } },
+    );
+
+    return unwrap(data);
   },
 
   async create(payload: CreateStudyPlanPayload): Promise<CreatedStudyPlan> {

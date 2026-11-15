@@ -20,11 +20,8 @@ const Nav = () => {
   // console.log(data,isPending,error)
   // console.log("-------------")
 
+  // The /about page still exists; it's just not linked from the navbar.
   const navLinks = [
-    {
-      label: "حول",
-      href: "/about",
-    },
     {
       label: "الرئيسية",
       href: "/",

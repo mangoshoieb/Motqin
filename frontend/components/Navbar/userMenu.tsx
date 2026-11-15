@@ -5,18 +5,17 @@ import {
   User,
   Palette,
   Settings,
-  Bell,
   CreditCard,
-  CircleHelp,
   LogOut,
   ChevronRight,
-  Trophy,
-  ShieldOff,
   CloudUpload,
   Table2,
   LayoutDashboard,
+  Mail,
+  MessageSquareWarning,
+  type LucideIcon,
 } from "lucide-react";
-import { isManager } from "@/app/lib/payments";
+import { isManager, isTeacherAccount } from "@/app/lib/payments";
 import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
 import { useRef, useState } from "react";
 import ThemeSubMenu from "../Navbar/ThemeMenu";
@@ -81,21 +80,25 @@ type UserMenuProps = {
   onClose: () => void;
 };
 
-const menuItems = [
+type MenuItem = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  hasSubMenu?: boolean;
+};
+
+// The distraction blocker (/focus) is reached from the home page's magic
+// section now; notifications live in settings.
+const menuItemsFor = (isTeacher: boolean): MenuItem[] => [
   {
     label: "الملف الشخصي",
     href: "/profile",
     icon: User,
   },
   {
-    label: "منع المشتتات",
-    href: "/focus",
-    icon: ShieldOff,
-  },
-  {
-    label: "الإشعارات",
-    href: "/notifications",
-    icon: Bell,
+    label: "العروض والمحفظة",
+    href: "/settings/billing",
+    icon: CreditCard,
   },
   {
     label: "المظهر",
@@ -108,16 +111,11 @@ const menuItems = [
     href: "/settings",
     icon: Settings,
   },
-  {
-    label: "الاشتراك والمحفظة",
-    href: "/settings/billing",
-    icon: CreditCard,
-  },
-  {
-    label: "المساعدة",
-    href: "/help",
-    icon: CircleHelp,
-  },
+  // Teachers get a contact page; students and mentors send suggestions and
+  // report problems.
+  isTeacher
+    ? { label: "تواصل معنا", href: "/contact", icon: Mail }
+    : { label: "الاقتراحات والمشاكل", href: "/feedback", icon: MessageSquareWarning },
 ];
 
 export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
@@ -192,7 +190,7 @@ export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
             <span>لوحة الإدارة</span>
           </Link>
         )}
-        {menuItems.map((item) => {
+        {menuItemsFor(isTeacherAccount(user)).map((item) => {
           const Icon = item.icon;
           if (!item.hasSubMenu) {
             return (

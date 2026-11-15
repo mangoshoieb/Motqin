@@ -163,6 +163,7 @@ export const API_ROUTES = {
   STUDY_PLANS: {
     CREATE: "/study-plan/create",
     FILTER: "/study-plan/filter",
+    PERFORMANCE_BY_RANGE: "/study-plan/user-performance-by-range",
     UPDATE: (id: string | number) => `/study-plan/${id}`,
     DELETE: (id: string | number) => `/study-plan/${id}`,
     TOGGLE_STATUS: (id: string | number) => `/study-plan/${id}/toggle-study-plan-status`,

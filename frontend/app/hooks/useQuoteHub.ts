@@ -5,10 +5,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
 
 import { authStorage } from "../lib/auth-storage";
-import { DailyQuote, QuoteComment, QuoteReactionUser, ReactionType } from "../types/quote.types";
+import {
+  CommentDeleteResult,
+  DailyQuote,
+  QuoteComment,
+  QuoteReactionUser,
+  ReactionType,
+} from "../types/quote.types";
 import { QUOTE_TODAY_QUERY_KEY } from "./useTodayQuote";
+import { EDUCATIONAL_DAY_QUERY_KEY } from "./useEducationalDay";
 import { applyReaction, quoteReactionsKey, removeUserReaction } from "./useQuoteReaction";
-import { insertComment, patchComment, removeComment } from "../lib/quote-comments";
+import { insertComment, patchComment, removeComments } from "../lib/quote-comments";
 
 // The hub lives next to the REST API: NEXT_PUBLIC_BASE_URL is ".../api", the
 // hub is ".../quoteHub".
@@ -24,12 +31,9 @@ const EVENTS = {
   quoteScheduled: "ReceiveQuoteScheduled",
   quoteUpdated: "ReceiveQuoteUpdated",
   quoteDeleted: "ReceiveQuoteDeleted",
+  // Sent to everyone at 00:00 Cairo time: { date: "YYYY-MM-DD" }.
+  newDay: "ReceiveNewDay",
 } as const;
-
-interface CommentDeletePayload {
-  commentId: number;
-  quoteId: number;
-}
 interface ReactionPayload {
   quoteId: number;
   userId: string;
@@ -81,9 +85,23 @@ export function useQuoteHub(quoteId: number | null | undefined, currentUserId?: 
       setToday((prev) => ({ ...prev, comments: patchComment(prev.comments ?? [], comment) }));
     });
 
-    connection.on(EVENTS.commentDelete, ({ commentId, quoteId: id }: CommentDeletePayload) => {
-      if (id !== quoteId) return;
-      setToday((prev) => ({ ...prev, comments: removeComment(prev.comments ?? [], commentId) }));
+    // Deleting a comment deletes its thread: `deletedIds` lists the comment
+    // and every reply, which also covers replies shown flattened.
+    connection.on(
+      EVENTS.commentDelete,
+      ({ commentId, quoteId: id, deletedIds }: CommentDeleteResult) => {
+        if (id !== quoteId) return;
+        setToday((prev) => ({
+          ...prev,
+          comments: removeComments(prev.comments ?? [], deletedIds?.length ? deletedIds : [commentId]),
+        }));
+      },
+    );
+
+    // Midnight: a new day means a new quote and a new day number.
+    connection.on(EVENTS.newDay, () => {
+      refetchToday();
+      queryClient.invalidateQueries({ queryKey: EDUCATIONAL_DAY_QUERY_KEY });
     });
 
     // Reactions: the list holds one row per user, so the event is enough to

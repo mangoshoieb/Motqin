@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
-  CalendarCheck2,
   CloudUpload,
   Crown,
   Hourglass,
@@ -41,15 +40,6 @@ const PRIMARY_BTN =
   "flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 dark:bg-blue-700 px-5 font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 dark:hover:bg-blue-800 active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300";
 const SECONDARY_BTN =
   "flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-5 font-semibold text-zinc-800 transition hover:bg-zinc-50 active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:focus-visible:ring-zinc-700";
-
-const Perk = ({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) => (
-  <li className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-300">
-    <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-300">
-      <Icon size={16} />
-    </span>
-    {children}
-  </li>
-);
 
 // Three used-up pills — makes "the free uses are gone" read at a glance.
 const UsageMeter = () => (
@@ -335,14 +325,6 @@ export default function AuthGateDialog() {
                       سجّل دخولك ليبقى تقدّمك محفوظاً على كل أجهزتك، أو ابدأ التجربة الآن بدون حساب.
                     </p>
                   </div>
-
-                  <ul className="flex flex-col gap-2.5">
-                    <Perk icon={CalendarCheck2}>نظّم موادك ودروسك وخطة مذاكرتك</Perk>
-                    <Perk icon={Timer}>
-                      {GUEST_FREE_USES} جلسات مذاكرة و{GUEST_FREE_USES} مراجعات متباعدة مجاناً
-                    </Perk>
-                    <Perk icon={ShieldCheck}>أنشئ حسابك لاحقاً وكل ما أنجزته يبقى معك</Perk>
-                  </ul>
 
                   <div className="grid grid-cols-2 gap-3">
                     <button type="button" className={PRIMARY_BTN} onClick={() => run("signup")}>

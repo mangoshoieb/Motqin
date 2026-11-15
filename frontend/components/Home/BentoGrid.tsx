@@ -6,7 +6,7 @@ export default function BentoGrid() {
   return (
     <section className="w-full">
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 grid grid-cols-10 gap-6 auto-rows-[80px]">
-        <Link href="/planner" className="col-span-7 row-span-4 rounded-3xl">
+        <Link href="/planner/today" className="col-span-7 row-span-4 rounded-3xl">
           <FeatureCard
             title="Planner"
             description="Plan your study sessions and track your daily progress"

@@ -73,10 +73,24 @@ export interface QuoteReactionUser {
   createdAt?: string;
 }
 
-// GET /admin/quotes/educational-day → data
-export interface EducationalDay {
+// GET /quotes/academic-day → data (null when the student's stage and grade
+// have no school-year calendar).
+export interface AcademicDay {
   stage: number;
-  dayNum: number; // 1-based day of the school year
+  grade: number;
+  startDate: string; // "YYYY-MM-DD"
+  endDate: string; // last day of the final exams
+  totalDays: number;
+  dayNumber: number; // today included; 0 before startDate
+  daysRemaining: number; // days left after today
+}
+
+// DELETE /quotes/comment/{id} → data, and the ReceiveCommentDelete payload.
+export interface CommentDeleteResult {
+  commentId: number;
+  quoteId: number;
+  // The comment and all its replies, at any depth.
+  deletedIds?: number[];
 }
 
 export interface QuoteMyStats {

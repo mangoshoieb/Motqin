@@ -43,10 +43,15 @@ export const patchComment = (list: QuoteComment[], incoming: QuoteComment): Quot
         : c,
   );
 
-export const removeComment = (list: QuoteComment[], commentId: number): QuoteComment[] =>
-  list
-    .filter((c) => c.id !== commentId)
-    .map((c) => (c.replies?.length ? { ...c, replies: removeComment(c.replies, commentId) } : c));
+/** Remove every comment whose id is in `ids`, at any depth (a deleted thread). */
+export const removeComments = (list: QuoteComment[], ids: Iterable<number>): QuoteComment[] => {
+  const gone = new Set(ids);
+  const walk = (nodes: QuoteComment[]): QuoteComment[] =>
+    nodes
+      .filter((c) => !gone.has(c.id))
+      .map((c) => (c.replies?.length ? { ...c, replies: walk(c.replies) } : c));
+  return walk(list);
+};
 
 /**
  * Normalise whatever the API returned into a proper tree: comments that

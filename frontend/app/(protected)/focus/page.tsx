@@ -4,7 +4,6 @@ import { Smartphone } from "lucide-react";
 import { MentorLockCard } from "@/components/Blocker/MentorLockCard";
 import { SchedulesSection } from "@/components/Blocker/SchedulesSection";
 import { BlockerSummaryCard } from "@/components/Blocker/BlockerSummaryCard";
-import { FocusSessionCard } from "@/components/Focus/FocusSessionCard";
 
 export default function FocusPage() {
   return (
@@ -37,8 +36,6 @@ export default function FocusPage() {
 
           <BlockerSummaryCard />
 
-          {/* Works in the browser on its own — no phone needed. */}
-          <FocusSessionCard />
         </div>
       </div>
     </main>

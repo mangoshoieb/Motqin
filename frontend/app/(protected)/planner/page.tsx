@@ -24,6 +24,7 @@ import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
 import { ExecutionTask } from "@/app/types/execution-board.types";
 import { useWorkHourLimits } from "@/app/hooks/useUserPreferences";
 import { useBoardDrag } from "@/app/hooks/useBoardDrag";
+import { useAuthKind } from "@/app/hooks/useAuthKind";
 import { BoardDragGhost } from "@/components/Planner/BoardDragGhost";
 
 type PlanningTab = "ai" | "manual";
@@ -80,6 +81,27 @@ const Planner = () => {
     placeholderData: (previous) => previous,
   });
 
+  // Each day's performance (hours studied, sessions done) from GET
+  // /study-plan/user-performance-by-range. Under "study-plans", so whatever
+  // refreshes the plans (a session ending, a task toggled) refreshes this too.
+  // A plan without PerformanceRange answers 403 not_in_plan — the cards then
+  // keep the numbers worked out from the plans themselves. Guests skip it.
+  const isRegistered = useAuthKind() === "user";
+  const { data: performance } = useQuery({
+    queryKey: ["study-plans", "performance", dates[0], dates[6]],
+    queryFn: () => studyPlansService.performanceByRange(dates[0], dates[6]),
+    enabled: isRegistered,
+    retry: false,
+    placeholderData: (previous) => previous,
+  });
+  // Keyed by yyyy-MM-dd, this week's days only (placeholder data can still
+  // be the previous week's while the new one loads).
+  const performanceByDate = new Map(
+    (performance?.days ?? [])
+      .map((day) => [day.date.slice(0, 10), day] as const)
+      .filter(([date]) => date >= dates[0] && date <= dates[6]),
+  );
+
   // Waits for the week board above to load (it decides where the card ends
   // up), then gives the layout a beat to settle before scrolling — smoothly,
   // so it reads as moving down the page rather than a jump.
@@ -111,11 +133,17 @@ const Planner = () => {
   const days = weekData.map((day, index) => {
     const date = dates[index];
     const items = studyPlans?.items.filter((item) => item.date === date) ?? [];
+    const dayPerformance = performanceByDate.get(date);
     return {
       ...applyStudyPlansToDay(
         { ...day, date, isToday: date === todayDate },
         items,
       ),
+      ...(dayPerformance && {
+        // Hours to one decimal, like the local fallback.
+        workingHours: Math.round(dayPerformance.productiveMinutes / 6) / 10,
+        focusSessions: dayPerformance.completedSessionsCount,
+      }),
       isFuture: date > todayDate,
       isPast: date < todayDate,
     };

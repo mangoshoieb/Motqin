@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, CornerDownLeft, Flag, FlagOff, MessageCircle, Pencil, Reply, Send, ShieldOff, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, CornerDownLeft, Flag, Flame, FlagOff, MessageCircle, Pencil, Reply, Send, ShieldOff, Trash2, X } from "lucide-react";
 import { QuoteComment } from "@/app/types/quote.types";
 import { useAuth } from "@/app/(public)/context/auth.context";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/app/hooks/useQuoteComment";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { buildThread, countAll, flattenReplies } from "@/app/lib/quote-comments";
+import { quoteErrorCode } from "@/app/lib/quote-errors";
 import { shortName } from "@/app/lib/user";
 import UserAvatar from "@/components/ui/UserAvatar";
 import ReportCommentDialog from "./ReportCommentDialog";
@@ -28,10 +29,31 @@ function timeAgo(isoDate: string) {
 }
 
 
-// Comments shown before "عرض كل التعليقات", and after expanding (the rest
-// scroll inside the box).
-const COLLAPSED_COMMENTS = 2;
+// Collapsed, the card shows only the most popular comment; after "عرض كل
+// التعليقات" about this many fit before the rest scroll inside the box.
 const EXPANDED_COMMENTS = 5;
+
+// The most popular top-level comment: the one with the most replies (at any
+// depth), newest on a tie. Comments removed by an admin only win if nothing
+// else is left.
+function mostPopular(thread: QuoteComment[]): QuoteComment | undefined {
+  const pool = thread.some((c) => !c.isDeletedByAdmin)
+    ? thread.filter((c) => !c.isDeletedByAdmin)
+    : thread;
+  let best: QuoteComment | undefined;
+  let bestReplies = -1;
+  for (const comment of pool) {
+    const replies = countAll(comment.replies ?? []);
+    if (
+      replies > bestReplies ||
+      (replies === bestReplies && best && comment.createdAt > best.createdAt)
+    ) {
+      best = comment;
+      bestReplies = replies;
+    }
+  }
+  return best;
+}
 
 // Hard cap on a comment's length, enforced in the box and on submit.
 export const COMMENT_MAX_CHARS = 300;
@@ -159,6 +181,11 @@ function ReplyBox({
         onSuccess: () => {
           setText("");
           onDone();
+        },
+        // The comment was deleted while the box was open: the hook already
+        // toasted and refetched, so just close the box.
+        onError: (error) => {
+          if (quoteErrorCode(error) === "parent_comment_deleted") onDone();
         },
       },
     );
@@ -410,7 +437,11 @@ function CommentItem({
       {confirmingDelete && (
         <ConfirmDialog
           title="حذف التعليق"
-          message="هل أنت متأكد من حذف هذا التعليق؟ لا يمكن التراجع عن هذا الإجراء."
+          message={
+            comment.replies?.length
+              ? "سيتم حذف هذا التعليق وكل الردود عليه. لا يمكن التراجع عن هذا الإجراء."
+              : "هل أنت متأكد من حذف هذا التعليق؟ لا يمكن التراجع عن هذا الإجراء."
+          }
           confirmLabel="حذف"
           cancelLabel="إلغاء"
           onCancel={() => setConfirmingDelete(false)}
@@ -432,11 +463,23 @@ export default function QuoteComments({
 }) {
   const [newComment, setNewComment] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const scrollToEnd = useRef(false);
   const { mutate: addComment, isPending } = useAddQuoteComment();
   const thread = buildThread(comments);
   const total = countAll(thread);
-  const visible = expanded ? thread : thread.slice(0, COLLAPSED_COMMENTS);
-  const hiddenCount = thread.length - visible.length;
+  const top = mostPopular(thread);
+  const visible = expanded ? thread : top ? [top] : [];
+  const canToggle = thread.length > 1;
+  // Only call it "most popular" when it actually stands out.
+  const showTopLabel = !expanded && canToggle && !!top?.replies?.length;
+
+  // After posting, the new comment is at the end of the expanded list.
+  useLayoutEffect(() => {
+    if (!scrollToEnd.current || !listRef.current) return;
+    scrollToEnd.current = false;
+    listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [comments, expanded]);
 
   const handleSubmit = () => {
     const content = newComment.trim();
@@ -444,7 +487,14 @@ export default function QuoteComments({
 
     addComment(
       { quoteId, content },
-      { onSuccess: () => setNewComment("") }
+      {
+        onSuccess: () => {
+          setNewComment("");
+          // Show the whole list so the student sees their comment land.
+          scrollToEnd.current = true;
+          setExpanded(true);
+        },
+      }
     );
   };
 
@@ -459,7 +509,7 @@ export default function QuoteComments({
           <MessageCircle size={15} className="text-blue-600 dark:text-blue-400" />
           التعليقات ({total})
         </span>
-        {thread.length > COLLAPSED_COMMENTS && (
+        {canToggle && (
           <span className="flex items-center gap-1 text-xs font-semibold text-zinc-400">
             {expanded ? "عرض أقل" : "عرض الكل"}
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -487,9 +537,17 @@ export default function QuoteComments({
 
       {thread.length > 0 ? (
         <>
+          {showTopLabel && (
+            <p className="mt-5 flex items-center gap-1 text-[11px] font-semibold text-zinc-400">
+              <Flame size={12} className="text-orange-500 dark:text-orange-400" />
+              التعليق الأكثر تفاعلًا
+            </p>
+          )}
+
           {/* Expanded: ~EXPANDED_COMMENTS rows tall, the rest scroll. */}
           <div
-            className={`mt-5 space-y-4 pe-1 ${expanded ? "overflow-y-auto" : ""}`}
+            ref={listRef}
+            className={`${showTopLabel ? "mt-2" : "mt-5"} space-y-4 pe-1 ${expanded ? "overflow-y-auto" : ""}`}
             style={expanded ? { maxHeight: `${EXPANDED_COMMENTS * 5.6}rem` } : undefined}
           >
             {visible.map((comment) => (
@@ -497,14 +555,21 @@ export default function QuoteComments({
             ))}
           </div>
 
-          {!expanded && hiddenCount > 0 && (
+          {canToggle && (
             <button
               type="button"
-              onClick={() => setExpanded(true)}
-              className="mt-3 flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400"
+              onClick={() => setExpanded((open) => !open)}
+              className="mx-auto mt-4 flex items-center gap-1 rounded-full border border-zinc-200 px-4 py-1.5 text-xs font-semibold text-zinc-600 transition hover:border-blue-300 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-700 dark:hover:text-blue-400"
             >
-              <ChevronDown size={14} />
-              عرض كل التعليقات ({thread.length})
+              {expanded ? (
+                <>
+                  <ChevronUp size={14} /> عرض أقل
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={14} /> عرض كل التعليقات ({thread.length})
+                </>
+              )}
             </button>
           )}
         </>
