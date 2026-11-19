@@ -7,6 +7,7 @@ import {
   GooglePhoneVerifyRequest,
   GuestLoginResponse,
   OtpSentResponse,
+  UpdateMeRequest,
 } from "../types/auth.types";
 import { authStorage } from "../lib/auth-storage";
 import { withInviterCode } from "../lib/invite-code";
@@ -98,12 +99,11 @@ export const authService = {
     return data;
   },
 
-  // PUT /users/{id} — UserUpdateDto: name (required), role, gradeLevel.
-  async updateProfile(
-    id: string,
-    payload: { name: string; role?: string | null; gradeLevel?: number },
-  ): Promise<void> {
-    await axiosInstance.put(API_ROUTES.USERS.UPDATE(id), payload);
+  // PUT /users/me — a partial update: every field is optional and a field
+  // left out is kept. Returns the whole updated profile (same shape as GET).
+  async updateMe(payload: UpdateMeRequest): Promise<CurrentUserResponse> {
+    const { data } = await axiosInstance.put<CurrentUserResponse>(API_ROUTES.USERS.CURRENT_USER, payload);
+    return data;
   },
 
   // POST /users/upload-photo — multipart with a single `Photo` part. The

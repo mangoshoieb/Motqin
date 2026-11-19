@@ -19,7 +19,6 @@ import {
   GraduationCap,
   UserCheck,
   Handshake,
-  Wallet,
   Gauge,
   ReceiptText,
   BadgePercent,
@@ -67,8 +66,7 @@ const navItems: SettingsNavItem[] = [
     show: ({ assists }) => assists,
   },
   { label: "الإشعارات", href: "/settings/notifications", icon: Bell },
-  { label: "نظرة عامة", href: "/settings/billing", icon: Wallet, exact: true, section: "الاشتراك والمحفظة" },
-  { label: "باقتي وحدودها", href: "/settings/billing/limits", icon: Gauge },
+  { label: "باقتي وحدودها", href: "/settings/billing/limits", icon: Gauge, section: "الاشتراك والمحفظة" },
   // { label: "سجل المعاملات", href: "/settings/billing/transactions", icon: ReceiptText },
   {
     label: "مبيعاتي",

@@ -13,7 +13,16 @@ export const EDUCATIONAL_STAGE_LABELS: Record<number, string> = {
   2: "إعدادي",
   3: "ثانوي",
   4: "جامعي",
+  5: "خريج",
 };
+
+// Graduates (stage 5) have no grade.
+export const GRADUATE_STAGE = 5;
+
+export const EDUCATIONAL_STAGE_OPTIONS = Object.entries(EDUCATIONAL_STAGE_LABELS).map(([value, label]) => ({
+  value: Number(value),
+  label,
+}));
 
 export const gradeLevelLabel = (value?: number | null) =>
   GRADE_LEVEL_OPTIONS.find((o) => o.value === value)?.label ?? (value ? String(value) : "—");

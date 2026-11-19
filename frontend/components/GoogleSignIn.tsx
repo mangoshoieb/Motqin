@@ -48,6 +48,11 @@ export default function GoogleSignIn({ onSuccess, onError, text = "continue_with
           shape="rectangular"
           text={text}
           width={width}
+          // Chrome/Edge show their own Google account sheet (FedCM) instead
+          // of a popup window. On the live site the popup was refused by the
+          // browser ("[GSI_LOGGER]: Failed to open popup window"); browsers
+          // without FedCM still fall back to the popup.
+          use_fedcm_for_button
         />
       )}
     </div>

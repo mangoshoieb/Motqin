@@ -162,7 +162,7 @@ export default function QuoteSection() {
   useQuoteHub(quote?.quoteId, user?.id);
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center px-6 py-16 md:px-12">
+    <div className="relative flex w-full items-center justify-center px-6 py-10 md:px-12 md:py-14">
       {isLoading ? (
         <div className="w-full max-w-2xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 md:p-10">
           <Skeleton className="mx-auto size-12 rounded-full" />

@@ -14,6 +14,7 @@ import {
   Mail,
   MessageSquareWarning,
   type LucideIcon,
+  Headset,
 } from "lucide-react";
 import { isManager, isTeacherAccount } from "@/app/lib/payments";
 import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
@@ -97,7 +98,7 @@ const menuItemsFor = (isTeacher: boolean): MenuItem[] => [
   },
   {
     label: "العروض والمحفظة",
-    href: "/settings/billing",
+    href: "/subscription",
     icon: CreditCard,
   },
   {
@@ -114,7 +115,7 @@ const menuItemsFor = (isTeacher: boolean): MenuItem[] => [
   // Teachers get a contact page; students and mentors send suggestions and
   // report problems.
   isTeacher
-    ? { label: "تواصل معنا", href: "/contact", icon: Mail }
+    ? { label: "تواصل معنا", href: "/contact", icon: Headset }
     : { label: "الاقتراحات والمشاكل", href: "/feedback", icon: MessageSquareWarning },
 ];
 

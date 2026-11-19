@@ -34,14 +34,14 @@ export const BlockerSummaryCard = () => {
       detail: settings.autoStartPlanBlock ? "يبدأ عند منتصف الليل" : "تبدؤه بنفسك",
       on: settings.autoStartPlanBlock,
     },
-    {
-      icon: Globe,
-      label: "المواقع المحجوبة",
-      value: String(websites.length),
-      detail: websites.length ? websites.slice(0, 2).join(", ") + (websites.length > 2 ? "…" : "") : "لا شيء بعد",
-      on: websites.length > 0,
-      ltrDetail: websites.length > 0,
-    },
+    // {
+    //   icon: Globe,
+    //   label: "المواقع المحجوبة",
+    //   value: String(websites.length),
+    //   detail: websites.length ? websites.slice(0, 2).join(", ") + (websites.length > 2 ? "…" : "") : "لا شيء بعد",
+    //   on: websites.length > 0,
+    //   ltrDetail: websites.length > 0,
+    // },
     {
       icon: Smartphone,
       label: "التطبيقات المسموحة",

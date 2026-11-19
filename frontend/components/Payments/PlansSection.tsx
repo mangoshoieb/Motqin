@@ -18,13 +18,16 @@ import { BundleAudience } from "@/app/types/payment.types";
 import { Segmented } from "@/components/TrackingTables/ui";
 import { PlanCard } from "./PlanCard";
 import { ComparisonTable } from "./ComparisonTable";
+import { CouponBox } from "./CouponBox";
 
 const selectClasses =
   "w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 outline-none transition focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:focus:border-blue-500";
 
 // Plans for one audience at a time, opening on the account's own; the term
 // picker changes every card's price.
-export function PlansSection() {
+// The coupon lives on the page, so the discount announcement above can
+// apply one too.
+export function PlansSection({ coupon, onCoupon }: { coupon: string; onCoupon: (coupon: string) => void }) {
   const { user } = useAuth();
   const kind = useAuthKind();
   // A link can ask for an audience (?audience=Mentor from a plan-limit
@@ -54,33 +57,52 @@ export function PlansSection() {
 
   return (
     <div>
-      <div className="mx-auto flex max-w-md flex-col gap-5">
+      <div id="plans" className="mx-auto flex max-w-6xl scroll-mt-6 flex-col gap-5">
         <Segmented<BundleAudience>
           value={audience}
           onChange={setAudience}
           options={tabs}
-          className="w-full"
+          className="mx-auto w-full max-w-md"
         />
-        <div className="flex flex-col gap-2">
-          <label htmlFor="term" className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            مدة الاشتراك
-          </label>
-          <select
-            id="term"
-            value={term}
-            onChange={(e) => setTerm(Number(e.target.value) as TermMonths)}
-            className={selectClasses}
-          >
-            {TERM_MONTHS.map((months) => {
-              const saving = bestSaving(months);
-              return (
-                <option key={months} value={months}>
-                  {TERM_LABELS[months]}
-                  {saving > 0 ? ` — وفّر حتى ${saving}٪` : ""}
-                </option>
-              );
-            })}
-          </select>
+        {/* One line: the coupon at the right edge, the term in the middle
+            (an empty last column on the left keeps the term centred). On
+            phones the term comes first. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-start">
+          <div className="flex flex-col gap-2 sm:order-2">
+            <label htmlFor="term" className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+              مدة الاشتراك
+            </label>
+            <select
+              id="term"
+              value={term}
+              onChange={(e) => setTerm(Number(e.target.value) as TermMonths)}
+              className={selectClasses}
+            >
+              {TERM_MONTHS.map((months) => {
+                const saving = bestSaving(months);
+                return (
+                  <option key={months} value={months}>
+                    {TERM_LABELS[months]}
+                    {saving > 0 ? ` — وفّر حتى ${saving}٪` : ""}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+          <div className="sm:order-1">
+          <CouponBox
+            // Remounts on a coupon applied from outside (the announcement),
+            // so the field shows it.
+            key={coupon}
+            applied={coupon}
+            onApply={onCoupon}
+            disabled={kind !== "user"}
+            // Checked against the first plan as it is (all main features);
+            // each card also says what the coupon saves on it.
+            bundleId={tiers[0]?.terms[term]?.id ?? null}
+          />
+          </div>
+          <div className="hidden sm:order-3 sm:block" aria-hidden />
         </div>
       </div>
 
@@ -110,6 +132,7 @@ export function PlansSection() {
                   isCurrent={bundle.id === currentId}
                   currentGroups={subscription?.current.groups}
                   buyDisabled={teacherLocked}
+                  coupon={coupon}
                 />
               );
             })}

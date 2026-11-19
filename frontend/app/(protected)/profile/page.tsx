@@ -1,30 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
 import Skeleton from "@/components/ui/Skeleton";
-import { useUploadProfilePhoto } from "@/app/hooks/useUploadProfilePhoto";
-import { useUpdateProfile } from "@/app/hooks/useUpdateProfile";
+import { PHOTO_TYPES, useUploadProfilePhoto } from "@/app/hooks/useUploadProfilePhoto";
+import { useUpdateMe } from "@/app/hooks/useUpdateMe";
 import {
   educationalStageLabel,
+  EDUCATIONAL_STAGE_OPTIONS,
   GRADE_LEVEL_OPTIONS,
+  GRADUATE_STAGE,
   gradeLevelLabel,
 } from "@/app/constants/user.constants";
 import RegionSelect from "@/components/RegionSelect";
 import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 import { useCountries, useEgyptianGovernorates } from "@/app/hooks/useLookups";
 import { findLookupItem } from "@/app/types/lookup.types";
+import { isEgypt, isPlaceholderEmail, NAME_MAX, ProfileErrors, profileErrors } from "@/app/lib/profile";
+import { UpdateMeRequest } from "@/app/types/auth.types";
 import GoalsManager from "@/components/Profile/GoalsManager";
+import DescriptionField from "@/components/Profile/DescriptionField";
 
 const PROFILE_IMAGE = "/my-notion-face-portrait.png";
+const PHOTO_ERROR = "الصورة غير مدعومة أو أكبر من 6 ميجا";
+
+const readonlyBox =
+  "rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
+const editBox = "w-full rounded-xl border bg-white px-4 py-3 dark:bg-zinc-900";
+const editBorder = (error?: string) =>
+  error ? "border-red-400 dark:border-red-500/60" : "border-zinc-400 dark:border-zinc-700";
+
+const Dash = () => <span className="text-zinc-400">—</span>;
+const FieldError = ({ message }: { message?: string }) =>
+  message ? <p className="mt-1.5 text-sm text-red-500 dark:text-red-400">{message}</p> : null;
+
+interface ProfileForm {
+  name: string;
+  // The governorate as the API numbers it; null until one is chosen.
+  region: number | null;
+  educationalStage: number;
+  gradeLevel: number;
+}
 
 export default function ProfilePage() {
   const { data: user, isLoading, isError } = useCurrentUser();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [showBio, setShowBio] = useState(false);
 
   // Local preview shown while the upload is in flight; cleared once
   // /users/me comes back with the stored photoUrl.
@@ -39,13 +63,11 @@ export default function ProfilePage() {
       onSuccess: () => toast.success("تم تحديث الصورة الشخصية"),
       onError: (error) => {
         setPhotoPreview(null);
-        toast.error(
-          error.message === "not-image"
-            ? "يرجى اختيار ملف صورة."
-            : error.message === "too-large"
-              ? "حجم الصورة يجب ألا يتجاوز 5 ميجابايت."
-              : "تعذر رفع الصورة، حاول مرة أخرى.",
-        );
+        const rejected =
+          error.message === "unsupported" ||
+          error.message === "too-large" ||
+          (axios.isAxiosError(error) && error.response?.status === 400);
+        toast.error(rejected ? PHOTO_ERROR : "تعذر رفع الصورة، حاول مرة أخرى.");
       },
       onSettled: () => URL.revokeObjectURL(preview),
     });
@@ -53,88 +75,76 @@ export default function ProfilePage() {
 
   const photoSrc = photoPreview ?? user?.photoUrl ?? PROFILE_IMAGE;
 
-  const [form, setForm] = useState<{
-    name: string;
-    bio: string;
-    // The governorate as the API numbers it; null until one is chosen.
-    region: number | null;
-    gradeLevel: number;
-  }>({
-    name: "",
-    bio: "",
-    region: null,
-    gradeLevel: 0,
-  });
-  const { mutate: updateProfile, isPending: isSavingProfile } = useUpdateProfile();
-
-  // Both come back as the enum name ("Egypt", "Cairo"); the lookups turn
-  // that into the Arabic label to show and the integer the API works in.
+  // Both may come back as the enum name ("Egypt", "Cairo") or the number;
+  // the lookups turn either into the Arabic label and the integer.
   const { data: countries } = useCountries();
   const { data: governorates } = useEgyptianGovernorates();
   const countryLabel = findLookupItem(countries, user?.country)?.nameAr;
-  const regionValue = findLookupItem(governorates, user?.region)?.value ?? null;
+  const region = findLookupItem(governorates, user?.region);
+  const inEgypt = isEgypt(user?.country);
+  const isGraduate = user?.educationalStage === GRADUATE_STAGE;
 
-  // Sync the editable form with the real user data once /users/me resolves.
-  // regionValue is in here too: the governorate list may land after the user.
-  useEffect(() => {
-    if (user) {
-      setForm((prev) => ({
-        ...prev,
-        name: user.fullName ?? "",
-        region: regionValue,
-        gradeLevel: user.gradeLevel ?? 0,
-      }));
-    }
-  }, [user, regionValue]);
+  const [form, setForm] = useState<ProfileForm>({ name: "", region: null, educationalStage: 0, gradeLevel: 0 });
+  const [errors, setErrors] = useState<ProfileErrors>({});
+  const { mutate: updateMe, isPending: isSavingProfile } = useUpdateMe();
+  const formIsGraduate = form.educationalStage === GRADUATE_STAGE;
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const handleRegionChange = (value: number) => {
-    setForm((prev) => ({ ...prev, region: value }));
+  const startEditing = () => {
+    if (!user) return;
+    setForm({
+      name: user.fullName ?? "",
+      region: region?.value ?? null,
+      educationalStage: user.educationalStage ?? 0,
+      gradeLevel: user.gradeLevel ?? 0,
+    });
+    setErrors({});
+    setIsEditing(true);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-
-    setForm({
-      name: user?.fullName ?? "",
-      bio: "",
-      region: regionValue,
-      gradeLevel: user?.gradeLevel ?? 0,
-    });
+    setErrors({});
   };
 
-  // PUT /users/{id}. Only name and grade are editable server-side; region
-  // and bio have no backend field yet, so they stay local.
+  // PUT /users/me with only the fields that changed (the rest are kept).
   const handleSave = () => {
     if (!user) return;
     const name = form.name.trim();
-    if (!name) {
-      toast.error("الاسم مطلوب.");
+    const next: ProfileErrors = {};
+    if (!name) next.fullName = "الاسم مطلوب";
+    else if (name.length > NAME_MAX) next.fullName = `الاسم أطول من ${NAME_MAX} حرف`;
+    if (!formIsGraduate && !form.gradeLevel) next.gradeLevel = "اختر الصف الدراسي";
+    if (Object.keys(next).length) {
+      setErrors(next);
       return;
     }
-    updateProfile(
-      {
-        id: user.id,
-        name,
-        role: user.role ?? undefined,
-        gradeLevel: form.gradeLevel || user.gradeLevel,
+
+    const payload: UpdateMeRequest = {};
+    if (name !== user.fullName) payload.fullName = name;
+    // The governorate can be changed, not cleared.
+    if (inEgypt && form.region && form.region !== region?.value) payload.region = form.region;
+    if (form.educationalStage && form.educationalStage !== user.educationalStage) {
+      payload.educationalStage = form.educationalStage;
+    }
+    if (!formIsGraduate && form.gradeLevel !== user.gradeLevel) payload.gradeLevel = form.gradeLevel;
+
+    if (!Object.keys(payload).length) {
+      setIsEditing(false);
+      return;
+    }
+
+    updateMe(payload, {
+      onSuccess: () => {
+        toast.success("تم حفظ التغييرات");
+        setErrors({});
+        setIsEditing(false);
       },
-      {
-        onSuccess: () => {
-          toast.success("تم حفظ التغييرات");
-          setIsEditing(false);
-        },
-        onError: () => toast.error("تعذر حفظ التغييرات، حاول مرة أخرى."),
+      onError: (error) => {
+        const fieldErrors = profileErrors(error);
+        setErrors(fieldErrors);
+        if (fieldErrors.general) toast.error(fieldErrors.general);
       },
-    );
+    });
   };
 
   return (
@@ -149,7 +159,7 @@ export default function ProfilePage() {
               <label className="group relative cursor-pointer">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept={PHOTO_TYPES.join(",")}
                   className="hidden"
                   disabled={isUploading}
                   onChange={(e) => {
@@ -195,6 +205,7 @@ export default function ProfilePage() {
               <p className="mt-6 text-sm text-zinc-500">
                 {isUploading ? "جاري رفع الصورة..." : "اضغط على الصورة لتغييرها"}
               </p>
+              <p className="mt-1 text-xs text-zinc-400">JPEG أو PNG أو WebP، حتى 6 ميجا</p>
             </div>
           </div>
           <GoalsManager />
@@ -208,8 +219,8 @@ export default function ProfilePage() {
 
             {!isEditing ? (
               <button
-                onClick={() => setIsEditing(true)}
-                disabled={isLoading || isError}
+                onClick={startEditing}
+                disabled={isLoading || isError || !user}
                 className="rounded-xl border border-zinc-300 px-5 py-2 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
               >
                 تعديل
@@ -242,84 +253,118 @@ export default function ProfilePage() {
               <Skeleton className="h-[52px] w-full" />
               <Skeleton className="h-[52px] w-full" />
             </div>
-          ) : isError ? (
+          ) : isError || !user ? (
             <p className="text-sm text-red-500 dark:text-red-400">
               تعذر تحميل بيانات الحساب. حاول تحديث الصفحة.
             </p>
           ) : (
           <div className="space-y-6">
             {/* Name */}
-
             <div>
               <label className="mb-2 block font-medium">الاسم</label>
-
-              <input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full rounded-xl border border-zinc-400 disabled:border-zinc-300 px-4 py-3 disabled:bg-zinc-50 bg-white dark:disabled:border-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:disabled:bg-zinc-800"
-              />
+              {isEditing ? (
+                <>
+                  <input
+                    value={form.name}
+                    maxLength={NAME_MAX}
+                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                    className={`${editBox} ${editBorder(errors.fullName)}`}
+                  />
+                  <FieldError message={errors.fullName} />
+                </>
+              ) : (
+                <div className={readonlyBox}>{user.fullName || <Dash />}</div>
+              )}
             </div>
 
-            {/* Region */}
-
-            <RegionSelect
-              value={form.region}
-              onChange={handleRegionChange}
-              disabled={!isEditing}
-            />
-
-            {/* Bio */}
-
-            {showBio ? (
+            {/* Region — Egypt only */}
+            {inEgypt && (
               <div>
-                <label className="mb-2 block font-medium">الوصف</label>
-
-                <textarea
-                  name="bio"
-                  rows={4}
-                  value={form.bio}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className=" w-full h-25 resize-none rounded-xl border bg-white border-zinc-400 disabled:border-zinc-300 px-4 py-3 disabled:bg-zinc-50 dark:disabled:border-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:disabled:bg-zinc-800"
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="mb-2 block font-medium">الوصف</label>
-
-                <button
-                  type="button"
-                  onClick={() => setShowBio(true)}
-                  disabled={!isEditing}
-                  className="flex items-center gap-2 bg-blue-300/30 dark:bg-blue-500/15 hover:bg-blue-300/50 dark:hover:bg-blue-500/20 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 px-4 py-3 text-zinc-500 transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-blue-300"
-                >
-                  <span className="text-lg">+</span>
-                  إضافة وصف
-                </button>
+                {isEditing ? (
+                  <RegionSelect
+                    value={form.region}
+                    onChange={(value: number) => setForm((prev) => ({ ...prev, region: value }))}
+                    error={errors.region}
+                  />
+                ) : (
+                  <>
+                    <label className="mb-2 block font-medium">المحافظة</label>
+                    <div className={readonlyBox}>
+                      {region?.nameAr ?? <span className="text-zinc-400">اختر المحافظة</span>}
+                    </div>
+                  </>
+                )}
               </div>
             )}
+
+            {/* Description — saves on its own */}
+            <DescriptionField description={user.description ?? null} />
+
             <div className="my-8 border-t border-zinc-200 dark:border-zinc-800" />
 
-            {/* Readonly — real data from GET /users/me */}
+            {/* Stage and grade */}
+            <div>
+              <label className="mb-2 block font-medium">المرحلة التعليمية</label>
+              {isEditing ? (
+                <>
+                  <select
+                    value={form.educationalStage || ""}
+                    onChange={(e) => setForm((prev) => ({ ...prev, educationalStage: Number(e.target.value) }))}
+                    className={`${editBox} ${editBorder(errors.educationalStage)}`}
+                  >
+                    {!form.educationalStage && <option value="">اختر المرحلة</option>}
+                    {EDUCATIONAL_STAGE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <FieldError message={errors.educationalStage} />
+                </>
+              ) : (
+                <div className={readonlyBox}>{educationalStageLabel(user.educationalStage)}</div>
+              )}
+            </div>
 
+            {/* Graduates have no grade */}
+            {(isEditing ? !formIsGraduate : !isGraduate) && (
+              <div>
+                <label className="mb-2 block font-medium">الصف الدراسي</label>
+                {isEditing ? (
+                  <>
+                    <select
+                      value={form.gradeLevel || ""}
+                      onChange={(e) => setForm((prev) => ({ ...prev, gradeLevel: Number(e.target.value) }))}
+                      className={`${editBox} ${editBorder(errors.gradeLevel)}`}
+                    >
+                      {!form.gradeLevel && <option value="">اختر الصف</option>}
+                      {GRADE_LEVEL_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <FieldError message={errors.gradeLevel} />
+                  </>
+                ) : (
+                  <div className={readonlyBox}>{gradeLevelLabel(user.gradeLevel)}</div>
+                )}
+              </div>
+            )}
+
+            {/* Readonly — email, phone and country have their own flows */}
             <div>
               <label className="mb-2 block font-medium">البريد الإلكتروني</label>
-
-              <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {user?.email}
+              <div className={readonlyBox} dir="ltr" style={{ textAlign: "right" }}>
+                {isPlaceholderEmail(user.email) ? <Dash /> : user.email}
               </div>
             </div>
 
             <div>
               <label className="mb-2 block font-medium">رقم الهاتف</label>
 
-              <div
-                dir="ltr"
-                className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-right text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-              >
-                {user?.phoneNumber ? (
+              <div dir="ltr" className={`${readonlyBox} text-right`}>
+                {user.phoneNumber ? (
                   <span className="flex items-center justify-end gap-2">
                     {user.phoneNumberConfirmed && (
                       <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
@@ -329,56 +374,20 @@ export default function ProfilePage() {
                     {user.phoneNumber}
                   </span>
                 ) : (
-                  <span className="text-zinc-400">—</span>
+                  <Dash />
                 )}
               </div>
             </div>
 
             <div>
               <label className="mb-2 block font-medium">الدولة</label>
-
-              <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {countryLabel ?? <span className="text-zinc-400">—</span>}
-              </div>
+              <div className={readonlyBox}>{countryLabel ?? <Dash />}</div>
             </div>
 
-            <div>
-              <label className="mb-2 block font-medium">المرحلة التعليمية</label>
-
-              <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {educationalStageLabel(user?.educationalStage)}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block font-medium">الصف الدراسي</label>
-
-              {isEditing ? (
-                <select
-                  value={form.gradeLevel}
-                  onChange={(e) => setForm((prev) => ({ ...prev, gradeLevel: Number(e.target.value) }))}
-                  className="w-full rounded-xl border border-zinc-400 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900"
-                >
-                  {GRADE_LEVEL_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                  {gradeLevelLabel(user?.gradeLevel)}
-                </div>
-              )}
-            </div>
-
-            {user?.role && (
+            {user.role && (
               <div>
                 <label className="mb-2 block font-medium">الدور</label>
-
-                <div className="rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                  {user.role}
-                </div>
+                <div className={readonlyBox}>{user.role}</div>
               </div>
             )}
           </div>

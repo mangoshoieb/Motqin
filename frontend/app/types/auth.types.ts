@@ -16,6 +16,15 @@ export interface GooglePhoneVerifyRequest extends GooglePhoneRequest {
   inviterCode?: string;
 }
 
+// PUT /users/me — send only what changed. description "" removes it.
+export interface UpdateMeRequest {
+  fullName?: string;
+  region?: number;
+  description?: string;
+  educationalStage?: number;
+  gradeLevel?: number;
+}
+
 // The phone-request endpoints all answer with the resend limits.
 export interface OtpSentResponse {
   message: string;
@@ -164,6 +173,8 @@ declare global {
     roles?: string[];
     // Absolute URL of the profile photo, null until one is uploaded.
     photoUrl?: string | null;
+    // The student's own short bio (up to 500 characters); null when empty.
+    description?: string | null;
   }
 }
 

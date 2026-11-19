@@ -1,4 +1,5 @@
 "use client";
+import { toast } from "sonner";
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
 import { Phone, User } from "lucide-react";
@@ -58,7 +59,9 @@ const SignIn = () => {
                 googleLogin({ idToken });
               }}
               onError={() => {
-                console.log("Google Login Failed");
+                toast.error("تعذّر تسجيل الدخول بجوجل", {
+                  description: "اسمح بالنوافذ المنبثقة لهذا الموقع ثم حاول مرة أخرى، أو سجّل برقم هاتفك.",
+                });
               }}
             />
 

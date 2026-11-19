@@ -2,11 +2,10 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   ArrowRight,
-  Check,
   CheckCircle2,
   Loader2,
   ShieldCheck,
@@ -33,15 +32,11 @@ import {
   bundleName,
   customPrice,
   durationLabel,
-  featureLabel,
-  featureValueText,
   formatDay,
   formatEgp,
   formatMoney,
-  isFeatureOn,
-  leftOutText,
+  keptGroupsParam,
   parseGroups,
-  rateLimitText,
   removableGroups,
   termOf,
   tierOf,
@@ -51,24 +46,36 @@ import { KeptGroups } from "@/components/Payments/BillingBits";
 import { TopUpDialog } from "@/components/Payments/TopUpDialog";
 import { AnimatedMoney } from "@/components/Payments/AnimatedMoney";
 import { MobilePriceBar } from "@/components/Payments/MobilePriceBar";
+import { GroupCard, visibleGroups } from "@/components/Payments/PlanGroups";
 import { inputClass, primaryButton, secondaryButton } from "@/components/TrackingTables/ui";
 
 // Coupons are stored without dashes or spaces, in capitals.
 const normalizeCoupon = (text: string) => text.replace(/[\s-]+/g, "").toUpperCase();
 
 const CheckoutContent = () => {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const bundleId = Number(searchParams.get("bundleId")) || null;
-  // The main features kept in the plan builder; none = the whole plan.
-  const groups = parseGroups(searchParams.get("groups"));
   const registered = useAuthKind() === "user";
 
   const { data: bundle, isLoading: bundleLoading, error: bundleError } = useBundle(bundleId);
   const { data: audienceBundles } = useBundles(bundle?.audience ?? "Student");
-  const [couponInput, setCouponInput] = useState("");
-  const [coupon, setCoupon] = useState("");
+
+  // The main features taken off — chosen right here with the switches (this
+  // page is also the plan builder). It starts from ?groups= (the features a
+  // plan card kept); null until the student changes something.
+  const urlGroups = parseGroups(searchParams.get("groups"));
+  const [dropped, setDropped] = useState<string[] | null>(null);
+  const removable = removableGroups(bundle).map((g) => g.group);
+  const off = dropped ?? (urlGroups ? removable.filter((g) => !urlGroups.includes(g)) : []);
+  const kept = removable.filter((g) => !off.includes(g));
+  // What goes to preview/purchase: null = the whole plan.
+  const groups = bundle ? keptGroupsParam(bundle, kept) : urlGroups;
+  const toggleGroup = (group: string, on: boolean) =>
+    setDropped(on ? off.filter((g) => g !== group) : [...off, group]);
+  // A coupon applied on the plans page comes along as ?coupon=.
+  const linkedCoupon = normalizeCoupon(searchParams.get("coupon") ?? "");
+  const [couponInput, setCouponInput] = useState(linkedCoupon);
+  const [coupon, setCoupon] = useState(linkedCoupon);
   const {
     data: preview,
     isFetching: previewing,
@@ -110,15 +117,13 @@ const CheckoutContent = () => {
   const term = termOf(bundle) ?? 1;
   // The plan lists all 20 features; show its own audience's, as the list does.
   const ownKeys = new Set(audienceBundles?.find((b) => b.kind === "Free")?.features.map((f) => f.feature) ?? []);
-  const features = bundle.features.filter((f) => ownKeys.size === 0 || ownKeys.has(f.feature));
-  // Main features taken off in the plan builder.
-  const removedGroups = groups ? removableGroups(bundle).map((g) => g.group).filter((g) => !groups.includes(g)) : [];
-  const removedFeature = (key: string) => removedGroups.includes(bundle.features.find((f) => f.feature === key)?.group ?? "");
+  const planGroups = visibleGroups(bundle, ownKeys);
+  const customisable = removable.length > 1;
+  const listPrice = customPrice(bundle, off);
 
   const couponError = preview?.couponError ? errorCodeMessage(preview.couponError) ?? preview.couponError : null;
   const notForCustomized = preview?.couponError === "coupon_not_for_customized";
-  const wholePlan = () => router.replace(`${pathname}?bundleId=${bundle.id}`);
-  const builderHref = `/subscription/plans/${bundle.id}${groups ? `?groups=${groups.join(",")}` : ""}`;
+  const wholePlan = () => setDropped([]);
   const blocked = preview?.blockedReason ? errorCodeMessage(preview.blockedReason) ?? preview.blockedReason : null;
   const short = preview ? Math.max(0, preview.amountDue - preview.walletBalance) : 0;
   // An upgrade charges only the difference for the days left.
@@ -173,7 +178,7 @@ const CheckoutContent = () => {
             <Link href="/settings/billing/limits" className={cn(primaryButton, "flex-1")}>
               حدود باقتي
             </Link>
-            <Link href="/settings/billing" className={cn(secondaryButton, "flex-1")}>
+            <Link href="/subscription" className={cn(secondaryButton, "flex-1")}>
               المحفظة والاشتراك
             </Link>
           </div>
@@ -202,16 +207,13 @@ const CheckoutContent = () => {
 
             {operation && <p className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">{operation.hint}</p>}
 
-            {removableGroups(bundle).length > 1 && (
-              <div className="mt-4 flex flex-wrap items-center gap-2">
+            {customisable && (
+              <div className="mt-4">
                 {groups ? (
-                  <KeptGroups groups={groups} className="flex-1" />
+                  <KeptGroups groups={groups} />
                 ) : (
-                  <span className="flex-1 text-xs text-zinc-500">الباقة كاملة بكل مميزاتها</span>
+                  <span className="text-xs text-zinc-500">الباقة كاملة بكل مميزاتها</span>
                 )}
-                <Link href={builderHref} className="flex items-center gap-1 text-xs font-semibold text-violet-700 hover:underline dark:text-violet-300">
-                  <SlidersHorizontal size={13} /> {groups ? "تعديل المميزات" : "خصّص باقتك"}
-                </Link>
               </div>
             )}
 
@@ -353,11 +355,12 @@ const CheckoutContent = () => {
           </div>
         </div>
 
-        {/* Plan details */}
-        <div className="lg:col-span-3">
+        {/* Plan details — also the plan builder: a switch on each main
+            feature the plan can drop; the price on the left follows it. */}
+        <div className="flex flex-col gap-4 lg:col-span-3">
           <div
             className={cn(
-              "relative h-full rounded-3xl border p-8",
+              "relative rounded-3xl border p-8",
               highlighted
                 ? "border-blue-900 bg-blue-950 text-white dark:border-blue-800 dark:bg-blue-900"
                 : "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100",
@@ -374,44 +377,42 @@ const CheckoutContent = () => {
             </p>
             <div className="mt-6 flex items-baseline gap-1">
               <span className="text-3xl font-extrabold tabular-nums">
-                <AnimatedMoney value={Math.round(customPrice(bundle, removedGroups) / term)} />
+                <AnimatedMoney value={Math.round(listPrice / term)} />
               </span>
               <span className="text-sm">ج.م / شهرياً</span>
+              {listPrice < bundle.price && (
+                <span className={cn("ms-2 text-sm line-through", highlighted ? "text-blue-300" : "text-zinc-400")}>
+                  <AnimatedMoney value={Math.round(bundle.price / term)} />
+                </span>
+              )}
             </div>
-
-            <ul className="mt-8 flex flex-col gap-4 text-sm">
-              {features.map((feature) => {
-                // A feature whose main feature was taken off keeps only its
-                // left-out allowance.
-                const removed = removedFeature(feature.feature);
-                const on = removed ? !!feature.accessIfLeftOut && feature.accessIfLeftOut !== "Off" : isFeatureOn(feature);
-                const rate = rateLimitText(feature);
-                return (
-                  <li key={feature.feature} className={cn("flex items-start gap-2", !on && "opacity-50")}>
-                    {on ? (
-                      <Check className={cn("mt-0.5 size-4 shrink-0", highlighted ? "text-emerald-300" : "text-emerald-600 dark:text-emerald-400")} />
-                    ) : (
-                      <X className="mt-0.5 size-4 shrink-0" />
-                    )}
-                    <span>
-                      {featureLabel(feature.feature, feature.displayName)}
-                      {removed ? (
-                        <b className={highlighted ? "text-amber-300" : "text-amber-700 dark:text-amber-400"}>
-                          {" "}
-                          · {leftOutText(feature) ?? "غير متاح"} (حذفتها)
-                        </b>
-                      ) : (
-                        feature.type !== "Access" && <b> · {featureValueText(feature.type, feature.access, feature.limit)}</b>
-                      )}
-                      {on && !removed && rate && (
-                        <span className={cn("block text-xs", highlighted ? "text-blue-200" : "text-zinc-500")}>{rate}</span>
-                      )}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+            {customisable && (
+              <p
+                className={cn(
+                  "mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold",
+                  highlighted ? "bg-white/15 text-white" : "bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
+                )}
+              >
+                <SlidersHorizontal size={15} /> اشتراكك على كيفك: أوقف ما لا تحتاجه من المميزات وادفع أقل
+              </p>
+            )}
           </div>
+
+          {planGroups.map((group) => {
+            const canRemove = customisable && removable.includes(group.group);
+            const isOn = !off.includes(group.group);
+            return (
+              <GroupCard
+                key={group.group}
+                group={group}
+                canRemove={canRemove}
+                isOn={isOn}
+                // The last main feature can't be switched off.
+                isLast={isOn && canRemove && kept.length === 1}
+                onToggle={(on) => toggleGroup(group.group, on)}
+              />
+            );
+          })}
         </div>
       </div>
 

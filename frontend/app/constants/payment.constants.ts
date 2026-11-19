@@ -128,6 +128,62 @@ export const CARD_FEATURES: Record<BundleAudience, FeatureKey[]> = {
   Mentor: ["Mentees"],
 };
 
+// Student plan cards: the features grouped by main feature, worded as in the
+// subscription redesign. "feature" is the bundle feature whose limit shows on
+// the row; rows without one are included in every plan. A two-part label
+// ("صورة ← معلومة") reads as "turn a photo into a flashcard".
+export interface CardFeatureRow {
+  label: string | [string, string];
+  feature?: FeatureKey;
+}
+
+// group: the main feature (bundle.groups) the heading's checkbox keeps or drops.
+export const STUDENT_CARD_GROUPS: { group: string; title: string; rows: CardFeatureRow[] }[] = [
+  {
+    group: "StudyPlanner",
+    title: "المخطط",
+    rows: [
+      { label: "To-do list" },
+      { label: "Timer" },
+      { label: "Notes section" },
+      { label: "التخطيط بالذكاء الاصطناعي", feature: "AiStudyPlanner" },
+      { label: "لوحة الأسبوع" },
+      { label: "تتبع الأداء", feature: "PerformanceRange" },
+    ],
+  },
+  {
+    group: "SpacedRepetition",
+    title: "التكرار المتباعد",
+    rows: [
+      { label: "فترات تكرار حسب المادة" },
+      { label: ["صورة", "معلومة"], feature: "AiImageQuestion" },
+      { label: ["PDF", "معلومات جاهزة"], feature: "AiPdfQuestions" },
+      { label: "إنشاء مواد مخصصة", feature: "CustomSubjects" },
+      { label: "دروس مخصصة", feature: "CustomLessons" },
+      { label: "بنك أسئلتك", feature: "CustomQuestions" },
+    ],
+  },
+  {
+    group: "DistractionBlocker",
+    title: "منع المشتتات",
+    rows: [
+      { label: "جلسات تركيز بلا مشتتات", feature: "BlockerSessions" },
+      { label: "جداول حجب مخصصة", feature: "BlockerSchedules" },
+      { label: "حجب تلقائي حسب الجدول" },
+      { label: "قفل الإعدادات من المشرف" },
+    ],
+  },
+  {
+    group: "Mentor",
+    title: "الإشراف والمتابعة",
+    rows: [
+      { label: "تابع أصدقاءك واجعلهم يتابعوك", feature: "Mentees" },
+      { label: "مشرف يتابع أداءك", feature: "Mentors" },
+      { label: "يتابع مانع المشتتات ويقفله" },
+    ],
+  },
+];
+
 // "≈ X ج.م per student a month" under teacher and mentor cards.
 export const PER_UNIT_FEATURE: Partial<Record<BundleAudience, { feature: FeatureKey; label: string }>> = {
   Teacher: { feature: "TrackedStudents", label: "للطالب شهريًا" },
@@ -274,3 +330,14 @@ export const PAYMENT_ERROR_DEFAULTS: Record<string, string> = {
 // Kept with every plan and period, per product spec.
 export const REFUND_GUARANTEE_TEXT =
   "يمكنك استرداد كامل المبلغ المدفوع إذا لم تتجاوز نسبة استخدامك من رصيد الذكاء الاصطناعي المخصص للخطة 10%. في حال تجاوز هذه النسبة، لا يحق للمستخدم استرداد المبلغ.";
+
+// The discount announced under the wallet on the plans page. There's no API
+// for announcements yet, so it's set here: change the code/percent for a new
+// offer, or set it to null to hide the section. The coupon itself is still
+// checked by the server when applied.
+export const COUPON_ANNOUNCEMENT: { code: string; percent: number; title: string; subtitle: string } | null = {
+  code: "MOTQIN10",
+  percent: 10,
+  title: "خصم جديد على كل الباقات",
+  subtitle: "استخدم الكوبون واشترك بسعر أقل لفترة محدودة.",
+};

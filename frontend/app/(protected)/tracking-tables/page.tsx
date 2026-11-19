@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FileSpreadsheet, Plus, Search, Table2 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import Skeleton from "@/components/ui/Skeleton";
@@ -33,12 +33,27 @@ const groupTables = (tables: TrackingTableSummary[]) => {
   return groups;
 };
 
+// Links from the teacher home: ?tab=reports opens the sent reports,
+// ?dialog=create|import opens that dialog. Safe to read in the initial state:
+// the protected layout only renders pages in the browser.
+const urlParam = (key: string) =>
+  typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get(key);
+
 export default function TrackingTablesPage() {
-  const [tab, setTab] = useState<Tab>("tables");
-  const [dialog, setDialog] = useState<"create" | "import" | null>(null);
+  const [tab, setTab] = useState<Tab>(() => (urlParam("tab") === "reports" ? "reports" : "tables"));
+  const [dialog, setDialog] = useState<"create" | "import" | null>(() => {
+    const wanted = urlParam("dialog");
+    return wanted === "create" || wanted === "import" ? wanted : null;
+  });
   const [search, setSearch] = useState("");
   const { data: tables, isLoading } = useTrackingTables();
   const { isTeacher, createFor, importFor } = useTrackingAccess();
+
+  // Clean ?tab= / ?dialog= off the URL once read, so a refresh doesn't reopen
+  // the dialog.
+  useEffect(() => {
+    if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   const canCreate = isTeacher || createFor.length > 0;
   const canImport = isTeacher || importFor.length > 0;

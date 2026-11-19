@@ -5,6 +5,8 @@ import Footer from "@/components/Footer";
 import BentoGrid from "@/components/Home/BentoGrid";
 import MagicSection from "@/components/Home/MagicSection";
 import QuoteSection from "@/components/Home/QuoteSection";
+import TeacherHome from "@/components/Home/Teacher/TeacherHome";
+import { hasAnyRole } from "@/app/lib/payments";
 import { PlanReminder } from "@/components/Payments/PlanReminder";
 import Image from "next/image";
 import { useEffect } from "react";
@@ -16,7 +18,10 @@ import { useAuthGate } from "@/app/lib/auth-gate.store";
 const WELCOME_SHOWN_KEY = "motqin:welcomeShown";
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isGuest, user } = useAuth();
+  // Teachers get their own home: groups, students, plan usage. Only the
+  // "Teacher" role — admins and support keep the student home.
+  const isTeacherHome = isAuthenticated && !isGuest && hasAnyRole(user, ["Teacher"]);
   const openGate = useAuthGate((s) => s.open);
 
   // First landing with no session at all: sign in, sign up, or try as a
@@ -27,6 +32,15 @@ export default function Home() {
     sessionStorage.setItem(WELCOME_SHOWN_KEY, "1");
     openGate({ kind: "welcome" });
   }, [openGate]);
+
+  if (isTeacherHome) {
+    return (
+      <main className="home-ambient-bg min-h-screen w-full font-sans">
+        <TeacherHome />
+        <Footer />
+      </main>
+    );
+  }
 
   return (
     <main className="home-ambient-bg min-h-screen w-full sm:items-start font-sans">

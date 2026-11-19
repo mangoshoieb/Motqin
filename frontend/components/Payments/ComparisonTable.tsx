@@ -8,7 +8,6 @@ import {
   featureNote,
   featureValueText,
   formatMoney,
-  rateLimitText,
   type PlanTier,
 } from "@/app/lib/payments";
 import { Bundle, BundleFeature } from "@/app/types/payment.types";
@@ -16,14 +15,10 @@ import { Bundle, BundleFeature } from "@/app/types/payment.types";
 function ValueCell({ feature }: { feature: BundleFeature | undefined }) {
   if (!feature || feature.access === "Off") return <Minus size={16} className="mx-auto text-zinc-300 dark:text-zinc-600" />;
   if (feature.type === "Access") return <Check size={18} className="mx-auto text-emerald-600 dark:text-emerald-400" />;
-  const rate = rateLimitText(feature);
   return (
-    <>
-      <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
-        {featureValueText(feature.type, feature.access, feature.limit)}
-      </span>
-      {rate && <span className="mt-0.5 block text-[11px] leading-4 text-amber-700 dark:text-amber-400">{rate}</span>}
-    </>
+    <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
+      {featureValueText(feature.type, feature.access, feature.limit)}
+    </span>
   );
 }
 

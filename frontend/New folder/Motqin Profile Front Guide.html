@@ -1,0 +1,536 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Motqin Profile Front Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style id="page-style">
+/* Layout: one reading column; a controller is a coloured band, each endpoint a card (brief, fields, good cases, bad cases, lookups, notes); each screen card ends with the front's task checklist and a notes box; manual test closes the page. Same family as the Payments guide. */
+:root {
+  --bg: #f5f7f6; --card: #ffffff; --fg: #16211d; --muted: #586560; --line: #dbe3df; --code-bg: #eef3f0;
+  --accent: #0f6b52;
+  --get: #12805c;  --get-bg: #e2f4ec;
+  --post: #2f5bd3; --post-bg: #e6edfd;
+  --put: #a66300;  --put-bg: #fcf0db;
+  --del: #c2364b;  --del-bg: #fce6e9;
+  --ok: #12805c;   --warn: #a66300;  --bad: #c2364b;
+  --u: #0f6b52;  --u-bg: #ddf1e8;
+  --a: #6a46c4;  --a-bg: #ede6fb;
+  --t: #3a7d2c;  --t-bg: #e7f3e2;
+  --bar: rgba(255,255,255,0.94);
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+    --accent: #4fcf9f;
+    --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+    --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+    --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+    --bar: rgba(21,29,26,0.95);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+  --accent: #4fcf9f;
+  --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+  --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+  --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+  --bar: rgba(21,29,26,0.95);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 120px;
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 26px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ar { font-family: "IBM Plex Sans Arabic", var(--font-body); direction: rtl; unicode-bidi: isolate; }
+
+.hero { display: grid; gap: 12px; }
+.lead { max-width: 74ch; color: var(--muted); }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 13.5px; padding: 5px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--fg); }
+.nav a.u { background: var(--u-bg); color: var(--u); border-color: transparent; }
+.nav a.a { background: var(--a-bg); color: var(--a); border-color: transparent; }
+.nav a.t { background: var(--t-bg); color: var(--t); border-color: transparent; }
+
+.part { display: grid; gap: 16px; }
+.ctl { display: grid; gap: 6px; padding: 16px 20px; border-radius: 14px; scroll-margin-top: 12px; }
+.ctl .num { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; }
+.ctl p { max-width: 74ch; }
+.ctl.u { background: var(--u-bg); } .ctl.u .num, .ctl.u h2 { color: var(--u); }
+.ctl.a { background: var(--a-bg); } .ctl.a .num, .ctl.a h2 { color: var(--a); }
+.ctl.t { background: var(--t-bg); } .ctl.t .num, .ctl.t h2 { color: var(--t); }
+.ctl.n { background: var(--code-bg); }
+
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; scroll-margin-top: 12px; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.put, .m.patch { background: var(--put-bg); color: var(--put); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; color: var(--warn); }
+.tag.chg { color: var(--a); }
+.tag.imp { color: var(--bad); }
+.todo li.important label { background: var(--del-bg); border-left: 3px solid var(--bad); }
+.todo li.important label:hover { background: var(--del-bg); }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--code-bg); color: var(--muted); }
+.brief { max-width: 78ch; }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 6px; align-content: start; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.5; }
+.case { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; min-width: 0; }
+.case > .lbl { color: var(--ok); }
+.bad > .lbl { color: var(--bad); }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td code { white-space: pre-wrap; }
+.params td:first-child { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+.s { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+.s.ok { background: var(--get-bg); color: var(--ok); }
+.s.b4 { background: var(--del-bg); color: var(--bad); }
+.s.b3 { background: var(--put-bg); color: var(--warn); }
+.dep { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dep span.chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--code-bg); border: 1px solid var(--line); }
+.notes { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+.tip.warn { border-left-color: var(--warn); }
+
+/* front task checklist */
+.todo-box { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; min-width: 0; }
+.todo-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.todo-head .lbl { color: var(--accent); }
+.count { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--code-bg); color: var(--muted); font-variant-numeric: tabular-nums; }
+.count.all { background: var(--get-bg); color: var(--ok); }
+.todo { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.todo label { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; padding: 6px 8px; border-radius: 8px; cursor: pointer; min-width: 0; }
+.todo label:hover { background: var(--code-bg); }
+.todo input[type="checkbox"] { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--ok); cursor: pointer; }
+.todo input:checked + span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.todo span { min-width: 0; }
+.note-field { display: grid; gap: 4px; }
+.note-field textarea { width: 100%; min-height: 54px; resize: vertical; font: inherit; font-size: 14px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+
+.flow ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+.flow li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; display: grid; gap: 8px; min-width: 0; }
+.flow li::before { content: counter(step); position: absolute; left: 14px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--t-bg); color: var(--t); font-family: var(--font-mono); font-weight: 600; font-size: 13px; display: grid; place-items: center; }
+.flow li.stage { counter-increment: none; background: none; border: 0; padding: 8px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--t); }
+.flow li.stage::before { content: none; }
+.expect { color: var(--muted); font-size: 14px; }
+.expect b { color: var(--fg); }
+.foot { color: var(--muted); font-size: 13px; }
+.pmap { display: grid; gap: 14px; }
+.jr { display: grid; gap: 6px; min-width: 0; }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pg { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 8px; background: var(--card); border: 1px solid var(--line); color: var(--fg); text-decoration: none; }
+a.pg:hover { border-color: var(--accent); }
+.pg.hub { background: var(--u-bg); color: var(--u); border-color: transparent; }
+.pg.ext { border-style: dashed; color: var(--muted); background: transparent; }
+.arr { color: var(--muted); font-size: 13px; }
+.pname { font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+.pname-ar { font-size: 16px; font-weight: 600; color: var(--muted); }
+
+/* save bar */
+.savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--bar); border-top: 1px solid var(--line); backdrop-filter: blur(6px);
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.savebar-in { max-width: 1000px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.prog { display: grid; gap: 4px; flex: 1 1 220px; min-width: 0; }
+.prog-text { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.prog-track { height: 6px; border-radius: 999px; background: var(--code-bg); overflow: hidden; }
+.prog-fill { height: 100%; width: 0; background: var(--ok); border-radius: 999px; transition: width .25s ease; }
+.save-msg { font-size: 13px; color: var(--muted); }
+.save-msg.dirty { color: var(--warn); font-weight: 600; }
+.save-msg.err { color: var(--bad); }
+.btn { font: inherit; font-weight: 600; font-size: 14px; padding: 8px 16px; border-radius: 9px; border: 0; background: var(--accent); color: var(--bg); cursor: pointer; }
+.btn[disabled] { opacity: .45; cursor: default; }
+@media (max-width: 520px) { .flow li { padding-left: 16px; padding-top: 50px; } .flow li.stage { padding-top: 8px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+<main id="guide" class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Motqin backend · profile · for the front · updated 17 Nov 2026</span>
+  <h1>Motqin Profile Front Guide</h1>
+  <p class="lead">Profile page APIs for the front: tick each task when done, then press <b>Save progress</b>.</p>
+  <nav class="nav" aria-label="Sections">
+    <a class="u" href="#me">My profile</a>
+    <a class="t" href="#test">Manual test</a>
+  </nav>
+</header>
+
+<article class="ep" id="cards">
+  <div class="ep-line"><span class="path">How each card is organized</span></div>
+  <div class="table-wrap"><table>
+    <tr><td><b>Header</b></td><td>Method (<span class="m get">GET</span> <span class="m post">POST</span> <span class="m put">PUT</span> <span class="m del">DELETE</span>), path, and <span class="who">who can call it</span>.</td></tr>
+    <tr><td><b>Brief</b></td><td>What it's for and which screen uses it.</td></tr>
+    <tr><td><b>Fields</b></td><td>Every input with its limits and meaning.</td></tr>
+    <tr><td><b style="color: var(--ok);">Valid</b></td><td>Real request and response: left is what you send, right is what you get.</td></tr>
+    <tr><td><b style="color: var(--bad);">Bad cases</b></td><td><b>Send</b> · <b>Get</b> · <b>Show</b> (the Arabic message).</td></tr>
+    <tr><td><b>Lookups</b></td><td>Endpoints it depends on.</td></tr>
+    <tr><td><b>Notes · front tasks</b></td><td>How to build the screen around it: one checkbox per thing the front must do (the counter shows how many are done). <b>Save progress</b> at the bottom saves the ticks for everyone.</td></tr>
+  </table></div>
+  <p class="foot"><span class="tag">new</span> and <span class="tag chg">changed</span> mark what changed on 17 Nov 2026. Responses are from a real run on the dev server.</p>
+</article>
+
+<article class="ep" id="general">
+  <div class="ep-line"><span class="path">General notes</span><span class="tag">new</span></div>
+  <div class="todo-box">
+    <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="general"></span></div>
+    <ul class="todo" data-group="general">
+      <li><label><input type="checkbox" id="t-general-email" data-task="general-email"><span>Email is never editable.</span></label></li>
+      <li><label><input type="checkbox" id="t-general-phone" data-task="general-phone"><span>Changing the phone number is on hold, to be discussed later.</span></label></li>
+      <li><label><input type="checkbox" id="t-general-goals" data-task="general-goals"><span>Delete the goals section (<span class="ar">أهدافي</span>) from the profile page.</span></label></li>
+    </ul>
+  </div>
+</article>
+
+
+
+
+<section class="part" id="me">
+  <div class="ctl u"><span class="num">UsersController · /api/users/me</span><h2>My profile</h2><p>The signed-in user's own profile. Any account with a token, guests included.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/users/me</span><span class="who">registered user · guest</span></div>
+    <p class="brief">The whole profile for the Profile page. <span class="tag">new</span> <code>description</code> at the end.</p>
+    <div class="case"><span class="lbl">Valid</span>
+      <pre class="code">{ "id": "babadd64-2b8c-496f-a5d7-f9bf7c28b1e5",
+  "fullName": "Profile Test",
+  "email": "guest_3ef68837507644aa937fac8cec5b8e8b@motqin.internal",
+  "emailConfirmed": false,
+  "phoneNumber": null, "phoneNumberConfirmed": false,
+  "region": 2, "country": 1, "educationalStage": 3, "gradeLevel": 2,
+  "isProfileComplete": false,
+  "createdAt": "2026-11-17T14:05:11.0225798",
+  "roles": ["Guest"],
+  "photoUrl": null,
+  "description": null }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>no token</td><td><span class="s b4">401</span> empty body</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      </table></div></div>
+  
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="me-get"></span></div>
+      <span class="lbl">How to show each field</span>
+      <div class="table-wrap"><table>
+      <tr><th>Field on screen</th><th>From</th><th>Show</th></tr>
+      <tr><td class="ar">الاسم</td><td><code>fullName</code></td><td>As is.</td></tr>
+      <tr><td class="ar">المحافظة</td><td><code>region</code> (1–27)</td><td>The <code>nameAr</code> from <code>GET /api/lookups/egyptian-governorates</code>. <code>null</code> → the placeholder <span class="ar">اختر المحافظة</span>. Only when <code>country</code> is 1 (Egypt).</td></tr>
+      <tr><td class="ar">الوصف</td><td><code>description</code> <span class="tag">new</span></td><td><code>null</code> → the <span class="ar">+ إضافة وصف</span> button. Text → the text, keeping its line breaks, with an edit icon.</td></tr>
+      <tr><td class="ar">البريد الإلكتروني</td><td><code>email</code></td><td>"—" when it ends in <code>@motqin.internal</code>: that's a placeholder for phone and guest accounts, not a real address.</td></tr>
+      <tr><td class="ar">رقم الهاتف</td><td><code>phoneNumber</code></td><td>"—" when <code>null</code> (guests).</td></tr>
+      <tr><td class="ar">الدولة</td><td><code>country</code></td><td>The <code>nameAr</code> from <code>GET /api/lookups/countries</code>.</td></tr>
+      <tr><td class="ar">المرحلة التعليمية</td><td><code>educationalStage</code></td><td>1 <span class="ar">ابتدائي</span> · 2 <span class="ar">إعدادي</span> · 3 <span class="ar">ثانوي</span> · 4 <span class="ar">جامعي</span> · 5 <span class="ar">خريج</span> <span class="tag">new</span></td></tr>
+      <tr><td class="ar">الصف الدراسي</td><td><code>gradeLevel</code></td><td>1–6 → <span class="ar">الصف الأول</span> … <span class="ar">الصف السادس</span></td></tr>
+      <tr><td>Photo</td><td><code>photoUrl</code></td><td><code>null</code> → the default avatar.</td></tr>
+    </table></div>
+      <ul class="todo" data-group="me-get">
+        <li><label><input type="checkbox" id="t-profile-desc" data-task="profile-desc"><span>Show <span class="ar">الوصف</span> from <code>description</code>: <span class="ar">+ إضافة وصف</span> when it's <code>null</code>, otherwise the text with <code>white-space: pre-line</code> and an edit icon.</span></label></li>
+        <li><label><input type="checkbox" id="t-profile-email" data-task="profile-email"><span>Show "—" for an email ending in <code>@motqin.internal</code>, and for a <code>null</code> phone.</span></label></li>
+        <li><label><input type="checkbox" id="t-profile-region" data-task="profile-region"><span>Show <span class="ar">المحافظة</span> only when <code>country</code> is 1; show the placeholder when <code>region</code> is <code>null</code>.</span></label></li>
+        <li><label><input type="checkbox" id="t-profile-enums" data-task="profile-enums"><span>Map <code>educationalStage</code> and <code>gradeLevel</code> numbers to their Arabic labels (table above).</span></label></li>
+        <li><label><input type="checkbox" id="t-profile-graduate" data-task="profile-graduate"><span><span class="tag">new</span> Stage 5 <span class="ar">خريج</span>: show it, and hide <span class="ar">الصف الدراسي</span> for a graduate (no grade).</span></label></li>
+        <li><label><input type="checkbox" id="t-auth-401" data-task="auth-401"><span>On 401 from any <code>/api/users</code> call: refresh the token once (<code>POST /api/auth/refresh-token</code>) and retry; still 401 → sign-in.</span></label></li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m put">PUT</span><span class="path">/api/users/me</span><span class="who">registered user · guest</span><span class="tag">new</span></div>
+    <p class="brief">Edit the profile: the <span class="ar">تعديل</span> form and <span class="ar">الوصف</span>. Every field is optional; send only what changed: a field left out (or <code>null</code>) is kept, so it works like a partial update even though the verb is PUT. <code>PATCH</code> answers <span class="s b4">405</span>. Returns the whole updated profile, the same shape as <code>GET /me</code>.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Body field</th><th>Rules</th><th>Meaning</th></tr>
+      <tr><td>fullName</td><td>optional · 1–100 · not only spaces</td><td><span class="ar">الاسم</span>, trimmed.</td></tr>
+      <tr><td>region</td><td>optional · 1–27</td><td><span class="ar">المحافظة</span>. Can be changed, not cleared.</td></tr>
+      <tr><td>description</td><td>optional · up to 500</td><td><span class="ar">الوصف</span>, trimmed. <code>""</code> or spaces → removed (<code>null</code>).</td></tr>
+      <tr><td>educationalStage</td><td>optional · 1–5</td><td><span class="ar">المرحلة التعليمية</span>. <span class="tag">new</span> 5 = Graduate (<span class="ar">خريج</span>).</td></tr>
+      <tr><td>gradeLevel</td><td>optional · 1–6</td><td><span class="ar">الصف الدراسي</span></td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · the edit form</span>
+      <div class="io">
+        <div><pre class="code">{ "fullName": "Profile Test", "region": 1,
+  "description": "طالب ثانوية عامة، هدفي كلية الطب",
+  "educationalStage": 3, "gradeLevel": 3 }</pre></div>
+        <div><pre class="code">200
+{ "id": "babadd64-…", "fullName": "Profile Test",
+  "region": 1, "country": 1, "educationalStage": 3, "gradeLevel": 3,
+  …,
+  "description": "طالب ثانوية عامة، هدفي كلية الطب" }</pre></div>
+      </div></div>
+    <div class="case"><span class="lbl">Valid · description only, then remove it</span>
+      <div class="io">
+        <div><pre class="code">{ "description": "أذاكر كل يوم ساعتين" }
+{ "description": "" }</pre></div>
+        <div><pre class="code">200 … "description": "أذاكر كل يوم ساعتين" }
+200 … "description": null }</pre></div>
+      </div>
+      <p class="expect"><code>{}</code> changes nothing and returns the profile. A guest's 200 also carries <code>X-Guest-Reminder: save_your_data</code>.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>{ "fullName": "" }</code> or <code>"   "</code></td><td><span class="s b4">400</span> <code>validation_error</code>, <code>FullName: ["Name cannot be empty."]</code></td><td class="ar">الاسم مطلوب</td></tr>
+        <tr><td>a name of 101+ characters</td><td><span class="s b4">400</span> <code>FullName: ["Name cannot exceed 100 characters."]</code></td><td class="ar">الاسم أطول من 100 حرف</td></tr>
+        <tr><td>a description of 501+ characters</td><td><span class="s b4">400</span> <code>Description: ["Description cannot exceed 500 characters."]</code></td><td class="ar">الوصف أطول من 500 حرف</td></tr>
+        <tr><td><code>"region": 40</code> · <code>"educationalStage": 6</code> · <code>"gradeLevel": 0</code></td><td><span class="s b4">400</span> <code>Region</code> / <code>EducationalStage</code> / <code>GradeLevel</code> with "… is not valid"</td><td class="ar">بعض البيانات المدخلة غير صحيحة</td></tr>
+        <tr><td>several at once</td><td><span class="s b4">400</span>, one <code>details</code> key per field</td><td>each under its field</td></tr>
+        <tr><td><code>"region": "Cairo"</code> or <code>"description": 5</code></td><td><span class="s b4">400</span>, <code>details</code> keys <code>dto</code> and <code>$.region</code>: the JSON type is wrong</td><td class="ar">بعض البيانات المدخلة غير صحيحة</td></tr>
+        <tr><td>no token</td><td><span class="s b4">401</span> empty body</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      </table></div></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">GET /api/lookups/egyptian-governorates</span><span>for the governorate dropdown.</span></div>
+    <ul class="notes">
+      <li>Email, phone, country and photo are not in this endpoint; they have their own flows.</li>
+      <li>Changing stage or grade changes which subjects the app offers; reload subject lists after a save that changed them.</li>
+    </ul>
+  
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="me-patch"></span></div>
+      <ul class="todo" data-group="me-patch">
+        <li><label><input type="checkbox" id="t-desc-open" data-task="desc-open"><span><span class="ar">+ إضافة وصف</span> and the edit icon open a text area in place, filled with the current text.</span></label></li>
+        <li><label><input type="checkbox" id="t-desc-counter" data-task="desc-counter"><span>A live counter <code>n / 500</code>; stop typing at 500 (the server refuses 501 with <code>Description</code>).</span></label></li>
+        <li><label><input type="checkbox" id="t-desc-save" data-task="desc-save"><span><span class="ar">حفظ</span> sends <code>{ "description": text }</code> and shows the returned <code>description</code> (the server trims spaces at both ends).</span></label></li>
+        <li><label><input type="checkbox" id="t-desc-remove" data-task="desc-remove"><span>A <span class="ar">حذف الوصف</span> action, or saving an empty box, sends <code>""</code>; the response has <code>description: null</code>, so show <span class="ar">+ إضافة وصف</span> again.</span></label></li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/users/upload-photo</span><span class="who">registered user · guest</span></div>
+    <p class="brief">Unchanged. <code>multipart/form-data</code>, one field <code>Photo</code>: JPEG, PNG or WebP, up to 6 MB (the type is checked from the file's bytes, not its name).</p>
+    <div class="case"><span class="lbl">Valid</span>
+      <pre class="code">{ "success": true, "message": "Profile photo uploaded successfully.",
+  "photoKey": "profile-photos/{userId}/{random}.png", "fileName": "{random}.png" }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>no file</td><td><span class="s b4">400</span> <code>validation_error</code>, <code>Photo: ["Please select a photo to upload."]</code></td><td class="ar">اختر صورة</td></tr>
+        <tr><td>a GIF, a renamed file or 6 MB+</td><td><span class="s b4">400</span> <code>{ "success": false, "message": "Unsupported or corrupted image…" }</code></td><td class="ar">الصورة غير مدعومة أو أكبر من 6 ميجا</td></tr>
+      </table></div></div>
+  
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="photo"></span></div>
+      <ul class="todo" data-group="photo">
+        <li class="important"><label><input type="checkbox" id="t-photo-compress" data-task="photo-compress"><span><span class="tag imp">important</span> <b>Compress the photo on the device before uploading.</b> Resize it so the longest side is at most 512 px (it's only shown as a small circle) and save it as JPEG or WebP at about 80% quality, aiming for under 300 KB. The server accepts up to 6 MB and stores the file exactly as sent, with no resizing, so an uncompressed phone photo (often 3–5 MB) is what every screen would download.</span></label></li>
+        <li><label><input type="checkbox" id="t-photo-pick" data-task="photo-pick"><span>Picker accepts JPEG, PNG and WebP only, up to 6 MB; check the size before uploading.</span></label></li>
+        <li><label><input type="checkbox" id="t-photo-refresh" data-task="photo-refresh"><span>After a 200, call <code>GET /api/users/me</code> and show the new <code>photoUrl</code>.</span></label></li>
+        <li><label><input type="checkbox" id="t-photo-error" data-task="photo-error"><span>On 400 show <span class="ar">الصورة غير مدعومة أو أكبر من 6 ميجا</span>.</span></label></li>
+      </ul>
+    </div>
+  </article>
+</section>
+
+
+
+<section class="part" id="test">
+  <div class="ctl t"><span class="num">Manual test</span><h2>Testing every profile endpoint</h2><p>In Swagger on the dev server, signed in as a guest: paste its token into Authorize. 52 checks passed on 17 Nov 2026; these are the ones to repeat.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">What you need</span></div>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Item</th><th>Value</th></tr>
+      <tr><td>Guest</td><td><code>POST /api/auth/guest</code> with header <code>X-Device-Id: profile-test-1117</code> (the same device gives back the same guest).</td></tr>
+    </table></div>
+    <p class="tip warn">Edit only the guest's profile.</p>
+  </article>
+
+  <div class="flow"><ol>
+    <li class="stage">No token</li>
+    <li><div class="ep-line">Every <code>/api/users</code> endpoint with no Authorization header</div>
+      <p class="expect"><b>401</b>, empty body, for <code>GET</code> / <code>PUT /me</code>.</p></li>
+
+
+    <li class="stage">Guest profile</li>
+    <li><div class="ep-line"><span class="m get">GET</span><span class="path">/api/users/me</span></div>
+      <p class="expect"><b>200</b>, <code>"description": null</code>.</p></li>
+    <li><div class="ep-line"><span class="m put">PUT</span><span class="path">/api/users/me</span> <code>{ "description": "  طالب في الثانوية العامة  " }</code></div>
+      <p class="expect"><b>200</b>, the text without the outer spaces; headers <code>X-Guest-Reminder: save_your_data</code>. <code>GET /me</code> shows it too.</p></li>
+    <li><div class="ep-line"><span class="m put">PUT</span> <code>{}</code>, then <code>{ "fullName": "Profile Test", "region": 2, "educationalStage": 3, "gradeLevel": 2 }</code></div>
+      <p class="expect"><b>200</b> both; the first changes nothing, the second changes those four and keeps the description.</p></li>
+    <li><div class="ep-line"><span class="m put">PUT</span> <code>{ "description": "" }</code> · <code>{ "description": "   " }</code> · 500 characters</div>
+      <p class="expect"><b>200</b>: <code>null</code>, <code>null</code>, then the 500 characters.</p></li>
+    <li><div class="ep-line">Bad bodies</div>
+      <p class="expect"><b>400</b> <code>validation_error</code> for: empty name, spaces-only name, 101-character name, 501-character description, <code>"region": 99</code>, <code>"region": "Paris"</code>, <code>"region": "Cairo"</code>, <code>"educationalStage": 6</code>, <code>"gradeLevel": 0</code>, <code>"description": 5</code>.</p></li>
+
+  </ol></div>
+  <p class="foot">Bodies and responses captured on 17 November 2026 from a local server on the shared dev database. The guest test account stays (guests are made on every first app open).</p>
+</section>
+
+</main>
+
+<div class="savebar" id="savebar">
+  <div class="savebar-in">
+    <div class="prog">
+      <span class="prog-text" id="prog-text">Front tasks</span>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+    </div>
+    <span class="save-msg" id="save-msg">Loading…</span>
+    <button class="btn" id="save-btn" type="button" disabled>Save progress</button>
+  </div>
+</div>
+
+<script type="application/json" id="page-state">{"done":{},"notes":{},"savedAt":null}</script>
+<script id="page-script">
+(function () {
+  // Capture the authored parts before anything changes the page; the saved version is rebuilt from these + state.
+  var GUIDE_SRC = document.getElementById('guide').innerHTML;
+  var SAVEBAR_SRC = document.getElementById('savebar').outerHTML;
+  var STYLE_SRC = document.getElementById('page-style').textContent;
+  var SCRIPT_SRC = document.getElementById('page-script').textContent;
+  var END = '<' + '/script>';
+  var SKELETON = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>';
+  var HEAD_SRC = '<title>Motqin Profile Front Guide</title>\n'
+    + '<meta name="claude:viewport-fit-sides" content="cover">\n'
+    + '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+    + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">\n';
+  var PENDING_KEY = 'motqinProfileGuide.pending';
+  var SCROLL_KEY = 'motqinProfileGuide.scroll';
+
+  function readState() {
+    try {
+      var s = JSON.parse(document.getElementById('page-state').textContent || '{}');
+      return { done: s.done || {}, notes: s.notes || {}, savedAt: s.savedAt || null };
+    } catch (e) { return { done: {}, notes: {}, savedAt: null }; }
+  }
+  function ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+  function ssSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
+  function ssDel(k) { try { sessionStorage.removeItem(k); } catch (e) {} }
+
+  var saved = readState();
+  var work = { done: Object.assign({}, saved.done), notes: Object.assign({}, saved.notes) };
+
+  // Changes kept from before a reload (a save that lost a race, or the reload after our own save).
+  var pending = ssGet(PENDING_KEY);
+  if (pending) {
+    ssDel(PENDING_KEY);
+    try {
+      var p = JSON.parse(pending);
+      Object.keys(p.done || {}).forEach(function (k) { work.done[k] = !!p.done[k]; });
+      Object.keys(p.notes || {}).forEach(function (k) { work.notes[k] = String(p.notes[k]); });
+    } catch (e) {}
+  }
+  var scroll = ssGet(SCROLL_KEY);
+  if (scroll) { ssDel(SCROLL_KEY); var y = parseInt(scroll, 10); if (!isNaN(y)) requestAnimationFrame(function () { window.scrollTo(0, y); }); }
+
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input[data-task]'));
+  var notes = Array.prototype.slice.call(document.querySelectorAll('textarea[data-note]'));
+  var btn = document.getElementById('save-btn');
+  var msg = document.getElementById('save-msg');
+  var progText = document.getElementById('prog-text');
+  var progFill = document.getElementById('prog-fill');
+  var art = null, ready = false, readOnly = false, busy = false, notice = '';
+
+  function changes() {
+    var d = { done: {}, notes: {} }, n = 0;
+    boxes.forEach(function (b) { var k = b.dataset.task; if (!!work.done[k] !== !!saved.done[k]) { d.done[k] = !!work.done[k]; n++; } });
+    notes.forEach(function (t) { var k = t.dataset.note; if ((work.notes[k] || '') !== (saved.notes[k] || '')) { d.notes[k] = work.notes[k] || ''; n++; } });
+    d.count = n;
+    return d;
+  }
+
+  function fmt(iso) {
+    try { return new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
+  }
+
+  function renderStatus() {
+    var total = boxes.length, done = boxes.filter(function (b) { return !!work.done[b.dataset.task]; }).length;
+    progText.textContent = done + ' of ' + total + ' front tasks done';
+    progFill.style.width = (total ? Math.round(done * 100 / total) : 0) + '%';
+    document.querySelectorAll('[data-count-for]').forEach(function (c) {
+      var g = c.getAttribute('data-count-for');
+      var list = document.querySelectorAll('ul[data-group="' + g + '"] input[data-task]');
+      var dn = 0; list.forEach(function (b) { if (work.done[b.dataset.task]) dn++; });
+      c.textContent = dn + ' / ' + list.length;
+      c.classList.toggle('all', list.length > 0 && dn === list.length);
+    });
+    var ch = changes().count;
+    msg.className = 'save-msg';
+    if (busy) { msg.textContent = 'Saving…'; }
+    else if (notice) { msg.textContent = notice; msg.classList.add('err'); }
+    else if (readOnly) { msg.textContent = ch ? 'View only: ' + ch + ' change' + (ch > 1 ? 's' : '') + ' on this screen, not saved.' : 'View only: ticks stay on this screen.'; }
+    else if (ch) { msg.textContent = ch + ' unsaved change' + (ch > 1 ? 's' : ''); msg.classList.add('dirty'); }
+    else if (!ready) { msg.textContent = 'Connecting…'; }
+    else { msg.textContent = saved.savedAt ? 'All saved · ' + fmt(saved.savedAt) : 'Nothing ticked yet'; }
+    btn.disabled = busy || readOnly || !ready || ch === 0;
+    btn.hidden = readOnly;
+  }
+
+  boxes.forEach(function (b) {
+    b.checked = !!work.done[b.dataset.task];
+    b.addEventListener('change', function () { work.done[b.dataset.task] = b.checked; notice = ''; renderStatus(); });
+  });
+  notes.forEach(function (t) {
+    t.value = work.notes[t.dataset.note] || '';
+    t.addEventListener('input', function () { work.notes[t.dataset.note] = t.value; notice = ''; renderStatus(); });
+  });
+
+  function buildDoc(state) {
+    var json = JSON.stringify(state).replace(/</g, '\\u003c');
+    return SKELETON + HEAD_SRC
+      + '<style id="page-style">' + STYLE_SRC + '</style>\n'
+      + '<main id="guide" class="wrap">' + GUIDE_SRC + '</main>\n\n'
+      + SAVEBAR_SRC + '\n'
+      + '<script type="application/json" id="page-state">' + json + END + '\n'
+      + '<script id="page-script">' + SCRIPT_SRC + END + '\n'
+      + '</body></html>';
+  }
+
+  function cleanState() {
+    var done = {}, nts = {};
+    boxes.forEach(function (b) { if (work.done[b.dataset.task]) done[b.dataset.task] = true; });
+    notes.forEach(function (t) { var v = (work.notes[t.dataset.note] || ''); if (v.trim()) nts[t.dataset.note] = v; });
+    return { done: done, notes: nts, savedAt: new Date().toISOString() };
+  }
+
+  btn.addEventListener('click', function () {
+    if (!art || busy || readOnly) return;
+    var ch = changes();
+    if (!ch.count) return;
+    busy = true; notice = ''; renderStatus();
+    ssSet(PENDING_KEY, JSON.stringify({ done: ch.done, notes: ch.notes }));
+    ssSet(SCROLL_KEY, String(Math.round(window.scrollY)));
+    art.publish(buildDoc(cleanState())).then(function () {
+      busy = false; msg.textContent = 'Saved. Reloading…';
+    }, function (e) {
+      busy = false;
+      var code = e && e.code;
+      if (code === 'conflict') { msg.textContent = 'Someone saved first. Reloading; your changes come back as unsaved.'; return; }
+      ssDel(PENDING_KEY); ssDel(SCROLL_KEY);
+      if (['not_writer', 'not_granted', 'consent_required', 'capability_disabled', 'capability_removed', 'not_declared'].indexOf(code) >= 0) { readOnly = true; }
+      else if (code === 'rate_limited') { notice = 'Saving too often. Wait a minute, then save again.'; }
+      else { notice = 'Couldn’t save. Check your connection and save again.'; }
+      renderStatus();
+    });
+  });
+
+  renderStatus();
+  var use = window.claude && typeof window.claude.use === 'function' ? window.claude.use('artifact') : Promise.resolve(null);
+  Promise.resolve(use).then(function (a) {
+    art = a; ready = true; if (!a) readOnly = true; renderStatus();
+  }, function () { ready = true; readOnly = true; renderStatus(); });
+})();
+</script>
+
+</body></html>

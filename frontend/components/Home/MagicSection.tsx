@@ -661,7 +661,7 @@ export default function MagicSection() {
 
   return (
     <section className="w-full">
-      <div className="mx-auto mt-24 max-w-7xl px-4 py-16 sm:px-6 lg:mt-40 lg:px-12">
+      <div className="mx-auto mt-16 max-w-7xl px-4 pt-4 pb-10 sm:px-6 lg:mt-22 lg:px-12">
         <div className="lg:hidden">
           <FeatureCards stats={stats} />
         </div>

@@ -25,11 +25,11 @@ const Footer = () => {
           <div className="flex flex-col gap-3">
             <h3 className="font-semibold text-lg">الخدمات</h3>
             <ul className="flex flex-col gap-2 text-[var(--input-text)] text-[15px]">
-              <li>
+              {/* <li>
                 <Link href="/ai-teacher" className="hover:text-[var(--assistant-text)] transition">
                   المعلم الذكي
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link href="/planner/today" className="hover:text-[var(--assistant-text)] transition">
                   المخطط الدراسي
@@ -41,9 +41,9 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/quiz" className="hover:text-[var(--assistant-text)] transition">
-                  الاختبارات وتتبع التقدم
-                </Link>
+                <Link href="/subjects" className="hover:text-[var(--assistant-text)] transition">
+                  متقن    
+                    </Link>
               </li>
               <li>
                 <Link href="/competitions" className="hover:text-[var(--assistant-text)] transition">
@@ -90,7 +90,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t flex flex-col md:flex-row justify-between items-center text-sm text-gray-400 gap-4">
           <p>© 2026 متقن</p>
-          <p>صُمم للطلاب الذين يسعون للتميّز.</p>
+          <p></p>
         </div>
       </div>
     </footer>
