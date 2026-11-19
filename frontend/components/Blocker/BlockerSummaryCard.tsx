@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Globe, Settings2, ShieldCheck, Smartphone, Sunrise } from "lucide-react";
+import { Globe, Settings2, ShieldCheck, Smartphone, Sunrise, type LucideIcon } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { useBlockerSettings } from "@/app/hooks/useDistractionBlocker";
 import Skeleton from "@/components/ui/Skeleton";
@@ -15,7 +15,15 @@ export const BlockerSummaryCard = () => {
   if (isError || !settings) return null;
 
   const websites = settings.blockedWebsites ?? [];
-  const tiles = [
+  // ltrDetail: the detail is Latin text (website names), shown left-to-right.
+  const tiles: {
+    icon: LucideIcon;
+    label: string;
+    value: string;
+    detail: string;
+    on: boolean;
+    ltrDetail?: boolean;
+  }[] = [
     {
       icon: ShieldCheck,
       label: "أثناء جلسات المذاكرة",
