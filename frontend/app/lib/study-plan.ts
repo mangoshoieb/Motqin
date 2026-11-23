@@ -64,7 +64,9 @@ export const studyPlanToExecutionTask = (item: StudyPlanItem): ExecutionTask => 
   date: item.date,
   estimatedMinutes: item.durationInMinutes,
   completed: item.status === completedStatus,
-  notes: item.userNotes.join("\n") || item.systemNotes.join("\n"),
+  notes: (item.userNotes ?? []).join("\n") || (item.systemNotes ?? []).join("\n"),
+  noteList: item.userNotes ?? [],
+  systemNotes: item.systemNotes ?? [],
 });
 
 const sessionStatus = (status: number): ExecutionSession["status"] => {

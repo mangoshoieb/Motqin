@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, ChevronLeft, ChevronRight, PencilRuler, RefreshCw, Sparkles } from "lucide-react";
+import { CalendarDays, PencilRuler, RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import DayCard from "@/components/DayCard";
 import { weekData } from "@/app/data/days";
@@ -17,7 +17,9 @@ import {
   sortByPriority,
 } from "@/app/lib/study-plan";
 import { cn } from "@/app/lib/utils";
+import Link from "next/link";
 import { PlannerViewSwitch } from "@/components/Planner/PlannerViewSwitch";
+import { PeriodPager } from "@/components/Planner/PeriodPager";
 import AiPlanningSection from "@/components/Planner/AiPlanningSection";
 import NextWeekBoard from "@/components/Planner/NextWeekBoard";
 import { AddTaskDialog } from "@/components/ExecutionBoard/AddTaskDialog";
@@ -56,9 +58,8 @@ const Planner = () => {
   const scrolledToPlanning = useRef(false);
 
 
-  // The top board shows the current week by default and can page back
-  // through earlier weeks (weekOffset ≤ 0); next week lives in the
-  // manual-planning tab below, so paging forward stops at 0.
+  // The top board shows the current week by default and pages back through
+  // earlier weeks or ahead to coming ones (weekOffset < 0 / > 0).
   const [weekOffset, setWeekOffset] = useState(0);
   const isCurrentWeek = weekOffset === 0;
   const dates = currentWeekDates(weekOffset);
@@ -126,9 +127,15 @@ const Planner = () => {
     ? "الأسبوع الحالي"
     : weekOffset === -1
       ? "الأسبوع السابق"
-      : weekOffset === -2
-        ? "قبل أسبوعين"
-        : `قبل ${-weekOffset} أسابيع`;
+      : weekOffset === 1
+        ? "الأسبوع القادم"
+        : weekOffset === -2
+          ? "قبل أسبوعين"
+          : weekOffset === 2
+            ? "بعد أسبوعين"
+            : weekOffset < 0
+              ? `قبل ${-weekOffset} أسابيع`
+              : `بعد ${weekOffset} أسابيع`;
 
   const days = weekData.map((day, index) => {
     const date = dates[index];
@@ -282,34 +289,30 @@ const Planner = () => {
   return (
     <main className="h-full w-full bg-zinc-100 dark:bg-zinc-950" dir="rtl">
       <div className="px-6 py-8">
-        <div className="flex items-center justify-between flex-wrap gap-4 mb-6 px-17">
-          <PlannerViewSwitch />
+        {/* Same layout as the execution board's header: the view switch and
+            preferences on top, then the title with the week arrows on its
+            left, and the week's dates under it. */}
+        <div className="mb-6 flex flex-col gap-6 px-17">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <PlannerViewSwitch />
 
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Week pager — RTL, so "back" points right and "forward" left. */}
-            <div className="flex items-center gap-1 rounded-full border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900">
-              <button
-                type="button"
-                onClick={() => setWeekOffset((offset) => offset - 1)}
-                title="الأسبوع السابق"
-                aria-label="الأسبوع السابق"
-                className="flex size-8 items-center justify-center rounded-full text-zinc-600 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                <ChevronRight size={18} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setWeekOffset((offset) => Math.min(0, offset + 1))}
-                disabled={isCurrentWeek}
-                title="الأسبوع التالي"
-                aria-label="الأسبوع التالي"
-                className="flex size-8 items-center justify-center rounded-full text-zinc-600 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                <ChevronLeft size={18} />
-              </button>
-            </div>
+            <Link
+              href="/settings/planner"
+              className="shrink-0 px-5 py-2.5 rounded-full border border-zinc-200 text-zinc-600 text-sm font-medium transition hover:bg-white dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              تفضيلات المخطط
+            </Link>
+          </div>
 
-            <div className="flex items-baseline gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-4">
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{weekTitle}</h1>
+              <PeriodPager
+                onPrevious={() => setWeekOffset((offset) => offset - 1)}
+                onNext={() => setWeekOffset((offset) => offset + 1)}
+                previousLabel="الأسبوع السابق"
+                nextLabel="الأسبوع التالي"
+              />
               {isFetching && !isLoading && (
                 <RefreshCw
                   size={16}
@@ -317,24 +320,10 @@ const Planner = () => {
                   className="animate-spin text-blue-500 dark:text-blue-400"
                 />
               )}
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-                {weekTitle}
-              </h1>
-              <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                {formatPlannerDate(dates[0])} - {formatPlannerDate(dates[6])}
-              </div>
             </div>
-
-            {/* {!isCurrentWeek && (
-              <button
-                type="button"
-                onClick={() => setWeekOffset(0)}
-                className="flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-950/60"
-              >
-                <Undo2 size={14} />
-                العودة إلى الأسبوع الحالي
-              </button>
-            )} */}
+            <p className="mt-1 text-right text-zinc-500 dark:text-zinc-400" dir="ltr">
+              {formatPlannerDate(dates[0])} - {formatPlannerDate(dates[6])}
+            </p>
           </div>
         </div>
 

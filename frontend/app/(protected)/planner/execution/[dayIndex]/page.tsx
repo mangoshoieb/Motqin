@@ -47,11 +47,19 @@ const ExecutionBoardPage = () => {
   const queryClient = useQueryClient();
   const dayIndex = Number(params.dayIndex);
   const parsedWeek = Number(searchParams.get("week") ?? "0");
-  // Any earlier week (the planner board pages back through them), this
-  // week, or next week — never further ahead than that.
-  const weekOffset = Number.isFinite(parsedWeek) ? Math.min(1, Math.trunc(parsedWeek)) : 0;
+  // Any week, earlier or later — the arrows page day by day through them.
+  const weekOffset = Number.isFinite(parsedWeek) ? Math.trunc(parsedWeek) : 0;
 
   const { data, isLoading } = useExecutionBoard(dayIndex, weekOffset);
+
+  // The arrows beside the title: the day before / after, crossing into the
+  // previous or next week at the ends (days run 1 = Sunday … 7 = Saturday).
+  const goToDay = (offset: -1 | 1) => {
+    const next = dayIndex + offset;
+    const target =
+      next < 1 ? { day: 7, week: weekOffset - 1 } : next > 7 ? { day: 1, week: weekOffset + 1 } : { day: next, week: weekOffset };
+    router.push(`/planner/execution/${target.day}?week=${target.week}`);
+  };
   // Session and break lengths, from the user's saved planner preferences.
   const { sessionMinutes, breakMinutes } = useBreakMinutes();
 
@@ -344,19 +352,26 @@ const ExecutionBoardPage = () => {
       });
   };
 
-  const updateTaskNotes = (id: string, notes: string) => {
+  // A task holds any number of notes — userNotes is a list, one entry each,
+  // and the whole list goes out on every change (add, edit, delete).
+  const updateTaskNotes = (id: string, noteList: string[]) => {
     const task = tasks.find((item) => item.id === id);
     if (!task) return;
 
-    setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, notes } : item)));
+    const joined = noteList.join("\n") || (task.systemNotes ?? []).join("\n");
+    setTasks((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, noteList, notes: joined } : item)),
+    );
 
-    void studyPlansService.update(Number(id), {
-      userNotes: notes.trim() ? [notes.trim()] : [],
-    })
+    void studyPlansService.update(Number(id), { userNotes: noteList })
       .then(() => queryClient.invalidateQueries({ queryKey: ["study-plans"] }))
       .catch(() => {
-        setTasks((prev) => prev.map((item) => (item.id === id ? { ...item, notes: task.notes } : item)));
-        toast.error("تعذر حفظ ملاحظة المهمة");
+        setTasks((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, noteList: task.noteList, notes: task.notes } : item,
+          ),
+        );
+        toast.error("تعذر حفظ ملاحظات المهمة");
       });
   };
 
@@ -947,9 +962,20 @@ const ExecutionBoardPage = () => {
   };
 
   if (isLoading) {
+    // The header (and its arrows) stays put while the day loads, so paging
+    // through days doesn't blank the page.
+    const loadingDay = weekData.find((day) => day.index === dayIndex);
     return (
-      <div dir="rtl" className="p-10 text-zinc-500 dark:text-zinc-400">
-        جاري تحميل لوحة التنفيذ...
+      <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 px-4 py-8">
+        <div className="max-w-6xl mx-auto flex flex-col gap-8">
+          <ExecutionBoardHeader
+            dayName={loadingDay?.dayName ?? ""}
+            date={currentWeekDates(weekOffset)[dayIndex - 1] ?? ""}
+            onPreviousDay={() => goToDay(-1)}
+            onNextDay={() => goToDay(1)}
+          />
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">جاري تحميل لوحة التنفيذ...</p>
+        </div>
       </div>
     );
   }
@@ -981,6 +1007,8 @@ const ExecutionBoardPage = () => {
             totalStudyMinutes,
             quizAccuracy: data.detail.outputs.quizAccuracy,
           }}
+          onPreviousDay={() => goToDay(-1)}
+          onNextDay={() => goToDay(1)}
         />
 
         {/* Two columns: the day's tasks, and its spaced-repetition reviews
@@ -1070,4 +1098,12 @@ const ExecutionBoardPage = () => {
   );
 };
 
-export default ExecutionBoardPage;
+// Keyed by the day, so moving to another day with the arrows starts it
+// fresh — a break, dialog or draft from the previous day doesn't carry over.
+const ExecutionBoardRoute = () => {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  return <ExecutionBoardPage key={`${String(params.dayIndex)}:${searchParams.get("week") ?? "0"}`} />;
+};
+
+export default ExecutionBoardRoute;

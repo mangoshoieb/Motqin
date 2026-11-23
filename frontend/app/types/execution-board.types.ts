@@ -27,7 +27,11 @@ export interface ExecutionTask {
   completed: boolean;
   quizLink?: ExecutionQuizLink; // revision tasks only
   repetitionNumber?: number; // mirrors StudyPlan.repetitionNumber, revision tasks only
-  notes?: string; // optional free-form note, entered per task
+  notes?: string; // every note joined — for read-only summaries
+  // The student's own notes, one entry each (StudyPlan.userNotes), and the
+  // ones the AI planner attached (systemNotes, read-only).
+  noteList?: string[];
+  systemNotes?: string[];
 }
 
 // A local study-timer session for a "daily" task. Revision tasks don't get

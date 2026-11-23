@@ -38,7 +38,7 @@ interface ExecutionTaskListProps {
   onDeleteSession?: (sessionId: string) => void;
   onStartRevision?: (task: ExecutionTask) => void;
   onPostpone?: (task: ExecutionTask) => void;
-  onNotesChange: (id: string, notes: string) => void;
+  onNotesChange: (id: string, noteList: string[]) => void;
   onEdit?: (task: ExecutionTask) => void;
   onDelete?: (task: ExecutionTask) => void;
   onDropTask?: (draggedId: string, targetId: string) => void;
@@ -147,8 +147,8 @@ export const ExecutionTaskList = ({
       {tasks.length === 0 ? (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">لا توجد مهام هنا لهذا اليوم</p>
       ) : (
-        // Room between cards for the notes button sticking out of each.
-        <div className="flex flex-col gap-7 pb-4">
+        // The task cards, one under the other.
+        <div className="flex flex-col gap-4">
           {tasks.map((task) => (
             <div
               key={task.id}

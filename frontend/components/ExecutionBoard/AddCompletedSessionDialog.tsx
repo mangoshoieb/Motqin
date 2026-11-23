@@ -13,11 +13,22 @@ import { DurationFields } from "@/components/ui/DurationFields";
 const inputClass =
   "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
 
-// "2026-09-26T14:05" — what <input type="datetime-local"> wants.
-const localInputValue = (date: Date) => {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
+const pad = (value: number) => String(value).padStart(2, "0");
+
+// "2026-09-26" in local time.
+const localDate = (date: Date) =>
+  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+// "14:05" — what <input type="time"> wants.
+const localTime = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+// "الخميس 26 نوفمبر" — the fixed day, shown beside the time field.
+const dayLabel = (date: string) =>
+  new Date(`${date}T00:00:00`).toLocaleDateString("ar-EG-u-nu-latn", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 
 interface AddCompletedSessionDialogProps {
   task: ExecutionTask;
@@ -43,14 +54,12 @@ export const AddCompletedSessionDialog = ({
 }: AddCompletedSessionDialogProps) => {
   const [title, setTitle] = useState(task.title);
   const [minutes, setMinutes] = useState(defaultMinutes);
-  const [completedAt, setCompletedAt] = useState(() => {
-    const now = new Date();
-    if (!boardDate) return localInputValue(now);
-    // Keep the time of day, move it onto the board's date.
-    const [year, month, day] = boardDate.split("-").map(Number);
-    if (!year || !month || !day) return localInputValue(now);
-    return localInputValue(new Date(year, month - 1, day, now.getHours(), now.getMinutes()));
-  });
+  // The session belongs to the board's day — only the time is the
+  // student's to pick.
+  const [day] = useState(() =>
+    boardDate && /^\d{4}-\d{2}-\d{2}$/.test(boardDate) ? boardDate : localDate(new Date()),
+  );
+  const [completedTime, setCompletedTime] = useState(() => localTime(new Date()));
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -58,8 +67,10 @@ export const AddCompletedSessionDialog = ({
       if (!description) throw new Error("title-required");
       if (!minutes || minutes <= 0) throw new Error("duration-required");
 
-      const finished = new Date(completedAt);
-      if (Number.isNaN(finished.getTime())) throw new Error("date-required");
+      const finished = new Date(`${day}T${completedTime}:00`);
+      if (!completedTime || Number.isNaN(finished.getTime())) throw new Error("date-required");
+      // Can't have finished something later than now.
+      if (finished.getTime() > Date.now() + 60_000) throw new Error("future-time");
 
       return studySessionsService.createCompleted({
         studyPlanId: Number(task.id),
@@ -79,6 +90,7 @@ export const AddCompletedSessionDialog = ({
         "title-required": "العنوان مطلوب.",
         "duration-required": "المدة يجب أن تكون أكبر من صفر.",
         "date-required": "وقت الانتهاء غير صالح.",
+        "future-time": "لا يمكن أن يكون وقت الانتهاء في المستقبل.",
       };
       const known = messages[error.message];
       if (known) toast.error(known);
@@ -132,11 +144,13 @@ export const AddCompletedSessionDialog = ({
           />
           <label className="block text-sm text-zinc-700 dark:text-zinc-300">
             وقت الانتهاء
+            {/* The day is fixed (the board's own); shown, not editable. */}
+            <span className="mt-1 block text-[11px] text-zinc-400 dark:text-zinc-500">{dayLabel(day)}</span>
             <input
-              type="datetime-local"
-              value={completedAt}
-              onChange={(event) => setCompletedAt(event.target.value)}
-              className={`${inputClass} mt-5.5`}
+              type="time"
+              value={completedTime}
+              onChange={(event) => setCompletedTime(event.target.value)}
+              className={`${inputClass} mt-1`}
             />
           </label>
         </div>
