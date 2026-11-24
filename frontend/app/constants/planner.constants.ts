@@ -66,6 +66,9 @@ export const API_ROUTES = {
     COMPLETE_PROFILE: "/auth/phone-complete-signup",
     LOGOUT: "/auth/logout",
     GUEST: "/auth/guest",
+    // Profile page: add a phone (an account with none) or change it.
+    CHANGE_PHONE_REQUEST: "/auth/change-phone-request",
+    CHANGE_PHONE_CONFIRM: "/auth/change-phone-confirm",
   },
 
   // Reference lists for the enums the API stores (country, governorate).

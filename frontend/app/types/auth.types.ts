@@ -44,6 +44,12 @@ export interface GooglePhoneVerifyRequest extends GooglePhoneRequest, Partial<Si
   fullName?: string;
 }
 
+// POST /auth/change-phone-confirm — the new number's token pair.
+export interface ChangePhoneConfirmResponse {
+  message: string;
+  token: AuthTokens;
+}
+
 // PUT /users/me — send only what changed. description "" removes it.
 export interface UpdateMeRequest {
   fullName?: string;

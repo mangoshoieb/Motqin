@@ -23,6 +23,7 @@ import { isEgypt, isPlaceholderEmail, NAME_MAX, ProfileErrors, profileErrors } f
 import { UpdateMeRequest } from "@/app/types/auth.types";
 import GoalsManager from "@/components/Profile/GoalsManager";
 import DescriptionField from "@/components/Profile/DescriptionField";
+import ChangePhoneDialog from "@/components/Profile/ChangePhoneDialog";
 
 const PROFILE_IMAGE = "/my-notion-face-portrait.png";
 const PHOTO_ERROR = "الصورة غير مدعومة أو أكبر من 6 ميجا";
@@ -49,6 +50,8 @@ export default function ProfilePage() {
   const { data: user, isLoading, isError } = useCurrentUser();
 
   const [isEditing, setIsEditing] = useState(false);
+  // «أضف رقم هاتفك» (no number yet) or تغيير.
+  const [phoneDialog, setPhoneDialog] = useState<"add" | "change" | null>(null);
 
   // Local preview shown while the upload is in flight; cleared once
   // /users/me comes back with the stored photoUrl.
@@ -363,9 +366,9 @@ export default function ProfilePage() {
             <div>
               <label className="mb-2 block font-medium">رقم الهاتف</label>
 
-              <div dir="ltr" className={`${readonlyBox} text-right`}>
-                {user.phoneNumber ? (
-                  <span className="flex items-center justify-end gap-2">
+              {user.phoneNumber ? (
+                <div className={`${readonlyBox} flex items-center justify-between gap-3`}>
+                  <span dir="ltr" className="flex items-center gap-2">
                     {user.phoneNumberConfirmed && (
                       <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                         مؤكد
@@ -373,10 +376,32 @@ export default function ProfilePage() {
                     )}
                     {user.phoneNumber}
                   </span>
-                ) : (
-                  <Dash />
-                )}
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setPhoneDialog("change")}
+                    className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    تغيير
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setPhoneDialog("add")}
+                    className="w-full rounded-xl border border-dashed border-blue-300 bg-blue-50/60 px-4 py-3 text-right font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15"
+                  >
+                    + أضف رقم هاتفك
+                  </button>
+                  {/* A teacher, parent or mentor finds a student by phone. */}
+                  <p className="mt-1.5 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                    يجدك المعلم أو ولي الأمر أو المشرف برقم هاتفك، فبدونه لا يمكن ربطك بأيٍّ منهم.
+                  </p>
+                </>
+              )}
+              {phoneDialog && (
+                <ChangePhoneDialog adding={phoneDialog === "add"} onClose={() => setPhoneDialog(null)} />
+              )}
             </div>
 
             <div>

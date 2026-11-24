@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitPhone, toInternationalPhone } from "./phone";
+import { samePhone, splitPhone, toInternationalPhone } from "./phone";
 
 describe("toInternationalPhone", () => {
   it("drops the leading 0 and adds the picked code", () => {
@@ -29,5 +29,13 @@ describe("splitPhone", () => {
   it("finds the longest matching code", () => {
     expect(splitPhone("+966500000123", [1, 20, 966])).toEqual({ dialCode: 966, number: "500000123" });
     expect(splitPhone("+201000000221", [1, 20, 966])).toEqual({ dialCode: 20, number: "01000000221" });
+  });
+});
+
+describe("samePhone", () => {
+  it("matches the stored Egyptian form to the international one", () => {
+    expect(samePhone("01000000221", "+201000000221")).toBe(true);
+    expect(samePhone("+966500000123", "+966500000123")).toBe(true);
+    expect(samePhone("01000000221", "+966500000123")).toBe(false);
   });
 });

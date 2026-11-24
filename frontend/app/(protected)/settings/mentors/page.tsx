@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { useAuthKind } from "@/app/hooks/useAuthKind";
 import { useInviteMentor, useMyMentors } from "@/app/hooks/useMentorship";
 import { mentorshipErrorMessage } from "@/app/lib/mentorship";
-import { normalizeEgyptianPhone } from "@/app/lib/phone";
+import { EMPTY_PHONE, PHONE_INVALID_MESSAGE, PhoneValue, toInternationalPhone } from "@/app/lib/phone";
+import PhoneField from "@/components/auth/PhoneField";
 import { formatClock, parseUtc } from "@/app/lib/distraction-blocker";
 import { isAuthGateError } from "@/app/lib/api-error";
 import { MAX_MENTORS } from "@/app/constants/mentorship.constants";
@@ -19,7 +20,7 @@ const MentorsSettingsPage = () => {
   const { data, isLoading, isError, refetch } = useMyMentors();
   const inviteMentor = useInviteMentor();
 
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState<PhoneValue>(EMPTY_PHONE);
   const [error, setError] = useState<string | null>(null);
 
   if (authKind === "guest") {
@@ -57,15 +58,16 @@ const MentorsSettingsPage = () => {
   const unlockedUntil = parseUtc(blockerLock.unlockedUntil);
 
   const invite = async () => {
-    const normalized = normalizeEgyptianPhone(phone);
+    // Any country, from the code picker.
+    const normalized = toInternationalPhone(phone.dialCode, phone.number);
     if (!normalized) {
-      setError("أدخل رقم موبايل مصري صحيح، مثل 01012345678.");
+      setError(PHONE_INVALID_MESSAGE);
       return;
     }
     setError(null);
     try {
       const mentor = await inviteMentor.mutateAsync(normalized);
-      setPhone("");
+      setPhone(EMPTY_PHONE);
       toast.success(`أُرسلت الدعوة إلى ${mentor.mentorName}`);
     } catch (err) {
       if (!isAuthGateError(err)) setError(mentorshipErrorMessage(err));
@@ -130,34 +132,28 @@ const MentorsSettingsPage = () => {
             event.preventDefault();
             void invite();
           }}
-          className="flex flex-col gap-2 sm:flex-row"
+          className="flex flex-col gap-3 sm:flex-row sm:items-start"
         >
-          <label htmlFor="mentor-phone" className="sr-only">
-            رقم هاتف المشرف
-          </label>
-          <input
-            id="mentor-phone"
-            type="tel"
-            dir="ltr"
-            inputMode="tel"
-            value={phone}
-            onChange={(event) => {
-              setPhone(event.target.value);
-              setError(null);
-            }}
-            disabled={atLimit}
-            placeholder="01XXXXXXXXX"
-            className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-left text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-blue-500"
-          />
+          <div className="min-w-0 flex-1">
+            <PhoneField
+              label="رقم هاتف المشرف"
+              value={phone}
+              onChange={(next) => {
+                setPhone(next);
+                setError(null);
+              }}
+              disabled={atLimit}
+              error={error ?? undefined}
+            />
+          </div>
           <button
             type="submit"
-            disabled={atLimit || !phone.trim() || inviteMentor.isPending}
-            className="shrink-0 rounded-lg bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={atLimit || !phone.number.trim() || inviteMentor.isPending}
+            className="h-14 shrink-0 sm:mt-3 rounded-2xl bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {inviteMentor.isPending ? "جاري الإرسال..." : "إرسال الدعوة"}
           </button>
         </form>
-        {error && <p className="-mt-2 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           {mentors.length} / {MAX_MENTORS} مشرفين، والدعوات المعلّقة منهم
         </p>

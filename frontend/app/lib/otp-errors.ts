@@ -23,6 +23,8 @@ export function otpRetryAfterSeconds(error: unknown): number | null {
 const MESSAGES: [RegExp, string][] = [
   [/^Invalid (or expired )?(verification )?code/i, "رمز التحقق غير صحيح."],
   [/expired/i, "انتهت صلاحية الرمز. اطلب رمزًا جديدًا."],
+  [/already your phone number/i, "هذا رقمك الحالي."],
+  [/^No pending phone-change request/i, "اطلب رمزًا جديدًا."],
   [/^No (pending authentication|code was requested)/i, "لم يُطلب رمز لهذا الرقم بعد. اطلب رمزًا جديدًا."],
   [/already (used|in use) by another account/i, "هذا الرقم مستخدم في حساب آخر."],
   [/must verify your phone/i, "أكّد رقم هاتفك أولًا."],

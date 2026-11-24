@@ -1,5 +1,6 @@
 "use client";
 
+import { samePhone } from "@/app/lib/phone";
 import { useState } from "react";
 import Link from "next/link";
 import { Info, Pencil, RotateCcw, UserMinus, UserPlus, UsersRound } from "lucide-react";
@@ -84,7 +85,7 @@ const AssistantsSettingsPage = () => {
           assistant={editing === "new" ? null : editing}
           onClose={() => setEditing(null)}
           onExisting={(phoneNumber) =>
-            setEditing(assistants.find((a) => a.phoneNumber === phoneNumber) ?? null)
+            setEditing(assistants.find((a) => samePhone(a.phoneNumber, phoneNumber)) ?? null)
           }
         />
       )}

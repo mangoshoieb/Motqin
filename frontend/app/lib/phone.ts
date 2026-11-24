@@ -69,3 +69,13 @@ export function splitPhone(phone: string, dialCodes: number[]): PhoneValue {
   const rest = digits.slice(String(match).length);
   return { dialCode: match, number: match === EGYPT_DIAL_CODE ? `0${rest}` : rest };
 }
+
+// The server stores an Egyptian mobile as 01XXXXXXXXX and others as +966…;
+// this puts any spelling in that form so two numbers can be compared.
+export const storedPhoneForm = (phone: string) => {
+  const digits = toLatinDigits(phone).replace(/[\s\-().]/g, "");
+  return normalizeEgyptianPhone(digits) ?? digits;
+};
+
+export const samePhone = (a?: string | null, b?: string | null) =>
+  !!a && !!b && storedPhoneForm(a) === storedPhoneForm(b);

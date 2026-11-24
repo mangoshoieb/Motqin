@@ -47,7 +47,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link href="/competitions" className="hover:text-[var(--assistant-text)] transition">
-                  المنافسات و التحدبات
+                  المنافسات و التحديات
                 </Link>
               </li>
             </ul>

@@ -5,7 +5,8 @@ import { Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { getApiErrorMessage, getCodedApiError, isAuthGateError } from "@/app/lib/api-error";
-import { normalizeEgyptianPhone } from "@/app/lib/phone";
+import { EMPTY_PHONE, PHONE_INVALID_MESSAGE, PhoneValue, toInternationalPhone } from "@/app/lib/phone";
+import PhoneField from "@/components/auth/PhoneField";
 import { useAssistantPermissions } from "@/app/hooks/useLookups";
 import { useAddAssistant, useTrackingTables, useUpdateAssistant } from "@/app/hooks/useTrackingTables";
 import { isOwnTable } from "@/app/lib/tracking-table";
@@ -26,7 +27,7 @@ export const AssistantFormDialog = ({ assistant, onClose, onExisting }: Assistan
   const addAssistant = useAddAssistant();
   const updateAssistant = useUpdateAssistant();
 
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState<PhoneValue>(EMPTY_PHONE);
   const [permissions, setPermissions] = useState<AssistantPermission[]>(assistant?.permissions ?? []);
   const [allTables, setAllTables] = useState(assistant?.allTables ?? false);
   const [groupIds, setGroupIds] = useState<string[]>(assistant?.tables.map((t) => t.groupId) ?? []);
@@ -67,9 +68,10 @@ export const AssistantFormDialog = ({ assistant, onClose, onExisting }: Assistan
       return;
     }
 
-    const phoneNumber = normalizeEgyptianPhone(phone);
+    // Any country, from the code picker.
+    const phoneNumber = toInternationalPhone(phone.dialCode, phone.number);
     if (!phoneNumber) {
-      setPhoneError("أدخل رقم موبايل مصري صحيح: 01 ثم 9 أرقام.");
+      setPhoneError(PHONE_INVALID_MESSAGE);
       return;
     }
     try {
@@ -133,29 +135,23 @@ export const AssistantFormDialog = ({ assistant, onClose, onExisting }: Assistan
         >
           <div className="flex flex-col gap-6 overflow-y-auto px-6 py-5">
             {!assistant && (
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">رقم هاتف المساعد</span>
-                <input
-                  type="tel"
-                  dir="ltr"
-                  inputMode="tel"
-                  autoFocus
+              <div className="flex flex-col gap-1.5">
+                <PhoneField
+                  label="رقم هاتف المساعد"
                   value={phone}
-                  onChange={(event) => {
-                    setPhone(event.target.value);
+                  autoFocus
+                  onChange={(next) => {
+                    setPhone(next);
                     setPhoneError(null);
                   }}
-                  placeholder="01XXXXXXXXX"
-                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-left text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  error={phoneError ?? undefined}
                 />
-                {phoneError ? (
-                  <span className="text-xs font-medium text-red-600 dark:text-red-400">{phoneError}</span>
-                ) : (
+                {!phoneError && (
                   <span className="text-xs text-zinc-500 dark:text-zinc-400">
                     أي حساب مسجّل في متقن. يبدأ الوصول فورًا دون قبول، ولا يتغير نوع حسابه.
                   </span>
                 )}
-              </label>
+              </div>
             )}
 
             <fieldset className="flex flex-col gap-2">
@@ -285,7 +281,7 @@ export const AssistantFormDialog = ({ assistant, onClose, onExisting }: Assistan
             </button>
             <button
               type="submit"
-              disabled={saving || nothingChosen || (!assistant && !phone.trim())}
+              disabled={saving || nothingChosen || (!assistant && !phone.number.trim())}
               className="rounded-lg bg-blue-600 dark:bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "جاري الحفظ..." : assistant ? "حفظ الصلاحيات" : "إضافة المساعد"}

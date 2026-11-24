@@ -5,6 +5,7 @@ import {
   GoogleLoginResponse,
   GooglePhoneRequest,
   GooglePhoneVerifyRequest,
+  ChangePhoneConfirmResponse,
   GuestLoginRequest,
   GuestLoginResponse,
   OtpSentResponse,
@@ -102,6 +103,21 @@ export const authService = {
 
     return data;
   },
+  // Profile page: a WhatsApp code to the new number (also for an account
+  // with no number yet).
+  async changePhoneRequest(newPhoneNumber: string): Promise<OtpSentResponse> {
+    const { data } = await axiosInstance.post<OtpSentResponse>(API_ROUTES.AUTH.CHANGE_PHONE_REQUEST, {
+      newPhoneNumber,
+    });
+    return data;
+  },
+
+  // Saves the number; the answer carries a new token pair.
+  async changePhoneConfirm(body: { newPhoneNumber: string; code: string }): Promise<ChangePhoneConfirmResponse> {
+    const { data } = await axiosInstance.post<ChangePhoneConfirmResponse>(API_ROUTES.AUTH.CHANGE_PHONE_CONFIRM, body);
+    return data;
+  },
+
   async getCurrentUser(): Promise<CurrentUserResponse> {
     const { data } = await axiosInstance.get(API_ROUTES.USERS.CURRENT_USER);
 
