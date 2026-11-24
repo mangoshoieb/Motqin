@@ -3,31 +3,37 @@
 import { useState } from "react";
 import { Check, Loader2, TicketPercent, X } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import { usePurchasePreview } from "@/app/hooks/usePayments";
-import { errorCodeMessage } from "@/app/lib/error-codes";
 
 // Coupons are stored without dashes or spaces, in capitals.
 export const normalizeCoupon = (text: string) => text.replace(/[\s-]+/g, "").toUpperCase();
 
-// The coupon field next to the term picker. Applying it checks it against a
-// plan (POST /subscription/preview, which saves nothing); every plan card
-// then shows what it saves there. Only signed-up accounts can buy, so
-// guests see it disabled.
+// What the coupon does across the plans shown, worked out by PlansSection
+// from a preview of each plan: how many take it, and the error to show when
+// none does.
+export interface CouponStatus {
+  checking: boolean;
+  accepted: number; // plans with a saving
+  error: string | null; // only when no plan takes it
+}
+
+// The coupon field next to the term picker. Each plan card shows what the
+// coupon saves on it, or why it doesn't apply there; this field only says
+// whether any plan takes it. Only signed-up accounts can buy, so guests see
+// it disabled.
 export function CouponBox({
   applied,
   onApply,
-  bundleId,
+  status,
   disabled,
 }: {
   applied: string;
   onApply: (coupon: string) => void;
-  bundleId: number | null;
+  status: CouponStatus;
   disabled: boolean;
 }) {
   const [text, setText] = useState(applied);
-  const { data: preview, isFetching } = usePurchasePreview(bundleId, applied, null, !disabled && !!applied);
-  const error = applied && preview?.couponError ? errorCodeMessage(preview.couponError) ?? "الكوبون غير صالح" : null;
-  const valid = !!applied && !!preview && !preview.couponError && preview.discountPercent > 0;
+  const error = applied && !status.checking ? status.error : null;
+  const valid = !!applied && !status.checking && status.accepted > 0;
 
   const apply = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +90,7 @@ export function CouponBox({
         )}
       </div>
       <p className="min-h-5 text-xs" aria-live="polite">
-        {applied && isFetching && !preview ? (
+        {applied && status.checking ? (
           <span className="inline-flex items-center gap-1 text-zinc-500">
             <Loader2 size={12} className="animate-spin" /> جاري التحقق...
           </span>
@@ -92,7 +98,7 @@ export function CouponBox({
           <span className="text-rose-600 dark:text-rose-400">{error}</span>
         ) : valid ? (
           <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400">
-            <Check size={13} /> خصم {preview.discountPercent}٪ — التوفير ظاهر على كل باقة
+            <Check size={13} /> الكوبون مطبّق — التوفير ظاهر على {status.accepted === 1 ? "الباقة التي يشملها" : "الباقات التي يشملها"}
           </span>
         ) : null}
       </p>

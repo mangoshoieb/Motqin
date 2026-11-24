@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   ArrowDownLeft,
   ArrowUpRight,
-  CalendarClock,
   Loader2,
   ReceiptText,
   RotateCcw,
@@ -57,9 +56,10 @@ export function KeptGroups({ groups, className }: { groups: string[] | null | un
   );
 }
 
-// The current plan, the one waiting to start, and the grace-days warning.
+// The current plan and the grace-days warning. Every plan is active at
+// once, so there is never one waiting to start.
 export function PlanSummaryCard({ me, showLimitsLink }: { me: MySubscription; showLimitsLink?: boolean }) {
-  const { current, scheduled } = me;
+  const { current } = me;
   const paid = current.kind === "Paid";
   const left = daysLeft(current.endDate);
   // Renewing keeps the same main features.
@@ -93,7 +93,9 @@ export function PlanSummaryCard({ me, showLimitsLink }: { me: MySubscription; sh
           <KeptGroups groups={current.groups} className="mt-2" />
         </div>
         <div className="flex flex-wrap gap-2">
-          {paid && !scheduled && (
+          {/* Renewing opens only in the grace days; while the plan runs the
+              server allows upgrades only. */}
+          {paid && current.inGrace && (
             <Link href={renewHref} className={primaryButton}>
               تجديد
             </Link>
@@ -104,7 +106,7 @@ export function PlanSummaryCard({ me, showLimitsLink }: { me: MySubscription; sh
             </Link>
           )}
           <Link href="/subscription" className={secondaryButton}>
-            {paid ? "تغيير الباقة" : "ترقية الباقة"}
+            {paid && current.inGrace ? "اختر باقة أخرى" : "ترقية الباقة"}
           </Link>
         </div>
       </div>
@@ -114,7 +116,7 @@ export function PlanSummaryCard({ me, showLimitsLink }: { me: MySubscription; sh
           <AlertTriangle size={18} className="mt-0.5 shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="font-bold">انتهت باقتك، وما زالت مزاياها متاحة حتى {formatDay(current.graceEndsAt)}</p>
-            <p className="mt-0.5">جدّد الآن حتى لا تتوقف مزاياك. لتغيير الباقة يجب التجديد أولاً.</p>
+            <p className="mt-0.5">جدّد الآن حتى لا تتوقف مزاياك، أو اختر أي باقة أخرى.</p>
           </div>
           <Link href={renewHref} className={cn(primaryButton, "bg-amber-500 dark:bg-amber-700 hover:bg-amber-600 dark:hover:bg-amber-700")}>
             جدّد الآن
@@ -122,20 +124,6 @@ export function PlanSummaryCard({ me, showLimitsLink }: { me: MySubscription; sh
         </div>
       )}
 
-      {scheduled && (
-        <div className="mt-5 flex items-start gap-3 rounded-2xl bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-500/10 dark:text-blue-200">
-          <CalendarClock size={18} className="mt-0.5 shrink-0" />
-          <div>
-            <p>
-              <span className="font-bold">
-                <BundleName bundleId={scheduled.bundleId} kind={scheduled.kind} title={scheduled.bundleTitle} />
-              </span>{" "}
-              تبدأ في {formatDay(scheduled.startDate)} وتنتهي في {formatDay(scheduled.endDate)}. دُفعت بالفعل.
-            </p>
-            <KeptGroups groups={scheduled.groups} className="mt-1.5" />
-          </div>
-        </div>
-      )}
     </section>
   );
 }

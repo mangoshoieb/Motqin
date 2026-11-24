@@ -1,118 +1,78 @@
 "use client";
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { User, Globe, Ticket } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
-import CustomButton from "@/components/CustomButton";
-import CustomInput from "@/components/CustomInput";
-
-import { completeProfileSchema } from "@/app/lib/validators/auth";
 import { useCompleteProfile } from "@/app/hooks/useCompleteProfile";
 import { useAuthStore } from "@/app/lib/auth.store";
-import Skeleton from "@/components/ui/Skeleton";
-import RegionSelect from "@/components/RegionSelect";
-import { getInviterCode } from "@/app/lib/invite-code";
+import { AuthFieldErrors, authFieldErrors } from "@/app/lib/auth-field-errors";
+import { otpErrorMessage } from "@/app/lib/otp-errors";
+import SignupDetailsForm from "@/components/auth/SignupDetailsForm";
 
-type FormData = z.infer<typeof completeProfileSchema>;
-
+// Phone sign-up, last step: /verify-phone answered needsSignup, so the new
+// account is made from «بياناتك» (POST /auth/phone-complete-signup).
 export default function CompleteProfile() {
-  const router = useRouter();
-
   const phoneNumber = useAuthStore((state) => state.phoneNumber);
-
   const { mutate: completeProfile, isPending } = useCompleteProfile();
+  const [serverErrors, setServerErrors] = useState<AuthFieldErrors | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    setValue,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(completeProfileSchema),
-  });
-
-  // The invite link's code, kept in sessionStorage — only readable in the
-  // browser, so it's filled in after mount.
+  // The phone lives in memory only; wait a tick before deciding a reload
+  // lost it.
+  const [ready, setReady] = useState(false);
   useEffect(() => {
-    const code = getInviterCode();
-    if (code) setValue("inviterCode", code);
-  }, [setValue]);
-
-  const onSubmit = (data: FormData) => {
-    if (!phoneNumber) {
-      return;
-    }
-
-    completeProfile({
-      phoneNumber,
-      name: data.name,
-      region: data.region,
-      // "" when the student cleared it, so the stored code isn't sent.
-      inviterCode: data.inviterCode ?? "",
-    });
-  };
+    const timeout = setTimeout(() => setReady(true), 0);
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
     <main dir="rtl" className="min-h-screen flex bg-[var(--surface)]">
-      {/* Form */}
+      <section className="w-full flex justify-center p-4 sm:p-6 lg:p-8">
+        <div className="w-full max-w-2xl flex flex-col gap-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-sm px-6 sm:px-8 py-8">
+          <h1 className="text-3xl font-bold text-right">بياناتك</h1>
 
-      <section className="w-full flex justify-center  p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
-        <div className="w-full max-w-4xl flex flex-col gap-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-sm px-6 sm:px-8 py-8">
-          <h1 className="text-3xl font-bold text-right">أكمل بياناتك</h1>
+          {ready && !phoneNumber ? (
+            <div className="flex flex-col gap-5">
+              <p className="text-gray-500 leading-8">
+                انتهت الجلسة قبل إكمال التسجيل. أدخل رقم هاتفك من جديد لنرسل لك رمزًا جديدًا.
+              </p>
+              <Link
+                href="/sign-up"
+                className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 dark:bg-blue-700 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
+              >
+                <ArrowRight className="size-5" />
+                العودة إلى إنشاء حساب
+              </Link>
+            </div>
+          ) : (
+            <>
+              <p className="text-gray-500 leading-8 mb-2">
+                لم يتبق سوى خطوة واحدة لإنشاء حسابك والبدء باستخدام
+                <span className="font-semibold text-black dark:text-white"> متقن</span>.
+              </p>
 
-          <p className="text-gray-500 leading-8 ">
-            لم يتبق سوى خطوة واحدة لإنشاء حسابك والبدء باستخدام
-            <span className="font-semibold text-black dark:text-white"> متقن</span>.
-          </p>
-
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-5"
-          >
-            <CustomInput
-              label="الاسم"
-              placeholder="مثال: محمد أحمد"
-              icon={<User size={18} />}
-              error={errors.name?.message}
-              {...register("name")}
-            />
-            <Controller
-              control={control}
-              name="region"
-              render={({ field }) => (
-                <RegionSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                  error={errors.region?.message}
-                />
-              )}
-            />
-            <CustomInput
-              label="كود الدعوة (اختياري)"
-              placeholder="مثال: 7595148B"
-              icon={<Ticket size={18} />}
-              dir="ltr"
-              autoComplete="off"
-              error={errors.inviterCode?.message}
-              {...register("inviterCode")}
-            />
-
-
-            <Skeleton className="w-full h-[40vh]" />
-
-            <CustomButton
-              title="إنشاء الحساب"
-              type="submit"
-              disabled={isPending}
-              className="w-full font-semibold"
-            />
-          </form>
+              <SignupDetailsForm
+                submitLabel={isPending ? "جارٍ إنشاء الحساب..." : "إنشاء الحساب"}
+                submitting={isPending}
+                serverErrors={serverErrors}
+                onSubmit={({ name, fields }) => {
+                  if (!phoneNumber) return;
+                  setServerErrors(null);
+                  completeProfile(
+                    { phoneNumber, name, ...fields },
+                    {
+                      onError: (error) => {
+                        const fieldErrors = authFieldErrors(error);
+                        if (fieldErrors) setServerErrors(fieldErrors);
+                        else toast.error("تعذر إنشاء الحساب", { description: otpErrorMessage(error) });
+                      },
+                    },
+                  );
+                }}
+              />
+            </>
+          )}
         </div>
       </section>
     </main>

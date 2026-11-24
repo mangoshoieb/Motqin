@@ -220,7 +220,7 @@ function attentionItems(
 ): AttentionItem[] {
   const items: AttentionItem[] = [];
 
-  if (me?.current.kind === "Paid" && !me.scheduled) {
+  if (me?.current.kind === "Paid") {
     const days = daysUntil(me.current.endDate);
     if (me.current.inGrace) {
       items.push({
@@ -238,9 +238,9 @@ function attentionItems(
         icon: CalendarClock,
         tone: "bg-amber-500/10 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300",
         title: days <= 0 ? "باقتك تنتهي اليوم" : `باقتك تنتهي خلال ${days} ${days <= 10 ? "أيام" : "يومًا"}`,
-        detail: `تنتهي في ${formatDay(me.current.endDate)}`,
+        detail: `تنتهي في ${formatDay(me.current.endDate)}، ويمكنك تجديدها بعد انتهائها`,
         href: "/subscription",
-        cta: "جدّد",
+        cta: "الباقات",
       });
     }
   }
@@ -535,7 +535,7 @@ function BundleCard({ me, isLoading }: { me: MySubscription | undefined; isLoadi
       )}
 
       <div className="mt-5 flex flex-wrap gap-2">
-        {paid && !me.scheduled && (
+        {paid && me.current.inGrace && (
           <Link
             href={renewHref}
             className="flex-1 rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-bold text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"

@@ -1,37 +1,64 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Phone } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
-import { useAuthStore } from "@/app/lib/auth.store";
-import { useGooglePhoneRequest, useGooglePhoneVerify } from "@/app/hooks/useGooglePhone";
+import PhoneField from "@/components/auth/PhoneField";
+import InviterCodeField from "@/components/auth/InviterCodeField";
+import WhatsAppDebugBox from "@/components/auth/WhatsAppDebugBox";
+import SignupDetailsForm, { SignupDetailsResult } from "@/components/auth/SignupDetailsForm";
+import { GoogleProfile, useAuthStore } from "@/app/lib/auth.store";
+import {
+  useGooglePhoneRequest,
+  useGooglePhoneVerify,
+  useGoogleProfileSubmit,
+} from "@/app/hooks/useGooglePhone";
 import { isGoogleTokenInvalid, otpErrorMessage, otpRetryAfterSeconds } from "@/app/lib/otp-errors";
-import { normalizeEgyptianPhone } from "@/app/lib/phone";
+import { AuthFieldErrors, authFieldErrors } from "@/app/lib/auth-field-errors";
+import { EMPTY_PHONE, PHONE_INVALID_MESSAGE, PhoneValue, toInternationalPhone } from "@/app/lib/phone";
 
-// Google sign-up for an account with no confirmed phone: POST /auth/google
-// answered needsPhone, so the user confirms a phone by WhatsApp here (step 2:
-// the number, step 3: the code). The Google ID token from the first step
-// rides along on both calls.
+type Step = "profile" | "phone" | "code";
+
+const toFormValues = (profile: GoogleProfile | null): SignupDetailsResult | null => {
+  if (!profile) return null;
+  const { fullName, ...fields } = profile;
+  return { name: fullName, fields };
+};
+
+// Google sign-up after the first POST /auth/google:
+// · needsProfile (a new user): «بياناتك» first; the second call answers a
+//   token (done, no phone) or needsPhone (a Secondary student, a teacher or
+//   a parent).
+// · needsPhone: confirm a phone by WhatsApp (the number, then the code).
+// The Google ID token rides along on every call, and the form values go
+// again with google/phone-verify, which makes the account.
 const GooglePhone = () => {
   const idToken = useAuthStore((state) => state.googleIdToken);
+  const needsProfile = useAuthStore((state) => state.googleNeedsProfile);
+  const googleFullName = useAuthStore((state) => state.googleFullName);
+  const googleProfile = useAuthStore((state) => state.googleProfile);
   const storedPhone = useAuthStore((state) => state.phoneNumber);
   const resendCooldownSeconds = useAuthStore((state) => state.resendCooldownSeconds);
   const resendsRemaining = useAuthStore((state) => state.resendsRemaining);
   const setResendInfo = useAuthStore((state) => state.setResendInfo);
   const setGoogleIdToken = useAuthStore((state) => state.setGoogleIdToken);
+  const setGoogleProfile = useAuthStore((state) => state.setGoogleProfile);
 
+  const submitProfile = useGoogleProfileSubmit();
   const requestCode = useGooglePhoneRequest();
   const verifyCode = useGooglePhoneVerify();
 
-  const [step, setStep] = useState<"phone" | "code">("phone");
-  const [phone, setPhone] = useState("");
+  const [step, setStep] = useState<Step>(() => (needsProfile ? "profile" : "phone"));
+  const [phone, setPhone] = useState<PhoneValue>(EMPTY_PHONE);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [profileErrors, setProfileErrors] = useState<AuthFieldErrors | null>(null);
+  const [inviterError, setInviterError] = useState<string>();
   // The Google token lasts about an hour; once rejected, start over.
   const [expired, setExpired] = useState(false);
 
@@ -47,15 +74,42 @@ const GooglePhone = () => {
     return () => clearInterval(timer);
   }, [cooldown]);
 
+  const formValues = useMemo(() => toFormValues(googleProfile), [googleProfile]);
+
+  // Returns true when the error was the expired Google token.
+  const tokenExpired = (err: unknown) => {
+    if (!isGoogleTokenInvalid(err)) return false;
+    setGoogleIdToken("");
+    setExpired(true);
+    return true;
+  };
+
   const fail = (err: unknown) => {
-    if (isGoogleTokenInvalid(err)) {
-      setGoogleIdToken("");
-      setExpired(true);
-      return;
-    }
+    if (tokenExpired(err)) return;
     const retryAfter = otpRetryAfterSeconds(err);
     if (retryAfter) setResendInfo(retryAfter, resendsRemaining);
-    setError(otpErrorMessage(err));
+    setError(authFieldErrors(err)?.PhoneNumber ?? otpErrorMessage(err));
+  };
+
+  // «التالي»: the second auth/google call, with the form.
+  const onProfile = async ({ name, fields }: SignupDetailsResult) => {
+    const profile: GoogleProfile = { fullName: name, ...fields };
+    setProfileErrors(null);
+    try {
+      const data = await submitProfile.mutateAsync({ idToken, ...profile });
+      if (data.needsPhone) {
+        setGoogleProfile(profile);
+        setError(null);
+        // Back here from a form error on the code step: the code is kept.
+        setStep(code && storedPhone ? "code" : "phone");
+      }
+      // A token: useGoogleProfileSubmit signs in.
+    } catch (err) {
+      if (tokenExpired(err)) return;
+      const fieldErrors = authFieldErrors(err);
+      if (fieldErrors) setProfileErrors(fieldErrors);
+      else toast.error("تعذر إكمال التسجيل", { description: otpErrorMessage(err) });
+    }
   };
 
   const sendCode = async (phoneNumber: string) => {
@@ -70,9 +124,9 @@ const GooglePhone = () => {
   };
 
   const submitPhone = () => {
-    const normalized = normalizeEgyptianPhone(phone);
+    const normalized = toInternationalPhone(phone.dialCode, phone.number);
     if (!normalized) {
-      setError("أدخل رقم موبايل مصري صحيح: 01 ثم 9 أرقام.");
+      setError(phone.number.trim() ? PHONE_INVALID_MESSAGE : "أدخل رقم الهاتف");
       return;
     }
     void sendCode(normalized);
@@ -84,30 +138,49 @@ const GooglePhone = () => {
       return;
     }
     setError(null);
+    setInviterError(undefined);
     try {
-      await verifyCode.mutateAsync({ idToken, phoneNumber: storedPhone, code });
+      await verifyCode.mutateAsync({ idToken, phoneNumber: storedPhone, code, ...(googleProfile ?? {}) });
     } catch (err) {
+      if (tokenExpired(err)) return;
+      // A form field or the invite code was refused; the code wasn't used up.
+      const fieldErrors = authFieldErrors(err);
+      if (fieldErrors) {
+        const { InviterCode, ...rest } = fieldErrors;
+        if (InviterCode) setInviterError(InviterCode);
+        if (Object.keys(rest).length) {
+          setProfileErrors(rest);
+          setStep("profile");
+        }
+        return;
+      }
       fail(err);
     }
   };
 
   const restart = !idToken || expired;
+  const title = step === "profile" ? "بياناتك" : "تأكيد رقم الهاتف";
 
   return (
     <main dir="rtl" className="min-h-screen flex bg-[var(--surface)]">
-      <section className="w-full lg:w-[40%] flex justify-center items-center p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
-        <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-sm px-6 sm:px-8 py-8">
+      <section className="w-full lg:w-[45%] flex justify-center items-center p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
+        <div className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-3xl shadow-sm px-6 sm:px-8 py-8">
           <div className="mb-4 flex items-center gap-2">
             <FcGoogle size={28} />
-            <h1 className="text-3xl font-bold text-right">تأكيد رقم الهاتف</h1>
+            <h1 className="text-3xl font-bold text-right">{title}</h1>
           </div>
+          {!restart && needsProfile && (
+            <p className="mb-4 text-xs font-semibold text-blue-600 dark:text-blue-400">
+              {step === "profile" ? "الخطوة 1: أكمل بياناتك" : "الخطوة 2: أكّد رقم هاتفك"}
+            </p>
+          )}
 
           {restart ? (
             <div className="flex flex-col gap-5">
               <p className="text-gray-500 text-sm sm:text-base leading-7">
                 {expired
                   ? "انتهت جلسة تسجيل الدخول بجوجل. ابدأ من جديد من زر جوجل."
-                  : "ابدأ تسجيل الدخول بجوجل أولًا، ثم أكّد رقم هاتفك هنا."}
+                  : "ابدأ تسجيل الدخول بجوجل أولًا، ثم أكمل بياناتك هنا."}
               </p>
               <Link
                 href="/sign-in"
@@ -117,8 +190,25 @@ const GooglePhone = () => {
                 العودة إلى تسجيل الدخول
               </Link>
             </div>
+          ) : step === "profile" ? (
+            <div className="flex flex-col gap-4">
+              <p className="text-gray-500 text-sm sm:text-base leading-7">
+                أهلًا بك في متقن! أخبرنا عنك قليلًا لنجهّز حسابك.
+              </p>
+              <SignupDetailsForm
+                initialName={googleFullName}
+                initial={formValues}
+                submitLabel={submitProfile.isPending ? "جارٍ الحفظ..." : "التالي"}
+                submitting={submitProfile.isPending}
+                serverErrors={profileErrors}
+                inviterCodeField="noPhoneStep"
+                phoneStepHint
+                onSubmit={(result) => void onProfile(result)}
+              />
+            </div>
           ) : step === "phone" ? (
             <form
+              noValidate
               onSubmit={(event) => {
                 event.preventDefault();
                 submitPhone();
@@ -126,23 +216,21 @@ const GooglePhone = () => {
               className="flex flex-col gap-5"
             >
               <p className="text-gray-500 text-sm sm:text-base leading-7">
-                آخر خطوة لإنشاء حسابك: أدخل رقم هاتفك، وسنرسل رمز تحقق إلى واتساب. إن كان للرقم حساب في متقن
-                نربط جوجل به.
+                آخر خطوة لإنشاء حسابك: أدخل رقم هاتفك، وسنرسل رمز تحقق إلى واتساب. يحتاجه المعلم أو ولي الأمر
+                ليجدك ويتابعك.
               </p>
-              <CustomInput
-                label="رقم الهاتف"
-                placeholder="01XXXXXXXXX"
-                type="tel"
-                dir="ltr"
-                inputMode="tel"
-                icon={<Phone size={18} />}
+              <PhoneField
                 value={phone}
-                onChange={(event) => {
-                  setPhone(event.target.value);
+                autoFocus
+                onChange={(next) => {
+                  setPhone(next);
                   setError(null);
                 }}
                 error={error ?? undefined}
               />
+              {needsProfile && (
+                <InviterCodeField error={inviterError} onChange={() => setInviterError(undefined)} />
+              )}
               <CustomButton
                 title={requestCode.isPending ? "جارٍ الإرسال..." : "إرسال الرمز عبر واتساب"}
                 type="submit"
@@ -152,9 +240,19 @@ const GooglePhone = () => {
               {cooldown > 0 && (
                 <p className="text-center text-sm text-gray-500">يمكنك طلب رمز بعد {cooldown} ثانية</p>
               )}
+              {needsProfile && (
+                <button
+                  type="button"
+                  onClick={() => setStep("profile")}
+                  className="text-sm font-semibold text-gray-700 dark:text-zinc-300 transition-colors hover:text-blue-600 dark:hover:text-blue-300"
+                >
+                  تعديل بياناتك
+                </button>
+              )}
             </form>
           ) : (
             <form
+              noValidate
               onSubmit={(event) => {
                 event.preventDefault();
                 void submitCode();
@@ -174,6 +272,7 @@ const GooglePhone = () => {
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
+                dir="ltr"
                 value={code}
                 onChange={(event) => {
                   setCode(event.target.value.replace(/\D/g, "").slice(0, 6));
@@ -181,6 +280,10 @@ const GooglePhone = () => {
                 }}
                 error={error ?? undefined}
               />
+              <WhatsAppDebugBox />
+              {inviterError && (
+                <InviterCodeField error={inviterError} onChange={() => setInviterError(undefined)} />
+              )}
               <CustomButton
                 title={verifyCode.isPending ? "جارٍ التحقق..." : "تأكيد"}
                 type="submit"

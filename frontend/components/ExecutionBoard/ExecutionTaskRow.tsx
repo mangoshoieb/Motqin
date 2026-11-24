@@ -245,22 +245,37 @@ export const ExecutionTaskRow = ({
       : session.id === breakSessionId && !session.breakCompleted);
 
   return (
-    // Two layers so the notes colour can frame the card's lower part: the
-    // outer one is white for its top 40% and then fades into the notes
-    // colour; the inner panel sits 8px in from the sides, so that colour
-    // shows as a border down both sides, and its rounded bottom corners
-    // curve smoothly into the notes footer below it.
+    // Two layers so the notes colour can frame the card's lower part. The
+    // outer one paints only an 8px strip down each side — white for the top
+    // 40%, then fading into the notes colour; the white panel inside sits
+    // between them, so the strips read as borders, and its rounded bottom
+    // corners curve smoothly into the notes box below.
+    // Closed, the notes box is a half-width tab hanging under the card's
+    // right side: the panel then reaches the left edge itself and ends with
+    // a rounded corner there (the outer layer has no background of its own,
+    // so the page shows beside the tab). Opening it brings the left strip
+    // in as the box widens to the full width.
     <div
       className={cn(
-        "relative flex min-w-0 flex-col rounded-lg px-2",
+        "relative flex min-w-0 flex-col rounded-lg px-2 transition-[background-size] duration-300",
         "[--card-bg:#ffffff] [--notes-bg:#fef3c7] dark:[--card-bg:#18181b] dark:[--notes-bg:#451a03]",
         isDragging && "cursor-grabbing",
       )}
       style={{
-        backgroundImage: "linear-gradient(to bottom, var(--card-bg) 40%, var(--notes-bg) calc(40% + 32px))",
+        backgroundImage: [0, 1]
+          .map(() => "linear-gradient(to bottom, var(--card-bg) 40%, var(--notes-bg) calc(40% + 32px))")
+          .join(", "),
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "right top, left top",
+        backgroundSize: `8px 100%, ${notesOpen ? "8px" : "0px"} 100%`,
       }}
     >
-      <div className="flex min-w-0 flex-col gap-3 rounded-b-2xl bg-white px-3 py-5 dark:bg-zinc-900">
+      <div
+        className={cn(
+          "flex min-w-0 flex-col gap-3 bg-white py-5 pr-3 transition-[margin,padding,border-radius] duration-300 dark:bg-zinc-900",
+          notesOpen ? "rounded-b-2xl pl-3" : "-ml-2 rounded-tl-lg rounded-bl-lg rounded-br-2xl pl-5",
+        )}
+      >
       <div className="flex items-center gap-3">
         {/* The only place a drag starts — a fixed-size grip at the card's
             edge, Jira-style — so text fields and buttons elsewhere on the

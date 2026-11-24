@@ -169,6 +169,10 @@ export const formatPlannerDate = (date: string) => {
   return `${String(value.getDate()).padStart(2, "0")}/${String(value.getMonth() + 1).padStart(2, "0")}`;
 };
 
+// Finished on the clock, or logged afterwards (ManuallyCompleted).
+const isDoneSession = (session: { status: number }) =>
+  session.status === StudySessionStatus.Completed || session.status === StudySessionStatus.ManuallyCompleted;
+
 export const completedSessionHours = (items: StudyPlanItem[]) => {
   const minutes = items.reduce(
     (sum, item) =>
@@ -209,6 +213,11 @@ export const applyStudyPlansToDay = (day: PlannerDay, items: StudyPlanItem[]): P
     // Hours actually studied: the day's completed focus sessions, to one
     // decimal — not the tasks' planned estimates.
     workingHours: completedSessionHours(items),
-    focusSessions: items.reduce((sum, item) => sum + item.studySessions.length, 0),
+    // Sessions actually finished — not every session planned in the tasks.
+    focusSessions: items.reduce(
+      (sum, item) =>
+        sum + item.studySessions.filter(isDoneSession).length,
+      0,
+    ),
   };
 };

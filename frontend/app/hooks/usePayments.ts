@@ -4,6 +4,7 @@ import {
   keepPreviousData,
   useInfiniteQuery,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -139,6 +140,18 @@ export const usePurchasePreview = (
     queryFn: () => api.preview(bundleId!, coupon || null, groups),
     enabled: enabled && !!bundleId,
     placeholderData: keepPreviousData,
+  });
+
+// The coupon on each plan shown, as the whole plan: the plans page's field
+// says whether any of them takes it. Same keys as usePurchasePreview, so a
+// card showing its whole plan shares the request.
+export const useCouponPreviews = (bundleIds: number[], coupon: string, enabled: boolean) =>
+  useQueries({
+    queries: bundleIds.map((bundleId) => ({
+      queryKey: PAYMENT_KEYS.preview(bundleId, coupon, ""),
+      queryFn: () => api.preview(bundleId, coupon || null, null),
+      enabled: enabled && !!coupon,
+    })),
   });
 
 export const usePurchase = () => {

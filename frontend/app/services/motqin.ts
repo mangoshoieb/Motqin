@@ -435,6 +435,15 @@ export const studyPlansService = {
     return unwrap(data) ?? { items: [], total: 0 };
   },
 
+  // GET /study-plan/user-performance: today's completed plans, completed
+  // sessions and their minutes. Available on every plan.
+  async performanceToday(): Promise<UserPerformanceDay> {
+    const { data } = await axiosInstance.get<UserPerformanceDay | ApiEnvelope<UserPerformanceDay>>(
+      API_ROUTES.STUDY_PLANS.PERFORMANCE_TODAY,
+    );
+    return unwrap(data);
+  },
+
   // A plan feature (PerformanceRange): 403 not_in_plan when the plan has it off.
   async performanceByRange(startDate: string, endDate: string): Promise<UserPerformanceRange> {
     const { data } = await axiosInstance.get<UserPerformanceRange | ApiEnvelope<UserPerformanceRange>>(

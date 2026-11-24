@@ -1,40 +1,14 @@
 // lib/validators/auth.ts
 import { z } from "zod";
 
-export const signUpSchema = z.object({
-  phoneNumber: z
-    .string()
-    .min(11, "Phone number is required")
-    .max(15, "Invalid phone number")
-    .regex(/^01[0125][0-9]{8}$/, "Please enter a valid Egyptian phone number"),
-
-  username: z.string().min(3, "Username must be at least 3 characters").max(30),
-});
-export const signInSchema = z.object({
-  phoneNumber: z
-    .string()
-    .min(11, "Phone number is required")
-    .max(15, "Invalid phone number")
-    .regex(/^01[0125][0-9]{8}$/, "Please enter a valid Egyptian phone number"),
-});
+// Phone numbers are checked with toInternationalPhone (app/lib/phone.ts) —
+// any country, not only Egypt — and the server's details.PhoneNumber
+// message is shown when it refuses one. The «بياناتك» form validates itself
+// (components/auth/SignupDetailsForm.tsx).
 
 export const verifyPhoneSchema = z.object({
-  code: z.string().length(6, "OTP must contain exactly 6 digits"),
-});
-
-export const completeProfileSchema = z.object({
-  name: z
+  code: z
     .string()
-    .min(3, "الاسم يجب أن يحتوي على 3 أحرف على الأقل")
-    .max(50),
-
-  // EgyptianGovernorate on the API: the integer from
-  // GET /lookups/egyptian-governorates, never the Arabic label.
-  region: z
-    .number({ error: "يرجى اختيار المحافظة" })
-    .int()
-    .min(1, "يرجى اختيار المحافظة"),
-
-  // Competition invite code, optional — prefilled from the invite link.
-  inviterCode: z.string().max(32).optional(),
+    .trim()
+    .regex(/^\d{6}$/, "رمز التحقق 6 أرقام"),
 });

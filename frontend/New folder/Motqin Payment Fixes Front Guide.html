@@ -1,0 +1,785 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Motqin Payment Fixes Front Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style id="page-style">
+/* Layout: one reading column; a controller is a coloured band, each endpoint a card (brief, fields, good cases, bad cases, lookups, notes); each screen card ends with the front's task checklist and a notes box; manual test closes the page. Same family as the Payments guide. */
+:root {
+  --bg: #f5f7f6; --card: #ffffff; --fg: #16211d; --muted: #586560; --line: #dbe3df; --code-bg: #eef3f0;
+  --accent: #0f6b52;
+  --get: #12805c;  --get-bg: #e2f4ec;
+  --post: #2f5bd3; --post-bg: #e6edfd;
+  --put: #a66300;  --put-bg: #fcf0db;
+  --del: #c2364b;  --del-bg: #fce6e9;
+  --ok: #12805c;   --warn: #a66300;  --bad: #c2364b;
+  --u: #0f6b52;  --u-bg: #ddf1e8;
+  --a: #6a46c4;  --a-bg: #ede6fb;
+  --t: #3a7d2c;  --t-bg: #e7f3e2;
+  --bar: rgba(255,255,255,0.94);
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "IBM Plex Sans Arabic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+    --accent: #4fcf9f;
+    --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+    --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+    --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+    --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+    --bar: rgba(21,29,26,0.95);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --card: #151d1a; --fg: #e6eeea; --muted: #98a7a0; --line: #25332e; --code-bg: #1b2522;
+  --accent: #4fcf9f;
+  --get: #4fd29a; --get-bg: #12312a; --post: #86a8ff; --post-bg: #1a2648;
+  --put: #f3b14d; --put-bg: #3a2a10; --del: #ff8396; --del-bg: #3f1a22;
+  --ok: #4fd29a; --warn: #f3b14d; --bad: #ff8396;
+  --u: #4fcf9f; --u-bg: #12352a; --a: #b69bff; --a-bg: #261d40; --t: #8fd47d; --t-bg: #18301a;
+  --bar: rgba(21,29,26,0.95);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 120px;
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 26px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 13px; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ar { font-family: "IBM Plex Sans Arabic", var(--font-body); direction: rtl; unicode-bidi: isolate; }
+
+.hero { display: grid; gap: 12px; }
+.lead { max-width: 74ch; color: var(--muted); }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a { text-decoration: none; font-weight: 600; font-size: 13.5px; padding: 5px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--fg); }
+.nav a.u { background: var(--u-bg); color: var(--u); border-color: transparent; }
+.nav a.a { background: var(--a-bg); color: var(--a); border-color: transparent; }
+.nav a.t { background: var(--t-bg); color: var(--t); border-color: transparent; }
+
+.part { display: grid; gap: 16px; }
+.ctl { display: grid; gap: 6px; padding: 16px 20px; border-radius: 14px; scroll-margin-top: 12px; }
+.ctl .num { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; }
+.ctl p { max-width: 74ch; }
+.ctl.u { background: var(--u-bg); } .ctl.u .num, .ctl.u h2 { color: var(--u); }
+.ctl.a { background: var(--a-bg); } .ctl.a .num, .ctl.a h2 { color: var(--a); }
+.ctl.t { background: var(--t-bg); } .ctl.t .num, .ctl.t h2 { color: var(--t); }
+.ctl.n { background: var(--code-bg); }
+
+.ep { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; scroll-margin-top: 12px; }
+.ep-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.m { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; letter-spacing: 0.04em; }
+.m.get { background: var(--get-bg); color: var(--get); }
+.m.post { background: var(--post-bg); color: var(--post); }
+.m.put, .m.patch { background: var(--put-bg); color: var(--put); }
+.m.del { background: var(--del-bg); color: var(--del); }
+.path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; color: var(--warn); }
+.tag.chg { color: var(--a); }
+.tag.imp { color: var(--bad); }
+.todo li.important label { background: var(--del-bg); border-left: 3px solid var(--bad); }
+.todo li.important label:hover { background: var(--del-bg); }
+.who { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--code-bg); color: var(--muted); }
+.brief { max-width: 78ch; }
+.lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.io { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+.io > div { min-width: 0; display: grid; gap: 6px; align-content: start; }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.5; }
+.case { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; min-width: 0; }
+.case > .lbl { color: var(--ok); }
+.bad > .lbl { color: var(--bad); }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td code { white-space: pre-wrap; }
+.params td:first-child { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+.s { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+.s.ok { background: var(--get-bg); color: var(--ok); }
+.s.b4 { background: var(--del-bg); color: var(--bad); }
+.s.b3 { background: var(--put-bg); color: var(--warn); }
+.dep { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dep span.chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--code-bg); border: 1px solid var(--line); }
+.notes { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.tip { font-size: 14px; border-left: 3px solid var(--accent); padding: 6px 12px; background: var(--code-bg); border-radius: 0 8px 8px 0; }
+.tip.warn { border-left-color: var(--warn); }
+
+/* front task checklist */
+.todo-box { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; min-width: 0; }
+.todo-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.todo-head .lbl { color: var(--accent); }
+.count { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--code-bg); color: var(--muted); font-variant-numeric: tabular-nums; }
+.count.all { background: var(--get-bg); color: var(--ok); }
+.todo { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.todo label { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; padding: 6px 8px; border-radius: 8px; cursor: pointer; min-width: 0; }
+.todo label:hover { background: var(--code-bg); }
+.todo input[type="checkbox"] { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--ok); cursor: pointer; }
+.todo input:checked + span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.todo span { min-width: 0; }
+.note-field { display: grid; gap: 4px; }
+.note-field textarea { width: 100%; min-height: 54px; resize: vertical; font: inherit; font-size: 14px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+
+.flow ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+.flow li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; display: grid; gap: 8px; min-width: 0; }
+.flow li::before { content: counter(step); position: absolute; left: 14px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--t-bg); color: var(--t); font-family: var(--font-mono); font-weight: 600; font-size: 13px; display: grid; place-items: center; }
+.flow li.stage { counter-increment: none; background: none; border: 0; padding: 8px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--t); }
+.flow li.stage::before { content: none; }
+.expect { color: var(--muted); font-size: 14px; }
+.expect b { color: var(--fg); }
+.foot { color: var(--muted); font-size: 13px; }
+.pmap { display: grid; gap: 14px; }
+.jr { display: grid; gap: 6px; min-width: 0; }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pg { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 8px; background: var(--card); border: 1px solid var(--line); color: var(--fg); text-decoration: none; }
+a.pg:hover { border-color: var(--accent); }
+.pg.hub { background: var(--u-bg); color: var(--u); border-color: transparent; }
+.pg.ext { border-style: dashed; color: var(--muted); background: transparent; }
+.arr { color: var(--muted); font-size: 13px; }
+.pname { font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+.pname-ar { font-size: 16px; font-weight: 600; color: var(--muted); }
+
+/* save bar */
+.savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--bar); border-top: 1px solid var(--line); backdrop-filter: blur(6px);
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.savebar-in { max-width: 1000px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.prog { display: grid; gap: 4px; flex: 1 1 220px; min-width: 0; }
+.prog-text { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.prog-track { height: 6px; border-radius: 999px; background: var(--code-bg); overflow: hidden; }
+.prog-fill { height: 100%; width: 0; background: var(--ok); border-radius: 999px; transition: width .25s ease; }
+.save-msg { font-size: 13px; color: var(--muted); }
+.save-msg.dirty { color: var(--warn); font-weight: 600; }
+.save-msg.err { color: var(--bad); }
+.btn { font: inherit; font-weight: 600; font-size: 14px; padding: 8px 16px; border-radius: 9px; border: 0; background: var(--accent); color: var(--bg); cursor: pointer; }
+.btn[disabled] { opacity: .45; cursor: default; }
+@media (max-width: 520px) { .flow li { padding-left: 16px; padding-top: 50px; } .flow li.stage { padding-top: 8px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+<main id="guide" class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Motqin backend · payments · for the front · updated 23 Nov 2026</span>
+  <h1>Motqin Payment Fixes Front Guide</h1>
+  <p class="lead">Payment APIs for the front: tick each task when done, then press <b>Save progress</b>.</p>
+  <nav class="nav" aria-label="Sections">
+    <a href="#general">General notes</a>
+    <a class="u" href="#subscription">Subscription</a>
+    <a class="a" href="#wallet">Wallet</a>
+    <a href="#payment">Payment</a>
+    <a class="t" href="#test">Manual test</a>
+  </nav>
+</header>
+
+<article class="ep" id="cards">
+  <div class="ep-line"><span class="path">How each card is organized</span></div>
+  <div class="table-wrap"><table>
+    <tr><td><b>Header</b></td><td>Method (<span class="m get">GET</span> <span class="m post">POST</span> <span class="m put">PUT</span> <span class="m del">DELETE</span>), path, and <span class="who">who can call it</span>.</td></tr>
+    <tr><td><b>Brief</b></td><td>What it's for and which screen uses it.</td></tr>
+    <tr><td><b>Fields</b></td><td>Every input with its limits and meaning.</td></tr>
+    <tr><td><b style="color: var(--ok);">Valid</b></td><td>Real request and response: left is what you send, right is what you get.</td></tr>
+    <tr><td><b style="color: var(--bad);">Bad cases</b></td><td><b>Send</b> · <b>Get</b> · <b>Show</b> (the Arabic message).</td></tr>
+    <tr><td><b>Lookups</b></td><td>Endpoints it depends on.</td></tr>
+    <tr><td><b>Notes · front tasks</b></td><td>How to build the screen around it: one checkbox per thing the front must do (the counter shows how many are done). <b>Save progress</b> at the bottom saves the ticks for everyone.</td></tr>
+  </table></div>
+  <p class="foot"><span class="tag">new</span> and <span class="tag chg">changed</span> mark what changed between 21 and 23 Nov 2026. Responses come from the payments test run on the live API (21–23 Nov, test account "kamel"). Long lists are cut with <code>…</code>. Every error body has the shape <code>{ "success": false, "data": null, "error": { "code", "message", "details"? } }</code>. Arabic texts come from <code>GET /api/lookups/error-codes</code>.</p>
+</article>
+
+<article class="ep" id="general">
+  <div class="ep-line"><span class="path">General notes</span><span class="tag chg">changed</span></div>
+  <p class="brief">A student can no longer buy a plan that starts later. While a paid plan is running, the only thing they can buy is an <b>upgrade</b>, paying the difference for the days left. After the plan ends, they can buy any plan.</p>
+  <span class="lbl">What the student can buy</span>
+  <div class="table-wrap"><table>
+    <tr><th>Student's plan</th><th>Can buy</th><th><code>operation</code></th><th>Starts</th></tr>
+    <tr><td>Free (or Guest after sign-up)</td><td>Any paid plan</td><td><code>Purchase</code></td><td>Now</td></tr>
+    <tr><td>Paid, still running</td><td>A higher plan with the same term that keeps every main feature they have, or their own plan with a main feature added back</td><td><code>Upgrade</code></td><td>Now, ends with the current plan</td></tr>
+    <tr><td>Paid, still running</td><td>Anything else: the same plan again, a lower plan, a different term</td><td>refused: <code>upgrade_only</code></td><td>—</td></tr>
+    <tr><td>Paid, ended, in the 3 grace days (<code>current.inGrace</code>)</td><td>The same plan</td><td><code>Renewal</code></td><td>Active now; its days count from the old end date</td></tr>
+    <tr><td>Paid, ended, in the 3 grace days</td><td>Any other plan</td><td><code>Purchase</code></td><td>Now</td></tr>
+  </table></div>
+  <p class="expect">An upgrade costs the price-list difference for the days left, and coupons never apply to it.</p>
+  <div class="todo-box">
+    <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="general"></span></div>
+    <ul class="todo" data-group="general">
+      <li class="important"><label><input type="checkbox" id="t-gen-scheduled" data-task="gen-scheduled"><span><span class="tag imp">important</span> Delete everything about scheduled plans: the <span class="ar">تغيير لباقة أقل</span> and <span class="ar">باقة تالية</span> labels and hints on checkout, the scheduled banner (<span class="ar">… دُفعت بالفعل.</span>) on the limits page, and the "<span class="ar">تبدأ في … وتنتهي في …</span>" branch of the success screen. Every plan is active at once now.</span></label></li>
+      <li><label><input type="checkbox" id="t-gen-codes" data-task="gen-codes"><span>In <code>PAYMENT_ERROR_DEFAULTS</code>, remove <code>already_scheduled</code> and <code>renew_first</code>, and add <code>upgrade_only</code>: <span class="ar">باقتك سارية حتى نهايتها، يمكنك الترقية الآن فقط واختيار أي باقة بعد انتهائها</span>.</span></label></li>
+      <li><label><input type="checkbox" id="t-gen-refund" data-task="gen-refund"><span>Delete the <span class="ar">ضمان استرداد الأموال</span> box from checkout and the <code>REFUND_GUARANTEE_TEXT</code> constant. There is no refund feature behind it.</span></label></li>
+      <li><label><input type="checkbox" id="t-gen-current" data-task="gen-current"><span>Plans page, plan still running: the current plan's card says <span class="ar">باقتك الحالية</span> with no buy button (remove <span class="ar">جدّد الخطة</span> from it).</span></label></li>
+      <li><label><input type="checkbox" id="t-gen-grace" data-task="gen-grace"><span>Plans page, in grace: every card is buyable. The current plan's card says <span class="ar">جدّد الخطة</span>; the others say <span class="ar">اشترك</span>.</span></label></li>
+      <li><label><input type="checkbox" id="t-gen-banner" data-task="gen-banner"><span>Grace banner: replace <span class="ar">لتغيير الباقة يجب التجديد أولاً</span> (no longer true) with <span class="ar">جدّد الآن حتى لا تتوقف مزاياك، أو اختر أي باقة أخرى</span>.</span></label></li>
+      <li><label><input type="checkbox" id="t-gen-addback" data-task="gen-addback"><span>Adding a main feature back is an upgrade of the <b>same</b> plan: a student on Motqin without spaced repetition adds it to Motqin itself. <span class="ar">أضفها</span> on the limits page already opens that checkout; keep it.</span></label></li>
+    </ul>
+  </div>
+</article>
+
+
+<section class="part" id="subscription">
+  <div class="ctl u"><span class="num">SubscriptionController · /api/subscription</span><h2>Subscription</h2><p>The student's plan, its history, and buying a plan from the wallet. Preview and purchase need a registered account; <code>me</code> and <code>history</code> also answer guests.</p></div>
+
+  <article class="ep" id="sub-me">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/subscription/me</span><span class="who">registered user · guest</span><span class="tag chg">changed</span></div>
+    <p class="brief">The current plan and its limits, for the plans page, checkout and <span class="ar">حدود باقتي</span>. <span class="tag chg">changed</span> <code>scheduled</code> is gone: the body is <code>{ current, quotas }</code>, and <code>current.status</code> is only <code>Active</code>, <code>Expired</code> or <code>Replaced</code>.</p>
+    <div class="case"><span class="lbl">Valid · a paid plan</span>
+      <pre class="code">200
+{ "success": true, "error": null,
+  "data": {
+    "current": { "id": 196, "bundleId": 20, "bundleTitle": "Motqin Pro · 1 month",
+      "bundleDurationMonths": 1, "kind": "Paid", "groups": null,
+      "status": "Active", "replacedReason": null,
+      "startDate": "2026-11-22T08:04:32.262826+00:00",
+      "endDate": "2026-12-21T07:37:57.9823463+00:00",
+      "inGrace": false, "graceEndsAt": "2026-12-24T07:37:57.9823463+00:00",
+      "listPrice": 299, "discountAmount": 0, "pricePaid": 142, "couponCode": null },
+    "quotas": [ … ] } }</pre></div>
+    <div class="case"><span class="lbl">Valid · a guest (one quota shown)</span>
+      <pre class="code">200
+{ "data": {
+    "current": { "id": 188, "bundleId": 4, "bundleTitle": "Guest", "bundleDurationMonths": null,
+      "kind": "Guest", "groups": null, "status": "Active", "replacedReason": null,
+      "startDate": "2026-11-17T14:05:12.262539+00:00", "endDate": null,
+      "inGrace": false, "graceEndsAt": null,
+      "listPrice": 0, "discountAmount": 0, "pricePaid": 0, "couponCode": null },
+    "quotas": [ { "feature": "AiStudyPlanner", "displayName": "AI study planner",
+      "group": "StudyPlanner", "type": "Usage", "access": "Limited",
+      "limit": 1, "used": 0, "remaining": 1, "resetsAt": null,
+      "lifetime": true, "included": true }, … ] } }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>no token</td><td><span class="s b4">401</span> empty body</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      </table></div></div>
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="sub-me"></span></div>
+      <ul class="todo" data-group="sub-me">
+        <li class="important"><label><input type="checkbox" id="t-me-scheduled" data-task="me-scheduled"><span><span class="tag imp">important</span> Stop reading <code>data.scheduled</code>; it no longer comes back. Drop the <code>Scheduled</code> status from the status labels.</span></label></li>
+        <li><label><input type="checkbox" id="t-me-grace" data-task="me-grace"><span>The grace banner shows only while <code>current.inGrace</code> is true, with the date from <code>graceEndsAt</code> (<span class="ar">انتهت باقتك، وما زالت مزاياها متاحة حتى …</span>).</span></label></li>
+        <li><label><input type="checkbox" id="t-me-renew" data-task="me-renew"><span>Limits page: hide <span class="ar">تجديد</span> while the plan runs (<code>inGrace</code> false); show it only in grace.</span></label></li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep" id="sub-history">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/subscription/history</span><span class="who">registered user · guest</span><span class="tag chg">changed</span></div>
+    <p class="brief">Every plan the student had, for <span class="ar">سجل الاشتراكات</span>. <span class="tag chg">changed</span> Newest purchase first, by the order the rows were created. A grace renewal starts at the old end date, so sorting by <code>startDate</code> would put the newest row at the bottom.</p>
+    <div class="case"><span class="lbl">Valid</span>
+      <pre class="code">200
+{ "success": true, "error": null, "data": [
+  { "id": 196, "bundleId": 20, "bundleTitle": "Motqin Pro · 1 month", "bundleDurationMonths": 1,
+    "kind": "Paid", "groups": null, "status": "Active", "replacedReason": null,
+    "startDate": "2026-11-22T08:04:32.262826+00:00", "endDate": "2026-12-21T07:37:57.9823463+00:00",
+    "listPrice": 299, "discountAmount": 0, "pricePaid": 142, "couponCode": null, … },
+  { "id": 195, "bundleId": 17, "bundleTitle": "Motqin · 1 month", "bundleDurationMonths": 1,
+    "kind": "Paid", "groups": ["StudyPlanner", "SpacedRepetition", "Mentor"],
+    "status": "Replaced", "replacedReason": "Upgrade",
+    "startDate": "2026-11-21T08:37:57.9823463+01:00", "endDate": "2026-11-22T08:04:32.262826+00:00",
+    "listPrice": 153, "discountAmount": 0, "pricePaid": 153, "couponCode": null, … },
+  { "id": 194, "bundleTitle": "Motqin · 1 month", "status": "Expired", … },
+  { "id": 193, "bundleTitle": "Motqin · 1 month", "status": "Replaced", "replacedReason": "Upgrade", … },
+  { "id": 192, "bundleTitle": "Free", "status": "Replaced", "replacedReason": "Superseded", … },
+  … ] }</pre>
+      <p class="expect">Row 195 is the grace renewal: it was bought after 194, but its <code>startDate</code> is earlier. It still comes second.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>no token</td><td><span class="s b4">401</span> empty body</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      </table></div></div>
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="sub-history"></span></div>
+      <ul class="todo" data-group="sub-history">
+        <li class="important"><label><input type="checkbox" id="t-hist-order" data-task="hist-order"><span><span class="tag imp">important</span> Show the rows in the order they arrive. Don't re-sort by date.</span></label></li>
+        <li><label><input type="checkbox" id="t-hist-chips" data-task="hist-chips"><span>Status chips: <code>Active</code> <span class="ar">نشطة</span> · <code>Expired</code> <span class="ar">منتهية</span> · <code>Replaced</code> <span class="ar">استُبدلت</span>. Remove the scheduled chip.</span></label></li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep" id="sub-preview">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/preview</span><span class="who">registered user</span><span class="tag chg">changed</span></div>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Body field</th><th>Rules</th><th>Meaning</th></tr>
+      <tr><td>bundleId</td><td>required · a bundle id</td><td>The plan's card (from <code>GET /api/bundles</code>).</td></tr>
+      <tr><td>groups</td><td>optional · main features to keep</td><td><code>StudyPlanner</code>, <code>SpacedRepetition</code>, <code>DistractionBlocker</code>, <code>Mentor</code>. Left out or <code>null</code>: the whole plan. Only for a bundle with <code>customizable: true</code>; keep at least one.</td></tr>
+      <tr><td>couponCode</td><td>optional</td><td>The coupon the student typed. It applies after the feature discount.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid · first purchase with a coupon</span>
+      <div class="io">
+        <div><pre class="code">{ "bundleId": 14, "couponCode": "TJFIRST20" }</pre></div>
+        <div><pre class="code">200 { "data": {
+  "operation": "Purchase", "fullPrice": 99,
+  "featuresDiscountPercent": 0, "featuresDiscount": 0, "groups": null,
+  "listPrice": 99, "discountPercent": 20, "discountAmount": 19.8,
+  "amountDue": 79.2, "walletBalance": 100, "suggestedRechargeAmount": 0,
+  "couponError": null, "blockedReason": null,
+  "startsAt": "2026-11-21T21:12:…+00:00",
+  "endsAt": "2026-12-21T21:12:…+00:00" } }</pre></div>
+      </div></div>
+    <div class="case"><span class="lbl">Valid · upgrade with 10 days left, short balance</span>
+      <div class="io">
+        <div><pre class="code">{ "bundleId": 17 }
+// the student is on Plus · 1 month</pre></div>
+        <div><pre class="code">200 { "data": {
+  "operation": "Upgrade", "fullPrice": 179, "listPrice": 179,
+  "discountAmount": 0, "amountDue": 27,
+  "walletBalance": 20.8, "suggestedRechargeAmount": 10,
+  "couponError": null, "blockedReason": null,
+  "endsAt": "2026-12-01T22:13:51.6800073+01:00", … } }</pre>
+          <p class="expect">Checkout shows <span class="ar">ينقصك 6.2</span> and <span class="ar">اشحن 10 ج.م</span>. <code>endsAt</code> is the current plan's end.</p></div>
+      </div></div>
+    <div class="case"><span class="lbl">Valid · a coupon that doesn't apply</span>
+      <div class="io">
+        <div><pre class="code">{ "bundleId": 14, "couponCode": "TJPRO" }
+// TJPRO is only for Motqin Pro</pre></div>
+        <div><pre class="code">200 { "data": {
+  "operation": "Purchase", "fullPrice": 99, "listPrice": 99,
+  "discountAmount": 0, "amountDue": 99,
+  "couponError": "coupon_not_applicable", "blockedReason": null, … } }</pre>
+          <p class="expect">The same coupon on Motqin Pro (<code>bundleId: 20</code>) gives <code>discountAmount: 59.8</code> and <code>amountDue: 239.2</code>.</p></div>
+      </div></div>
+    <div class="case"><span class="lbl">Valid · a coupon not allowed on a customised plan</span>
+      <div class="io">
+        <div><pre class="code">{ "bundleId": 17, "couponCode": "TJWHOLE",
+  "groups": ["StudyPlanner", "DistractionBlocker", "Mentor"] }</pre></div>
+        <div><pre class="code">200 { "data": {
+  "operation": "Purchase", "fullPrice": 179,
+  "featuresDiscount": 53, "listPrice": 126,
+  "discountAmount": 0, "amountDue": 126,
+  "couponError": "coupon_not_for_customized", … } }</pre>
+          <p class="expect">The same coupon without <code>groups</code>: <code>listPrice: 179</code>, <code>discountAmount: 35.8</code>, <code>amountDue: 143.2</code>.</p></div>
+      </div></div>
+    <div class="case"><span class="lbl">Valid · blocked while a plan runs <span class="tag">new</span></span>
+      <div class="io">
+        <div><pre class="code">{ "bundleId": 14 }
+// the student is on Motqin Pro until 21 Dec</pre></div>
+        <div><pre class="code">200 { "data": {
+  "operation": null, "fullPrice": 0, "featuresDiscountPercent": 0,
+  "featuresDiscount": 0, "groups": null, "listPrice": 0,
+  "discountPercent": 0, "discountAmount": 0, "amountDue": 0,
+  "walletBalance": 0.8, "suggestedRechargeAmount": 0,
+  "couponError": null, "blockedReason": "upgrade_only",
+  "startsAt": null, "endsAt": null } }</pre>
+          <p class="expect">Every price is 0 because nothing can be bought, not because it's free. The same comes back for the same plan again and for a different term.</p></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>a lower plan, the same plan or another term while a paid plan runs</td><td><span class="s ok">200</span> <code>blockedReason: "upgrade_only"</code></td><td>On a card: <span class="ar">يمكنك اختيار هذه الباقة بعد انتهاء باقتك الحالية</span>. On checkout: <span class="ar">باقتك سارية حتى نهايتها، يمكنك الترقية الآن فقط واختيار أي باقة بعد انتهائها</span></td></tr>
+        <tr><td><code>"groups": []</code> or an unknown group</td><td><span class="s ok">200</span> <code>blockedReason: "invalid_groups"</code></td><td class="ar">اختر ميزة رئيسية واحدة على الأقل من المميزات المتاحة في هذه الباقة</td></tr>
+        <tr><td><code>groups</code> on a bundle sold whole</td><td><span class="s ok">200</span> <code>blockedReason: "bundle_not_customizable"</code></td><td class="ar">هذه الباقة تُشترى كاملة ولا يمكن اختيار مميزاتها</td></tr>
+        <tr><td>Free (<code>bundleId: 5</code>), an unknown id or <code>abc</code></td><td><span class="s ok">200</span> <code>blockedReason: "bundle_unavailable"</code></td><td class="ar">هذه الباقة غير متاحة للشراء</td></tr>
+        <tr><td>a teacher bundle from a student account</td><td><span class="s ok">200</span> <code>blockedReason: "teacher_plan_only"</code></td><td class="ar">باقات المدرسين متاحة لحسابات المدرسين فقط</td></tr>
+        <tr><td><code>NOPE</code>, or a switched-off coupon</td><td><span class="s ok">200</span> <code>couponError: "coupon_invalid"</code></td><td class="ar">الكوبون غير صحيح</td></tr>
+        <tr><td>a coupon that starts later</td><td><span class="s ok">200</span> <code>couponError: "coupon_not_started"</code></td><td class="ar">الكوبون لم يبدأ بعد</td></tr>
+        <tr><td>an expired coupon</td><td><span class="s ok">200</span> <code>couponError: "coupon_expired"</code></td><td class="ar">انتهت صلاحية الكوبون</td></tr>
+        <tr><td>a coupon with no uses left</td><td><span class="s ok">200</span> <code>couponError: "coupon_unavailable"</code></td><td class="ar">نفدت مرات استخدام الكوبون</td></tr>
+        <tr><td>a coupon for other plans</td><td><span class="s ok">200</span> <code>couponError: "coupon_not_applicable"</code></td><td class="ar">الكوبون لا ينطبق على هذه الباقة</td></tr>
+        <tr><td>a coupon the student already used</td><td><span class="s ok">200</span> <code>couponError: "coupon_already_used"</code></td><td class="ar">استخدمت هذا الكوبون من قبل</td></tr>
+        <tr><td>a first-purchase coupon after the first purchase</td><td><span class="s ok">200</span> <code>couponError: "coupon_first_purchase_only"</code></td><td class="ar">الكوبون لأول عملية شراء فقط</td></tr>
+        <tr><td>any coupon on an upgrade</td><td><span class="s ok">200</span> <code>couponError: "coupon_not_for_upgrades"</code></td><td class="ar">لا يمكن استخدام كوبون عند الترقية</td></tr>
+        <tr><td>a whole-plan coupon with <code>groups</code></td><td><span class="s ok">200</span> <code>couponError: "coupon_not_for_customized"</code></td><td class="ar">هذا الكوبون لا يُستخدم مع باقة حذفت منها مميزات</td></tr>
+        <tr><td>a guest token</td><td><span class="s b4">403</span> <code>{ "success": false, "code": "registration_required", "message": "أنشئ حسابك للمتابعة" }</code></td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+        <tr><td>no token</td><td><span class="s b4">401</span> empty body</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      </table></div></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">GET /api/bundles?audience=Student</span><span>the cards and their ids</span><span class="chip">GET /api/subscription/me</span><span>the current plan and <code>inGrace</code></span><span class="chip">GET /api/lookups/error-codes</span><span>Arabic texts</span></div>
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="sub-preview"></span></div>
+      <ul class="todo" data-group="sub-preview">
+        <li class="important"><label><input type="checkbox" id="t-pv-percard" data-task="pv-percard"><span><span class="tag imp">important</span> Plans page with a coupon: preview <b>each card shown</b> with <code>{ bundleId, couponCode, groups }</code>, not only the cheapest one. A card with no <code>couponError</code> shows <span class="ar">الكوبون يوفّر X ج.م</span> from <code>discountAmount</code>. A card with a <code>couponError</code> keeps its normal price and adds a small note with that error's text. Show the page-wide error only when <b>no</b> card accepts the coupon.</span></label></li>
+        <li class="important"><label><input type="checkbox" id="t-pv-block" data-task="pv-block"><span><span class="tag imp">important</span> A card whose preview has <code>blockedReason: "upgrade_only"</code> gets a disabled button and the note <span class="ar">يمكنك اختيار هذه الباقة بعد انتهاء باقتك الحالية</span> (no date needed). Cards that preview as <code>Upgrade</code> stay buyable.</span></label></li>
+        <li class="important"><label><input type="checkbox" id="t-pv-couponstop" data-task="pv-couponstop"><span><span class="tag imp">important</span> Checkout: while the preview has a <code>couponError</code>, show the error and keep <span class="ar">تأكيد الدفع</span> / <span class="ar">تفعيل الباقة</span> <b>disabled</b> until the student removes or changes the coupon. Today the button stays enabled and buys without the coupon.</span></label></li>
+        <li><label><input type="checkbox" id="t-pv-customized" data-task="pv-customized"><span>On <code>coupon_not_for_customized</code> (card or checkout): tick all the main-feature checkboxes, lock them, and preview again without <code>groups</code>. Show that price: the full plan with the coupon discount. Removing the coupon unlocks them. Delete the <span class="ar">اشترك في الباقة كاملة لتستخدم الكوبون</span> button.</span></label></li>
+        <li><label><input type="checkbox" id="t-pv-blockedcheckout" data-task="pv-blockedcheckout"><span>Checkout with any <code>blockedReason</code>: hide the price lines (no <span class="ar">المطلوب دفعه 0 ج.م</span>) and the <span class="ar">تفعيل الباقة</span> button. Show only the reason's text and a link back to the plans.</span></label></li>
+        <li><label><input type="checkbox" id="t-pv-upgradecoupon" data-task="pv-upgradecoupon"><span>While a paid plan runs, previews with a coupon come back with <code>coupon_not_for_upgrades</code>, so no card shows a saving. That's expected.</span></label></li>
+        <li><label><input type="checkbox" id="t-pv-short" data-task="pv-short"><span>When <code>suggestedRechargeAmount</code> &gt; 0, show <span class="ar">ينقصك X</span> (<code>amountDue − walletBalance</code>) and the button <span class="ar">اشحن {suggestedRechargeAmount} ج.م</span>.</span></label></li>
+        <li><label><input type="checkbox" id="t-pv-refresh" data-task="pv-refresh"><span>After a top-up started from checkout succeeds, preview again so the summary shows the confirm button. Today it keeps showing <span class="ar">اشحن 34 ج.م</span> until the page is reloaded.</span></label></li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep" id="sub-purchase">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/subscription/purchase</span><span class="who">registered user</span><span class="tag chg">changed</span></div>
+    <p class="brief">Buys the plan from the wallet: <span class="ar">تأكيد الدفع</span> / <span class="ar">تفعيل الباقة</span> on checkout. It takes the same body as preview, and the same rules decide. <span class="tag chg">changed</span> A coupon error now refuses the purchase (nothing is charged), and anything but an upgrade while a plan runs gives <code>upgrade_only</code>. The new plan is always active at once.</p>
+    <div class="case"><span class="lbl">Valid · upgrade to Motqin Pro</span>
+      <div class="io">
+        <div><pre class="code">{ "bundleId": 20 }
+// on Motqin · 1 month until 21 Dec,
+// wallet 142.80</pre></div>
+        <div><pre class="code">200 { "success": true, "error": null, "data": {
+  "operation": "Upgrade",
+  "subscription": { "id": 196, "bundleId": 20,
+    "bundleTitle": "Motqin Pro · 1 month", "bundleDurationMonths": 1,
+    "kind": "Paid", "groups": null, "status": "Active", "replacedReason": null,
+    "startDate": "2026-11-22T08:04:32.262826+00:00",
+    "endDate": "2026-12-21T07:37:57.9823463+00:00",
+    "inGrace": false, "graceEndsAt": "2026-12-24T07:37:57.9823463+00:00",
+    "listPrice": 299, "discountAmount": 0, "pricePaid": 142, "couponCode": null },
+  "amountCharged": 142, "walletBalance": 0.8 } }</pre></div>
+      </div>
+      <p class="expect">The old plan becomes <code>Replaced</code> / <code>Upgrade</code>, and the ledger gets <code>−142 Upgrade</code>. The end date stays the old plan's.</p></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>not an upgrade while a paid plan runs</td><td><span class="s b4">400</span> <code>upgrade_only</code>, <code>details: { "endsAt": "2026-12-21T21:12:27.4136933+00:00" }</code></td><td class="ar">باقتك سارية حتى نهايتها، يمكنك الترقية الآن فقط واختيار أي باقة بعد انتهائها</td></tr>
+        <tr><td>a coupon the preview flagged (e.g. expired)</td><td><span class="s b4">400</span> with the coupon's code, e.g. <code>coupon_expired</code>, "This coupon can't be used here."</td><td>that code's text, e.g. <span class="ar">انتهت صلاحية الكوبون</span></td></tr>
+        <tr><td>a coupon on an upgrade</td><td><span class="s b4">400</span> <code>coupon_not_for_upgrades</code></td><td class="ar">لا يمكن استخدام كوبون عند الترقية</td></tr>
+        <tr><td>a coupon that ran out a second ago</td><td><span class="s b4">400</span> <code>coupon_unavailable</code>, "This coupon has just run out. Your wallet balance is untouched."</td><td class="ar">نفدت مرات استخدام الكوبون</td></tr>
+        <tr><td>the wallet doesn't cover it</td><td><span class="s b4">400</span> <code>insufficient_balance</code>, <code>details: { "walletBalance", "amountDue" }</code></td><td class="ar">رصيد المحفظة لا يكفي، اشحن المحفظة أولاً</td></tr>
+        <tr><td>Free or an unknown bundle</td><td><span class="s b4">400</span> <code>bundle_unavailable</code></td><td class="ar">هذه الباقة غير متاحة للشراء</td></tr>
+        <tr><td>a guest token</td><td><span class="s b4">403</span> <code>registration_required</code></td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+      </table></div></div>
+    <span class="lbl">Lookups and dependencies</span>
+    <div class="dep"><span class="chip">POST /api/subscription/preview</span><span>always before the button is enabled</span><span class="chip">GET /api/wallet</span><span>the balance after it</span></div>
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="sub-purchase"></span></div>
+      <ul class="todo" data-group="sub-purchase">
+        <li class="important"><label><input type="checkbox" id="t-buy-sendcoupon" data-task="buy-sendcoupon"><span><span class="tag imp">important</span> Always send the coupon the student entered. Today checkout drops it when the preview had a <code>couponError</code> (<code>coupon: … &amp;&amp; !couponError ? … : null</code>), so the student pays full price after seeing an error.</span></label></li>
+        <li><label><input type="checkbox" id="t-buy-400" data-task="buy-400"><span>On any 400, show the code's text and stay on checkout. Nothing was charged, so no refresh of the wallet is needed.</span></label></li>
+        <li><label><input type="checkbox" id="t-buy-success" data-task="buy-success"><span>Success screen: <span class="ar">تم الاشتراك</span> / <span class="ar">تم التجديد</span> / <span class="ar">تمت الترقية</span> from <code>operation</code>, then "<span class="ar">مفعّلة الآن حتى …</span>" from <code>subscription.endDate</code> and <span class="ar">خُصم X ج.م · رصيدك الآن Y ج.م</span> from <code>amountCharged</code> and <code>walletBalance</code>.</span></label></li>
+        <li><label><input type="checkbox" id="t-buy-double" data-task="buy-double"><span>Disable the button while the call runs. A second click or a second tab gets <code>upgrade_only</code> after the first one goes through, and the wallet never goes below 0.</span></label></li>
+      </ul>
+    </div>
+  </article>
+</section>
+
+
+<section class="part" id="wallet">
+  <div class="ctl a"><span class="num">WalletController · /api/wallet</span><h2>Wallet</h2><p>The balance and its ledger. Registered users only; a guest gets 403 <code>registration_required</code>.</p></div>
+
+  <article class="ep" id="wallet-get">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/wallet</span><span class="who">registered user</span></div>
+    <p class="brief">Unchanged. The balance for the wallet card and checkout.</p>
+    <div class="case"><span class="lbl">Valid</span>
+      <pre class="code">200 { "success": true, "error": null,
+  "data": { "balance": 0.8, "updatedAt": "2026-11-22T08:04:32.3200866" } }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>a guest token</td><td><span class="s b4">403</span> <code>{ "success": false, "code": "registration_required", "message": "أنشئ حسابك للمتابعة" }</code></td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+        <tr><td>no token</td><td><span class="s b4">401</span> empty body</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      </table></div></div>
+  </article>
+
+  <article class="ep" id="wallet-tx">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/wallet/transactions</span><span class="who">registered user</span><span class="tag chg">changed</span></div>
+    <p class="brief">The ledger, newest first, for <span class="ar">المعاملات</span>. <span class="tag chg">changed</span> A top-up whose checkout ran out unpaid now shows <code>Expired</code> here as soon as the list is read. It no longer waits for the hourly job. The type is only <code>Deposit</code>, <code>Subscribe</code>, <code>Renewal</code> or <code>Upgrade</code>; old <code>Downgrade</code> rows were converted to <code>Subscribe</code>.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Query</th><th>Rules</th><th>Meaning</th></tr>
+      <tr><td>page</td><td>optional · from 1 · default 1</td><td>Page number.</td></tr>
+      <tr><td>pageSize</td><td>optional · 1–100 · default 20</td><td>Rows per page; more than 100 is cut to 100.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid</span>
+      <div class="io">
+        <div><pre class="code">GET /api/wallet/transactions?page=1&amp;pageSize=4</pre></div>
+        <div><pre class="code">200 { "data": { "items": [
+  { "id": 131, "amount": 20, "type": "Deposit", "status": "Expired",
+    "paymentMethod": null, "reference": "6646435-463b90d8-639309512194926563",
+    "userSubscriptionId": null, "createdAt": "2026-11-22T13:33:39.4926563" },
+  { "id": 130, "amount": 20, "type": "Deposit", "status": "Expired", … },
+  { "id": 128, "amount": -142, "type": "Upgrade", "status": "Succeeded",
+    "paymentMethod": null, "reference": null,
+    "userSubscriptionId": 196, "createdAt": "2026-11-22T08:04:32.3200866" },
+  { "id": 127, "amount": 99, "type": "Deposit", "status": "Succeeded",
+    "paymentMethod": "card", "reference": "4973645-463b90d8-639309313718477399",
+    "userSubscriptionId": null, "createdAt": "2026-11-22T08:02:51.8477399" } ],
+  "total": 14, "page": 1, "pageSize": 4 } }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>a guest token</td><td><span class="s b4">403</span> <code>registration_required</code></td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+        <tr><td>no token</td><td><span class="s b4">401</span> empty body</td><td class="ar">يرجى تسجيل الدخول مرة أخرى</td></tr>
+      </table></div></div>
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="wallet-tx"></span></div>
+      <ul class="todo" data-group="wallet-tx">
+        <li><label><input type="checkbox" id="t-tx-expired" data-task="tx-expired"><span>Status chips: <code>Pending</code> <span class="ar">جاري المعالجة</span> with <span class="ar">تحقق</span> · <code>Succeeded</code> · <code>Failed</code> · <code>Expired</code> <span class="ar">انتهت</span> with <b>no</b> <span class="ar">تحقق</span> button.</span></label></li>
+        <li><label><input type="checkbox" id="t-tx-downgrade" data-task="tx-downgrade"><span>Drop <code>Downgrade</code> from the type labels.</span></label></li>
+      </ul>
+    </div>
+  </article>
+</section>
+
+
+<section class="part" id="payment">
+  <div class="ctl n"><span class="num">PaymentController · /api/payment</span><h2>Payment</h2><p>Topping up the wallet through Paymob. Only Paymob's signed server callback credits the wallet; the redirect page only displays.</p></div>
+
+  <article class="ep" id="pay-recharge">
+    <div class="ep-line"><span class="m post">POST</span><span class="path">/api/payment/recharge-wallet</span><span class="who">registered user</span></div>
+    <p class="brief">Starts a top-up: the <span class="ar">شحن المحفظة</span> dialog and checkout's <span class="ar">اشحن X ج.م</span>. Unchanged API, but the payment-method labels on screen change.</p>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Body field</th><th>Rules</th><th>Meaning</th></tr>
+      <tr><td>amount</td><td>required · at least 10 · at most 2 decimals</td><td>EGP to add. Arabic digits typed by the student must be converted before sending.</td></tr>
+      <tr><td>method</td><td>optional</td><td>Left out: Paymob's page with card <b>and</b> mobile wallets (valid 1 hour). <code>"kiosk"</code>: Fawry; refused with <code>method_unavailable</code> while Fawry isn't set up.</td></tr>
+    </table></div>
+    <div class="case"><span class="lbl">Valid</span>
+      <div class="io">
+        <div><pre class="code">{ "amount": 20 }</pre></div>
+        <div><pre class="code">200 { "success": true, "error": null, "data": {
+  "redirectUrl": "https://eg.checkout.paymob.com/?publicKey=…&amp;clientSecret=…",
+  "reference": "6644354-463b90d8-639309512184910083",
+  "expiresAt": "2026-11-22T14:33:38.4910083+00:00" } }</pre></div>
+      </div></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td><code>{ "amount": 9 }</code></td><td><span class="s b4">400</span> <code>amount_too_small</code>, <code>details: { "minimum": 10 }</code></td><td class="ar">المبلغ أقل من الحد الأدنى للشحن</td></tr>
+        <tr><td><code>{ "amount": 10.555 }</code></td><td><span class="s b4">400</span> <code>amount_invalid</code>, "Use at most two decimal places."</td><td class="ar">المبلغ غير صحيح</td></tr>
+        <tr><td><code>{ "amount": 50, "method": "kiosk" }</code> before Fawry is set up</td><td><span class="s b4">400</span> <code>method_unavailable</code></td><td class="ar">طريقة الدفع هذه غير متاحة حالياً</td></tr>
+        <tr><td>a guest token</td><td><span class="s b4">403</span> <code>registration_required</code></td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+      </table></div></div>
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="pay-recharge"></span></div>
+      <ul class="todo" data-group="pay-recharge">
+        <li><label><input type="checkbox" id="t-rc-popup" data-task="rc-popup"><span>Open <code>redirectUrl</code> in a new tab. Keep the dialog's <span class="ar">فتح صفحة الدفع</span> link for when the browser blocks the pop-up (it happened in the test).</span></label></li>
+      </ul>
+    </div>
+  </article>
+
+  <article class="ep" id="pay-status">
+    <div class="ep-line"><span class="m get">GET</span><span class="path">/api/payment/recharges/{reference}</span><span class="who">registered user</span><span class="tag chg">changed</span></div>
+    <p class="brief">Where a top-up stands: poll it after the Paymob redirect and behind the <span class="ar">تحقق</span> button. It asks Paymob when the row is still pending (at most once every 15 seconds per top-up). <span class="tag chg">changed</span> A top-up still unpaid after its <code>expiresAt</code> is now saved as <code>Expired</code>, so the transactions list says the same. A late success from Paymob is still credited.</p>
+    <div class="case"><span class="lbl">Valid · a checkout that ran out</span>
+      <div class="io">
+        <div><pre class="code">GET /api/payment/recharges/6644354-463b90d8-639309512184910083</pre></div>
+        <div><pre class="code">200 { "success": true, "error": null, "data": {
+  "reference": "6644354-463b90d8-639309512184910083",
+  "status": "Expired", "requestedAmount": 20, "receivedAmount": null,
+  "paymentMethod": null, "createdAt": "2026-11-22T13:33:38.4910083",
+  "expiresAt": "2026-11-22T14:32:46.533782+01:00" } }</pre></div>
+      </div></div>
+    <div class="case"><span class="lbl">Valid · paid</span>
+      <pre class="code">200 { "data": { "reference": "2522407-463b90d8-639308919616735695", "status": "Succeeded",
+  "requestedAmount": 100, "receivedAmount": 100, "paymentMethod": "card",
+  "createdAt": "2026-11-21T21:06:01.6735695", "expiresAt": "2026-11-21T22:06:01.6735695+00:00" } }</pre></div>
+    <div class="case bad"><span class="lbl">Bad cases</span>
+      <div class="table-wrap"><table>
+        <tr><th>Send</th><th>Get</th><th>Show</th></tr>
+        <tr><td>an unknown reference, or another student's</td><td><span class="s b4">404</span> <code>not_found</code>, "Recharge not found."</td><td class="ar">العنصر المطلوب غير موجود</td></tr>
+        <tr><td>a guest token</td><td><span class="s b4">403</span> <code>registration_required</code></td><td class="ar">أنشئ حسابك للمتابعة</td></tr>
+      </table></div></div>
+    <div class="todo-box">
+      <div class="todo-head"><span class="lbl">Notes · front tasks</span><span class="count" data-count-for="pay-status"></span></div>
+      <ul class="todo" data-group="pay-status">
+        <li><label><input type="checkbox" id="t-st-stop" data-task="st-stop"><span>Stop polling on <code>Succeeded</code>, <code>Failed</code> or <code>Expired</code>. <code>Expired</code> shows <span class="ar">انتهت مهلة الدفع</span> and offers a new top-up; <code>Failed</code> shows <span class="ar">لم تتم عملية الدفع</span>.</span></label></li>
+        <li><label><input type="checkbox" id="t-st-success" data-task="st-success"><span>On <code>Succeeded</code>, refresh <code>GET /api/wallet</code> and, on checkout, the preview.</span></label></li>
+      </ul>
+    </div>
+  </article>
+
+</section>
+
+
+<section class="part" id="test">
+  <div class="ctl t"><span class="num">Manual test</span><h2>Testing the payment fixes</h2><p>On the web, signed in as a student with a Paymob test card for top-ups. These are the checks from the 21–23 Nov run to repeat after the front changes.</p></div>
+
+  <article class="ep">
+    <div class="ep-line"><span class="path">What you need</span></div>
+    <div class="table-wrap"><table class="params">
+      <tr><th>Item</th><th>Value</th></tr>
+      <tr><td>Test card</td><td>Mastercard <code>5123 4567 8901 2346</code>, <code>Test Account</code>, <code>01/39</code>, CVV <code>123</code>. Paymob test mode ignores the CVV; the decline comes on a second attempt.</td></tr>
+      <tr><td>Student</td><td>A new student account (the first-purchase coupon works once).</td></tr>
+      <tr><td>Coupons</td><td>Made with <code>POST /api/admin/coupons</code>: one for everything, one for Motqin Pro only, one not allowed on customised plans, one expired.</td></tr>
+    </table></div>
+    <p class="tip warn">Top-ups use Paymob's test keys, so no real money moves.</p>
+  </article>
+
+  <div class="flow"><ol>
+    <li class="stage">Plans page</li>
+    <li><div class="ep-line">On Free, apply the Motqin-Pro-only coupon</div>
+      <p class="expect">Only the Motqin Pro card shows <span class="ar">الكوبون يوفّر 59.8 ج.م</span>; Plus and Motqin show a small "not applicable" note. <b>No</b> page-wide error.</p></li>
+    <li><div class="ep-line">Apply the whole-plan-only coupon, then untick a main feature</div>
+      <p class="expect">The checkboxes tick themselves and lock; the price is the full plan with the coupon. Removing the coupon unlocks them.</p></li>
+
+    <li class="stage">Checkout and coupons</li>
+    <li><div class="ep-line">Checkout with the expired coupon</div>
+      <p class="expect"><span class="ar">انتهت صلاحية الكوبون</span> and the confirm button <b>disabled</b>. No refund box on the page.</p></li>
+    <li><div class="ep-line">Buy Plus with the first-purchase coupon, short of balance</div>
+      <p class="expect"><span class="ar">اشحن X ج.م</span>. Pay it with the test card: back on checkout, the summary shows the confirm button without a reload. Buying gives <span class="ar">تم الاشتراك</span>.</p></li>
+
+    <li class="stage">Plan running</li>
+    <li><div class="ep-line">Plans page with Plus running</div>
+      <p class="expect">Plus says <span class="ar">باقتك الحالية</span> with no button; Motqin and Motqin Pro (same term) are buyable; the 6- and 12-month cards are disabled with <span class="ar">يمكنك اختيار هذه الباقة بعد انتهاء باقتك الحالية</span>.</p></li>
+    <li><div class="ep-line">Open <code>/subscription/checkout?bundleId=15</code> by hand</div>
+      <p class="expect">Only the <code>upgrade_only</code> text and a link back. No <span class="ar">المطلوب دفعه 0</span>, no <span class="ar">تفعيل الباقة</span>.</p></li>
+    <li><div class="ep-line">Upgrade to Motqin with a coupon typed in</div>
+      <p class="expect"><span class="ar">لا يمكن استخدام كوبون عند الترقية</span> and the button disabled. Without the coupon it upgrades: <span class="ar">تمت الترقية</span>.</p></li>
+
+    <li class="stage">Grace and history</li>
+    <li><div class="ep-line">In the grace days (move the end date into the past on the dev DB)</div>
+      <p class="expect">Banner <span class="ar">جدّد الآن حتى لا تتوقف مزاياك، أو اختر أي باقة أخرى</span>; every card buyable. Renewing shows the hint <span class="ar">تبدأ الآن، وتُحسب من تاريخ انتهاء باقتك السابقة</span>.</p></li>
+    <li><div class="ep-line"><span class="ar">سجل الاشتراكات</span></div>
+      <p class="expect">The renewal is at the top, not at the bottom. No scheduled chip anywhere.</p></li>
+
+    <li class="stage">Wallet</li>
+    <li><div class="ep-line">Start a top-up and close Paymob without paying; wait past its hour</div>
+      <p class="expect"><span class="ar">المعاملات</span> shows <span class="ar">انتهت</span> with no <span class="ar">تحقق</span> button. The dialog shows the card and mobile wallet as available, and only Fawry as <span class="ar">قريبًا</span>.</p></li>
+  </ol></div>
+  <p class="foot">Responses captured from 21 to 23 November 2026 on the live API (motqin-demo-2), test account "kamel". The test coupons (TJ…) are deactivated.</p>
+</section>
+
+</main>
+
+<div class="savebar" id="savebar">
+  <div class="savebar-in">
+    <div class="prog">
+      <span class="prog-text" id="prog-text">Front tasks</span>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+    </div>
+    <span class="save-msg" id="save-msg">Loading…</span>
+    <button class="btn" id="save-btn" type="button" disabled>Save progress</button>
+  </div>
+</div>
+
+<script type="application/json" id="page-state">{"done":{},"notes":{},"savedAt":null}</script>
+<script id="page-script">
+(function () {
+  // Capture the authored parts before anything changes the page; the saved version is rebuilt from these + state.
+  var GUIDE_SRC = document.getElementById('guide').innerHTML;
+  var SAVEBAR_SRC = document.getElementById('savebar').outerHTML;
+  var STYLE_SRC = document.getElementById('page-style').textContent;
+  var SCRIPT_SRC = document.getElementById('page-script').textContent;
+  var END = '<' + '/script>';
+  var SKELETON = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>';
+  var HEAD_SRC = '<title>Motqin Payment Fixes Front Guide</title>\n'
+    + '<meta name="claude:viewport-fit-sides" content="cover">\n'
+    + '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+    + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">\n';
+  var PENDING_KEY = 'motqinPaymentFixesGuide.pending';
+  var SCROLL_KEY = 'motqinPaymentFixesGuide.scroll';
+
+  function readState() {
+    try {
+      var s = JSON.parse(document.getElementById('page-state').textContent || '{}');
+      return { done: s.done || {}, notes: s.notes || {}, savedAt: s.savedAt || null };
+    } catch (e) { return { done: {}, notes: {}, savedAt: null }; }
+  }
+  function ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+  function ssSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
+  function ssDel(k) { try { sessionStorage.removeItem(k); } catch (e) {} }
+
+  var saved = readState();
+  var work = { done: Object.assign({}, saved.done), notes: Object.assign({}, saved.notes) };
+
+  // Changes kept from before a reload (a save that lost a race, or the reload after our own save).
+  var pending = ssGet(PENDING_KEY);
+  if (pending) {
+    ssDel(PENDING_KEY);
+    try {
+      var p = JSON.parse(pending);
+      Object.keys(p.done || {}).forEach(function (k) { work.done[k] = !!p.done[k]; });
+      Object.keys(p.notes || {}).forEach(function (k) { work.notes[k] = String(p.notes[k]); });
+    } catch (e) {}
+  }
+  var scroll = ssGet(SCROLL_KEY);
+  if (scroll) { ssDel(SCROLL_KEY); var y = parseInt(scroll, 10); if (!isNaN(y)) requestAnimationFrame(function () { window.scrollTo(0, y); }); }
+
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input[data-task]'));
+  var notes = Array.prototype.slice.call(document.querySelectorAll('textarea[data-note]'));
+  var btn = document.getElementById('save-btn');
+  var msg = document.getElementById('save-msg');
+  var progText = document.getElementById('prog-text');
+  var progFill = document.getElementById('prog-fill');
+  var art = null, ready = false, readOnly = false, busy = false, notice = '';
+
+  function changes() {
+    var d = { done: {}, notes: {} }, n = 0;
+    boxes.forEach(function (b) { var k = b.dataset.task; if (!!work.done[k] !== !!saved.done[k]) { d.done[k] = !!work.done[k]; n++; } });
+    notes.forEach(function (t) { var k = t.dataset.note; if ((work.notes[k] || '') !== (saved.notes[k] || '')) { d.notes[k] = work.notes[k] || ''; n++; } });
+    d.count = n;
+    return d;
+  }
+
+  function fmt(iso) {
+    try { return new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
+  }
+
+  function renderStatus() {
+    var total = boxes.length, done = boxes.filter(function (b) { return !!work.done[b.dataset.task]; }).length;
+    progText.textContent = done + ' of ' + total + ' front tasks done';
+    progFill.style.width = (total ? Math.round(done * 100 / total) : 0) + '%';
+    document.querySelectorAll('[data-count-for]').forEach(function (c) {
+      var g = c.getAttribute('data-count-for');
+      var list = document.querySelectorAll('ul[data-group="' + g + '"] input[data-task]');
+      var dn = 0; list.forEach(function (b) { if (work.done[b.dataset.task]) dn++; });
+      c.textContent = dn + ' / ' + list.length;
+      c.classList.toggle('all', list.length > 0 && dn === list.length);
+    });
+    var ch = changes().count;
+    msg.className = 'save-msg';
+    if (busy) { msg.textContent = 'Saving…'; }
+    else if (notice) { msg.textContent = notice; msg.classList.add('err'); }
+    else if (readOnly) { msg.textContent = ch ? 'View only: ' + ch + ' change' + (ch > 1 ? 's' : '') + ' on this screen, not saved.' : 'View only: ticks stay on this screen.'; }
+    else if (ch) { msg.textContent = ch + ' unsaved change' + (ch > 1 ? 's' : ''); msg.classList.add('dirty'); }
+    else if (!ready) { msg.textContent = 'Connecting…'; }
+    else { msg.textContent = saved.savedAt ? 'All saved · ' + fmt(saved.savedAt) : 'Nothing ticked yet'; }
+    btn.disabled = busy || readOnly || !ready || ch === 0;
+    btn.hidden = readOnly;
+  }
+
+  boxes.forEach(function (b) {
+    b.checked = !!work.done[b.dataset.task];
+    b.addEventListener('change', function () { work.done[b.dataset.task] = b.checked; notice = ''; renderStatus(); });
+  });
+  notes.forEach(function (t) {
+    t.value = work.notes[t.dataset.note] || '';
+    t.addEventListener('input', function () { work.notes[t.dataset.note] = t.value; notice = ''; renderStatus(); });
+  });
+
+  function buildDoc(state) {
+    var json = JSON.stringify(state).replace(/</g, '\\u003c');
+    return SKELETON + HEAD_SRC
+      + '<style id="page-style">' + STYLE_SRC + '</style>\n'
+      + '<main id="guide" class="wrap">' + GUIDE_SRC + '</main>\n\n'
+      + SAVEBAR_SRC + '\n'
+      + '<script type="application/json" id="page-state">' + json + END + '\n'
+      + '<script id="page-script">' + SCRIPT_SRC + END + '\n'
+      + '</body></html>';
+  }
+
+  function cleanState() {
+    var done = {}, nts = {};
+    boxes.forEach(function (b) { if (work.done[b.dataset.task]) done[b.dataset.task] = true; });
+    notes.forEach(function (t) { var v = (work.notes[t.dataset.note] || ''); if (v.trim()) nts[t.dataset.note] = v; });
+    return { done: done, notes: nts, savedAt: new Date().toISOString() };
+  }
+
+  btn.addEventListener('click', function () {
+    if (!art || busy || readOnly) return;
+    var ch = changes();
+    if (!ch.count) return;
+    busy = true; notice = ''; renderStatus();
+    ssSet(PENDING_KEY, JSON.stringify({ done: ch.done, notes: ch.notes }));
+    ssSet(SCROLL_KEY, String(Math.round(window.scrollY)));
+    art.publish(buildDoc(cleanState())).then(function () {
+      busy = false; msg.textContent = 'Saved. Reloading…';
+    }, function (e) {
+      busy = false;
+      var code = e && e.code;
+      if (code === 'conflict') { msg.textContent = 'Someone saved first. Reloading; your changes come back as unsaved.'; return; }
+      ssDel(PENDING_KEY); ssDel(SCROLL_KEY);
+      if (['not_writer', 'not_granted', 'consent_required', 'capability_disabled', 'capability_removed', 'not_declared'].indexOf(code) >= 0) { readOnly = true; }
+      else if (code === 'rate_limited') { notice = 'Saving too often. Wait a minute, then save again.'; }
+      else { notice = 'Couldn’t save. Check your connection and save again.'; }
+      renderStatus();
+    });
+  });
+
+  renderStatus();
+  var use = window.claude && typeof window.claude.use === 'function' ? window.claude.use('artifact') : Promise.resolve(null);
+  Promise.resolve(use).then(function (a) {
+    art = a; ready = true; if (!a) readOnly = true; renderStatus();
+  }, function () { ready = true; readOnly = true; renderStatus(); });
+})();
+</script>
+
+</body></html>

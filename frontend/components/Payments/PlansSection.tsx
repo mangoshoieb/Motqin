@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Info } from "lucide-react";
 import Skeleton from "@/components/ui/Skeleton";
 import { useAuth } from "@/app/(public)/context/auth.context";
-import { useBundles, useMySubscription } from "@/app/hooks/usePayments";
+import { useBundles, useCouponPreviews, useMySubscription } from "@/app/hooks/usePayments";
 import { useAuthKind } from "@/app/hooks/useAuthKind";
 import {
   AUDIENCES,
@@ -18,7 +18,8 @@ import { BundleAudience } from "@/app/types/payment.types";
 import { Segmented } from "@/components/TrackingTables/ui";
 import { PlanCard } from "./PlanCard";
 import { ComparisonTable } from "./ComparisonTable";
-import { CouponBox } from "./CouponBox";
+import { CouponBox, type CouponStatus } from "./CouponBox";
+import { errorCodeMessage } from "@/app/lib/error-codes";
 
 const selectClasses =
   "w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 outline-none transition focus:border-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:focus:border-blue-500";
@@ -49,7 +50,27 @@ export function PlansSection({ coupon, onCoupon }: { coupon: string; onCoupon: (
   const { free, tiers } = groupPlans(bundles ?? []);
   // Teacher plans are for teacher accounts; the server refuses anyone else.
   const teacherLocked = audience === "Teacher" && kind !== "none" && !isTeacherAccount(user);
-  const currentId = subscription?.current.bundleId;
+  const current = subscription?.current;
+  const currentId = current?.bundleId;
+  // A paid plan still running: only upgrades can be bought until it ends.
+  // In its grace days (ended, features kept 3 days) anything can be bought.
+  const planRunning = current?.kind === "Paid" && current.status === "Active" && !current.inGrace;
+  const inGrace = !!current?.inGrace;
+
+  // The coupon on each plan shown: the field says whether any takes it; each
+  // card shows its own saving or why not.
+  const shownIds = tiers.map((t) => t.terms[term]?.id).filter((id): id is number => !!id);
+  const couponPreviews = useCouponPreviews(shownIds, coupon, kind === "user" && !teacherLocked);
+  const couponStatus: CouponStatus = (() => {
+    const results = couponPreviews.map((q) => q.data).filter((p) => !!p);
+    const accepted = results.filter((p) => !p.couponError && !p.blockedReason && p.discountAmount > 0).length;
+    const firstError = results.find((p) => p.couponError)?.couponError;
+    return {
+      checking: !!coupon && couponPreviews.some((q) => q.isLoading),
+      accepted,
+      error: accepted === 0 && results.length > 0 ? (firstError ? errorCodeMessage(firstError) ?? "الكوبون غير صالح" : "الكوبون لا ينطبق على هذه الباقات") : null,
+    };
+  })();
 
   // The best saving each term offers, for the picker's labels.
   const bestSaving = (months: TermMonths) =>
@@ -97,9 +118,7 @@ export function PlansSection({ coupon, onCoupon }: { coupon: string; onCoupon: (
             applied={coupon}
             onApply={onCoupon}
             disabled={kind !== "user"}
-            // Checked against the first plan as it is (all main features);
-            // each card also says what the coupon saves on it.
-            bundleId={tiers[0]?.terms[term]?.id ?? null}
+            status={couponStatus}
           />
           </div>
           <div className="hidden sm:order-3 sm:block" aria-hidden />
@@ -133,6 +152,8 @@ export function PlansSection({ coupon, onCoupon }: { coupon: string; onCoupon: (
                   currentGroups={subscription?.current.groups}
                   buyDisabled={teacherLocked}
                   coupon={coupon}
+                  planRunning={planRunning}
+                  inGrace={inGrace}
                 />
               );
             })}

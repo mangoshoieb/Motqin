@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authStorage } from "../lib/auth-storage";
 import { clearInviterCode } from "../lib/invite-code";
+import { clearAccountType } from "../lib/account-type";
 import { authReturnPath } from "../lib/auth-gate.store";
 import { useGuestStore } from "../lib/guest.store";
 import { GuestUpgradeResult } from "../types/auth.types";
@@ -23,6 +24,7 @@ export function useAuthSuccess() {
     authStorage.setTokens(tokens.token, tokens.refreshToken);
     // Signed in: the invite code has been sent (or no longer applies).
     clearInviterCode();
+    clearAccountType();
     useGuestStore.getState().clear();
 
     if (result?.guestDataDiscarded) {

@@ -240,15 +240,12 @@ export const GROUP_DISCOUNT_MAX = 90;
 
 export const OPERATION_META: Record<PurchaseOperation, { label: string; hint: string }> = {
   Purchase: { label: "شراء", hint: "تبدأ الباقة الآن." },
-  Renewal: { label: "تجديد", hint: "تبدأ عند انتهاء باقتك الحالية." },
+  Renewal: { label: "تجديد", hint: "تبدأ الآن، وتُحسب من تاريخ انتهاء باقتك السابقة." },
   Upgrade: { label: "ترقية", hint: "تبدأ الآن وتنتهي مع باقتك الحالية، وتدفع الفرق عن الأيام المتبقية فقط." },
-  Downgrade: { label: "تغيير لباقة أقل", hint: "تبدأ عند انتهاء باقتك الحالية." },
-  Scheduled: { label: "باقة تالية", hint: "تبدأ عند انتهاء باقتك الحالية." },
 };
 
 export const SUBSCRIPTION_STATUS_META: Record<SubscriptionStatus, { label: string; className: string }> = {
   Active: { label: "نشطة", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
-  Scheduled: { label: "تبدأ لاحقًا", className: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300" },
   Expired: { label: "منتهية", className: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300" },
   Replaced: { label: "استُبدلت", className: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300" },
 };
@@ -258,14 +255,13 @@ export const TRANSACTION_TYPE_LABELS: Record<WalletTransactionType, string> = {
   Subscribe: "اشتراك",
   Renewal: "تجديد",
   Upgrade: "ترقية",
-  Downgrade: "تغيير الباقة",
 };
 
 export const PAYMENT_STATUS_META: Record<PaymentStatus, { label: string; className: string }> = {
   Pending: { label: "جاري المعالجة", className: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" },
   Succeeded: { label: "تم", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
   Failed: { label: "فشل", className: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" },
-  Expired: { label: "انتهت المهلة", className: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300" },
+  Expired: { label: "انتهت", className: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300" },
 };
 
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -291,8 +287,7 @@ export const PAYMENT_ERROR_DEFAULTS: Record<string, string> = {
   coupon_not_for_upgrades: "لا يمكن استخدام كوبون عند الترقية",
   bundle_unavailable: "هذه الباقة غير متاحة للشراء",
   teacher_plan_only: "باقات المدرسين متاحة لحسابات المدرسين فقط",
-  already_scheduled: "لديك باقة ستبدأ بعد انتهاء الحالية بالفعل",
-  renew_first: "انتهت باقتك، جددها أولاً ثم غيّرها",
+  upgrade_only: "باقتك سارية حتى نهايتها، يمكنك الترقية الآن فقط واختيار أي باقة بعد انتهائها",
   purchase_failed: "تعذر إتمام الشراء، رصيدك لم يتغير",
   not_a_partner: "هذا الحساب غير مرتبط بأي شريك",
   audience_required: "حدد لمن هذه الباقة: طلاب أو مدرسين أو أولياء أمور",
@@ -326,10 +321,6 @@ export const PAYMENT_ERROR_DEFAULTS: Record<string, string> = {
   quota_exhausted: "استهلكت الحد المتاح في باقتك، يتجدد في موعد التجديد أو قم بالترقية",
   not_in_plan: "هذه الميزة غير متاحة في باقتك الحالية",
 };
-
-// Kept with every plan and period, per product spec.
-export const REFUND_GUARANTEE_TEXT =
-  "يمكنك استرداد كامل المبلغ المدفوع إذا لم تتجاوز نسبة استخدامك من رصيد الذكاء الاصطناعي المخصص للخطة 10%. في حال تجاوز هذه النسبة، لا يحق للمستخدم استرداد المبلغ.";
 
 // The discount announced under the wallet on the plans page. There's no API
 // for announcements yet, so it's set here: change the code/percent for a new

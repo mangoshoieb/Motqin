@@ -15,7 +15,8 @@ export function useResendOtp() {
   return useMutation({
     mutationFn: authService.logInPhone,
 
-    onSuccess: () => {
+    onSuccess: (data) => {
+      useAuthStore.getState().setWhatsAppDebug(data.whatsApp);
       toast.success("تم إرسال رمز تحقق جديد");
     },
 

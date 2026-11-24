@@ -84,7 +84,7 @@ export interface Wallet {
   updatedAt: string;
 }
 
-export type WalletTransactionType = "Deposit" | "Subscribe" | "Renewal" | "Upgrade" | "Downgrade";
+export type WalletTransactionType = "Deposit" | "Subscribe" | "Renewal" | "Upgrade";
 export type PaymentStatus = "Pending" | "Succeeded" | "Failed" | "Expired";
 
 export interface WalletTransaction {
@@ -125,7 +125,8 @@ export interface Recharge {
 
 // --- Subscription --------------------------------------------------------------
 
-export type SubscriptionStatus = "Scheduled" | "Active" | "Expired" | "Replaced";
+// Every plan is active at once now (no plans that start later).
+export type SubscriptionStatus = "Active" | "Expired" | "Replaced";
 
 export interface UserSubscription {
   id: number;
@@ -163,11 +164,10 @@ export interface Quota {
 // GET /subscription/me
 export interface MySubscription {
   current: UserSubscription;
-  scheduled: UserSubscription | null;
   quotas: Quota[];
 }
 
-export type PurchaseOperation = "Purchase" | "Renewal" | "Upgrade" | "Downgrade" | "Scheduled";
+export type PurchaseOperation = "Purchase" | "Renewal" | "Upgrade";
 
 // POST /subscription/preview — always 200; problems in couponError / blockedReason.
 // The price comes in steps: fullPrice − featuresDiscount = listPrice, then

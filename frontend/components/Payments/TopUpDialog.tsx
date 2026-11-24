@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, CreditCard, ExternalLink, Loader2, RotateCcw, Store, XCircle } from "lucide-react";
+import { CheckCircle2, CreditCard, ExternalLink, Loader2, RotateCcw, Smartphone, Store, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { getApiErrorMessage } from "@/app/lib/api-error";
@@ -187,22 +187,32 @@ export function TopUpDialog({
           )}
         </label>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        {/* Paymob's page offers both the card and mobile wallets; Fawry
+            (method "kiosk") isn't set up yet. */}
+        <div className="grid gap-2 sm:grid-cols-3">
           <div className="flex items-center gap-3 rounded-2xl border border-blue-600 bg-blue-50 px-4 py-3 dark:bg-blue-500/10">
-            <CreditCard size={20} className="text-blue-600 dark:text-blue-400" />
+            <CreditCard size={20} className="shrink-0 text-blue-600 dark:text-blue-400" />
             <div>
               <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">بطاقة بنكية</p>
               <p className="text-xs text-zinc-500">فيزا أو ماستركارد</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 opacity-60 dark:border-zinc-700">
-            <Store size={20} className="text-zinc-500" />
+          <div className="flex items-center gap-3 rounded-2xl border border-blue-600 bg-blue-50 px-4 py-3 dark:bg-blue-500/10">
+            <Smartphone size={20} className="shrink-0 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">فوري ومحافظ الموبايل</p>
+              <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">محافظ الموبايل</p>
+              <p className="text-xs text-zinc-500">فودافون كاش وغيرها</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 opacity-60 dark:border-zinc-700">
+            <Store size={20} className="shrink-0 text-zinc-500" />
+            <div>
+              <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">فوري</p>
               <p className="text-xs text-zinc-500">قريبًا</p>
             </div>
           </div>
         </div>
+        <p className="-mt-3 text-xs text-zinc-500">تختار طريقة الدفع في صفحة Paymob.</p>
 
         {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
       </div>

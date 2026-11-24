@@ -25,6 +25,7 @@ const MESSAGES: [RegExp, string][] = [
   [/expired/i, "انتهت صلاحية الرمز. اطلب رمزًا جديدًا."],
   [/^No (pending authentication|code was requested)/i, "لم يُطلب رمز لهذا الرقم بعد. اطلب رمزًا جديدًا."],
   [/already (used|in use) by another account/i, "هذا الرقم مستخدم في حساب آخر."],
+  [/must verify your phone/i, "أكّد رقم هاتفك أولًا."],
 ];
 
 export function otpErrorMessage(error: unknown): string {
@@ -46,11 +47,13 @@ export function otpErrorMessage(error: unknown): string {
       return "انتهت جلسة تسجيل الدخول بجوجل. ابدأ من جديد.";
   }
 
-  const coded = getCodedApiError<Record<string, string[]>>(error);
-  if (coded?.code === "validation_error") {
-    return coded.details && "PhoneNumber" in coded.details
-      ? "أدخل رقم موبايل مصري صحيح: 01 ثم 9 أرقام."
-      : "أدخل رمز التحقق.";
+  // validation_error / invalid_inviter_code: the server's own Arabic text
+  // (also shown under the field by pages that have one).
+  const coded = getCodedApiError<Record<string, string[] | string>>(error);
+  if (coded?.code === "validation_error" || coded?.code === "invalid_inviter_code") {
+    const first = Object.values(coded.details ?? {})[0];
+    const message = Array.isArray(first) ? first[0] : first;
+    return typeof message === "string" && message ? message : "بعض البيانات المدخلة غير صحيحة";
   }
 
   const message = body?.message ?? "";

@@ -22,6 +22,8 @@ export interface ErrorCodeItem {
 export interface CountryLookupItem extends LookupItem {
   // ISO code, countries only.
   code?: string | null;
+  // Phone country code without the "+" (20 for Egypt), for the phone picker.
+  dialCode?: number | null;
 }
 
 /**

@@ -8,19 +8,21 @@ import { useAuthStore } from "../lib/auth.store";
 import { otpErrorMessage } from "../lib/otp-errors";
 import { useAuthSuccess } from "./useAuthSuccess";
 
+// The Google button: the first POST /auth/google, with only the token (plus
+// the invite code and account type from the sign-up page).
 export function useGoogleLogin() {
   const router = useRouter();
   const completeAuth = useAuthSuccess();
-  const setGoogleIdToken = useAuthStore((state) => state.setGoogleIdToken);
+  const startGoogleSignup = useAuthStore((state) => state.startGoogleSignup);
 
   return useMutation({
     mutationFn: authService.googleLogin,
 
     onSuccess: (data, variables) => {
-      // A Google account without a confirmed phone: nothing was created yet.
-      // Confirm a phone by WhatsApp first, sending the same Google token.
-      if (data.needsPhone) {
-        setGoogleIdToken(variables.idToken);
+      // A new user: fill in «بياناتك» first (then maybe a phone).
+      // An existing account without a needed phone: straight to the phone.
+      if (data.needsProfile || data.needsPhone) {
+        startGoogleSignup(variables.idToken, !!data.needsProfile, data.fullName);
         router.push("/google-phone");
         return;
       }

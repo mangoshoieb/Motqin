@@ -81,19 +81,30 @@ export const TaskNotesFooter = ({
     if (editing === null) return;
     const empty = isRichTextEmpty(draft);
     const target = editing === "new" ? savedAs : editing;
+    let remaining = notes.length;
     if (target === null) {
       if (!empty) {
         onChange([...notes, draft]);
         setSavedAs(notes.length);
+        remaining += 1;
       }
     } else if (draft !== notes[target]) {
       onChange(empty ? notes.filter((_, i) => i !== target) : notes.map((note, i) => (i === target ? draft : note)));
-      if (empty) close = true;
+      if (empty) {
+        close = true;
+        remaining -= 1;
+      }
     }
     if (close) {
       setEditing(null);
       setSavedAs(null);
+      collapseIfEmpty(remaining);
     }
+  };
+
+  // Nothing written and nothing left: shrink back to the half box.
+  const collapseIfEmpty = (remainingNotes: number) => {
+    if (remainingNotes + systemNotes.length === 0) onOpenChange(false);
   };
 
   // Autosave once typing pauses.
@@ -115,6 +126,7 @@ export const TaskNotesFooter = ({
       if (savedAs !== null) onChange(notes.filter((_, i) => i !== savedAs));
       setEditing(null);
       setSavedAs(null);
+      collapseIfEmpty(savedAs !== null ? notes.length - 1 : notes.length);
     } else if (editing !== null) {
       const before = original;
       if (before !== null && notes[editing] !== before) {
@@ -130,6 +142,7 @@ export const TaskNotesFooter = ({
     onChange(notes.filter((_, i) => i !== index));
     // Clicking delete has already blurred (and closed) any open editor.
     if (editing === index) setEditing(null);
+    collapseIfEmpty(notes.length - 1);
     toast.success("تم حذف الملاحظة", {
       action: { label: "تراجع", onClick: () => onChange(before) },
     });
@@ -150,44 +163,69 @@ export const TaskNotesFooter = ({
     />
   );
 
+  const countLabel =
+    total === 1 ? "ملاحظة واحدة" : total === 2 ? "ملاحظتان" : `${total} ملاحظات`;
+
   return (
-    // Spans the card's full width (past its 8px side frame) and closes its bottom.
-    <div className={cn("relative -mx-2 rounded-b-lg", NOTES_TINT)}>
-      {/* The footer bar itself — always one short row. */}
-      <div className="flex h-10 items-center gap-2 px-4">
+    // Collapsed, the box covers the right half of the card's bottom; a click
+    // anywhere on it widens it to the full width (past the card's 8px side
+    // frame) and opens a new note to type into.
+    <div
+      className={cn(
+        "relative -mx-2 self-start transition-[width,border-radius] duration-300 ease-out",
+        NOTES_TINT,
+        open ? "w-[calc(100%+1rem)] rounded-b-lg" : "w-[calc(50%+0.5rem)] rounded-br-lg rounded-l-xl",
+      )}
+    >
+      {open ? (
+        <div className="flex h-10 items-center gap-2 px-4">
+          <button
+            type="button"
+            onClick={() => {
+              if (editing !== null) commit(true);
+              onOpenChange(false);
+            }}
+            aria-expanded
+            title="إخفاء الملاحظات"
+            className="flex min-w-0 flex-1 items-center gap-2 text-right text-xs text-amber-900/80 transition hover:text-amber-950 dark:text-amber-200/80 dark:hover:text-amber-100"
+          >
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-white/70 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+              <NotebookPen size={13} />
+            </span>
+            {total > 0 && <span className="shrink-0 font-semibold">{countLabel}</span>}
+            <ChevronDown size={14} className="shrink-0 rotate-180" />
+          </button>
+
+          {editing !== "new" && (
+            <button
+              type="button"
+              onClick={() => startEditing("new")}
+              className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold text-amber-800 transition hover:bg-white/60 dark:text-amber-200 dark:hover:bg-amber-950/50"
+            >
+              <Plus size={12} />
+              إضافة ملاحظة
+            </button>
+          )}
+        </div>
+      ) : (
+        // The whole half box is the way in.
         <button
           type="button"
-          onClick={() => {
-            if (open && editing !== null) commit(true);
-            onOpenChange(!open);
-          }}
-          aria-expanded={open}
-          title={open ? "إخفاء الملاحظات" : "عرض الملاحظات"}
-          className="flex min-w-0 flex-1 items-center gap-2 text-right text-xs text-amber-900/80 transition hover:text-amber-950 dark:text-amber-200/80 dark:hover:text-amber-100"
+          onClick={() => startEditing("new")}
+          aria-expanded={false}
+          aria-label="إضافة ملاحظة"
+          title={total > 0 ? "عرض الملاحظات وإضافة ملاحظة" : "إضافة ملاحظة"}
+          className="flex h-10 w-full min-w-0 cursor-text items-center gap-2 px-4 text-right text-xs text-amber-900/80 dark:text-amber-200/80"
         >
           <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-white/70 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
             <NotebookPen size={13} />
           </span>
-          <span className="shrink-0 font-semibold">
-            {total === 0 ? "لا توجد ملاحظات" : total === 1 ? "ملاحظة واحدة" : total === 2 ? "ملاحظتان" : `${total} ملاحظات`}
-          </span>
-          {!open && latest && (
+          {total > 0 && <span className="shrink-0 font-semibold">{countLabel}</span>}
+          {latest && (
             <span className="min-w-0 truncate text-amber-800/60 dark:text-amber-200/50">· {previewOf(latest)}</span>
           )}
-          {total > 0 && (
-            <ChevronDown size={14} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
-          )}
         </button>
-
-        <button
-          type="button"
-          onClick={() => startEditing("new")}
-          className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold text-amber-800 transition hover:bg-white/60 dark:text-amber-200 dark:hover:bg-amber-950/50"
-        >
-          <Plus size={12} />
-          إضافة ملاحظة
-        </button>
-      </div>
+      )}
 
       {open && (total > 0 || editing !== null) && (
         <div className="flex flex-col gap-2 border-t border-amber-200/70 px-4 py-3 dark:border-amber-800/40">

@@ -1,7 +1,35 @@
-export interface GoogleLoginRequest {
-  idToken: string;
-  // Competition invite code; only counts when this creates a new account.
+import type { AccountType } from "../lib/account-type";
+
+// The «بياناتك» form fields every sign-up sends (phone-complete-signup,
+// the second auth/google call and google/phone-verify). region only for
+// Egypt (country 1); stage and grade only for students, grade not for 5.
+export interface SignupProfileFields {
+  country: number;
+  region?: number;
+  educationalStage?: number;
+  gradeLevel?: number;
+  accountType?: AccountType;
   inviterCode?: string;
+}
+
+export interface GoogleLoginRequest extends Partial<SignupProfileFields> {
+  idToken: string;
+  // Second call only (with the form): the name from «بياناتك».
+  fullName?: string;
+}
+
+// POST /auth/guest — accountType asks for a teacher or parent trial.
+export interface GuestLoginRequest {
+  accountType?: AccountType;
+}
+
+// The code-sending endpoints, while WhatsApp is on hold: sent: false and
+// the message text to show on the page for testing.
+export interface WhatsAppDebug {
+  sent: boolean;
+  to?: string;
+  otp?: string;
+  text?: string;
 }
 
 // POST /auth/google/phone-request — step 2 of a Google sign-up.
@@ -11,9 +39,9 @@ export interface GooglePhoneRequest {
 }
 
 // POST /auth/google/phone-verify — step 3; signs in with the same token pair.
-export interface GooglePhoneVerifyRequest extends GooglePhoneRequest {
+export interface GooglePhoneVerifyRequest extends GooglePhoneRequest, Partial<SignupProfileFields> {
   code: string;
-  inviterCode?: string;
+  fullName?: string;
 }
 
 // PUT /users/me — send only what changed. description "" removes it.
@@ -30,6 +58,7 @@ export interface OtpSentResponse {
   message: string;
   resendCooldownSeconds: number;
   resendsRemaining: number;
+  whatsApp?: WhatsAppDebug;
 }
 
 export interface AuthTokens {
@@ -41,6 +70,8 @@ export interface AuthTokens {
 // Either the token pair, or — for a Google account with no confirmed phone
 // yet — needsPhone: true and nothing else (no account is created until the
 // phone is confirmed).
+// A new user's first call answers needsProfile (show «بياناتك», the name
+// prefilled from fullName); the second answers a token or needsPhone.
 export interface GoogleLoginResponse {
   message?: string;
   token: string;
@@ -48,6 +79,8 @@ export interface GoogleLoginResponse {
   expiresAt: string;
   guestDataDiscarded?: boolean;
   needsPhone?: boolean;
+  needsProfile?: boolean;
+  fullName?: string;
 }
 
 // Free uses a guest has left. Separate counters, 3 each.
@@ -114,12 +147,15 @@ declare global {
 
   interface LogInPhoneRequest {
     phoneNumber: string;
+    // Sign-up page only; checked for a new number before a code is sent.
+    inviterCode?: string;
   }
   interface LogInPhoneResponse {
     message: string;
     isNewUser: boolean;
     resendCooldownSeconds: number;
     resendsRemaining: number;
+    whatsApp?: WhatsAppDebug;
   }
 
   interface VerifyPhoneRequest {
@@ -137,11 +173,9 @@ declare global {
     };
   }
 
-  export interface CompleteProfileRequest {
+  export interface CompleteProfileRequest extends SignupProfileFields {
     phoneNumber: string;
     name: string;
-    region: number;
-    inviterCode?: string;
   }
 
   export interface CompleteProfileResponse {

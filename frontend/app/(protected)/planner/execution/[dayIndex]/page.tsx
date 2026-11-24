@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { usePlannerPerformance } from "@/app/hooks/usePlannerPerformance";
 import { useExecutionBoard, ExecutionBoardData } from "@/app/hooks/useExecutionBoard";
 import { useBreakMinutes } from "@/app/hooks/useBreakMinutes";
 import { weekData } from "@/app/data/days";
@@ -51,6 +52,9 @@ const ExecutionBoardPage = () => {
   const weekOffset = Number.isFinite(parsedWeek) ? Math.trunc(parsedWeek) : 0;
 
   const { data, isLoading } = useExecutionBoard(dayIndex, weekOffset);
+  // The server's completed sessions and studied minutes for this day (today
+  // on every plan; other days when the plan has performance tracking).
+  const dayPerformance = usePlannerPerformance(data?.day.date, data?.day.date).get(data?.day.date ?? "");
 
   // The arrows beside the title: the day before / after, crossing into the
   // previous or next week at the ends (days run 1 = Sunday … 7 = Saturday).
@@ -992,7 +996,11 @@ const ExecutionBoardPage = () => {
   }
 
   const tasksCompleted = tasks.filter((t) => t.completed).length;
-  const totalStudyMinutes = sessions.reduce((sum, s) => sum + s.actualMinutes, 0);
+  // Without the server's numbers, count only sessions actually finished —
+  // not every session planned in the day's tasks.
+  const doneSessions = sessions.filter((s) => s.status === "completed");
+  const totalSessions = dayPerformance?.completedSessionsCount ?? doneSessions.length;
+  const totalStudyMinutes = dayPerformance?.productiveMinutes ?? doneSessions.reduce((sum, s) => sum + s.actualMinutes, 0);
 
   return (
     <div dir="rtl" className="min-h-screen bg-zinc-100 dark:bg-zinc-950 px-4 py-8">
@@ -1003,7 +1011,7 @@ const ExecutionBoardPage = () => {
           outputs={{
             tasksCompleted,
             totalTasks: tasks.length,
-            totalSessions: sessions.length,
+            totalSessions,
             totalStudyMinutes,
             quizAccuracy: data.detail.outputs.quizAccuracy,
           }}

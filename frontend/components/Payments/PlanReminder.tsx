@@ -26,8 +26,8 @@ const daysUntil = (iso: string | null) => {
 
 // The most pressing thing to say about the plan, if anything.
 const reminderFor = (me: MySubscription, limitsOnly = false): Reminder | null => {
-  const { current, scheduled } = me;
-  if (!limitsOnly && current.kind === "Paid" && !scheduled) {
+  const { current } = me;
+  if (!limitsOnly && current.kind === "Paid") {
     if (current.inGrace) return { kind: "grace", until: current.graceEndsAt };
     const days = daysUntil(current.endDate);
     if (days !== null && days <= ENDING_DAYS) return { kind: "ending", days: Math.max(0, days) };
@@ -98,7 +98,7 @@ export function PlanReminder({ className, limitsOnly }: { className?: string; li
       <p className="min-w-0 flex-1">
         {reminder.kind === "grace" && (
           <>
-            <b>انتهت باقتك.</b> مزاياها متاحة حتى {formatDay(reminder.until)} فقط، جدّدها الآن حتى لا تتوقف.
+            <b>انتهت باقتك.</b> مزاياها متاحة حتى {formatDay(reminder.until)} فقط. جدّد الآن حتى لا تتوقف مزاياك، أو اختر أي باقة أخرى.
           </>
         )}
         {reminder.kind === "ending" && (
@@ -107,7 +107,7 @@ export function PlanReminder({ className, limitsOnly }: { className?: string; li
               باقتك تنتهي{" "}
               {reminder.days === 0 ? "اليوم" : reminder.days === 1 ? "غدًا" : reminder.days === 2 ? "بعد يومين" : `خلال ${reminder.days} أيام`}.
             </b>{" "}
-            جدّدها الآن، وتبدأ الباقة الجديدة عند انتهاء الحالية.
+            يمكنك تجديدها أو اختيار أي باقة بعد انتهائها، أو الترقية الآن.
           </>
         )}
         {reminder.kind === "limits" && (
@@ -118,13 +118,15 @@ export function PlanReminder({ className, limitsOnly }: { className?: string; li
         )}
       </p>
       <Link
-        href={reminder.kind === "limits" ? "/subscription" : renewHref}
+        // A running plan can't be renewed early (only upgraded); renewing
+        // opens in the grace days.
+        href={reminder.kind === "grace" ? renewHref : "/subscription"}
         className={cn(
           "rounded-full px-4 py-2 text-xs font-bold text-white",
           urgent ? "bg-rose-600 dark:bg-rose-700 hover:bg-rose-700 dark:hover:bg-rose-800" : "bg-amber-500 dark:bg-amber-700 hover:bg-amber-600 dark:hover:bg-amber-700",
         )}
       >
-        {reminder.kind === "limits" ? "اعرض العروض" : "جدّد الآن"}
+        {reminder.kind === "grace" ? "جدّد الآن" : "اعرض العروض"}
       </Link>
       {reminder.kind === "limits" && (
         <Link href="/settings/billing/limits" className="text-xs font-semibold underline-offset-2 hover:underline">

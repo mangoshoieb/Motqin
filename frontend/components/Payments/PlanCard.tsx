@@ -45,6 +45,8 @@ export function PlanCard({
   currentGroups,
   buyDisabled,
   coupon,
+  planRunning,
+  inGrace,
 }: {
   tier: string;
   bundle: Bundle;
@@ -56,6 +58,10 @@ export function PlanCard({
   currentGroups?: string[] | null;
   buyDisabled: boolean;
   coupon: string; // applied coupon, "" when none
+  // A paid plan still running: only upgrades can be bought until it ends.
+  planRunning: boolean;
+  // The current plan ended and is in its grace days: anything can be bought.
+  inGrace: boolean;
 }) {
   const meta = TIER_META[tier];
   const highlighted = HIGHLIGHTED_TIERS.includes(tier);
@@ -77,15 +83,27 @@ export function PlanCard({
   const canDrop = (group: string) => !(kept.length === 1 && kept[0] === group);
   const groupsParam = keptGroupsParam(bundle, kept);
 
-  // The coupon's effect on this plan, with these features (saves nothing).
-  const { data: preview } = usePurchasePreview(bundle.id, coupon, groupsParam, registered && !!coupon && !buyDisabled);
-  const couponApplies = !!coupon && !!preview && !preview.couponError && preview.discountAmount > 0;
-  const couponNote =
-    coupon && preview?.couponError === "coupon_not_for_customized"
-      ? errorCodeMessage(preview.couponError) ?? "هذا الكوبون لا يُطبَّق على الباقات المخصّصة"
-      : null;
+  // What buying this card would be (POST /subscription/preview, saves
+  // nothing): asked when a coupon is applied, and always while a paid plan
+  // runs, since then only some cards (upgrades) can be bought.
+  const previewing = registered && !buyDisabled && (!!coupon || planRunning);
+  const { data: preview } = usePurchasePreview(bundle.id, coupon, groupsParam, previewing);
+  // A whole-plan coupon with features taken off: put every main feature back
+  // (the checkboxes lock) and price the whole plan with the coupon instead.
+  const wholeForCoupon = !!coupon && !!groupsParam && preview?.couponError === "coupon_not_for_customized";
+  const { data: wholePreview } = usePurchasePreview(bundle.id, coupon, null, previewing && wholeForCoupon);
+  const active = wholeForCoupon ? wholePreview : preview;
+  const effectiveOff = wholeForCoupon ? [] : off;
+  const sendGroups = wholeForCoupon ? null : groupsParam;
 
-  const listPrice = customPrice(bundle, off);
+  const isUpgrade = active?.operation === "Upgrade";
+  // Anything but an upgrade while a plan runs: buyable after it ends.
+  const upgradeOnly = active?.blockedReason === "upgrade_only";
+  const couponApplies = !!coupon && !!active && !active.couponError && !active.blockedReason && active.discountAmount > 0;
+  // Why the coupon gives nothing here; the card keeps its normal price.
+  const couponNote = coupon && active?.couponError ? errorCodeMessage(active.couponError) ?? "الكوبون لا ينطبق على هذه الباقة" : null;
+
+  const listPrice = customPrice(bundle, effectiveOff);
   const featuresSaving = bundle.price - listPrice;
   const couponSaving = couponApplies ? preview!.discountAmount : 0;
   const price = Math.max(0, listPrice - couponSaving);
@@ -102,7 +120,7 @@ export function PlanCard({
 
   const checkoutHref =
     `/subscription/checkout?bundleId=${bundle.id}` +
-    (groupsParam ? `&groups=${groupsParam.join(",")}` : "") +
+    (sendGroups ? `&groups=${sendGroups.join(",")}` : "") +
     (couponApplies ? `&coupon=${encodeURIComponent(coupon)}` : "");
 
   return (
@@ -180,19 +198,32 @@ export function PlanCard({
           </div>
         )}
         {couponNote && <p className={cn("mt-2 text-xs", highlighted ? "text-amber-200" : "text-amber-700 dark:text-amber-400")}>{couponNote}</p>}
-        {removable.length > 1 && off.length === 0 && (
+        {wholeForCoupon && (
+          <p className={cn("mt-2 text-xs", highlighted ? "text-amber-200" : "text-amber-700 dark:text-amber-400")}>
+            هذا الكوبون للباقة كاملة، فأعدنا كل المميزات. أزل الكوبون لتعديلها.
+          </p>
+        )}
+        {isUpgrade && (
+          <p className={cn("mt-2 text-xs", muted)}>ترقية: تبدأ الآن وتنتهي مع باقتك الحالية، وتدفع الفرق عن الأيام المتبقية فقط.</p>
+        )}
+        {removable.length > 1 && off.length === 0 && !wholeForCoupon && (
           <p className={cn("mt-3 text-xs", muted)}>ألغِ تحديد ما لا تحتاجه من المميزات الرئيسية وادفع أقل.</p>
         )}
       </div>
 
-      {buyDisabled ? (
+      {isCurrent && planRunning && !isUpgrade ? (
+        // The running plan itself: nothing to buy (the badge says it's
+        // current). Ticking a dropped main feature back turns it into an
+        // upgrade, and the button appears.
+        null
+      ) : buyDisabled || upgradeOnly ? (
         <span
           className={cn(
             "mt-6 w-full cursor-not-allowed rounded-full py-3 text-center font-semibold opacity-50",
             highlighted ? "bg-white text-blue-950" : "border border-blue-600 text-blue-600 dark:text-blue-400",
           )}
         >
-          اختر الخطة
+          {upgradeOnly ? "اشترك" : "اختر الخطة"}
         </span>
       ) : (
         <Link
@@ -204,8 +235,11 @@ export function PlanCard({
               : "border border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40",
           )}
         >
-          {isCurrent ? "جدّد الخطة" : "اشترك"}
+          {isUpgrade ? "ترقية" : isCurrent && inGrace ? "جدّد الخطة" : "اشترك"}
         </Link>
+      )}
+      {upgradeOnly && !isCurrent && (
+        <p className={cn("mt-2 text-center text-xs", muted)}>يمكنك اختيار هذه الباقة بعد انتهاء باقتك الحالية</p>
       )}
 
       {audience === "Student" ? (
@@ -213,8 +247,8 @@ export function PlanCard({
           bundle={bundle}
           highlighted={highlighted}
           removable={removable.map((g) => g.group)}
-          off={off}
-          canDrop={canDrop}
+          off={effectiveOff}
+          canDrop={(group) => !wholeForCoupon && canDrop(group)}
           onToggle={toggle}
         />
       ) : (
@@ -226,8 +260,8 @@ export function PlanCard({
                 <GroupCheckbox
                   key={g.group}
                   label={FEATURE_GROUP_LABELS[g.group] ?? g.group}
-                  checked={!off.includes(g.group)}
-                  disabled={!canDrop(g.group)}
+                  checked={!effectiveOff.includes(g.group)}
+                  disabled={wholeForCoupon || !canDrop(g.group)}
                   highlighted={highlighted}
                   onChange={() => toggle(g.group)}
                 />
@@ -238,7 +272,7 @@ export function PlanCard({
             {CARD_FEATURES[audience].map((key) => {
               const feature = findFeature(bundle, key);
               if (!feature) return null;
-              const value = rowValue(feature, key, off.length > 0 && isLeftOut(bundle, off, key));
+              const value = rowValue(feature, key, effectiveOff.length > 0 && isLeftOut(bundle, effectiveOff, key));
               return (
                 <li key={key} className={cn("flex items-start gap-2", value && !value.on && "opacity-50")}>
                   {value?.on !== false ? (

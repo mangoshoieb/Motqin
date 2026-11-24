@@ -344,7 +344,7 @@ export default function AuthGateDialog() {
                   <button
                     type="button"
                     disabled={isStartingGuest}
-                    onClick={() => startGuest()}
+                    onClick={() => startGuest("Student")}
                     className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/60 font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:cursor-wait disabled:opacity-70 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:border-blue-700"
                   >
                     {isStartingGuest ? (

@@ -164,6 +164,8 @@ export const API_ROUTES = {
     CREATE: "/study-plan/create",
     FILTER: "/study-plan/filter",
     PERFORMANCE_BY_RANGE: "/study-plan/user-performance-by-range",
+    // Today only, no parameters; on every plan (the range is a plan feature).
+    PERFORMANCE_TODAY: "/study-plan/user-performance",
     UPDATE: (id: string | number) => `/study-plan/${id}`,
     DELETE: (id: string | number) => `/study-plan/${id}`,
     TOGGLE_STATUS: (id: string | number) => `/study-plan/${id}/toggle-study-plan-status`,

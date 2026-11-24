@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { BookOpen, CalendarCheck, House, type LucideIcon } from "lucide-react";
+import { cn } from "@/app/lib/utils";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { shortName } from "@/app/lib/user";
 import UserMenu from "./userMenu";
@@ -12,6 +15,49 @@ import { useLogout } from "@/app/hooks/useLogout";
 
 export const dynamic = "force-dynamic";
 
+// Each feature link takes its feature's own color: a light box of it on
+// hover, a slightly stronger one on its own pages. (The /about page still
+// exists; it's just not linked from the navbar.)
+const navLinks: {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  isActive: (pathname: string) => boolean;
+  tone: { hover: string; active: string };
+}[] = [
+  {
+    label: "الرئيسية",
+    href: "/",
+    icon: House,
+    isActive: (p) => p === "/",
+    tone: {
+      hover: "hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-100",
+      active: "border-zinc-300 bg-zinc-100 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100",
+    },
+  },
+  {
+    label: "المخطط",
+    // Opens today's plan first.
+    href: "/planner/today",
+    icon: CalendarCheck,
+    isActive: (p) => p.startsWith("/planner"),
+    tone: {
+      hover: "hover:border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-700 dark:hover:border-blue-400/30 dark:hover:bg-blue-400/10 dark:hover:text-blue-300",
+      active: "border-blue-500/40 bg-blue-500/15 text-blue-700 dark:border-blue-400/40 dark:bg-blue-400/15 dark:text-blue-300",
+    },
+  },
+  {
+    label: "متقن",
+    href: "/spaced-repetition",
+    icon: BookOpen,
+    isActive: (p) => p.startsWith("/spaced-repetition"),
+    tone: {
+      hover: "hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:border-emerald-400/30 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-300",
+      active: "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-300",
+    },
+  },
+];
+
 const Nav = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   // const { data, isPending, error } = useCurrentUser();
@@ -20,13 +66,7 @@ const Nav = () => {
   // console.log(data,isPending,error)
   // console.log("-------------")
 
-  // The /about page still exists; it's just not linked from the navbar.
-  const navLinks = [
-    {
-      label: "الرئيسية",
-      href: "/",
-    },
-  ];
+  const pathname = usePathname();
   // Temporary user object until auth is connected
   const { user, isLoading, isGuest } = useAuth();
   // First two words of the full name, e.g. "Amgad Mahmoud".
@@ -79,15 +119,23 @@ const Nav = () => {
         {/* Right Section */}
         <div className="flex items-center justify-end gap-3">
           {/* Center Navigation */}
-          <div className="flex items-center justify-center gap-10 font-bold text-lg ">
-            {navLinks.map((link, index) => {
+          <div dir="rtl" className="flex items-center gap-1 sm:gap-2">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const active = link.isActive(pathname);
               return (
                 <Link
-                  key={index}
+                  key={link.href}
                   href={link.href}
-                  className=""
+                  aria-label={link.label}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-2 rounded-xl border border-transparent px-2.5 py-1.5 text-base font-bold transition-colors duration-200 sm:px-3.5",
+                    active ? link.tone.active : cn("text-zinc-700 dark:text-zinc-300", link.tone.hover),
+                  )}
                 >
-                  {link.label}
+                  <Icon size={18} className="shrink-0" />
+                  <span className="hidden sm:inline">{link.label}</span>
                 </Link>
               );
             })}

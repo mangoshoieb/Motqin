@@ -32,22 +32,22 @@ const Footer = () => {
               </li> */}
               <li>
                 <Link href="/planner/today" className="hover:text-[var(--assistant-text)] transition">
-                  المخطط الدراسي
-                </Link>
-              </li>
-              <li>
-                <Link href="/focus-mode" className="hover:text-[var(--assistant-text)] transition">
-                  وضع التركيز (حظر التطبيقات)
+                  المخطط 
                 </Link>
               </li>
               <li>
                 <Link href="/subjects" className="hover:text-[var(--assistant-text)] transition">
-                  متقن    
+                  التكرار المتباعد    
                     </Link>
               </li>
               <li>
+                <Link href="/focus-mode" className="hover:text-[var(--assistant-text)] transition">
+                 منع المشتات
+                </Link>
+              </li>
+              <li>
                 <Link href="/competitions" className="hover:text-[var(--assistant-text)] transition">
-                  المنافسات
+                  المنافسات و التحدبات
                 </Link>
               </li>
             </ul>

@@ -5,22 +5,31 @@ import {
   GoogleLoginResponse,
   GooglePhoneRequest,
   GooglePhoneVerifyRequest,
+  GuestLoginRequest,
   GuestLoginResponse,
   OtpSentResponse,
   UpdateMeRequest,
 } from "../types/auth.types";
 import { authStorage } from "../lib/auth-storage";
 import { withInviterCode } from "../lib/invite-code";
+import { AccountType, withAccountType } from "../lib/account-type";
+
+// Every request that can create an account carries the invite code and the
+// account type kept from the sign-up page.
+const withSignupExtras = <T extends { inviterCode?: string; accountType?: AccountType }>(body: T): T =>
+  withAccountType(withInviterCode(body));
 
 // const refreshToken = authStorage.getRefreshToken();
 
 export const authService = {
   // Starts (or resumes) a no-account trial. The same X-Device-Id always
   // gets the same guest back, so reinstalling doesn't reset the trial.
-  async signInAsGuest(): Promise<GuestLoginResponse> {
+  // accountType: a teacher or parent trial from the sign-up page. The guide
+  // has no accountType on POST /auth/guest yet; the server ignores it today.
+  async signInAsGuest(body: GuestLoginRequest = {}): Promise<GuestLoginResponse> {
     const { data } = await axiosInstance.post<GuestLoginResponse>(
       API_ROUTES.AUTH.GUEST,
-      {},
+      body.accountType && body.accountType !== "Student" ? { accountType: body.accountType } : {},
       { headers: { "X-Device-Id": authStorage.getDeviceId() } }
     );
 
@@ -30,7 +39,7 @@ export const authService = {
   async googleLogin(body: GoogleLoginRequest): Promise<GoogleLoginResponse> {
     const { data } = await axiosInstance.post<GoogleLoginResponse>(
       API_ROUTES.AUTH.GOOGLE,
-      withInviterCode(body)
+      withSignupExtras(body)
     );
 
     return data;
@@ -51,7 +60,7 @@ export const authService = {
   async googlePhoneVerify(body: GooglePhoneVerifyRequest): Promise<GoogleLoginResponse> {
     const { data } = await axiosInstance.post<GoogleLoginResponse>(
       API_ROUTES.AUTH.GOOGLE_PHONE_VERIFY,
-      withInviterCode(body)
+      withSignupExtras(body)
     );
 
     return data;
@@ -88,7 +97,7 @@ export const authService = {
   ): Promise<CompleteProfileResponse> {
     const { data } = await axiosInstance.post<CompleteProfileResponse>(
       API_ROUTES.AUTH.COMPLETE_PROFILE,
-      withInviterCode(body)
+      withSignupExtras(body)
     );
 
     return data;

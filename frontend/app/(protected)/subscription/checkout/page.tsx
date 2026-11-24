@@ -8,7 +8,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Loader2,
-  ShieldCheck,
   SlidersHorizontal,
   Tag,
   Wallet,
@@ -25,7 +24,6 @@ import {
   HIGHLIGHTED_TIERS,
   OPERATION_META,
   RECHARGE_MIN,
-  REFUND_GUARANTEE_TEXT,
   TIER_META,
 } from "@/app/constants/payment.constants";
 import {
@@ -77,10 +75,27 @@ const CheckoutContent = () => {
   const [couponInput, setCouponInput] = useState(linkedCoupon);
   const [coupon, setCoupon] = useState(linkedCoupon);
   const {
-    data: preview,
-    isFetching: previewing,
-    refetch: refetchPreview,
+    data: groupsPreview,
+    isFetching: groupsPreviewing,
+    refetch: refetchGroupsPreview,
   } = usePurchasePreview(bundleId, coupon, groups, registered && !!bundle);
+  // A whole-plan coupon with features taken off: every main feature goes back
+  // on (the switches lock) and the whole plan is priced with the coupon.
+  // Removing the coupon unlocks them with the earlier choice.
+  const wholeForCoupon = !!coupon && !!groups && groupsPreview?.couponError === "coupon_not_for_customized";
+  const {
+    data: wholePreview,
+    isFetching: wholePreviewing,
+    refetch: refetchWholePreview,
+  } = usePurchasePreview(bundleId, coupon, null, registered && !!bundle && wholeForCoupon);
+  const preview = wholeForCoupon ? wholePreview : groupsPreview;
+  const previewing = groupsPreviewing || (wholeForCoupon && wholePreviewing);
+  const refetchPreview = () => {
+    void refetchGroupsPreview();
+    if (wholeForCoupon) void refetchWholePreview();
+  };
+  const effectiveOff = wholeForCoupon ? [] : off;
+  const sendGroups = wholeForCoupon ? null : groups;
   const purchase = usePurchase();
   const [result, setResult] = useState<PurchaseResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -119,13 +134,14 @@ const CheckoutContent = () => {
   const ownKeys = new Set(audienceBundles?.find((b) => b.kind === "Free")?.features.map((f) => f.feature) ?? []);
   const planGroups = visibleGroups(bundle, ownKeys);
   const customisable = removable.length > 1;
-  const listPrice = customPrice(bundle, off);
+  const listPrice = customPrice(bundle, effectiveOff);
 
   const couponError = preview?.couponError ? errorCodeMessage(preview.couponError) ?? preview.couponError : null;
-  const notForCustomized = preview?.couponError === "coupon_not_for_customized";
-  const wholePlan = () => setDropped([]);
+  // Nothing can be bought (a running plan and not an upgrade, a teacher plan…):
+  // the prices come back as 0, so only the reason is shown.
   const blocked = preview?.blockedReason ? errorCodeMessage(preview.blockedReason) ?? preview.blockedReason : null;
   const short = preview ? Math.max(0, preview.amountDue - preview.walletBalance) : 0;
+  const rechargeAmount = Math.max(RECHARGE_MIN, preview?.suggestedRechargeAmount || Math.ceil(short));
   // An upgrade charges only the difference for the days left.
   const credit = preview?.operation
     ? Math.max(0, Math.round((preview.listPrice - preview.discountAmount - preview.amountDue) * 100) / 100)
@@ -133,11 +149,12 @@ const CheckoutContent = () => {
   const operation = preview?.operation ? OPERATION_META[preview.operation] : null;
 
   const buy = () => {
-    if (!preview || blocked) return;
+    // A coupon the preview refused keeps the button off until it's removed
+    // or changed — buying would otherwise drop it and charge full price.
+    if (!preview || blocked || preview.couponError) return;
     setError(null);
-    // A coupon the preview refused isn't sent: the purchase works without it.
     purchase.mutate(
-      { bundleId: bundle.id, coupon: coupon && !preview.couponError ? coupon : null, groups },
+      { bundleId: bundle.id, coupon: coupon || null, groups: sendGroups },
       {
         onSuccess: setResult,
         onError: (err) => {
@@ -146,9 +163,9 @@ const CheckoutContent = () => {
             const missing = coded.details.amountDue - (coded.details.walletBalance ?? 0);
             setTopUp(Math.max(RECHARGE_MIN, Math.ceil(missing)));
           }
-          // Something changed since the preview (a coupon ran out, say):
-          // show the new state.
-          void refetchPreview();
+          // Nothing was charged. Something changed since the preview (a
+          // coupon ran out, say): show the new state.
+          refetchPreview();
           setError(getApiErrorMessage(err));
         },
       },
@@ -156,7 +173,6 @@ const CheckoutContent = () => {
   };
 
   if (result) {
-    const scheduled = result.subscription.status === "Scheduled";
     return (
       <Shell>
         <div className="mx-auto max-w-lg rounded-3xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
@@ -166,9 +182,7 @@ const CheckoutContent = () => {
           </h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-300">
             {bundleName(bundle)}
-            {scheduled
-              ? ` تبدأ في ${formatDay(result.subscription.startDate)} وتنتهي في ${formatDay(result.subscription.endDate)}.`
-              : ` مفعّلة الآن حتى ${formatDay(result.subscription.endDate)}.`}
+            {` مفعّلة الآن حتى ${formatDay(result.subscription.endDate)}.`}
           </p>
           <p className="mt-1 text-sm text-zinc-500">
             خُصم {formatEgp(result.amountCharged)} · رصيدك الآن {formatEgp(result.walletBalance)}
@@ -209,8 +223,8 @@ const CheckoutContent = () => {
 
             {customisable && (
               <div className="mt-4">
-                {groups ? (
-                  <KeptGroups groups={groups} />
+                {sendGroups ? (
+                  <KeptGroups groups={sendGroups} />
                 ) : (
                   <span className="text-xs text-zinc-500">الباقة كاملة بكل مميزاتها</span>
                 )}
@@ -218,7 +232,7 @@ const CheckoutContent = () => {
             )}
 
             {/* Coupon */}
-            {registered && (
+            {registered && !blocked && (
               <div className="mt-6">
                 {coupon && !preview?.couponError && preview && preview.discountPercent > 0 ? (
                   <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
@@ -257,16 +271,20 @@ const CheckoutContent = () => {
                     </button>
                   </form>
                 )}
-                {coupon && couponError && <p className="mt-1.5 text-xs text-rose-600 dark:text-rose-400">{couponError}</p>}
-                {coupon && notForCustomized && groups && (
-                  <button type="button" onClick={wholePlan} className="mt-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
-                    اشترك في الباقة كاملة لتستخدم الكوبون
-                  </button>
+                {coupon && couponError && (
+                  <p className="mt-1.5 text-xs text-rose-600 dark:text-rose-400">
+                    {couponError} — أزل الكوبون أو غيّره لإتمام الشراء.
+                  </p>
+                )}
+                {wholeForCoupon && (
+                  <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">
+                    هذا الكوبون للباقة كاملة، فأعدنا كل المميزات. أزل الكوبون لتعديلها.
+                  </p>
                 )}
               </div>
             )}
 
-            {registered ? (
+            {registered && !blocked ? (
               preview ? (
                 <dl className="mt-6 flex flex-col gap-3 text-sm">
                   <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
@@ -301,7 +319,7 @@ const CheckoutContent = () => {
                     </dt>
                     <dd className="tabular-nums">{formatEgp(preview.walletBalance)}</dd>
                   </div>
-                  {short > 0 && !blocked && (
+                  {short > 0 && (
                     <p className="text-xs text-amber-700 dark:text-amber-400">ينقصك {formatEgp(short)} لإتمام الشراء.</p>
                   )}
                 </dl>
@@ -311,9 +329,14 @@ const CheckoutContent = () => {
             ) : null}
 
             {blocked && (
-              <p className="mt-5 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
-                <AlertTriangle size={16} className="mt-0.5 shrink-0" /> {blocked}
-              </p>
+              <div className="mt-6">
+                <p className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0" /> {blocked}
+                </p>
+                <Link href="/subscription" className={cn(secondaryButton, "mt-4 w-full")}>
+                  الرجوع إلى الباقات
+                </Link>
+              </div>
             )}
             {error && <p className="mt-4 text-sm text-rose-600 dark:text-rose-400">{error}</p>}
 
@@ -324,19 +347,19 @@ const CheckoutContent = () => {
                   إنشاء حساب
                 </Link>
               </div>
-            ) : short > 0 && !blocked ? (
+            ) : blocked ? null : short > 0 ? (
               <button
                 type="button"
-                onClick={() => setTopUp(Math.max(RECHARGE_MIN, preview?.suggestedRechargeAmount || Math.ceil(short)))}
+                onClick={() => setTopUp(rechargeAmount)}
                 className="mt-8 w-full rounded-full bg-blue-950 py-3 font-semibold text-white transition hover:bg-blue-900 dark:bg-blue-100 dark:text-blue-950 dark:hover:bg-white"
               >
-                اشحن {formatMoney(Math.max(RECHARGE_MIN, preview?.suggestedRechargeAmount || Math.ceil(short)))} ج.م
+                اشحن {formatMoney(rechargeAmount)} ج.م
               </button>
             ) : (
               <button
                 type="button"
                 onClick={buy}
-                disabled={!preview || !!blocked || purchase.isPending || previewing}
+                disabled={!preview || !!preview.couponError || purchase.isPending || previewing}
                 className="mt-8 flex w-full items-center justify-center gap-2 rounded-full bg-blue-950 py-3 font-semibold text-white transition hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-100 dark:text-blue-950 dark:hover:bg-white"
               >
                 {purchase.isPending && <Loader2 size={16} className="animate-spin" />}
@@ -345,14 +368,6 @@ const CheckoutContent = () => {
             )}
           </div>
 
-          {/* Fixed refund guarantee — same wording on every plan/period */}
-          <div className="flex gap-3 rounded-3xl border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-900 dark:bg-emerald-950/40">
-            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <div>
-              <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300">ضمان استرداد الأموال</h3>
-              <p className="mt-1 text-xs leading-relaxed text-emerald-700 dark:text-emerald-400">{REFUND_GUARANTEE_TEXT}</p>
-            </div>
-          </div>
         </div>
 
         {/* Plan details — also the plan builder: a switch on each main
@@ -400,7 +415,7 @@ const CheckoutContent = () => {
 
           {planGroups.map((group) => {
             const canRemove = customisable && removable.includes(group.group);
-            const isOn = !off.includes(group.group);
+            const isOn = !effectiveOff.includes(group.group);
             return (
               <GroupCard
                 key={group.group}
@@ -408,7 +423,8 @@ const CheckoutContent = () => {
                 canRemove={canRemove}
                 isOn={isOn}
                 // The last main feature can't be switched off.
-                isLast={isOn && canRemove && kept.length === 1}
+                // Locked while a whole-plan coupon is applied.
+                isLast={wholeForCoupon || (isOn && canRemove && kept.length === 1)}
                 onToggle={(on) => toggleGroup(group.group, on)}
               />
             );
@@ -428,7 +444,7 @@ const CheckoutContent = () => {
               short > 0 ? (
                 <button
                   type="button"
-                  onClick={() => setTopUp(Math.max(RECHARGE_MIN, preview.suggestedRechargeAmount || Math.ceil(short)))}
+                  onClick={() => setTopUp(rechargeAmount)}
                   className="rounded-full bg-blue-950 px-6 py-3 font-semibold text-white dark:bg-blue-100 dark:text-blue-950"
                 >
                   اشحن المحفظة
@@ -437,7 +453,7 @@ const CheckoutContent = () => {
                 <button
                   type="button"
                   onClick={buy}
-                  disabled={purchase.isPending || previewing}
+                  disabled={!!preview.couponError || purchase.isPending || previewing}
                   className="flex items-center gap-2 rounded-full bg-blue-950 px-6 py-3 font-semibold text-white disabled:opacity-50 dark:bg-blue-100 dark:text-blue-950"
                 >
                   {purchase.isPending && <Loader2 size={16} className="animate-spin" />}
@@ -449,7 +465,18 @@ const CheckoutContent = () => {
         </>
       )}
 
-      {topUp !== null && <TopUpDialog initialAmount={topUp} onClose={() => setTopUp(null)} onPaid={() => setError(null)} />}
+      {/* A top-up that went through: preview again, so the summary shows
+          the confirm button without a reload. */}
+      {topUp !== null && (
+        <TopUpDialog
+          initialAmount={topUp}
+          onClose={() => setTopUp(null)}
+          onPaid={() => {
+            setError(null);
+            refetchPreview();
+          }}
+        />
+      )}
     </Shell>
   );
 };

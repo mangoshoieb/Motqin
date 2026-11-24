@@ -13,6 +13,7 @@ import { useResendOtp } from "@/app/hooks/useResendOtp";
 import z from "zod";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/app/lib/auth.store";
+import WhatsAppDebugBox from "@/components/auth/WhatsAppDebugBox";
 
 type VerifyPhoneForm = z.infer<typeof verifyPhoneSchema>;
 
@@ -98,7 +99,15 @@ const VerifyPhone = () => {
           </h1>
   
           <p className="text-gray-500 text-sm sm:text-base leading-7 mb-6">
-            أدخل رمز التحقق المكون من 6 أرقام الذي أرسلناه عبر واتساب إلى رقم هاتفك.
+            أدخل رمز التحقق المكون من 6 أرقام الذي أرسلناه عبر واتساب إلى{" "}
+            {phoneNumber ? (
+              <span dir="ltr" className="font-semibold text-gray-700 dark:text-zinc-300">
+                {phoneNumber}
+              </span>
+            ) : (
+              "رقم هاتفك"
+            )}
+            .
           </p>
   
           <form
@@ -109,9 +118,13 @@ const VerifyPhone = () => {
               label="رمز التحقق"
               placeholder="123456"
               type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              dir="ltr"
               error={errors.code?.message}
               {...register("code")}
             />
+            <WhatsAppDebugBox />
   
             <CustomButton
               title="تأكيد"

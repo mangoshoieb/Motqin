@@ -1,21 +1,17 @@
 "use client";
 import { toast } from "sonner";
 import CustomButton from "@/components/CustomButton";
-import CustomInput from "@/components/CustomInput";
-import { Phone, User } from "lucide-react";
 import Image from "next/image";
-import { useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { z } from "zod";
-import { signInSchema } from "@/app/lib/validators/auth";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleLogin } from "@/app/hooks/useAuth";
 import GoogleSignIn from "@/components/GoogleSignIn";
 import { useLogInPhone } from "@/app/hooks/useLoginPhone";
 import { useGuestLogin } from "@/app/hooks/useGuestLogin";
 import { useAuthKind } from "@/app/hooks/useAuthKind";
-type FormData = z.infer<typeof signInSchema>;
+import PhoneField from "@/components/auth/PhoneField";
+import { EMPTY_PHONE, PHONE_INVALID_MESSAGE, PhoneValue, toInternationalPhone } from "@/app/lib/phone";
+import { authFieldErrors } from "@/app/lib/auth-field-errors";
 
 const SignIn = () => {
   const { mutate: logInPhone, isPending: isPhonePending } = useLogInPhone();
@@ -23,20 +19,23 @@ const SignIn = () => {
   // Already a guest? They're here to upgrade, not to start another trial.
   const isGuest = useAuthKind() === "guest";
 
-  const { mutate: googleLogin, isPending: isGooglePending } = useGoogleLogin();
-  const googleButtonRef = useRef<HTMLDivElement>(null);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(signInSchema),
-  });
+  const { mutate: googleLogin } = useGoogleLogin();
+  const [phone, setPhone] = useState<PhoneValue>(EMPTY_PHONE);
+  const [phoneError, setPhoneError] = useState<string>();
 
-  const onSubmit = (data: FormData) => {
-    logInPhone({
-      phoneNumber: data.phoneNumber,
-    });
+  // Any country: "+" + dialCode + the number without its leading 0. The
+  // server's own message (details.PhoneNumber) goes under the field.
+  const onSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const phoneNumber = toInternationalPhone(phone.dialCode, phone.number);
+    if (!phoneNumber) {
+      setPhoneError(phone.number.trim() ? PHONE_INVALID_MESSAGE : "أدخل رقم الهاتف");
+      return;
+    }
+    logInPhone(
+      { phoneNumber },
+      { onError: (error) => setPhoneError(authFieldErrors(error)?.PhoneNumber) },
+    );
   };
 
   return (
@@ -49,10 +48,7 @@ const SignIn = () => {
         <div className="w-full h-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-sm px-6 sm:px-8 py-8">
           <h1 className="text-3xl font-bold text-right mb-6">تسجيل الدخول</h1>
 
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-6"
-          >
+          <form noValidate onSubmit={onSubmit} className="flex flex-col gap-6">
             <GoogleSignIn
               text="continue_with"
               onSuccess={(idToken) => {
@@ -72,23 +68,14 @@ const SignIn = () => {
               </Link>
             </div>
 
-            <CustomInput
-              label="رقم الهاتف"
-              placeholder="+20 10XXXXXXXX"
-              type="tel"
-              icon={<Phone size={18} />}
-              error={errors.phoneNumber?.message}
-              {...register("phoneNumber")}
+            <PhoneField
+              value={phone}
+              onChange={(next) => {
+                setPhone(next);
+                setPhoneError(undefined);
+              }}
+              error={phoneError}
             />
-            {/*   
-            <CustomInput
-              label="اسم المستخدم"
-              placeholder="مثال: محمد أحمد"
-              type="text"
-              icon={<User size={18} />}
-              error={errors.username?.message}
-              {...register("username")}
-            /> */}
 
             <CustomButton
               title="تسجيل دخول"
@@ -100,7 +87,7 @@ const SignIn = () => {
             {!isGuest && (
               <button
                 type="button"
-                onClick={() => startGuest()}
+                onClick={() => startGuest("Student")}
                 disabled={isGuestPending}
                 className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
               >
