@@ -48,7 +48,7 @@ const navLinks: {
   },
   {
     label: "متقن",
-    href: "/spaced-repetition",
+    href: "/subjects",
     icon: BookOpen,
     isActive: (p) => p.startsWith("/spaced-repetition"),
     tone: {

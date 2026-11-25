@@ -546,7 +546,7 @@ export default function TrackingTableBoardPage() {
           initialName={table.groupName}
           isPending={rename.isPending}
           onClose={() => setDialog(null)}
-          onSubmit={(name) => rename.mutate(name, { onSuccess: () => setDialog(null) })}
+          onSubmit={(name) => rename.mutateAsync(name).then(() => setDialog(null))}
         />
       )}
       {dialog?.kind === "coreFields" && (

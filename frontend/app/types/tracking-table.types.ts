@@ -113,6 +113,8 @@ export interface TrackingRow {
   parentPhone: string | null;
   noParentMessages: boolean;
   values: Record<string, CellValue>;
+  isDeleted?: boolean;
+  updatedAt?: string; // a UTC moment (…Z)
 }
 
 export type FilterOp =
@@ -165,8 +167,9 @@ export interface SaveColumnBody {
   options?: string[] | null;
 }
 
-// On update, name and phones are always sent; `values` carries only the
-// cells that changed (null clears one).
+// PUT /rows/{rowId} replaces the whole student: fullName, both phones and
+// noParentMessages always go with their current values (one left out is
+// cleared). `values` carries only the cells that changed (null clears one).
 export interface SaveRowBody {
   fullName: string;
   studentPhone: string | null;
@@ -180,6 +183,10 @@ export interface ImportPreviewColumn {
   index: number;
   header: string;
   guessedType: ColumnType;
+  // An exam header "امتحان 1 (من 20)": maxScore 20 and name "امتحان 1".
+  // maxScore is null otherwise; name may be missing on older servers.
+  maxScore?: number | null;
+  name?: string | null;
   coreField: CoreField | null;
 }
 
@@ -199,6 +206,8 @@ export interface ImportOptions {
   studentPhone?: number;
   parentPhone?: number;
   types?: Record<string, ColumnType>;
+  // The full mark (1–1000) of an Exam column whose header has no (من 20).
+  maxScores?: Record<string, number>;
   forTeacherId?: string;
 }
 
@@ -271,11 +280,28 @@ export interface ReportCounts {
   cancelled?: number;
 }
 
+// What a Sent message carried to WhatsApp. sent is false while sending is on
+// hold: nothing really went out, and text is what the parent would read.
+export interface ReportWhatsApp {
+  sent: boolean;
+  to: string;
+  template: string;
+  language: string;
+  otp?: string | null;
+  text: string;
+  payload?: unknown;
+}
+
 export interface ReportBatchMessage {
+  rowId?: number;
   student: string;
   phone: string | null;
   status: ReportMessageStatus;
-  error?: string | null;
+  reason?: string | null; // Skipped: a SkipReason
+  error?: string | null; // Failed
+  sentAt?: string | null;
+  // Only on Sent; null on every other status.
+  whatsApp?: ReportWhatsApp | null;
 }
 
 // GET /tracking-tables/reports (list) and /reports/{batchId} (with messages).

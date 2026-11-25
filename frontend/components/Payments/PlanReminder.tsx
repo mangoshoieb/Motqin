@@ -7,6 +7,7 @@ import { cn } from "@/app/lib/utils";
 import { useAuthKind } from "@/app/hooks/useAuthKind";
 import { useMySubscription } from "@/app/hooks/usePayments";
 import { featureLabel, formatDay, toUtcDate } from "@/app/lib/payments";
+import { todayLocal } from "@/app/lib/date";
 import { MySubscription } from "@/app/types/payment.types";
 
 // How close is "close": a plan ending within this many days, a monthly
@@ -42,7 +43,7 @@ const reminderFor = (me: MySubscription, limitsOnly = false): Reminder | null =>
   return items.length ? { kind: "limits", items: items.slice(0, 2) } : null;
 };
 
-const todayKey = (kind: string) => `motqin:plan-reminder:${kind}:${new Date().toISOString().slice(0, 10)}`;
+const todayKey = (kind: string) => `motqin:plan-reminder:${kind}:${todayLocal()}`;
 
 const wasDismissed = (kind: string) => {
   try {

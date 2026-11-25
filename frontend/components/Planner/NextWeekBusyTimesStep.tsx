@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { weekData } from "@/app/data/days";
 import { currentWeekDates, formatPlannerDate } from "@/app/lib/study-plan";
 import { cn } from "@/app/lib/utils";
+import { wallClock } from "@/app/lib/date";
 import { BusyTime, BusyTimeMode, BusyTimePayload, busyTimesService } from "@/app/services/motqin";
 
 const inputClass =
@@ -60,8 +61,9 @@ export default function NextWeekBusyTimesStep({ onContinue }: NextWeekBusyTimesS
       const date = dateFor(draft.dayIndex);
       // POST /user-preferences/busytime — a one-off on a specific next-week
       // date. Per the API doc the body carries EITHER startTime/endTime OR
-      // durationInMinutes (never both), and dates are ISO like the example.
-      const at = (time: string) => new Date(`${date}T${time}:00`).toISOString();
+      // durationInMinutes (never both). The times are the student's own clock,
+      // "2026-11-28T10:00:00" with no Z and no time-zone conversion.
+      const at = (time: string) => `${date}T${time}:00`;
       const payload: BusyTimePayload =
         draft.mode === "range"
           ? { title, isRepeated: false, startDate: date, endDate: date, startTime: at(draft.startTime), endTime: at(draft.endTime) }
@@ -89,13 +91,8 @@ export default function NextWeekBusyTimesStep({ onContinue }: NextWeekBusyTimesS
     onError: () => toast.error("تعذر حذف الوقت المشغول."),
   });
 
-  const localTime = (iso?: string) => {
-    if (!iso) return "";
-    const d = new Date(iso);
-    return Number.isNaN(d.getTime())
-      ? iso.slice(11, 16)
-      : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  };
+  // Shown as the student picked it: 10:00 is 10:00.
+  const localTime = (value?: string) => wallClock(value);
   const describe = (busy: BusyTime) =>
     busy.durationInMinutes
       ? `${busy.durationInMinutes} دقيقة`

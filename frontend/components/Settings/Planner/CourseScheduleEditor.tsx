@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { useGetSubjects } from "@/app/hooks/useGetSubjects";
 import { cn } from "@/app/lib/utils";
+import { parseLocalDateTime, toLocalDateTime, wallClock } from "@/app/lib/date";
 import { CourseSchedule, courseSchedulesService } from "@/app/services/motqin";
 import { WEEKDAYS, WeekDay } from "@/app/types/planner-preferences.types";
 
@@ -39,18 +40,14 @@ const getWeekDate = (day: WeekDay, time: string) => {
   date.setDate(date.getDate() - date.getDay() + dayNumbers[day]);
   const [hours, minutes] = time.split(":").map(Number);
   date.setHours(hours, minutes, 0, 0);
-  return date.toISOString();
+  // The student's own clock, no Z: 10:00 is sent and shown as 10:00.
+  return toLocalDateTime(date);
 };
 
-const getTime = (value: string) => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? ""
-    : `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-};
+const getTime = (value: string) => wallClock(value);
 
 const dayOf = (schedule: CourseSchedule): WeekDay | undefined =>
-  WEEKDAYS.find(({ key }) => new Date(schedule.startTime).getDay() === dayNumbers[key])?.key;
+  WEEKDAYS.find(({ key }) => parseLocalDateTime(schedule.startTime)?.getDay() === dayNumbers[key])?.key;
 
 // Subject + from/to row, used for both adding under a day and editing a row.
 function LectureForm({

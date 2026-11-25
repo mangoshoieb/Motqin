@@ -5,9 +5,8 @@ import { ChevronLeft, MessageCircle } from "lucide-react";
 import Skeleton from "@/components/ui/Skeleton";
 import { useReports } from "@/app/hooks/useTrackingTables";
 import { formatNumber } from "@/app/lib/tracking-table";
+import { formatMoment } from "@/app/lib/date";
 import { CountsBar, ReportStatusDialog, reportTotal } from "./ReportStatus";
-
-const dateTime = new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 // Every report sent (and any prepared but never sent), newest first.
 export function ReportsHistory() {
@@ -58,7 +57,7 @@ export function ReportsHistory() {
                     {report.template} · {report.groupName}
                   </p>
                   <p className="mt-0.5 text-xs text-zinc-500">
-                    {report.createdAt ? dateTime.format(new Date(report.createdAt)) : ""}
+                    {formatMoment(report.createdAt, "shortDateTime", "")}
                     {" · "}
                     {(c.draft ?? 0) > 0 && !c.sent
                       ? "لم يُرسل بعد"

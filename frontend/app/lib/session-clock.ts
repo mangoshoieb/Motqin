@@ -3,6 +3,8 @@
 // We keep a tiny per-session record in localStorage and rebuild the elapsed
 // time from it (plus the wall-clock time that passed while it was running).
 
+import { momentMs } from "./date";
+
 const KEY_PREFIX = "motqin:session-clock:";
 
 interface SessionClockRecord {
@@ -56,13 +58,7 @@ export const restoreSessionClock = (sessionId: string, serverRunning: boolean): 
  * (how far a session has run, whether its time is up) is then wrong by the
  * whole offset, so every server timestamp goes through here.
  */
-export const parseServerDate = (value?: string | null): number | null => {
-  if (!value) return null;
-  const trimmed = value.trim();
-  const hasZone = /(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(trimmed);
-  const time = Date.parse(hasZone ? trimmed : `${trimmed}Z`);
-  return Number.isNaN(time) ? null : time;
-};
+export const parseServerDate = (value?: string | null): number | null => momentMs(value);
 
 /** Fallback when nothing is stored locally: seconds since the server's startTime. */
 export const elapsedSinceStart = (startTime?: string | null): number | null => {

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { toast } from "sonner";
 import { getApiErrorMessage, getCodedApiError, isAuthGateError } from "./api-error";
+import { parseMoment } from "./date";
 import { BLOCKER_LIMITS } from "../constants/distraction-blocker.constants";
 import {
   BlockerErrorBody,
@@ -9,14 +10,8 @@ import {
   BlockScheduleInput,
 } from "../types/distraction-blocker.types";
 
-// Some moments come back without a "Z" ("2026-10-28T17:04:10.427") but are
-// UTC all the same — read bare, they'd land 2–3 hours off.
-export function parseUtc(value: string | null | undefined): Date | null {
-  if (!value) return null;
-  const hasZone = /(Z|[+-]\d\d:?\d\d)$/i.test(value);
-  const date = new Date(hasZone ? value : `${value}Z`);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
+// unlockedUntil, a session's plannedEndTime…: UTC moments (see lib/date).
+export const parseUtc = (value: string | null | undefined): Date | null => parseMoment(value);
 
 const clockFormat = new Intl.DateTimeFormat("ar-EG-u-nu-latn", {
   hour: "numeric",

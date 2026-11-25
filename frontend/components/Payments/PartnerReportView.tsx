@@ -3,6 +3,7 @@
 import { BadgePercent, Coins, Receipt, Users } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { arabicPlanTitle, formatDateTime, formatEgp, formatMoney } from "@/app/lib/payments";
+import { formatMoment } from "@/app/lib/date";
 import { PartnerReport, SalesLine } from "@/app/types/payment.types";
 import { Segmented } from "@/components/TrackingTables/ui";
 
@@ -59,6 +60,7 @@ export function PartnerReportView({
           <p className="text-sm text-zinc-500">
             {report.partner.type === "Center" ? "سنتر" : "مدرس"} · عمولة {formatMoney(report.partner.commissionPercent)}٪
             {!report.partner.isActive && " · موقوف"}
+            {report.partner.createdAt && ` · شريك منذ ${formatMoment(report.partner.createdAt, "date")}`}
           </p>
         </div>
         <Segmented value={range} onChange={onRangeChange} options={RANGE_OPTIONS} className="w-full whitespace-nowrap sm:w-[26rem]" />

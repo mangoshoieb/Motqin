@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { Check, Minus, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
@@ -72,13 +73,17 @@ export function Cell({
     );
   }
 
+  const isName = field.kind === "core" && field.id === "name";
+
   if (editing) {
     return (
       <InlineEditor
         type={type}
         initial={value}
         maxScore={column?.maxScore ?? null}
-        required={field.kind === "core" && field.id === "name"}
+        // A name can't be cleared, except on an imported row that never had one.
+        required={isName && !isEmptyValue(value)}
+        maxLength={isName ? TRACKING_LIMITS.STUDENT_NAME : type === "Text" ? TRACKING_LIMITS.TEXT_VALUE : undefined}
         onCancel={() => setEditing(false)}
         onCommit={(next) => {
           setEditing(false);
@@ -153,6 +158,7 @@ function InlineEditor({
   initial,
   maxScore,
   required,
+  maxLength,
   onCommit,
   onCancel,
 }: {
@@ -160,6 +166,7 @@ function InlineEditor({
   initial: CellValue;
   maxScore: number | null;
   required: boolean;
+  maxLength?: number;
   onCommit: (value: CellValue) => void;
   onCancel: () => void;
 }) {
@@ -177,54 +184,75 @@ function InlineEditor({
     else onCommit(value);
   };
 
-  const parse = (): CellValue | undefined => {
+  // Shown under the input; Enter on a bad value keeps the editor open.
+  const [error, setError] = useState<string | null>(null);
+  // Where the message goes: it renders in a portal, since the next row's
+  // sticky name cell would paint over anything inside this one.
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [errorAt, setErrorAt] = useState<{ top: number; right: number } | null>(null);
+  const showError = (message: string) => {
+    const rect = inputRef.current?.getBoundingClientRect();
+    if (rect) setErrorAt({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setError(message);
+  };
+
+  const parse = (): { value: CellValue } | { error: string } => {
     const text = draft.trim();
-    if (text === "") {
-      if (required) {
-        toast.error("اسم الطالب مطلوب");
-        return undefined;
-      }
-      return null;
-    }
+    if (text === "") return required ? { error: "اسم الطالب مطلوب" } : { value: null };
     if (type === "Number" || type === "Exam") {
       const n = Number(normalizeDigits(text));
-      if (!Number.isFinite(n)) {
-        toast.error("اكتب رقمًا");
-        return undefined;
-      }
+      if (!Number.isFinite(n)) return { error: "اكتب رقمًا" };
       if (type === "Exam" && maxScore && (n < 0 || n > maxScore)) {
-        toast.error(`الدرجة من 0 إلى ${formatNumber(maxScore)}`);
-        return undefined;
+        return { error: `الدرجة من 0 إلى ${formatNumber(maxScore)}` };
       }
-      return n;
+      return { value: n };
     }
-    if (type === "Phone") return normalizeDigits(text);
-    return text;
+    if (type === "Phone") return { value: normalizeDigits(text) };
+    return { value: text };
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      finish(parse());
+      const result = parse();
+      if ("error" in result) showError(result.error);
+      else finish(result.value);
     } else if (event.key === "Escape") {
       finish(undefined);
+    }
+  };
+
+  // Leaving the cell with a bad value keeps the old one.
+  const onBlur = () => {
+    if (done.current) return;
+    const result = parse();
+    if ("error" in result) {
+      toast.error(result.error);
+      finish(undefined);
+    } else {
+      finish(result.value);
     }
   };
 
   const numeric = type === "Number" || type === "Exam";
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="relative flex items-center gap-1">
       <input
+        ref={inputRef}
         autoFocus
         type={type === "Date" ? "date" : "text"}
         inputMode={numeric ? "decimal" : type === "Phone" ? "tel" : undefined}
         dir={numeric || type === "Phone" || type === "Date" ? "ltr" : "auto"}
         value={draft}
-        maxLength={type === "Text" ? TRACKING_LIMITS.TEXT_VALUE : undefined}
-        onChange={(e) => setDraft(e.target.value)}
+        maxLength={maxLength}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          setError(null);
+        }}
         onKeyDown={onKeyDown}
-        onBlur={() => finish(parse())}
+        onBlur={onBlur}
+        aria-invalid={!!error}
         className="h-8 w-full min-w-0 rounded-md border border-blue-500 bg-white px-2 text-sm text-zinc-900 shadow-sm outline-none ring-2 ring-blue-500/20 dark:bg-zinc-950 dark:text-zinc-100"
       />
       {type === "Exam" && (
@@ -241,6 +269,20 @@ function InlineEditor({
           </button>
         </>
       )}
+      {error &&
+        errorAt &&
+        createPortal(
+          <span
+            role="alert"
+            dir="rtl"
+            // Under the input, lined up with its start edge (the right in RTL).
+            style={{ top: errorAt.top, right: errorAt.right }}
+            className="fixed z-[60] whitespace-nowrap rounded-md bg-rose-600 px-2 py-1 text-xs font-semibold text-white shadow-md dark:bg-rose-700"
+          >
+            {error}
+          </span>,
+          document.body,
+        )}
     </div>
   );
 }

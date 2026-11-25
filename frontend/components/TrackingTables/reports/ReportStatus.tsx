@@ -2,13 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Ban, Loader2, RotateCcw } from "lucide-react";
+import { Ban, Loader2, MessageSquareText, RotateCcw } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { getApiErrorMessage } from "@/app/lib/api-error";
+import { formatMoment } from "@/app/lib/date";
 import { apiErrorCode, formatNumber } from "@/app/lib/tracking-table";
-import { REPORT_PLAN_CODES, REPORT_STATUS_META } from "@/app/constants/tracking-table.constants";
+import {
+  REPORT_PLAN_CODES,
+  REPORT_STATUS_META,
+  SKIP_REASON_LABELS,
+} from "@/app/constants/tracking-table.constants";
 import { useAllowReport, useReport, useStopReport } from "@/app/hooks/useTrackingTables";
-import { ReportCounts, ReportMessageStatus } from "@/app/types/tracking-table.types";
+import { ReportBatchMessage, ReportCounts, ReportMessageStatus } from "@/app/types/tracking-table.types";
 import { Modal, primaryButton, secondaryButton } from "../ui";
 
 const SEGMENTS: { key: keyof ReportCounts; status: ReportMessageStatus; bar: string }[] = [
@@ -53,6 +58,64 @@ export function PlanNotice({ message }: { message: string }) {
         عرض الباقات
       </Link>
     </div>
+  );
+}
+
+// One parent's line. A Sent message that didn't really go out (sending is on
+// hold) opens the WhatsApp text the parent would get. whatsApp is null on
+// every status but Sent.
+function MessageRow({ message: m }: { message: ReportBatchMessage }) {
+  const [open, setOpen] = useState(false);
+  const preview = m.status === "Sent" && m.whatsApp && !m.whatsApp.sent ? m.whatsApp : null;
+  const detail = m.error
+    ? { text: m.error, className: "text-rose-600 dark:text-rose-400" }
+    : m.status === "Skipped" && m.reason
+      ? { text: SKIP_REASON_LABELS[m.reason] ?? m.reason, className: "text-amber-700 dark:text-amber-400" }
+      : null;
+
+  return (
+    <li className="px-4 py-2.5 text-sm">
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">{m.student}</p>
+          {detail ? (
+            <p className={cn("truncate text-xs", detail.className)}>{detail.text}</p>
+          ) : (
+            m.phone && (
+              <p dir="ltr" className="text-right text-xs tabular-nums text-zinc-500">
+                {m.phone}
+              </p>
+            )
+          )}
+        </div>
+        {preview && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+          >
+            <MessageSquareText size={14} /> الرسالة
+          </button>
+        )}
+        <StatusChip status={m.status} />
+      </div>
+      {preview && open && (
+        <div className="mt-2 rounded-2xl bg-[#e5ddd5] p-3 dark:bg-zinc-800">
+          <p className="mb-2 text-center text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+            لم تُرسل فعلياً — هذا ما سيصل لولي الأمر
+          </p>
+          <div className="ms-auto max-w-[90%] rounded-xl rounded-se-sm bg-[#dcf8c6] px-3 py-2 text-[13px] leading-6 text-zinc-900 shadow-sm dark:bg-emerald-900/60 dark:text-zinc-100">
+            <p dir="auto" className="whitespace-pre-line break-words">
+              {preview.text}
+            </p>
+            {m.sentAt && (
+              <p className="mt-1 text-end text-[10px] text-zinc-500 dark:text-zinc-400">{formatMoment(m.sentAt, "time")}</p>
+            )}
+          </div>
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -109,23 +172,9 @@ export function ReportStatusView({ batchId }: { batchId: string }) {
       </div>
 
       {(report.messages?.length ?? 0) > 0 && (
-        <ul className="max-h-72 divide-y divide-zinc-100 overflow-y-auto rounded-2xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <ul className="max-h-96 divide-y divide-zinc-100 overflow-y-auto rounded-2xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {report.messages!.map((m, i) => (
-            <li key={i} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">{m.student}</p>
-                {m.error ? (
-                  <p className="truncate text-xs text-rose-600 dark:text-rose-400">{m.error}</p>
-                ) : (
-                  m.phone && (
-                    <p dir="ltr" className="text-right text-xs tabular-nums text-zinc-500">
-                      {m.phone}
-                    </p>
-                  )
-                )}
-              </div>
-              <StatusChip status={m.status} />
-            </li>
+            <MessageRow key={m.rowId ?? i} message={m} />
           ))}
         </ul>
       )}

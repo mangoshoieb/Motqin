@@ -1,5 +1,5 @@
-// Which kind of account a new user is making: picked by the sign-up page's
-// try-as-a-guest lines (طالب · معلم · ولي أمر) or on the «بياناتك» form.
+// Which kind of account a new user is making: set by the sign-up page they
+// start on (/sign-up, /sign-up/teacher, /sign-up/parent).
 // Kept in sessionStorage like the invite code so it survives /verify-phone
 // and the Google steps, sent on the calls that create the account
 // (phone-complete-signup, auth/google, google/phone-verify) and cleared on

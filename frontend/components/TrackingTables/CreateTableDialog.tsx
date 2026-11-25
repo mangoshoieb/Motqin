@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
+import { getApiErrorMessage } from "@/app/lib/api-error";
+import { NAME_FIELD_CODES, apiErrorCode } from "@/app/lib/tracking-table";
 import {
   COLUMN_TYPES,
   TABLE_COLORS,
@@ -17,7 +19,7 @@ import { trackingTableService } from "@/app/services/tracking-table.service";
 import { defaultView, useTableViewStore } from "@/app/lib/tracking-table-view.store";
 import { SaveColumnBody } from "@/app/types/tracking-table.types";
 import { useTrackingAccess } from "@/app/hooks/useTrackingAccess";
-import { Modal, inputClass, primaryButton, secondaryButton } from "./ui";
+import { FieldError, Modal, inputClass, primaryButton, secondaryButton } from "./ui";
 import { TeacherPicker } from "./TeacherPicker";
 
 // Columns most groups start with; the teacher ticks the ones they want and
@@ -33,12 +35,18 @@ const STARTER_COLUMNS: { key: string; column: SaveColumnBody }[] = [
   { key: "notes", column: { name: "ملاحظات", type: "Text" } },
 ];
 
+// group_name_required / name_too_long: the server's Arabic text under the
+// name field. Anything else was already toasted by the hook.
+const nameFieldError = (error: unknown) =>
+  NAME_FIELD_CODES.includes(apiErrorCode(error) ?? "") ? getApiErrorMessage(error) : null;
+
 export function CreateTableDialog({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [color, setColor] = useState<TableColor>("blue");
   const [starters, setStarters] = useState<string[]>(["attendance", "homework", "exam"]);
   const [addingColumns, setAddingColumns] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
   const createTable = useCreateTable();
   const updateView = useTableViewStore((s) => s.update);
 
@@ -61,7 +69,10 @@ export function CreateTableDialog({ onClose }: { onClose: () => void }) {
 
     const table = await createTable
       .mutateAsync({ groupName: trimmed, forTeacherId: forTeacherId || undefined })
-      .catch(() => null);
+      .catch((error) => {
+        setNameError(nameFieldError(error));
+        return null;
+      });
     if (!table) return;
     updateView(table.groupId, { ...defaultView(table.groupId), color });
 
@@ -104,10 +115,15 @@ export function CreateTableDialog({ onClose }: { onClose: () => void }) {
             dir="auto"
             value={name}
             maxLength={TRACKING_LIMITS.TABLE_NAME}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              setNameError(null);
+            }}
             placeholder="مثال: السبت 4 م — الصف الثالث"
+            aria-invalid={!!nameError}
             className={inputClass}
           />
+          <FieldError message={nameError} />
         </label>
 
         <div className="flex flex-col gap-2">
@@ -184,10 +200,12 @@ export function RenameTableDialog({
 }: {
   initialName: string;
   isPending: boolean;
-  onSubmit: (name: string) => void;
+  // Rejects on error; name errors show under the field.
+  onSubmit: (name: string) => Promise<unknown>;
   onClose: () => void;
 }) {
   const [name, setName] = useState(initialName);
+  const [nameError, setNameError] = useState<string | null>(null);
   const trimmed = name.trim();
   const disabled = !trimmed || trimmed === initialName || isPending;
 
@@ -210,17 +228,23 @@ export function RenameTableDialog({
         id="rename-table"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!disabled) onSubmit(trimmed);
+          if (!disabled) onSubmit(trimmed).catch((error) => setNameError(nameFieldError(error)));
         }}
+        className="flex flex-col gap-1.5"
       >
         <input
           autoFocus
           dir="auto"
           value={name}
           maxLength={TRACKING_LIMITS.TABLE_NAME}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setNameError(null);
+          }}
+          aria-invalid={!!nameError}
           className={inputClass}
         />
+        <FieldError message={nameError} />
       </form>
     </Modal>
   );

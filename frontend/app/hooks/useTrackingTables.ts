@@ -20,7 +20,12 @@ import {
   TrackingRow,
 } from "@/app/types/tracking-table.types";
 import { getApiErrorStatus, toastApiError } from "@/app/lib/api-error";
-import { apiErrorCode } from "@/app/lib/tracking-table";
+import { NAME_FIELD_CODES, apiErrorCode } from "@/app/lib/tracking-table";
+
+// Name errors show under the name field in the form; anything else is a toast.
+const toastUnlessNameError = (label: string) => (error: unknown) => {
+  if (!NAME_FIELD_CODES.includes(apiErrorCode(error) ?? "")) toastApiError(label, error);
+};
 
 export const TRACKING_KEYS = {
   all: ["tracking-tables"] as const,
@@ -67,7 +72,7 @@ export const useCreateTable = () => {
     mutationFn: ({ groupName, forTeacherId }: { groupName: string; forTeacherId?: string }) =>
       api.createTable(groupName, forTeacherId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: TRACKING_KEYS.list }),
-    onError: (error) => toastApiError("تعذر إنشاء الجدول", error),
+    onError: toastUnlessNameError("تعذر إنشاء الجدول"),
   });
 };
 
@@ -76,7 +81,7 @@ export const useRenameTable = (groupId: string) => {
   return useMutation({
     mutationFn: (groupName: string) => api.renameTable(groupId, groupName),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: TRACKING_KEYS.all }),
-    onError: (error) => toastApiError("تعذر تغيير اسم الجدول", error),
+    onError: toastUnlessNameError("تعذر تغيير اسم الجدول"),
   });
 };
 

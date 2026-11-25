@@ -8,6 +8,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import { toastApiError } from "@/app/lib/api-error";
 import { COUPONS_PAGE_SIZE } from "@/app/constants/payment.constants";
 import { formatDay } from "@/app/lib/payments";
+import { formatMoment } from "@/app/lib/date";
 import { useAdminCoupons, useAdminPartners, useSaveCoupon } from "@/app/hooks/useAdminPayments";
 import { Coupon } from "@/app/types/payment.types";
 import { AdminHeader, Chip } from "@/components/Admin/AdminHeader";
@@ -162,6 +163,7 @@ export default function AdminCouponsPage() {
                       <Copy size={13} className="text-zinc-300 group-hover:text-zinc-600" />
                     </button>
                     {partner && <p className="text-xs text-zinc-500">{partner.name}</p>}
+                    <p className="text-[11px] text-zinc-400">أُنشئ {formatMoment(c.createdAt, "shortDate")}</p>
                   </td>
                   <td className="px-3 py-3 font-bold tabular-nums">{c.discountPercent}٪</td>
                   <td dir="ltr" className="px-3 py-3 text-end tabular-nums text-zinc-600 dark:text-zinc-300">

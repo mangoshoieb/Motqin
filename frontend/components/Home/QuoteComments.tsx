@@ -13,11 +13,12 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { buildThread, countAll, flattenReplies } from "@/app/lib/quote-comments";
 import { quoteErrorCode } from "@/app/lib/quote-errors";
 import { shortName } from "@/app/lib/user";
+import { momentMs } from "@/app/lib/date";
 import UserAvatar from "@/components/ui/UserAvatar";
 import ReportCommentDialog from "./ReportCommentDialog";
 
 function timeAgo(isoDate: string) {
-  const diffMs = Date.now() - new Date(isoDate).getTime();
+  const diffMs = Date.now() - (momentMs(isoDate) ?? Date.now());
   const minutes = Math.floor(diffMs / 60000);
 
   if (minutes < 1) return "الآن";

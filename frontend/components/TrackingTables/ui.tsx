@@ -24,6 +24,11 @@ export const ghostButton =
 const popupClass =
   "rounded-2xl border border-zinc-200 bg-white p-1.5 text-sm text-zinc-800 shadow-xl shadow-zinc-900/10 outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:shadow-black/40 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 transition-[opacity,transform] duration-100 origin-[var(--transform-origin)]";
 
+// A server or form error under the field it's about.
+export function FieldError({ message }: { message: string | null | undefined }) {
+  return message ? <span className="text-xs font-medium text-rose-600 dark:text-rose-400">{message}</span> : null;
+}
+
 export function Modal({
   title,
   description,

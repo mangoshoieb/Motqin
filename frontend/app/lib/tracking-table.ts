@@ -29,11 +29,26 @@ export const apiErrorCode = (error: unknown): string | undefined => {
   return typeof code === "string" ? code : undefined;
 };
 
+// Wrapped { error: { details } } (current API) or flat { details }.
 export const apiErrorDetails = <T = Record<string, unknown>>(error: unknown): T | undefined => {
   if (!axios.isAxiosError(error)) return undefined;
-  const data = error.response?.data as { details?: T } | undefined;
-  return data?.details;
+  const data = error.response?.data as { details?: T; error?: { details?: T } } | undefined;
+  const wrapped = data?.error && typeof data.error === "object" ? data.error.details : undefined;
+  return wrapped ?? data?.details;
 };
+
+// The server's own (English, developer-facing) message — only for telling
+// apart codes that cover several cases, like invalid_file.
+export const apiErrorRawMessage = (error: unknown): string => {
+  if (!axios.isAxiosError(error)) return "";
+  const data = error.response?.data as { message?: unknown; error?: { message?: unknown } } | undefined;
+  const message = data?.error && typeof data.error === "object" ? data.error.message : data?.message;
+  return typeof message === "string" ? message : "";
+};
+
+// Name errors shown under the name field, in the create / rename table,
+// column and student forms.
+export const NAME_FIELD_CODES = ["group_name_required", "column_name_required", "name_required", "name_too_long", "column_name_taken"];
 
 // --- Access ------------------------------------------------------------------
 

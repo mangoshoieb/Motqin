@@ -7,6 +7,7 @@ import { cn } from "@/app/lib/utils";
 import Skeleton from "@/components/ui/Skeleton";
 import { getApiErrorMessage, toastApiError } from "@/app/lib/api-error";
 import { formatMoney } from "@/app/lib/payments";
+import { formatMoment } from "@/app/lib/date";
 import { useAdminPartners, useLinkPartnerUser, usePartnerReport, useSavePartner } from "@/app/hooks/useAdminPayments";
 import { Partner, PartnerType, SavePartnerBody } from "@/app/types/payment.types";
 import { AdminHeader, Chip, ErrorBox, Field } from "@/components/Admin/AdminHeader";
@@ -79,6 +80,7 @@ export default function AdminPartnersPage() {
               <tr key={p.id} className={cn(!p.isActive && "opacity-60")}>
                 <td className="px-5 py-3 font-semibold text-zinc-900 dark:text-zinc-100">
                   {p.name} <span className="text-xs font-normal text-zinc-400">#{p.id}</span>
+                  <p className="text-[11px] font-normal text-zinc-400">أُضيف {formatMoment(p.createdAt, "shortDate")}</p>
                 </td>
                 <td className="px-3 py-3 text-zinc-600 dark:text-zinc-300">{p.type === "Center" ? "سنتر" : "مدرس"}</td>
                 <td className="px-3 py-3 tabular-nums" dir="ltr">

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { getApiErrorMessage } from "@/app/lib/api-error";
 import { formatEgp, formatMoney } from "@/app/lib/payments";
+import { momentMs } from "@/app/lib/date";
 import { RECHARGE_MIN, RECHARGE_PRESETS } from "@/app/constants/payment.constants";
 import { useRecharge, useStartRecharge } from "@/app/hooks/usePayments";
 import { Modal, inputClass, primaryButton, secondaryButton } from "@/components/TrackingTables/ui";
@@ -60,7 +61,7 @@ export function TopUpDialog({
       popupRef.current = popup;
       reported.current = false;
       // A card checkout lasts an hour from when it started.
-      const startedAt = new Date(result.expiresAt).getTime() - CHECKOUT_LIFETIME_MS;
+      const startedAt = (momentMs(result.expiresAt) ?? NaN) - CHECKOUT_LIFETIME_MS;
       setCheckout({ reference: result.reference, url: result.redirectUrl, startedAt });
     } catch (err) {
       popup?.close();

@@ -3,19 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowLeft,
-  CalendarClock,
   FileSpreadsheet,
-  Gauge,
   Infinity as InfinityIcon,
-  KeyRound,
   Plus,
   Send,
   Sparkles,
   Table2,
-  TrendingDown,
-  UserX,
   Users,
   UsersRound,
   type LucideIcon,
@@ -25,13 +19,12 @@ import { useAuth } from "@/app/(public)/context/auth.context";
 import { shortName } from "@/app/lib/user";
 import { useMySubscription } from "@/app/hooks/usePayments";
 import { useAssistants, useReports, useTrackingTables } from "@/app/hooks/useTrackingTables";
-import { useTeacherAlerts } from "@/app/hooks/useTeacherAlerts";
 import { isOwnTable } from "@/app/lib/tracking-table";
 import { featureLabel, formatDay, formatMoney, toUtcDate } from "@/app/lib/payments";
+import { momentMs } from "@/app/lib/date";
 import { AUDIENCE_GROUPS } from "@/app/constants/payment.constants";
 import { MySubscription, Quota } from "@/app/types/payment.types";
 import { ReportBatch, TrackingTableSummary } from "@/app/types/tracking-table.types";
-import { TeacherAlert, TeacherAlertKind } from "@/app/types/teacher-home.types";
 import { BundleName } from "@/components/Payments/BillingBits";
 import { TableCard } from "@/components/TrackingTables/TableCard";
 import Skeleton from "@/components/ui/Skeleton";
@@ -52,7 +45,7 @@ const daysUntil = (iso: string | null | undefined) => {
 };
 
 const isThisWeek = (iso: string | undefined) =>
-  !!iso && Date.now() - new Date(iso).getTime() <= WEEK_MS;
+  !!iso && Date.now() - (momentMs(iso) ?? 0) <= WEEK_MS;
 
 // The plan limits that belong to a teacher: tracking tables and following
 // students (the student-side "Mentors" limit isn't theirs).
@@ -163,190 +156,6 @@ function Hero({
           href="/settings/assistants"
         />
       </div>
-    </section>
-  );
-}
-
-// ---- Needs attention ----------------------------------------------------------
-
-interface AttentionItem {
-  id: string;
-  icon: LucideIcon;
-  tone: string;
-  title: string;
-  detail?: string;
-  href: string;
-  cta: string;
-}
-
-const ALERT_META: Record<TeacherAlertKind, { icon: LucideIcon; tone: string; cta: string }> = {
-  grades_drop: {
-    icon: TrendingDown,
-    tone: "bg-rose-600/10 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300",
-    cta: "افتح الجدول",
-  },
-  missed_exam: {
-    icon: UserX,
-    tone: "bg-amber-500/10 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300",
-    cta: "افتح الجدول",
-  },
-  report_pending: {
-    icon: Send,
-    tone: "bg-violet-600/10 text-violet-700 dark:bg-violet-400/10 dark:text-violet-300",
-    cta: "راجع التقرير",
-  },
-  assistant_request: {
-    icon: KeyRound,
-    tone: "bg-blue-600/10 text-blue-700 dark:bg-blue-400/10 dark:text-blue-300",
-    cta: "المساعدون",
-  },
-};
-
-const alertHref = (alert: TeacherAlert) =>
-  alert.kind === "assistant_request"
-    ? "/settings/assistants"
-    : alert.kind === "report_pending"
-      ? "/tracking-tables?tab=reports"
-      : alert.groupId
-        ? `/tracking-tables/${alert.groupId}`
-        : "/tracking-tables";
-
-// What the teacher should look at: the plan (ending, limits nearly used),
-// reports that failed or were never sent, and the student alerts.
-function attentionItems(
-  me: MySubscription | undefined,
-  reports: ReportBatch[] | undefined,
-  alerts: TeacherAlert[] | undefined,
-): AttentionItem[] {
-  const items: AttentionItem[] = [];
-
-  if (me?.current.kind === "Paid") {
-    const days = daysUntil(me.current.endDate);
-    if (me.current.inGrace) {
-      items.push({
-        id: "plan-grace",
-        icon: AlertTriangle,
-        tone: "bg-rose-600/10 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300",
-        title: "انتهت باقتك",
-        detail: `مزاياها متاحة حتى ${formatDay(me.current.graceEndsAt)}، جدّدها حتى لا تتوقف.`,
-        href: "/subscription",
-        cta: "جدّد الآن",
-      });
-    } else if (days !== null && days <= ENDING_DAYS) {
-      items.push({
-        id: "plan-ending",
-        icon: CalendarClock,
-        tone: "bg-amber-500/10 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300",
-        title: days <= 0 ? "باقتك تنتهي اليوم" : `باقتك تنتهي خلال ${days} ${days <= 10 ? "أيام" : "يومًا"}`,
-        detail: `تنتهي في ${formatDay(me.current.endDate)}، ويمكنك تجديدها بعد انتهائها`,
-        href: "/subscription",
-        cta: "الباقات",
-      });
-    }
-  }
-
-  for (const q of teacherQuotas(me?.quotas ?? [])) {
-    if (q.access !== "Limited" || !q.limit || usedRatio(q) < NEAR_LIMIT) continue;
-    const full = (q.remaining ?? 0) <= 0;
-    items.push({
-      id: `quota-${q.feature}`,
-      icon: Gauge,
-      tone: full
-        ? "bg-rose-600/10 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300"
-        : "bg-amber-500/10 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300",
-      title: full
-        ? `وصلت للحد في ${featureLabel(q.feature, q.displayName)}`
-        : `اقتربت من الحد في ${featureLabel(q.feature, q.displayName)}`,
-      detail: `استخدمت ${formatMoney(q.used)} من ${formatMoney(q.limit)}`,
-      href: "/settings/billing/limits",
-      cta: "حدود باقتي",
-    });
-  }
-
-  for (const r of reports ?? []) {
-    if (!isThisWeek(r.createdAt)) continue;
-    if ((r.counts.failed ?? 0) > 0) {
-      items.push({
-        id: `report-failed-${r.batchId}`,
-        icon: AlertTriangle,
-        tone: "bg-rose-600/10 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300",
-        title: `لم تصل ${r.counts.failed} رسالة من تقرير ${r.groupName}`,
-        href: "/tracking-tables?tab=reports",
-        cta: "التفاصيل",
-      });
-    } else if ((r.counts.draft ?? 0) > 0 && !(r.counts.sent ?? 0)) {
-      items.push({
-        id: `report-draft-${r.batchId}`,
-        ...ALERT_META.report_pending,
-        title: `تقرير ${r.groupName} جاهز ولم يُرسل بعد`,
-        href: "/tracking-tables?tab=reports",
-      });
-    }
-  }
-
-  for (const alert of alerts ?? []) {
-    items.push({
-      id: alert.id,
-      ...ALERT_META[alert.kind],
-      title: alert.title,
-      detail: [alert.groupName, alert.detail].filter(Boolean).join(" · ") || undefined,
-      href: alertHref(alert),
-    });
-  }
-
-  return items;
-}
-
-function AttentionList({ items, isLoading }: { items: AttentionItem[]; isLoading: boolean }) {
-  return (
-    <section className={card}>
-      <div className="mb-4 flex items-center gap-2">
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">يحتاج انتباهك</h2>
-        {items.length > 0 && (
-          <span className="rounded-full bg-rose-600/10 px-2 py-0.5 text-xs font-bold tabular-nums text-rose-700 dark:bg-rose-400/10 dark:text-rose-300">
-            {items.length}
-          </span>
-        )}
-      </div>
-
-      {isLoading ? (
-        <div className="flex flex-col gap-2">
-          {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-16 rounded-2xl" />
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="flex flex-col items-center rounded-2xl bg-emerald-600/5 px-4 py-8 text-center dark:bg-emerald-400/5">
-          <Sparkles className="text-emerald-600 dark:text-emerald-400" size={24} />
-          <p className="mt-2 font-bold text-zinc-800 dark:text-zinc-200">كل شيء على ما يرام</p>
-          <p className="mt-1 text-sm text-zinc-500">لا يوجد ما يحتاج انتباهك الآن.</p>
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {items.map((item) => {
-            const Icon = item.icon;
-            return (
-              <li key={item.id}>
-                <Link
-                  href={item.href}
-                  className="group flex items-center gap-3 rounded-2xl p-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                >
-                  <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", item.tone)}>
-                    <Icon size={18} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{item.title}</p>
-                    {item.detail && <p className="mt-0.5 truncate text-xs text-zinc-500">{item.detail}</p>}
-                  </div>
-                  <span className="hidden shrink-0 items-center gap-1 text-xs font-semibold text-blue-700 group-hover:underline dark:text-blue-400 sm:flex">
-                    {item.cta} <ArrowLeft size={14} />
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
     </section>
   );
 }
@@ -626,12 +435,9 @@ function QuickActions() {
 export default function TeacherHome() {
   const { user } = useAuth();
   const { data: tables, isLoading: tablesLoading } = useTrackingTables();
-  const { data: reports, isLoading: reportsLoading, isError: reportsFailed } = useReports();
+  const { data: reports, isError: reportsFailed } = useReports();
   const assistants = useAssistants();
   const { data: me, isLoading: planLoading } = useMySubscription();
-  const { data: alerts, isLoading: alertsLoading } = useTeacherAlerts();
-
-  const items = attentionItems(me, reports, alerts);
 
   return (
     <div dir="rtl" className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6">
@@ -645,7 +451,6 @@ export default function TeacherHome() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
-          <AttentionList items={items} isLoading={planLoading || reportsLoading || alertsLoading} />
           <RecentTables tables={tables} isLoading={tablesLoading} />
         </div>
         <div className="flex flex-col gap-6">

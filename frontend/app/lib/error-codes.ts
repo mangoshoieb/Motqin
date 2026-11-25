@@ -30,6 +30,22 @@ const GUIDE_DEFAULTS: Record<string, string> = {
   not_an_exam_column: "أحد الأعمدة المختارة ليس عمود امتحان",
   unknown_rows: "بعض الطلاب المختارين ليسوا في هذا الجدول",
   duplicate_core_column: "اخترت نفس العمود لأكثر من حقل أساسي",
+  // Tracking Tables Front Guide, 24 Nov 2026.
+  group_name_required: "اسم المجموعة مطلوب",
+  name_too_long: "الاسم طويل جداً",
+  column_name_required: "اسم العمود مطلوب",
+  column_name_taken: "يوجد عمود بنفس الاسم",
+  max_score_required: "حدد الدرجة النهائية للامتحان",
+  name_required: "اسم الطالب مطلوب",
+  invalid_phone: "رقم الموبايل غير صحيح",
+  invalid_value: "القيمة لا تناسب نوع العمود",
+  invalid_file: "الملف غير مدعوم، المسموح ملفات Excel بصيغة xlsx",
+  unreadable_file: "تعذر قراءة الملف، احفظه مرة أخرى بصيغة xlsx",
+  empty_file: "الملف لا يحتوي على طلاب",
+  invalid_import_options: "إعدادات الاستيراد غير صحيحة، أعد اختيار الملف",
+  too_many_choices: "هذا العمود فيه قيم مختلفة كثيرة لا تصلح لعمود اختيار، اختر نوعاً آخر",
+  options_required: "أضف اختياراً واحداً على الأقل",
+  option_too_long: "أحد الاختيارات طويل جداً",
 };
 
 const toMap = (items: ErrorCodeItem[]) =>

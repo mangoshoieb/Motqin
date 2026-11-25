@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GraduationCap, Presentation, User, Users } from "lucide-react";
+import { User } from "lucide-react";
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
 import RegionSelect from "@/components/RegionSelect";
 import CountrySelect from "@/components/auth/CountrySelect";
 import InviterCodeField from "@/components/auth/InviterCodeField";
 import { EDUCATIONAL_STAGE_OPTIONS, GRADUATE_STAGE } from "@/app/constants/user.constants";
-import { ACCOUNT_TYPE_LABELS, AccountType, getAccountType, setAccountType } from "@/app/lib/account-type";
+import { AccountType, getAccountType } from "@/app/lib/account-type";
 import { AuthFieldErrors } from "@/app/lib/auth-field-errors";
 import { SignupProfileFields } from "@/app/types/auth.types";
 import { cn } from "@/app/lib/utils";
@@ -23,11 +23,12 @@ const ORDINALS = ["الأول", "الثاني", "الثالث", "الرابع", 
 const gradeLabel = (stage: number, grade: number) =>
   `${stage === UNIVERSITY_STAGE ? "الفرقة" : "الصف"} ${ORDINALS[grade - 1]}`;
 
-const ROLE_CARDS: { type: AccountType; icon: typeof User; hint: string }[] = [
-  { type: "Student", icon: GraduationCap, hint: "أذاكر وأتابع خطتي" },
-  { type: "Teacher", icon: Presentation, hint: "أتابع طلابي" },
-  { type: "Mentor", icon: Users, hint: "أتابع أبنائي" },
-];
+// Shown above the form for the accounts the teacher and parent sign-up
+// pages make.
+const ACCOUNT_NOTE: Partial<Record<AccountType, string>> = {
+  Teacher: "تنشئ حساب معلم",
+  Mentor: "تنشئ حساب ولي أمر أو مشرف",
+};
 
 // Whether a Google sign-up will go on to the phone step after this form:
 // a Secondary student, a teacher or a parent.
@@ -87,9 +88,10 @@ const FieldError = ({ message }: { message?: string }) =>
 
 /**
  * «بياناتك» — what a new account is made with, on phone sign-up
- * (/complete-profile) and Google sign-up (/google-phone). One question at a
- * time, the way Nagwa asks: who you are, then where, then stage and grade
- * as cards. Teachers and parents skip stage and grade.
+ * (/complete-profile) and Google sign-up (/google-phone). The account type
+ * isn't asked here: it comes from the page the user signed up on (/sign-up,
+ * /sign-up/teacher, /sign-up/parent — sessionStorage accountType). Stage and
+ * grade are cards, the way Nagwa asks; teachers and parents skip them.
  */
 export default function SignupDetailsForm({
   initialName = "",
@@ -109,7 +111,7 @@ export default function SignupDetailsForm({
   const [grade, setGrade] = useState<number | null>(initial?.fields.gradeLevel ?? null);
   const [errors, setErrors] = useState<AuthFieldErrors>({});
 
-  // The type picked on the sign-up page (sessionStorage, browser only).
+  // The type the sign-up page kept (sessionStorage, browser only).
   useEffect(() => {
     if (initial?.fields.accountType) return;
     const timeout = setTimeout(() => setType(getAccountType()), 0);
@@ -176,49 +178,14 @@ export default function SignupDetailsForm({
       }}
       className="flex flex-col gap-6"
     >
-      {/* 1 · Who */}
-      <fieldset className="space-y-2">
-        <legend className="mb-2 text-sm font-semibold text-gray-600 dark:text-zinc-400">أنا</legend>
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {ROLE_CARDS.map(({ type, icon: Icon, hint }) => {
-            const selected = accountType === type;
-            return (
-              <button
-                key={type}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => {
-                  setType(type);
-                  setAccountType(type);
-                  clear("AccountType", "EducationalStage", "GradeLevel");
-                }}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-2xl border-2 px-2 py-3 text-center transition-colors",
-                  selected
-                    ? "border-blue-600 bg-blue-50 dark:border-blue-500 dark:bg-blue-500/15"
-                    : "border-gray-200 bg-white hover:border-blue-300 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-blue-500/60",
-                )}
-              >
-                <Icon
-                  className={cn("size-7", selected ? "text-blue-600 dark:text-blue-400" : "text-gray-400 dark:text-zinc-500")}
-                />
-                <span
-                  className={cn(
-                    "text-sm font-bold leading-5",
-                    selected ? "text-blue-700 dark:text-blue-300" : "text-gray-800 dark:text-zinc-200",
-                  )}
-                >
-                  {ACCOUNT_TYPE_LABELS[type]}
-                </span>
-                <span className="hidden text-xs text-gray-500 dark:text-zinc-400 sm:block">{hint}</span>
-              </button>
-            );
-          })}
-        </div>
-        <FieldError message={errors.AccountType} />
-      </fieldset>
+      {ACCOUNT_NOTE[accountType] && (
+        <p className="-mb-2 w-fit rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+          {ACCOUNT_NOTE[accountType]}
+        </p>
+      )}
+      {errors.AccountType && <FieldError message={errors.AccountType} />}
 
-      {/* 2 · Name and place */}
+      {/* Name and place */}
       <CustomInput
         label="الاسم"
         placeholder="مثال: محمد أحمد"
@@ -255,7 +222,7 @@ export default function SignupDetailsForm({
         )}
       </div>
 
-      {/* 3 · Stage and grade (students only) */}
+      {/* Stage and grade (students only) */}
       {isStudent && (
         <fieldset className="space-y-2">
           <legend className="mb-2 text-sm font-semibold text-gray-600 dark:text-zinc-400">المرحلة الدراسية</legend>

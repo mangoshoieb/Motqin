@@ -9,6 +9,7 @@ import {
   TIER_META,
   type TermMonths,
 } from "../constants/payment.constants";
+import { parseMoment } from "./date";
 import {
   Bundle,
   BundleAudience,
@@ -41,13 +42,8 @@ export const audienceForUser = (user: RoleCarrier): BundleAudience =>
 
 // --- Dates and money -----------------------------------------------------------
 
-// createdAt / updatedAt come without a zone but are UTC.
-export const toUtcDate = (iso: string | null | undefined) => {
-  if (!iso) return null;
-  const hasZone = /([zZ]|[+-]\d\d:?\d\d)$/.test(iso);
-  const date = new Date(hasZone ? iso : `${iso}Z`);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
+// createdAt / updatedAt: UTC moments, shown in the viewer's clock (lib/date).
+export const toUtcDate = (iso: string | null | undefined) => parseMoment(iso);
 
 const dayFormat = new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric" });
 const dateTimeFormat = new Intl.DateTimeFormat("ar-EG", {

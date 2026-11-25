@@ -14,11 +14,10 @@ import {
 import { reactionOptions } from "@/app/constants/quote.constants";
 import { AcademicDay, ReactionType } from "@/app/types/quote.types";
 import Skeleton from "@/components/ui/Skeleton";
+// The server counts days in the student's own country now, so "today" is the device's.
+import { calendarDay, todayLocal } from "@/app/lib/date";
 import QuoteComments from "./QuoteComments";
 
-// Today as "YYYY-MM-DD" in Cairo, the timezone the backend counts days in.
-const cairoToday = () =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(new Date());
 
 // Arabic counted noun: يوم واحد / يومان / 3–10 أيام / 11+ يومًا.
 const daysLabel = (n: number) =>
@@ -28,7 +27,7 @@ const daysLabel = (n: number) =>
 // at its midpoint. Hidden when there's no calendar for the student, before
 // the year starts, and once it's over.
 function AcademicDayProgress({ day }: { day: AcademicDay | null | undefined }) {
-  if (!day || !day.dayNumber || day.endDate < cairoToday()) return null;
+  if (!day || !day.dayNumber || calendarDay(day.endDate) < todayLocal()) return null;
 
   const total = Math.max(day.totalDays, 1);
   const percent = Math.min(100, Math.max(0, (day.dayNumber / total) * 100));

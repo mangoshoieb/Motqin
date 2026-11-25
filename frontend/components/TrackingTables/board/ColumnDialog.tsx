@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
 import { getApiErrorMessage } from "@/app/lib/api-error";
-import { apiErrorCode, apiErrorDetails, normalizeDigits } from "@/app/lib/tracking-table";
+import { NAME_FIELD_CODES, apiErrorCode, apiErrorDetails, normalizeDigits } from "@/app/lib/tracking-table";
 import {
   COLUMN_TYPES,
   COLUMN_TYPE_ORDER,
@@ -13,7 +13,7 @@ import {
 } from "@/app/constants/tracking-table.constants";
 import { useSaveColumn } from "@/app/hooks/useTrackingTables";
 import { ColumnType, TrackingColumn } from "@/app/types/tracking-table.types";
-import { Modal, inputClass, primaryButton, secondaryButton } from "../ui";
+import { FieldError, Modal, inputClass, primaryButton, secondaryButton } from "../ui";
 import { choiceChipClass } from "./Cell";
 
 // values_dont_fit lists the students whose current value the new type can't
@@ -43,6 +43,10 @@ export function ColumnDialog({
   const [options, setOptions] = useState<string[]>(column?.options ?? []);
   const [optionDraft, setOptionDraft] = useState("");
   const [error, setError] = useState<{ message: string; rows: string[] } | null>(null);
+  // column_name_required / name_too_long / column_name_taken go under the
+  // name, max_score_required under the full mark.
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [scoreError, setScoreError] = useState<string | null>(null);
   const save = useSaveColumn(groupId);
 
   const score = Number(normalizeDigits(maxScore));
@@ -62,6 +66,8 @@ export function ColumnDialog({
     event.preventDefault();
     if (!valid || save.isPending) return;
     setError(null);
+    setNameError(null);
+    setScoreError(null);
     const finalOptions = optionDraft.trim() && !options.includes(optionDraft.trim())
       ? [...options, optionDraft.trim()]
       : options;
@@ -81,6 +87,9 @@ export function ColumnDialog({
           onClose();
         },
         onError: (err) => {
+          const code = apiErrorCode(err) ?? "";
+          if (NAME_FIELD_CODES.includes(code)) return setNameError(getApiErrorMessage(err));
+          if (code === "max_score_required") return setScoreError(getApiErrorMessage(err));
           const details = apiErrorDetails<{ rows?: unknown[] }>(err);
           setError({
             message: getApiErrorMessage(err),
@@ -117,10 +126,15 @@ export function ColumnDialog({
             dir="auto"
             value={name}
             maxLength={TRACKING_LIMITS.COLUMN_NAME}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              setNameError(null);
+            }}
             placeholder="مثال: امتحان الشهر"
+            aria-invalid={!!nameError}
             className={inputClass}
           />
+          <FieldError message={nameError} />
         </label>
 
         <div className="flex flex-col gap-2">
@@ -157,10 +171,14 @@ export function ColumnDialog({
               dir="ltr"
               inputMode="decimal"
               value={maxScore}
-              onChange={(e) => setMaxScore(e.target.value)}
+              onChange={(e) => {
+                setMaxScore(e.target.value);
+                setScoreError(null);
+              }}
               className={cn(inputClass, "w-32 text-center")}
             />
             {!scoreValid && <span className="text-xs text-rose-600 dark:text-rose-400">من 1 إلى {TRACKING_LIMITS.MAX_SCORE}</span>}
+            {scoreValid && <FieldError message={scoreError} />}
           </label>
         )}
 

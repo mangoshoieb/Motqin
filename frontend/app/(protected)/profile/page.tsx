@@ -24,6 +24,7 @@ import { UpdateMeRequest } from "@/app/types/auth.types";
 import GoalsManager from "@/components/Profile/GoalsManager";
 import DescriptionField from "@/components/Profile/DescriptionField";
 import ChangePhoneDialog from "@/components/Profile/ChangePhoneDialog";
+import { formatMoment, parseMoment } from "@/app/lib/date";
 
 const PROFILE_IMAGE = "/my-notion-face-portrait.png";
 const PHOTO_ERROR = "الصورة غير مدعومة أو أكبر من 6 ميجا";
@@ -413,6 +414,14 @@ export default function ProfilePage() {
               <div>
                 <label className="mb-2 block font-medium">الدور</label>
                 <div className={readonlyBox}>{user.role}</div>
+              </div>
+            )}
+
+            {/* createdAt is a UTC moment; shown on the viewer's own calendar. */}
+            {parseMoment(user.createdAt) && (
+              <div>
+                <label className="mb-2 block font-medium">تاريخ الانضمام</label>
+                <div className={readonlyBox}>{formatMoment(user.createdAt, "date")}</div>
               </div>
             )}
           </div>

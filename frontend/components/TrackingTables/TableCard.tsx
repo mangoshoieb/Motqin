@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Columns3, MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/app/lib/utils";
+import { timeAgo } from "@/app/lib/date";
 import { TABLE_COLORS } from "@/app/constants/tracking-table.constants";
 import { useTableView } from "@/app/lib/tracking-table-view.store";
 import { formatNumber, tableInitial } from "@/app/lib/tracking-table";
@@ -14,16 +15,6 @@ import { canOnTable, isOwnTable } from "@/app/lib/tracking-table";
 import { RenameTableDialog } from "./CreateTableDialog";
 import { Dropdown } from "./ui";
 
-const relative = new Intl.RelativeTimeFormat("ar", { numeric: "auto" });
-
-const timeAgo = (iso: string) => {
-  const minutes = Math.round((new Date(iso).getTime() - Date.now()) / 60_000);
-  if (!Number.isFinite(minutes)) return "";
-  if (Math.abs(minutes) < 60) return relative.format(minutes, "minute");
-  const hours = Math.round(minutes / 60);
-  if (Math.abs(hours) < 24) return relative.format(hours, "hour");
-  return relative.format(Math.round(hours / 24), "day");
-};
 
 export function TableCard({ table }: { table: TrackingTableSummary }) {
   const view = useTableView(table.groupId);
@@ -104,7 +95,7 @@ export function TableCard({ table }: { table: TrackingTableSummary }) {
           initialName={table.groupName}
           isPending={rename.isPending}
           onClose={() => setRenaming(false)}
-          onSubmit={(name) => rename.mutate(name, { onSuccess: () => setRenaming(false) })}
+          onSubmit={(name) => rename.mutateAsync(name).then(() => setRenaming(false))}
         />
       )}
     </div>

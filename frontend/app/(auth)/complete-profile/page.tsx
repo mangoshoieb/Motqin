@@ -10,6 +10,8 @@ import { useAuthStore } from "@/app/lib/auth.store";
 import { AuthFieldErrors, authFieldErrors } from "@/app/lib/auth-field-errors";
 import { otpErrorMessage } from "@/app/lib/otp-errors";
 import SignupDetailsForm from "@/components/auth/SignupDetailsForm";
+import { SIGN_UP_PAGES } from "@/components/auth/SignUpScreen";
+import { AccountType, getAccountType } from "@/app/lib/account-type";
 
 // Phone sign-up, last step: /verify-phone answered needsSignup, so the new
 // account is made from «بياناتك» (POST /auth/phone-complete-signup).
@@ -21,8 +23,13 @@ export default function CompleteProfile() {
   // The phone lives in memory only; wait a tick before deciding a reload
   // lost it.
   const [ready, setReady] = useState(false);
+  // Back to the sign-up page they started on.
+  const [accountType, setType] = useState<AccountType>("Student");
   useEffect(() => {
-    const timeout = setTimeout(() => setReady(true), 0);
+    const timeout = setTimeout(() => {
+      setReady(true);
+      setType(getAccountType());
+    }, 0);
     return () => clearTimeout(timeout);
   }, []);
 
@@ -38,7 +45,7 @@ export default function CompleteProfile() {
                 انتهت الجلسة قبل إكمال التسجيل. أدخل رقم هاتفك من جديد لنرسل لك رمزًا جديدًا.
               </p>
               <Link
-                href="/sign-up"
+                href={SIGN_UP_PAGES[accountType].href}
                 className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 dark:bg-blue-700 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800"
               >
                 <ArrowRight className="size-5" />

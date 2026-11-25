@@ -15,6 +15,7 @@ import {
   fromLocalInput,
   toLocalInput,
 } from "@/app/lib/payments";
+import { formatMoment } from "@/app/lib/date";
 import {
   useAdminBundles,
   useAdminPartners,
@@ -278,6 +279,7 @@ export function BatchDialog({ onClose }: { onClose: () => void }) {
       >
         <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-300">
           {batch.count} قسيمة · خصم {batch.discountPercent}٪ · تُستخدم كل قسيمة مرة واحدة
+          {batch.createdAt && ` · أُنشئت ${formatMoment(batch.createdAt, "dateTime")}`}
         </p>
         <div className="grid max-h-80 grid-cols-2 gap-1.5 overflow-y-auto sm:grid-cols-3" dir="ltr">
           {batch.codes.map((c) => (

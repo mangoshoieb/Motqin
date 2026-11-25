@@ -95,12 +95,16 @@ export const trackingTableService = {
     return unwrap<ImportPreview>(data);
   },
   importTable: async (file: File, groupName: string, options: ImportOptions = {}) => {
-    const { forTeacherId, ...columnOptions } = options;
+    const { forTeacherId, types, maxScores } = options;
     const form = new FormData();
     form.append("file", file);
     form.append("groupName", groupName);
-    // The index fields go both as their own form fields (current API) and in
-    // the older `options` JSON, with the same values either way.
+    // The fixed-field indexes are form fields of their own; `options` is JSON
+    // text with only the type picks and exam full marks, by sheet index.
+    const columnOptions = {
+      ...(types && Object.keys(types).length ? { types } : {}),
+      ...(maxScores && Object.keys(maxScores).length ? { maxScores } : {}),
+    };
     const indexFields = [
       ["nameColumn", options.name],
       ["studentPhoneColumn", options.studentPhone],
